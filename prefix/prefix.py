@@ -49,6 +49,8 @@ class Prefix(commands.Cog):
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix not in prefixes:
             return await ctx.send("That is not a valid prefix.")
+        if len(prefixes) == 1:
+            return await ctx.send("If you removed that prefix, you would have none left.")
         index = prefixes.index(prefix)
         prefixes.pop(index)
         await ctx.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
