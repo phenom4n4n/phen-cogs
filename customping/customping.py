@@ -1,3 +1,6 @@
+# Remove command logic originally from : https://github.com/mikeshardmind/SinbadCogs/tree/v3/messagebox
+# Speed test logic from https://github.com/PhasecoreX/PCXCogs/tree/master/netspeed
+
 import discord
 import time
 import asyncio
@@ -9,10 +12,9 @@ from redbot.core import commands, checks
 old_ping = None
 
 
+
 class CustomPing(commands.Cog):
     """A more information rich ping message."""
-
-    __author__ = "phenom4n4n"
 
     def __init__(self, bot):
         self.bot = bot
