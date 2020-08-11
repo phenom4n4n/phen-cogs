@@ -11,8 +11,6 @@ from redbot.core import commands, checks
 
 old_ping = None
 
-
-
 class CustomPing(commands.Cog):
     """A more information rich ping message."""
 
