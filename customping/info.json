@@ -1,0 +1,7 @@
+{
+	"author": ["PhenoM4n4n"],
+	"install_msg": "Thank you for installing CustomPing.",
+	"description": "Creates a custom ping embed to display latency statistics.",
+	"short": "Creates a custom ping embed to display latency statistics.",
+	"tags": "ping"
+  }

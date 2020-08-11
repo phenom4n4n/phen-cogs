@@ -1,0 +1,8 @@
+	{
+    "author" : ["PhenoM4n4n"],
+    "install_msg" : "Thank you for installing my cog!",
+    "name" : "Prefix",
+    "short" : "Manage guild prefixes.",
+    "description" : "Manage guild prefixes.",
+    "tags" : ["server", "prefix"]
+}

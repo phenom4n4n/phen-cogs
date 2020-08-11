@@ -1,0 +1,1 @@
+from .customping import setup
