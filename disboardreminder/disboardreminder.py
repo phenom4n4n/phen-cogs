@@ -64,6 +64,17 @@ class DisboardReminder(commands.Cog):
             await ctx.send(f"Set {role.name} to ping for bump reminders.")
             await self.config.guild(ctx.guild).role.set(role.id)
     
+    @bumpreminder.command()
+    async def message(self, ctx, *, message: str = None):
+        """Change the message used for reminders. Providing no message will reset to the default message."""
+
+        if message:
+            await self.config.guild(ctx.guild).message.set(message)
+            await ctx.tick()
+        else:
+            await self.config.guild(ctx.guild).message.clear()
+            await ctx.send("Reset this serer's reminder message.")
+    
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         await asyncio.sleep(remaining)
         await self.bump_message(guild)
@@ -133,6 +144,13 @@ class DisboardReminder(commands.Cog):
         embed = message.embeds[0]
         if "Bump done" not in embed.description:
             return
+        
+        channel = message.channel
+        
+        cmdMessages = await channel.history(limit=10).flatten()
+        cmdMessage = discord.utils.find(lambda m: m.content.lower().startswith("!d bump") and m.author.id in embed.description, cmdMessages)
+        if cmdMessage:
+            await channel.send(f"{cmdMessage.author.mention}, thank you for bumping! I will send my next reminder in 2 hours.")
 
         nextBump = calendar.timegm(message.created_at.utctimetuple()) + 7200
         await self.config.guild(message.guild).nextBump.set(nextBump)
