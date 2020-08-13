@@ -145,12 +145,8 @@ class DisboardReminder(commands.Cog):
         if "Bump done" not in embed.description:
             return
         
-        channel = message.channel
-        
-        cmdMessages = await channel.history(limit=10).flatten()
-        cmdMessage = discord.utils.find(lambda m: m.content.lower().startswith("!d bump") and m.author.id in embed.description, cmdMessages)
-        if cmdMessage:
-            await channel.send(f"{cmdMessage.author.mention}, thank you for bumping! I will send my next reminder in 2 hours.")
+        words = embed.description.split()
+        await message.channel.send(f"{words[0]} thank you for bumping! I will send my next reminder in 2 hours.")
 
         nextBump = calendar.timegm(message.created_at.utctimetuple()) + 7200
         await self.config.guild(message.guild).nextBump.set(nextBump)
