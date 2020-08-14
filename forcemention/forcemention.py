@@ -39,7 +39,7 @@ class ForceMention(Cog):
         await ctx.message.delete()
         await self.forcemention(ctx.channel, role, message)
 
-    async def forcemention(self, channel: discord.Channel, role: discord.Role, message: str):
+    async def forcemention(self, channel: discord.TextChannel, role: discord.Role, message: str):
         mentionPerms = discord.AllowedMentions(roles=True)
         if role.mentionable:
             await channel.send(message, allowed_mentions=mentionPerms)
