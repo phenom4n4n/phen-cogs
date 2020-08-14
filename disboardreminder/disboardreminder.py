@@ -65,7 +65,7 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(ctx.guild).role.set(role.id)
             await ctx.send(f"Set {role.name} to ping for bump reminders.")
     
-    @bumpreminder.command(aliases="ty")
+    @bumpreminder.command(aliases=["ty"])
     async def thankyou(self, ctx, *, message: str = None):
         """Change the message used for 'Thank You' messages. Providing no message will reset to the default message.
 
