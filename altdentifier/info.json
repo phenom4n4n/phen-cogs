@@ -1,0 +1,11 @@
+{
+    "author": ["PhenoM4n4n"],
+    "install_msg": "Thanks for installing AltDentifier!",
+    "name": "AltDentifier",
+    "disabled": false,
+    "short": "Check users with AltDentifier API",
+    "description": "Check users with AltDentifier API",
+    "tags": [],
+    "requirements": [],
+    "hidden": false
+}
