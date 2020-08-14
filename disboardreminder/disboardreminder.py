@@ -21,6 +21,7 @@ class DisboardReminder(commands.Cog):
             "channel": None,
             "role": None,
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
+            "tyMessage": "{member} thank you for bumping! I will send my next reminder in 2 hours.",
             "nextBump": None
         }
 
@@ -28,7 +29,7 @@ class DisboardReminder(commands.Cog):
 
     @checks.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
-    @commands.group()
+    @commands.group(aliases=["bprm"])
     async def bumpreminder(self, ctx):
         """Set a reminder to bump on Disboard.
         
@@ -40,7 +41,7 @@ class DisboardReminder(commands.Cog):
 
         This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
 
-        if channel is None:
+        if not channel:
             await self.config.guild(ctx.guild).channel.clear()
             await ctx.send("Disabled bump reminders in this server.")
         else:
@@ -57,13 +58,29 @@ class DisboardReminder(commands.Cog):
     async def pingrole(self, ctx, role: discord.Role=None):
         """Set a role to ping for bump reminders. If no role is provided, it will clear the current role."""
 
-        if role is None:
+        if not role:
             await self.config.guild(ctx.guild).role.clear()
             await ctx.send("Cleared the role for bump reminders.")
         else:
-            await ctx.send(f"Set {role.name} to ping for bump reminders.")
             await self.config.guild(ctx.guild).role.set(role.id)
+            await ctx.send(f"Set {role.name} to ping for bump reminders.")
     
+    @bumpreminder.command(aliases="ty")
+    async def thankyou(self, ctx, *, message: str = None):
+        """Change the message used for 'Thank You' messages. Providing no message will reset to the default message.
+
+        Variables:
+        `{member}` - Mentions the user who bumped
+        
+        Usage: `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`"""
+
+        if message:
+            await self.config.guild(ctx.guild).tyMessage.set(message)
+            await ctx.tick()
+        else:
+            await self.config.guild(ctx.guild).tyMessage.clear()
+            await ctx.send("Reset this server's Thank You message.")
+
     @bumpreminder.command()
     async def message(self, ctx, *, message: str = None):
         """Change the message used for reminders. Providing no message will reset to the default message."""
@@ -73,7 +90,7 @@ class DisboardReminder(commands.Cog):
             await ctx.tick()
         else:
             await self.config.guild(ctx.guild).message.clear()
-            await ctx.send("Reset this serer's reminder message.")
+            await ctx.send("Reset this server's reminder message.")
     
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         await asyncio.sleep(remaining)
@@ -92,7 +109,6 @@ class DisboardReminder(commands.Cog):
         await channel.send(message, allowed_mentions=mentionPerms)
         await self.config.guild(guild).nextBump.clear()
 
-# this doesn't actually work.. pls help
     async def bump_worker(self):
         """Restarts bump timers
         This worker will attempt to restart bump timers incase of a cog reload or
@@ -101,15 +117,11 @@ class DisboardReminder(commands.Cog):
         """
         try:
             await self.bot.wait_until_ready()
-            print("bump worker activated")
             guilds = [self.bot.get_guild(guild) for guild in await self.config.all_guilds()]
-            print(guilds)
             coros = []
             for guild in guilds:
-                print(guild)
                 timer = await self.config.guild(guild).nextBump()
                 if timer:
-                    print(timer)
                     now = calendar.timegm(datetime.utcnow().utctimetuple())
                     remaining = timer - now
                     if remaining <= 0:
@@ -145,8 +157,10 @@ class DisboardReminder(commands.Cog):
         if "Bump done" not in embed.description:
             return
         
-        words = embed.description.split()
-        await message.channel.send(f"{words[0]} thank you for bumping! I will send my next reminder in 2 hours.")
+        words = embed.description.split(",")
+        member = words[0]
+        tymessage = data["tyMessage"]
+        await message.channel.send(tymessage.format(member=member))
 
         nextBump = calendar.timegm(message.created_at.utctimetuple()) + 7200
         await self.config.guild(message.guild).nextBump.set(nextBump)

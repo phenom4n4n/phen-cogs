@@ -1,6 +1,6 @@
 {
   "author" : ["PhenoM4n4n"],
-  "install_msg" : "Thank you for installing DisboardReminder.",
+  "install_msg" : "Thank you for installing DisboardReminder. This requires the ForceMention cog to be installed and loaded from **this** repo.",
   "name" : "DisboardReminder",
   "short" : "Set a reminder to bump on Disboard.",
   "description" : "Set a reminder to bump on Disboard.",
