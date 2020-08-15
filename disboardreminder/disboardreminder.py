@@ -21,7 +21,7 @@ class DisboardReminder(commands.Cog):
             "channel": None,
             "role": None,
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
-            "tyMessage": "{member} thank you for bumping! I will send my next reminder in 2 hours.",
+            "tyMessage": "{member} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild.id}>.",
             "nextBump": None
         }
 
@@ -109,6 +109,7 @@ class DisboardReminder(commands.Cog):
         await channel.send(message, allowed_mentions=mentionPerms)
         await self.config.guild(guild).nextBump.clear()
 
+# sometimes this works but sometimes it doesnt?? pls help
     async def bump_worker(self):
         """Restarts bump timers
         This worker will attempt to restart bump timers incase of a cog reload or
@@ -160,7 +161,7 @@ class DisboardReminder(commands.Cog):
         words = embed.description.split(",")
         member = words[0]
         tymessage = data["tyMessage"]
-        await message.channel.send(tymessage.format(member=member))
+        await message.channel.send(tymessage.format(member=member, guild=message.guild))
 
         nextBump = calendar.timegm(message.created_at.utctimetuple()) + 7200
         await self.config.guild(message.guild).nextBump.set(nextBump)
