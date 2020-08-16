@@ -34,7 +34,6 @@ class AltDentifier(commands.Cog):
         if member.bot:
             return await ctx.send("Bots can't really be alts you know..")
         e = await self.alt_request(member)
-            
         await ctx.send(embed=e)
 
     @checks.admin_or_permissions(manage_guild=True)
