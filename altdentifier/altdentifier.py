@@ -17,6 +17,11 @@ class AltDentifier(commands.Cog):
             identifier=60124753086205362,
             force_registration=True,
         )
+        default_guild = {
+            "channel": None
+        }
+
+        self.config.register_guild(**default_guild)
 
     @checks.mod_or_permissions(manage_guild=True)
     @commands.guild_only()
@@ -31,6 +36,49 @@ class AltDentifier(commands.Cog):
         e = await self.alt_request(member)
             
         await ctx.send(embed=e)
+
+    @checks.admin_or_permissions(manage_guild=True)
+    @commands.guild_only()
+    @commands.group()
+    async def altset(self, ctx):
+        """AltDentifier Settings"""
+
+        if not ctx.subcommand_passed:
+            data = await self.config.guild(ctx.guild).all()
+            description = []
+
+            if data["channel"]:
+                channel = f"<#{data['tradeChannel']}>"
+            else:
+                channel = "None"
+            
+            description.append(f"Trade Request Channel: {channel}")
+            
+            color = await self.bot.get_embed_colour(ctx)
+            e = discord.Embed(
+                color=color,
+                title=f"AltDentifier Settings",
+                description=description
+            )
+            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+            await ctx.send(embed=e)
+
+    @altset.command()
+    async def channel(self, ctx, channel: discord.TextChannel = None):
+        """Set the channel to send AltDentifier join checks to.
+
+        This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
+
+        if not channel:
+            await self.config.guild(ctx.guild).channel.clear()
+            await ctx.send("Disabled AltDentifier join checks in this server.")
+        else:
+            try:
+                await channel.send("Set this channel as the message channel for AltDentifier join checks")
+                await self.config.guild(ctx.guild).channel.set(channel.id)
+            except discord.errors.Forbidden:
+                await ctx.send("I do not have permission to talk in that channel.")
+        await ctx.tick()
 
     async def alt_request(self, member: discord.Member):
         async with aiohttp.ClientSession() as session:
@@ -55,3 +103,15 @@ class AltDentifier(commands.Cog):
         elif trustfactor == 3:
             color = discord.Color.dark_green()
         return color
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        data = await self.config.guild(member.guild).all()
+        if not data["channel"]:
+            return
+        channel = member.guild.get_channel(data["channel"])
+        if not channel:
+            await self.config.guild(member.guild).channel.clear()
+            return
+        e = await self.alt_request(member)
+        await channel.send(embed=e)
