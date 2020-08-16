@@ -51,8 +51,9 @@ class AltDentifier(commands.Cog):
             else:
                 channel = "None"
             
-            description.append(f"Trade Request Channel: {channel}")
-            
+            description.append(f"AltDentifier Check Channel: {channel}")
+            description = "\n".join(description)
+
             color = await self.bot.get_embed_colour(ctx)
             e = discord.Embed(
                 color=color,
