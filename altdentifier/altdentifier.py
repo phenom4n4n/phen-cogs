@@ -12,6 +12,7 @@ class AltDentifier(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.session = aiohttp.ClientSession()
         self.config = Config.get_conf(
             self,
             identifier=60124753086205362,
@@ -22,6 +23,9 @@ class AltDentifier(commands.Cog):
         }
 
         self.config.register_guild(**default_guild)
+
+    def cog_unload(self):
+        self.bot.loop.create_task(self.session.close())
 
     @checks.mod_or_permissions(manage_guild=True)
     @commands.guild_only()
@@ -81,9 +85,8 @@ class AltDentifier(commands.Cog):
         await ctx.tick()
 
     async def alt_request(self, member: discord.Member):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
-                response = await response.json()
+        async with self.session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
+            response = await response.json()
         color = await self.pick_color(response["trustfactor"])
         e = discord.Embed(
             color=color,
