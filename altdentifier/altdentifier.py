@@ -51,7 +51,7 @@ class AltDentifier(commands.Cog):
             description = []
 
             if data["channel"]:
-                channel = f"<#{data['tradeChannel']}>"
+                channel = f"<#{data['channel']}>"
             else:
                 channel = "None"
             
