@@ -109,6 +109,8 @@ class AltDentifier(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        if member.bot:
+            return
         data = await self.config.guild(member.guild).all()
         if not data["channel"]:
             return
