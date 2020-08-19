@@ -1,7 +1,0 @@
-{
-  "author": ["PhenoM4n4n"],
-  "install_msg": "Thank you for installing AllowedMentions.",
-  "description": "Sanitize `@everyone` and role pings.",
-  "short": "Sanitize `@everyone` and role pings.",
-  "tags": "mention"
-}
