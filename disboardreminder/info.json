@@ -4,5 +4,6 @@
   "name" : "DisboardReminder",
   "short" : "Set a reminder to bump on Disboard.",
   "description" : "Set a reminder to bump on Disboard.",
-  "tags" : ["Disboard", "Reminder"]
+  "tags" : ["Disboard", "Reminder"],
+  "end_user_data_statement": "This cog does not store any End-User Data."
 }

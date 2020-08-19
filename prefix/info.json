@@ -3,6 +3,7 @@
     "install_msg" : "Thank you for installing my cog!",
     "name" : "Prefix",
     "short" : "Manage guild prefixes.",
-    "description" : "Manage guild prefixes.",
-    "tags" : ["server", "prefix"]
+    "description" : "Manage guild prefixes more extensively.",
+    "tags" : ["server", "prefix"],
+    "end_user_data_statement": "This cog does not store any End-User Data."
 }

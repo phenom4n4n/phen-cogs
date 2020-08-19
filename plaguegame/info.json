@@ -4,5 +4,6 @@
     "name" : "Plague",
     "short" : "Infect users with the plague!",
     "description" : "Plague game with a doctor and plaguebearer.",
-    "tags" : ["fun", "plague"]
+    "tags" : ["fun", "plague"],
+    "end_user_data_statement": "This cog stores data on users based off their ineteractions within the game. No personal data is stored."
 }
