@@ -160,10 +160,10 @@ class AltDentifier(commands.Cog):
         elif action == "mute":
             pass
         else:
-            role = self.bot.get_role(action[trust])
+            role = member.guild.get_role(action[trust])
             if role:
                 try:
-                    member.add_roles(role, reason=f"AltDentifier action taken for Trust Level {trust}")
+                    await member.add_roles(role, reason=f"AltDentifier action taken for Trust Level {trust}")
                 except discord.errors.Forbidden:
                     async with self.config.guild(member.guild).actions() as a:
                         a[trust] = None
