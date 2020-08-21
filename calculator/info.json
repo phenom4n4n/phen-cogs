@@ -1,0 +1,12 @@
+{
+    "author": ["PhenoM4n4n"],
+    "install_msg": "Thanks for installing Calculator!",
+    "name": "Calculator",
+    "disabled": false,
+    "short": "Calculate stuff",
+    "description": "Calculate stuff",
+    "tags": ["utility", "calculator"],
+    "requirements": ["simplecalculator"],
+    "hidden": false,
+    "end_user_data_statement": "This cog does not store any End-User Data."
+}
