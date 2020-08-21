@@ -19,7 +19,13 @@ class AltDentifier(commands.Cog):
             force_registration=True,
         )
         default_guild = {
-            "channel": None
+            "channel": None,
+            "actions": {
+                0: None,
+                1: None,
+                2: None,
+                3: None
+            }
         }
 
         self.config.register_guild(**default_guild)
@@ -69,6 +75,24 @@ class AltDentifier(commands.Cog):
 
     @altset.command()
     async def channel(self, ctx, channel: discord.TextChannel = None):
+        """Set the channel to send AltDentifier join checks to.
+
+        This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
+
+        if not channel:
+            await self.config.guild(ctx.guild).channel.clear()
+            await ctx.send("Disabled AltDentifier join checks in this server.")
+        else:
+            try:
+                await channel.send("Set this channel as the message channel for AltDentifier join checks")
+                await self.config.guild(ctx.guild).channel.set(channel.id)
+            except discord.errors.Forbidden:
+                await ctx.send("I do not have permission to talk in that channel.")
+        await ctx.tick()
+
+    @checks.is_owner()
+    @altset.command()
+    async def action(self, ctx, level: int, action: str):
         """Set the channel to send AltDentifier join checks to.
 
         This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
