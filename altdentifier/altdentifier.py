@@ -22,10 +22,10 @@ class AltDentifier(commands.Cog):
         default_guild = {
             "channel": None,
             "actions": {
-                0: None,
-                1: None,
-                2: None,
-                3: None
+                "0": None,
+                "1": None,
+                "2": None,
+                "3": None
             }
         }
 
@@ -114,11 +114,11 @@ class AltDentifier(commands.Cog):
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = None
             return await ctx.send(f"Removed actions for Trust Level {level}.")
-        if isinstance(action, str) and action.lower() not in ["kick", "ban", "mute"]:
-            return await ctx.send("This is not a valid action. The cvlid actions are kick, ban and mute. For roles, supply a role.")
         if isinstance(action, discord.Role):
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.id
+        if isinstance(action, str) and action.lower() not in ["kick", "ban", "mute"]:
+            return await ctx.send("This is not a valid action. The valid actions are kick, ban and mute. For roles, supply a role.")
         else:
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.lower()
