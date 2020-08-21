@@ -44,7 +44,8 @@ class AltDentifier(commands.Cog):
             member = ctx.author
         if member.bot:
             return await ctx.send("Bots can't really be alts you know..")
-        e = await self.alt_request(member)
+        trust = await self.alt_request(member)
+        e = await self.gen_alt_embed(trust, member)
         await ctx.send(embed=e)
 
     @checks.admin_or_permissions(manage_guild=True)
@@ -127,14 +128,7 @@ class AltDentifier(commands.Cog):
     async def alt_request(self, member: discord.Member):
         async with self.session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
             response = await response.json()
-        color = await self.pick_color(response["trustfactor"])
-        e = discord.Embed(
-            color=color,
-            title="AltDentifier Check",
-            description=f"{member.mention} is {response['formatted_trustfactor']}\nTrust Factor: {response['trustfactor']}"
-        )
-        e.set_thumbnail(url=member.avatar_url)
-        return e
+        return response['trustfactor'], response['formatted_trustfactor']
 
     async def pick_color(self, trustfactor: int):
         if trustfactor == 0:
@@ -147,6 +141,16 @@ class AltDentifier(commands.Cog):
             color = discord.Color.dark_green()
         return color
 
+    async def gen_alt_embed(self, trust: tuple, member: discord.Member):
+        color = await self.pick_color(trust[0])
+        e = discord.Embed(
+            color=color,
+            title="AltDentifier Check",
+            description=f"{member.mention} is {trust[0]}\nTrust Factor: {trust[1]}"
+        )
+        e.set_thumbnail(url=member.avatar_url)
+        return e
+
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.bot:
@@ -158,5 +162,6 @@ class AltDentifier(commands.Cog):
         if not channel:
             await self.config.guild(member.guild).channel.clear()
             return
-        e = await self.alt_request(member)
+        trust = await self.alt_request(member)
+        e = await self.gen_alt_embed(trust, member)
         await channel.send(embed=e)
