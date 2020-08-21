@@ -117,7 +117,7 @@ class AltDentifier(commands.Cog):
         if isinstance(action, discord.Role):
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.id
-        if isinstance(action, str) and action.lower() not in ["kick", "ban", "mute"]:
+        elif isinstance(action, str) and action.lower() not in ["kick", "ban", "mute"]:
             return await ctx.send("This is not a valid action. The valid actions are kick, ban and mute. For roles, supply a role.")
         else:
             async with self.config.guild(ctx.guild).actions() as a:
