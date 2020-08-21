@@ -1,6 +1,7 @@
 import discord
 import aiohttp
 import asyncio
+import typing
 
 from redbot.core import commands, checks, Config
 
@@ -70,6 +71,7 @@ class AltDentifier(commands.Cog):
                 title=f"AltDentifier Settings",
                 description=description
             )
+            e.add_field()
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
@@ -92,21 +94,30 @@ class AltDentifier(commands.Cog):
 
     @checks.is_owner()
     @altset.command()
-    async def action(self, ctx, level: int, action: str):
-        """Set the channel to send AltDentifier join checks to.
+    async def action(self, ctx, level: int, action: typing.Union[str, discord.Role] = None):
+        """Specify what actions to take when a member joins and has a certain Trust Level.
 
-        This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
-
-        if not channel:
-            await self.config.guild(ctx.guild).channel.clear()
-            await ctx.send("Disabled AltDentifier join checks in this server.")
+        Leave this empty to remove actions for the Level.        
+        The available actions are:
+        `kick`
+        `ban`
+        `mute`
+        `role` (don't say 'role' for this, pass an actual role."""
+        if not level in range(4):
+            return await ctx.send("This is not a valid Trust Level. The valid Levels are: 0, 1, 2, and 3.")
+        if not action:
+            async with self.config.guild(ctx.guild).actions() as a:
+                a[level] = None
+            await ctx.send(f"Removed actions for Trust Level {level}.")
+        if isinstance(action, str) and action.lower() not in ["kick", "ban", "mute"]:
+            return await ctx.send("This is not a valid action. The cvlid actions are kick, ban and mute. For roles, supply a role.")
+        if isinstance(action, discord.Role):
+            async with self.config.guild(ctx.guild).actions() as a:
+                a[level] = int(action.id)
         else:
-            try:
-                await channel.send("Set this channel as the message channel for AltDentifier join checks")
-                await self.config.guild(ctx.guild).channel.set(channel.id)
-            except discord.errors.Forbidden:
-                await ctx.send("I do not have permission to talk in that channel.")
-        await ctx.tick()
+            async with self.config.guild(ctx.guild).actions() as a:
+                a[level] = action.lower()
+        await ctx.tic()
 
     async def alt_request(self, member: discord.Member):
         async with self.session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
