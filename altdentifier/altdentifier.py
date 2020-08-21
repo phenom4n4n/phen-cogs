@@ -99,7 +99,7 @@ class AltDentifier(commands.Cog):
 
     @checks.is_owner()
     @altset.command()
-    async def action(self, ctx, level: int, action: typing.Union[str, discord.Role] = None):
+    async def action(self, ctx, level: int, action: typing.Union[discord.Role, str] = None):
         """Specify what actions to take when a member joins and has a certain Trust Level.
 
         Leave this empty to remove actions for the Level.        
