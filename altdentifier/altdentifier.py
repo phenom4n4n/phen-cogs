@@ -4,7 +4,7 @@ import asyncio
 import typing
 
 from redbot.core import commands, checks, Config
-
+from redbot.core.utils.chat_formatting import box
 
 class AltDentifier(commands.Cog):
     """
@@ -64,6 +64,11 @@ class AltDentifier(commands.Cog):
             
             description.append(f"AltDentifier Check Channel: {channel}")
             description = "\n".join(description)
+            actionsDict = data["actions"]
+            actions = []
+            for key, value in actionsDict.items():
+                actions.append(f"{key}: {value}")
+            actions = box("\n".join(actions))
 
             color = await self.bot.get_embed_colour(ctx)
             e = discord.Embed(
@@ -71,7 +76,7 @@ class AltDentifier(commands.Cog):
                 title=f"AltDentifier Settings",
                 description=description
             )
-            e.add_field()
+            e.add_field(name="Actions", value=actions, inline=False)
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
@@ -113,11 +118,11 @@ class AltDentifier(commands.Cog):
             return await ctx.send("This is not a valid action. The cvlid actions are kick, ban and mute. For roles, supply a role.")
         if isinstance(action, discord.Role):
             async with self.config.guild(ctx.guild).actions() as a:
-                a[level] = int(action.id)
+                a[level] = action.id
         else:
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.lower()
-        await ctx.tic()
+        await ctx.tick()
 
     async def alt_request(self, member: discord.Member):
         async with self.session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
