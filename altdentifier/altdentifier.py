@@ -160,7 +160,7 @@ class AltDentifier(commands.Cog):
         elif action == "mute":
             pass
         else:
-            role = member.guild.get_role(action[trust])
+            role = member.guild.get_role(actions[trust])
             if role:
                 try:
                     await member.add_roles(role, reason=f"AltDentifier action taken for Trust Level {trust}")
