@@ -151,6 +151,26 @@ class AltDentifier(commands.Cog):
         e.set_thumbnail(url=member.avatar_url)
         return e
 
+    async def take_action(self, member: discord.Member, trust: str, actions: dict):
+        action = actions[trust]
+        if action == "ban":
+            pass
+        elif action == "kick":
+            pass
+        elif action == "mute":
+            pass
+        else:
+            role = self.bot.get_role(action[trust])
+            if role:
+                try:
+                    member.add_roles(role, reason=f"AltDentifier action taken for Trust Level {trust}")
+                except discord.errors.Forbidden:
+                    async with self.config.guild(member.guild).actions() as a:
+                        a[trust] = None
+            else:
+                async with self.config.guild(member.guild).actions() as a:
+                    a[trust] = None
+
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.bot:
@@ -163,5 +183,6 @@ class AltDentifier(commands.Cog):
             await self.config.guild(member.guild).channel.clear()
             return
         trust = await self.alt_request(member)
+        await self.take_action(member, trust[0], data["actions"])
         e = await self.gen_alt_embed(trust, member)
         await channel.send(embed=e)
