@@ -16,6 +16,7 @@ class DisboardReminder(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
         self.load_check = self.bot.loop.create_task(self.bump_worker())
+        self.waiting_guild = []
         self.config = Config.get_conf(self, identifier=9765573181940385953309, force_registration=True)
         default_guild = {
             "channel": None,
@@ -141,15 +142,12 @@ class DisboardReminder(commands.Cog):
 
     @commands.Cog.listener("on_message_without_command")
     async def disboard_remind(self, message):
-        if message.guild is None:
-            return
-
-        if message.author.id != 302050872383242240:
+        if not message.guild or message.author.id != 302050872383242240:
             return
 
         data = await self.config.guild(message.guild).all()
 
-        if data["channel"] is None:
+        if not data["channel"] or data["nextBump"]:
             return
 
         if not message.embeds:
