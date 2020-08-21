@@ -151,8 +151,8 @@ class AltDentifier(commands.Cog):
         e.set_thumbnail(url=member.avatar_url)
         return e
 
-    async def take_action(self, member: discord.Member, trust: str, actions: dict):
-        action = actions[trust]
+    async def take_action(self, member: discord.Member, trust: int, actions: dict):
+        action = actions[str(trust)]
         if action == "ban":
             pass
         elif action == "kick":
