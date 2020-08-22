@@ -98,7 +98,6 @@ class AltDentifier(commands.Cog):
                 await ctx.send("I do not have permission to talk in that channel.")
         await ctx.tick()
 
-    @checks.is_owner()
     @altset.command()
     async def action(self, ctx, level: int, action: typing.Union[discord.Role, str] = None):
         """Specify what actions to take when a member joins and has a certain Trust Level.
