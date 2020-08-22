@@ -169,8 +169,11 @@ class DisboardReminder(commands.Cog):
         words = embed.description.split(",")
         member = words[0]
         tymessage = data["tyMessage"]
-        await message.channel.send(tymessage.format(member=member, guild=message.guild))
-
+        try:
+            await message.channel.send(tymessage.format(member=member, guild=message.guild))
+        except discord.errors.Forbidden:
+            pass
+        
         nextBump = calendar.timegm(message.created_at.utctimetuple()) + 7200
         await self.config.guild(message.guild).nextBump.set(nextBump)
 
