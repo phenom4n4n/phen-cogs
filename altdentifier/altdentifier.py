@@ -156,13 +156,13 @@ class AltDentifier(commands.Cog):
         reason = f"AltDentifier action taken for Trust Level {trust}"
         if action == "ban":
             try:
-                member.ban(reason=reason)
+                await member.ban(reason=reason)
             except discord.errors.Forbidden:
                 async with self.config.guild(member.guild).actions() as a:
                     a[trust] = None
         elif action == "kick":
             try:
-                member.kick(reason=reason)
+                await member.kick(reason=reason)
             except discord.errors.Forbidden:
                 async with self.config.guild(member.guild).actions() as a:
                     a[trust] = None
