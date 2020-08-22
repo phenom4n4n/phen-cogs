@@ -231,11 +231,12 @@ class Plague(commands.Cog):
             return f"You cannot infect a Doctor!"
         else:
             channel = await self.config.logChannel()
-            channel_obj = ctx.bot.get_channel(channel)
+            channel = ctx.bot.get_channel(channel)
 
             await self.config.user(user).gameState.set("infected")
             await self.notify_user(ctx= ctx, user=user, notificationType="infect")
-            await channel_obj.send(f"💀| Someone on `{ctx.guild}` was just infected with {plagueName}.")
+            if channel:
+                await channel.send(f"💀| Someone on `{ctx.guild}` was just infected with {plagueName}.")
             return f"`{user.name}` has been infected with {plagueName}."
 
     async def cure_user(self, ctx, *, user: discord.User):
@@ -250,11 +251,12 @@ class Plague(commands.Cog):
             return f"You cannot cure a Plaguebearer!"
         else:
             channel = await self.config.logChannel()
-            channel_obj = ctx.bot.get_channel(channel)
+            channel = ctx.bot.get_channel(channel)
 
             await self.config.user(user).gameState.set("healthy")
             await self.notify_user(ctx=ctx, user=user, notificationType="cure")
-            await channel_obj.send(f"✨| Someone on `{ctx.guild}` was just cured from {plagueName}.")
+            if channel:
+                await channel.send(f"✨| Someone on `{ctx.guild}` was just cured from {plagueName}.")
             return f"`{user.name}` has been cured from {plagueName}."
 
     async def notify_user(self, ctx, *, user: discord.User, notificationType: str):
