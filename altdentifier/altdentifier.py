@@ -107,7 +107,6 @@ class AltDentifier(commands.Cog):
         The available actions are:
         `kick`
         `ban`
-        `mute`
         `role` (don't say 'role' for this, pass an actual role."""
         if not level in range(4):
             return await ctx.send("This is not a valid Trust Level. The valid Levels are: 0, 1, 2, and 3.")
@@ -118,8 +117,8 @@ class AltDentifier(commands.Cog):
         if isinstance(action, discord.Role):
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.id
-        elif isinstance(action, str) and action.lower() not in ["kick", "ban", "mute"]:
-            return await ctx.send("This is not a valid action. The valid actions are kick, ban and mute. For roles, supply a role.")
+        elif isinstance(action, str) and action.lower() not in ["kick", "ban"]:
+            return await ctx.send("This is not a valid action. The valid actions are kick and ban. For roles, supply a role.")
         else:
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.lower()
@@ -141,13 +140,15 @@ class AltDentifier(commands.Cog):
             color = discord.Color.dark_green()
         return color
 
-    async def gen_alt_embed(self, trust: tuple, member: discord.Member):
+    async def gen_alt_embed(self, trust: tuple, member: discord.Member, *, actions: typing.Optional[str] = None):
         color = await self.pick_color(trust[0])
         e = discord.Embed(
             color=color,
             title="AltDentifier Check",
             description=f"{member.mention} is {trust[0]}\nTrust Factor: {trust[1]}"
         )
+        if actions:
+            e.add_field(name="Actions Taken", value=actions, inline=False)
         e.set_thumbnail(url=member.avatar_url)
         return e
 
@@ -157,28 +158,31 @@ class AltDentifier(commands.Cog):
         if action == "ban":
             try:
                 await member.ban(reason=reason)
+                return f"Banned for being Trust Level {trust}"
             except discord.errors.Forbidden:
                 async with self.config.guild(member.guild).actions() as a:
                     a[trust] = None
         elif action == "kick":
             try:
                 await member.kick(reason=reason)
+                return f"Kicked for being Trust Level {trust}"
             except discord.errors.Forbidden:
                 async with self.config.guild(member.guild).actions() as a:
                     a[trust] = None
-        elif action == "mute":
-            pass
-        else:
+        elif action:
             role = member.guild.get_role(action)
             if role:
                 try:
                     await member.add_roles(role, reason=reason)
+                    return f"{role.mention} given for being Trust Level {trust}"
                 except discord.errors.Forbidden:
                     async with self.config.guild(member.guild).actions() as a:
                         a[trust] = None
             else:
                 async with self.config.guild(member.guild).actions() as a:
                     a[trust] = None
+        else:
+            return None
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -192,6 +196,6 @@ class AltDentifier(commands.Cog):
             await self.config.guild(member.guild).channel.clear()
             return
         trust = await self.alt_request(member)
-        await self.take_action(member, trust[0], data["actions"])
-        e = await self.gen_alt_embed(trust, member)
+        action = await self.take_action(member, trust[0], data["actions"])
+        e = await self.gen_alt_embed(trust, member, actions=action)
         await channel.send(embed=e)
