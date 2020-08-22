@@ -102,12 +102,22 @@ class DisboardReminder(commands.Cog):
         channel = guild.get_channel(data["channel"])
         if data["role"]:
             role = guild.get_role(data["role"])
-            message = data["message"]
-            message = f"{role.mention}: {message}"
+            if role:
+                message = data["message"]
+                message = f"{role.mention}: {message}"
+            else:
+                await self.config.guild(guild).role.clear()
+                message = data["message"]
         else:
             message = data["message"]
         mentionPerms = discord.AllowedMentions(roles=True)
-        await channel.send(message, allowed_mentions=mentionPerms)
+        if channel:
+            try:
+                await channel.send(message, allowed_mentions=mentionPerms)
+            except discord.errors.Forbidden:
+                await self.config.guild(guild).channel.clear()
+        else:
+            await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
 
 # sometimes this works but sometimes it doesnt?? pls help
