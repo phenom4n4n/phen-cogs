@@ -4,7 +4,7 @@
     "name": "Calculator",
     "disabled": false,
     "short": "Calculate stuff",
-    "description": "[WIP] Calculate stuff",
+    "description": "Calculate stuff",
     "tags": ["utility", "calculator"],
     "requirements": ["simplecalculator"],
     "hidden": false,
