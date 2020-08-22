@@ -110,8 +110,7 @@ class AltDentifier(commands.Cog):
         if not level in range(4):
             return await ctx.send("This is not a valid Trust Level. The valid Levels are: 0, 1, 2, and 3.")
         if not action:
-            async with self.config.guild(ctx.guild).actions() as a:
-                a[level] = None
+            await self.clear_action(ctx.guild, level)
             return await ctx.send(f"Removed actions for Trust Level {level}.")
         if isinstance(action, discord.Role):
             async with self.config.guild(ctx.guild).actions() as a:
@@ -159,15 +158,13 @@ class AltDentifier(commands.Cog):
                 await member.ban(reason=reason)
                 return f"Banned for being Trust Level {trust}"
             except discord.errors.Forbidden:
-                async with self.config.guild(member.guild).actions() as a:
-                    a[trust] = None
+                await self.clear_action(member.guild, trust)
         elif action == "kick":
             try:
                 await member.kick(reason=reason)
                 return f"Kicked for being Trust Level {trust}"
             except discord.errors.Forbidden:
-                async with self.config.guild(member.guild).actions() as a:
-                    a[trust] = None
+                await self.clear_action(member.guild, trust)
         elif action:
             role = member.guild.get_role(action)
             if role:
@@ -175,13 +172,15 @@ class AltDentifier(commands.Cog):
                     await member.add_roles(role, reason=reason)
                     return f"{role.mention} given for being Trust Level {trust}"
                 except discord.errors.Forbidden:
-                    async with self.config.guild(member.guild).actions() as a:
-                        a[trust] = None
+                    await self.clear_action(member.guild, trust)
             else:
-                async with self.config.guild(member.guild).actions() as a:
-                    a[trust] = None
+                await self.clear_action(member.guild, trust)
         else:
             return None
+
+    async def clear_action(self, guild: discord.Guild, action: int):
+        async with self.config.guild(guild).actions() as a:
+            a[str(action)] = None
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
