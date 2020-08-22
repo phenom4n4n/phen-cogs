@@ -157,7 +157,7 @@ class DisboardReminder(commands.Cog):
 
         data = await self.config.guild(message.guild).all()
 
-        if not data["channel"] or data["nextBump"]:
+        if not data["channel"]:
             return
 
         if not message.embeds:
