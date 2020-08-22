@@ -17,5 +17,19 @@ class Calculator(commands.Cog):
     async def calculate(self, ctx, *, query):
         """Math"""
 
-        self.calculator.run('3 * 10')
-        await ctx.send(self.calculator.log)
+        self.calculator.run(query.strip())
+        result_dict = {}
+        for item in self.calculator.log:
+            item = item.split(": ")
+            if len(item) >= 2:
+                result_dict.update({item[0]:item[1]})
+        try:
+            query = result_dict["input string"]
+            result = result_dict["result"]
+        except KeyError:
+            return await ctx.send("Invalid Math operation")
+        result_embed = discord.Embed(
+            title=query,
+            description=result
+        )
+        await ctx.send(embed=result_embed)
