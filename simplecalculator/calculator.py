@@ -23,11 +23,11 @@ class Calculator(commands.Cog):
         calculator.run(query)
         
         result_dict = {}
-        for item in self.calculator.log:
+        for item in calculator.log:
             item = item.split(": ")
             if len(item) >= 2:
                 result_dict.update({item[0]:item[1]})
-                
+
         try:
             query = result_dict["input string"]
             result = result_dict["result"]
