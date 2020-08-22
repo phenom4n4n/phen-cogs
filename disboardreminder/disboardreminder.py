@@ -142,7 +142,7 @@ class DisboardReminder(commands.Cog):
                         coros.append(self.bump_timer(guild, remaining))
             await asyncio.gather(*coros)
         except Exception as e:
-            print(e)
+            print(f"Bump Restart issue: {e}")
 
     def cog_unload(self):
         self.__unload()
