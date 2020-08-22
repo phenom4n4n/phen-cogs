@@ -153,17 +153,26 @@ class AltDentifier(commands.Cog):
 
     async def take_action(self, member: discord.Member, trust: int, actions: dict):
         action = actions[str(trust)]
+        reason = f"AltDentifier action taken for Trust Level {trust}"
         if action == "ban":
-            pass
+            try:
+                member.ban(reason=reason)
+            except discord.errors.Forbidden:
+                async with self.config.guild(member.guild).actions() as a:
+                    a[trust] = None
         elif action == "kick":
-            pass
+            try:
+                member.kick(reason=reason)
+            except discord.errors.Forbidden:
+                async with self.config.guild(member.guild).actions() as a:
+                    a[trust] = None
         elif action == "mute":
             pass
         else:
             role = member.guild.get_role(action)
             if role:
                 try:
-                    await member.add_roles(role, reason=f"AltDentifier action taken for Trust Level {trust}")
+                    await member.add_roles(role, reason=reason)
                 except discord.errors.Forbidden:
                     async with self.config.guild(member.guild).actions() as a:
                         a[trust] = None
