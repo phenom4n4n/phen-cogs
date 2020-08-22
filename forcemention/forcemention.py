@@ -1,27 +1,19 @@
 # this is a modified version of Bobloy's forcemention cog
 import discord
 
-from redbot.core import Config, checks, commands
+from redbot.core import checks, commands
 
 from redbot.core.bot import Red
-from typing import Any
+import typing
 import asyncio
 
-Cog: Any = getattr(commands, "Cog", object)
-
-class ForceMention(Cog):
+class ForceMention(commands.Cog):
     """
     Mention the unmentionables
     """
 
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=9811198108111121, force_registration=True)
-        default_global = {}
-        default_guild = {}
-
-        self.config.register_global(**default_global)
-        self.config.register_guild(**default_guild)
 
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
@@ -39,7 +31,7 @@ class ForceMention(Cog):
         await ctx.message.delete()
         await self.forcemention(ctx.channel, role, message)
 
-    async def forcemention(self, channel: discord.TextChannel, role: discord.Role, message: str):
+    async def forcemention(self, channel: discord.TextChannel, role: discord.Role, message: str, embed: typing.Optional[discord.Embed] = None):
         mentionPerms = discord.AllowedMentions(roles=True)
         if role.mentionable:
             await channel.send(message, allowed_mentions=mentionPerms)
