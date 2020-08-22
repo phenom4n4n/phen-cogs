@@ -1,6 +1,6 @@
 {
     "author": ["PhenoM4n4n"],
-    "install_msg": "Thanks for installing AltDentifier!",
+    "install_msg": "Thanks for installing AltDentifier!\nGet started with `[p]help AltDentifier`.",
     "name": "AltDentifier",
     "disabled": false,
     "short": "Check users with AltDentifier API",
