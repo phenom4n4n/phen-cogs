@@ -1,0 +1,11 @@
+{
+    "author": ["PhenoM4n4n"],
+    "install_msg": "Thanks for installing EmbedGenerator!\nGet started with `[p] help embed`.",
+    "name": "EmbedGenerator",
+    "disabled": false,
+    "short": "Create, post, and store embeds",
+    "description": "Create, post, and store embeds.",
+    "tags": ["embed"],
+    "requirements": [],
+    "hidden": false
+}
