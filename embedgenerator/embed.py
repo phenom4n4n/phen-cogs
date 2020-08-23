@@ -37,13 +37,31 @@ class EmbedGenerator(commands.Cog):
         )
         await ctx.send(embed=e)
 
-    @embed.command()
+    @embed.command(aliases=["fromjson"])
     async def fromdata(self, ctx, *, data):
         """Make an embed from valid JSON.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
         Note: timestamps in embeds currently aren't supported."""
+        await self.str_embed_converter(ctx, data)
+        await ctx.tick()
+
+    @embed.command(aliases=["fromjsonfile"])
+    async def fromdatafile(self, ctx):
+        """Make an embed from a valid JSON file.
+
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
+        Note: timestamps in embeds currently aren't supported."""
+        if not ctx.message.attachments:
+            return await ctx.send("You need to provide a file for this..")
+        attachment = ctx.message.attachments[0]
+        content = await attachment.read()
+        try:
+            data = content.decode("utf-8")
+        except UnicodeDecodeError:
+            return await ctx.send("Invalid file")
         await self.str_embed_converter(ctx, data)
         await ctx.tick()
 
@@ -67,4 +85,5 @@ class EmbedGenerator(commands.Cog):
             title=errorType,
             description=f"```py\n{error}\n```"
         )
+        embed.set_footer(text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example")
         await ctx.send(embed=embed)
