@@ -39,17 +39,32 @@ class EmbedGenerator(commands.Cog):
 
     @embed.command()
     async def fromdata(self, ctx, *, data):
-        """Make an embed from valid JSON/YAML.
+        """Make an embed from valid JSON.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's an [embed generator](https://discohook.org/?message=eyJtZXNzYWdlIjp7ImVtYmVkcyI6W3t9XX19 "Click me!")."""
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
+        Note: timestamps in embeds currently aren't supported."""
+        await self.str_embed_converter(ctx, data)
+        await ctx.tick()
+
+    async def str_embed_converter(self, ctx, data):
         try:
             data = json.loads(data)
-        except json.decoder.JSONDecodeError:
-            return await ctx.send("Invalid Data")
-        e = discord.Embed.from_dict(data)
+        except json.decoder.JSONDecodeError as error:
+            return await self.embed_convert_error(ctx, "JSON Parse Error", error)
+        try:
+            e = discord.Embed.from_dict(data)
+        except Exception as error:
+            return await self.embed_convert_error(ctx, "Embed Parse Error", error)
         try:
             await ctx.send(embed=e)
-        except discord.errors.HTTPException:
-            return await ctx.send("Invalid Embed")
-        await ctx.tick()
+        except discord.errors.HTTPException as error:
+            return await self.embed_convert_error(ctx, "Embed Send Error", error)
+
+    async def embed_convert_error(self, ctx, errorType, error):
+        embed = discord.Embed(
+            color=await self.bot.get_embed_color(ctx),
+            title=errorType,
+            description=f"```py\n{error}\n```"
+        )
+        await ctx.send(embed=embed)
