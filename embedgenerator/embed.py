@@ -17,6 +17,14 @@ class EmbedGenerator(commands.Cog):
             identifier=43248937299564234735284,
             force_registration=True,
         )
+        default_global = {
+
+        }
+        default_guild = {
+
+        }
+        self.config.register_global(**default_global)
+        self.config.register_guild(**default_guild)
 
     @checks.bot_has_permissions(embed_links=True)
     @commands.group()
@@ -65,7 +73,19 @@ class EmbedGenerator(commands.Cog):
         await self.str_embed_converter(ctx, data)
         await ctx.tick()
 
+    @embed.command()
+    async def download(self, ctx, message: discord.Message, index: int = 0):
+        """Download a JSON file for a message's embed.
+
+        If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
+        embed = message.embeds[0]
+        data = embed.to_dict()
+        data = json.dumps(data, indent=4)
+        if len(data) <= 1990:
+            await ctx.send(f"```\n{data}\n```")
+
     async def str_embed_converter(self, ctx, data):
+        data.replace("'", '"')
         try:
             data = json.loads(data)
         except json.decoder.JSONDecodeError as error:
