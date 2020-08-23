@@ -43,18 +43,16 @@ class EmbedGenerator(commands.Cog):
         """Make an embed from valid JSON.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
-        Note: timestamps in embeds currently aren't supported."""
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
         await self.str_embed_converter(ctx, data)
         await ctx.tick()
 
-    @embed.command(aliases=["fromjsonfile"])
-    async def fromdatafile(self, ctx):
+    @embed.command(aliases=["fromjsonfile", "fromdatafile"])
+    async def fromfile(self, ctx):
         """Make an embed from a valid JSON file.
 
         This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
-        Note: timestamps in embeds currently aren't supported."""
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
         if not ctx.message.attachments:
             return await ctx.send("You need to provide a file for this..")
         attachment = ctx.message.attachments[0]
@@ -71,7 +69,9 @@ class EmbedGenerator(commands.Cog):
         """Post an embed from a message.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
-        embed = await self.frommsg(message, index)
+        embed = await self.frommsg(ctx, message, index)
+        if not embed:
+            return
         await ctx.send(embed=embed)
 
     @embed.command()
@@ -79,29 +79,33 @@ class EmbedGenerator(commands.Cog):
         """Download a JSON file for a message's embed.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
-        embed = await self.frommsg(message, index)
+        embed = await self.frommsg(ctx, message, index)
+        if not embed:
+            return
         data = embed.to_dict()
         data = json.dumps(data, indent=4)
-        if len(data) <= 1990:
-            await ctx.send(f"```\n{data}\n```")
-        else:
-            pass
-            fp = io.BytesIO(bytes(data, "utf-8"))
-            await ctx.send(file=discord.File(fp, "embed.json"))
+        fp = io.BytesIO(bytes(data, "utf-8"))
+        await ctx.send(file=discord.File(fp, "embed.json"))
 
-    async def frommsg(self, message: discord.Message, index: int = 0):
-        embed = message.embeds[index]
-        return embed
+    async def frommsg(self, ctx: commands.Context, message: discord.Message, index: int = 0):
+        try:
+            embed = message.embeds[index]
+            return embed
+        except IndexError:
+            await ctx.send("This is not a valid embed/index.")
+            return
 
     async def str_embed_converter(self, ctx, data):
         try:
             data = json.loads(data)
         except json.decoder.JSONDecodeError as error:
-            return await self.embed_convert_error(ctx, "JSON Parse Error", error)
+            await self.embed_convert_error(ctx, "JSON Parse Error", error)
+            return
         try:
             e = discord.Embed.from_dict(data)
         except Exception as error:
-            return await self.embed_convert_error(ctx, "Embed Parse Error", error)
+            await self.embed_convert_error(ctx, "Embed Parse Error", error)
+            return
         try:
             await ctx.send(embed=e)
         except discord.errors.HTTPException as error:
