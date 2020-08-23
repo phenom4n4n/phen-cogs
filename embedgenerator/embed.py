@@ -48,4 +48,8 @@ class EmbedGenerator(commands.Cog):
         except json.decoder.JSONDecodeError:
             return await ctx.send("Invalid Data")
         e = discord.Embed.from_dict(data)
-        await ctx.send(embed=e)
+        try:
+            await ctx.send(embed=e)
+        except discord.errors.HTTPException:
+            return await ctx.send("Invalid Embed")
+        await ctx.tick()
