@@ -41,7 +41,8 @@ class EmbedGenerator(commands.Cog):
     async def fromdata(self, ctx, *, data):
         """Make an embed from valid JSON/YAML.
 
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "click here")"""
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's an [embed generator](https://discohook.org/?message=eyJtZXNzYWdlIjp7ImVtYmVkcyI6W3t9XX19 "Click me!")."""
         try:
             data = json.loads(data)
         except json.decoder.JSONDecodeError:
