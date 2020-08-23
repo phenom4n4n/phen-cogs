@@ -2,6 +2,7 @@ import discord
 import aiohttp
 import typing
 import json
+import io
 
 from redbot.core import commands, checks, Config
 
@@ -17,14 +18,6 @@ class EmbedGenerator(commands.Cog):
             identifier=43248937299564234735284,
             force_registration=True,
         )
-        default_global = {
-
-        }
-        default_guild = {
-
-        }
-        self.config.register_global(**default_global)
-        self.config.register_guild(**default_guild)
 
     @checks.bot_has_permissions(embed_links=True)
     @commands.group()
@@ -59,7 +52,7 @@ class EmbedGenerator(commands.Cog):
     async def fromdatafile(self, ctx):
         """Make an embed from a valid JSON file.
 
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
         Note: timestamps in embeds currently aren't supported."""
         if not ctx.message.attachments:
@@ -73,19 +66,34 @@ class EmbedGenerator(commands.Cog):
         await self.str_embed_converter(ctx, data)
         await ctx.tick()
 
+    @embed.command(name="frommsg", aliases=["frommessage"])
+    async def com_frommsg(self, ctx, message: discord.Message, index: int = 0):
+        """Post an embed from a message.
+
+        If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
+        embed = await self.frommsg(message, index)
+        await ctx.send(embed=embed)
+
     @embed.command()
     async def download(self, ctx, message: discord.Message, index: int = 0):
         """Download a JSON file for a message's embed.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
-        embed = message.embeds[0]
+        embed = await self.frommsg(message, index)
         data = embed.to_dict()
         data = json.dumps(data, indent=4)
         if len(data) <= 1990:
             await ctx.send(f"```\n{data}\n```")
+        else:
+            pass
+            fp = io.BytesIO(bytes(data, "utf-8"))
+            await ctx.send(file=discord.File(fp, "embed.json"))
+
+    async def frommsg(self, message: discord.Message, index: int = 0):
+        embed = message.embeds[index]
+        return embed
 
     async def str_embed_converter(self, ctx, data):
-        data.replace("'", '"')
         try:
             data = json.loads(data)
         except json.decoder.JSONDecodeError as error:
