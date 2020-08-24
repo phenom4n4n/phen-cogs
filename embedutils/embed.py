@@ -279,7 +279,7 @@ class EmbedUtils(commands.Cog):
     async def remove(self, ctx, name):
         """Remove a global embed."""
         try:
-            async with self.config.guild.embeds() as a:
+            async with self.config.embeds() as a:
                 del a[name]
             await ctx.send("Embed deleted.")
         except KeyError:
