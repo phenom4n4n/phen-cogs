@@ -179,6 +179,7 @@ class EmbedGenerator(commands.Cog):
 
     @store.command(name="list")
     async def store_list(self, ctx):
+        """View stored embeds."""
         embeds = await self.config.guild(ctx.guild).embeds()
         description = []
 
@@ -211,7 +212,7 @@ class EmbedGenerator(commands.Cog):
         await self.store_embed(ctx, name, e)
         await ctx.tick()
 
-    @store.command(name="mmdata", aliases=["fromjson"])
+    @store.command(name="fromdata", aliases=["fromjson"])
     async def store_fromdata(self, ctx, name: str, *, data):
         """Store an embed from valid JSON on this server.
 
@@ -277,6 +278,7 @@ class EmbedGenerator(commands.Cog):
 
     @global_store.command(name="list")
     async def global_list(self, ctx):
+        """View global embeds."""
         embeds = await self.config.embeds()
         description = []
 
@@ -310,7 +312,7 @@ class EmbedGenerator(commands.Cog):
         await self.global_store_embed(ctx, name, e, locked)
         await ctx.tick()
 
-    @global_store.command(name="mmdata", aliases=["fromjson"])
+    @global_store.command(name="fromdata", aliases=["fromjson"])
     async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data):
         """Store an embed from valid JSON globally.
 
