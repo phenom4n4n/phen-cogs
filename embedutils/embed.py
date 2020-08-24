@@ -6,7 +6,7 @@ import io
 
 from redbot.core import commands, checks, Config
 
-class EmbedGenerator(commands.Cog):
+class EmbedUtils(commands.Cog):
     """
     Create, post, and store embeds.
     """
