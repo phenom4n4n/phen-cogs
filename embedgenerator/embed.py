@@ -113,7 +113,7 @@ class EmbedGenerator(commands.Cog):
     @com_drop.command(name="global")
     async def global_drop(self, ctx, name: str):
         """View an embed that is stored globally."""
-        embed = await self.get_stored_embed(ctx, name)
+        embed = await self.get_global_stored_embed(ctx, name)
         if embed:
             await ctx.send(embed=embed[0])
             async with self.config.guild(ctx.guild).embeds() as a:
