@@ -27,6 +27,7 @@ class EmbedGenerator(commands.Cog):
         self.config.register_global(**default_global)
         self.config.register_guild(**default_guild)
 
+    @checks.guild_only()
     @checks.has_permissions(embed_links=True)
     @checks.bot_has_permissions(embed_links=True)
     @commands.group()
@@ -102,16 +103,23 @@ class EmbedGenerator(commands.Cog):
     @embed.command(name="show", aliases=["view", "drop"])
     async def com_drop(self, ctx, name: str):
         """View an embed that is stored on this server."""
-        data = await self.config.guild(ctx.guild).embeds()
-        try:
-            embed = data[name]["embed"]
-        except KeyError:
-            await ctx.send("This is not a stored embed.")
-            return
-        embed = discord.Embed.from_dict(embed)
-        await ctx.send(embed=embed)
-        async with self.config.guild(ctx.guild).embeds() as a:
-            a[name]["uses"] += 1
+        embed = await self.get_stored_embed(ctx, name)
+        if embed:
+            await ctx.send(embed=embed[0])
+            async with self.config.guild(ctx.guild).embeds() as a:
+                a[name]["uses"] += 1
+
+    @embed.command(name="info", aliases=["view", "drop"])
+    async def com_drop(self, ctx, name: str):
+        """Get info about an embed that is stored on this server."""
+        data = await self.get_stored_embed(ctx, name)
+        if data:
+            e = discord.Embed(
+                title=f"{name} Info",
+                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data0)}"
+            )
+            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+            await ctx.send(embed=embed[0])
 
     @embed.command(aliases=["delete", "rm", "del"])
     async def remove(self, ctx, name):
@@ -243,6 +251,17 @@ class EmbedGenerator(commands.Cog):
                 "embed": embed
             }
         await ctx.send(f"Embed stored under the name `{name}`.")
+
+    async def get_stored_embed(self, ctx: commands.Context, name: str):
+        data = await self.config.guild(ctx.guild).embeds()
+        try:
+            data = data[name]
+            embed = data["embed"]
+        except KeyError:
+            await ctx.send("This is not a stored embed.")
+            return
+        embed = discord.Embed.from_dict(embed)
+        return embed, data["author"], data["uses"]
 
     async def global_store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed, locked: bool):
         embed = embed.to_dict()
