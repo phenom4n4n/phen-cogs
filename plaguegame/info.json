@@ -1,6 +1,6 @@
 	{
     "author" : ["PhenoM4n4n"],
-    "install_msg" : "Thank you for installing PlagueGame. \nNote: This is incomplete and I don't have the will to work on this anymore. PR's are welcome.",
+    "install_msg" : "Thank you for installing PlagueGame! Get started by setting a log channel, name, and infecting Patient 0 using `[p]plagueset`\nNote: This is incomplete and I don't have the will to work on this anymore. PR's are welcome.",
     "name" : "Plague",
     "short" : "Infect users with the plague!",
     "description" : "Plague game with a doctor and plaguebearer.",
