@@ -109,7 +109,7 @@ class EmbedGenerator(commands.Cog):
                 await ctx.send(embed=embed[0])
                 async with self.config.guild(ctx.guild).embeds() as a:
                     a[name]["uses"] += 1
-    
+
     @com_drop.command(name="global")
     async def global_drop(self, ctx, name: str):
         """View an embed that is stored globally."""
@@ -118,6 +118,8 @@ class EmbedGenerator(commands.Cog):
             await ctx.send(embed=embed[0])
             async with self.config.guild(ctx.guild).embeds() as a:
                 a[name]["uses"] += 1
+        else:
+            await ctx.send(f"No embed found :thonk: I shouldn't be saying this, but I am.\n Here's your arg for debugging: `{name}`")
 
     @embed.command(name="info")
     async def com_info(self, ctx, name: str):
@@ -393,7 +395,7 @@ class EmbedGenerator(commands.Cog):
         try:
             data = data[name]
             embed = data["embed"]
-            if data["locked"] and not await self.bot.is_owner(ctx.author):
+            if data["locked"] == True and not await self.bot.is_owner(ctx.author):
                 await ctx.send("This is not a stored embed.")
                 return
         except KeyError:
