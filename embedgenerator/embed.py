@@ -100,9 +100,19 @@ class EmbedGenerator(commands.Cog):
         fp = io.BytesIO(bytes(data, "utf-8"))
         await ctx.send(file=discord.File(fp, "embed.json"))
 
-    @embed.command(name="show", aliases=["view", "drop"])
+    @embed.group(name="show", aliases=["view", "drop"])
     async def com_drop(self, ctx, name: str):
-        """View an embed that is stored on this server."""
+        """View an embed that is stored."""
+        if not ctx.subcommand_passed:
+            embed = await self.get_stored_embed(ctx, name)
+            if embed:
+                await ctx.send(embed=embed[0])
+                async with self.config.guild(ctx.guild).embeds() as a:
+                    a[name]["uses"] += 1
+    
+    @com_drop.command(name="global")
+    async def global_drop(self, ctx, name: str):
+        """View an embed that is stored globally."""
         embed = await self.get_stored_embed(ctx, name)
         if embed:
             await ctx.send(embed=embed[0])
@@ -115,7 +125,7 @@ class EmbedGenerator(commands.Cog):
         data = await self.get_stored_embed(ctx, name)
         if data:
             e = discord.Embed(
-                title=f"{name} Info",
+                title=f"`{name}` Info",
                 description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}"
             )
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
@@ -242,6 +252,108 @@ class EmbedGenerator(commands.Cog):
         await ctx.send(embed=embed)
         await self.store_embed(ctx, name, embed)
 
+    @checks.is_owner()
+    @embed.group(name="global")
+    async def global_store(self, ctx):
+        """Store embeds for global use."""
+        if not ctx.subcommand_passed:
+            embeds = await self.config.embeds()
+            description = []
+
+            if not embeds:
+                return
+            for embed in embeds:
+                description.append(f"`{embed}`")
+            description = "\n".join(description)
+
+            color = await self.bot.get_embed_colour(ctx)
+            e = discord.Embed(
+                color=color,
+                title=f"Stored Embeds",
+                description=description
+            )
+            e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
+            await ctx.send(embed=e)
+
+    @global_store.command(name="list")
+    async def global_list(self, ctx):
+        embeds = await self.config.embeds()
+        description = []
+
+        for embed in embeds:
+            description.append(f"`{embed}`")
+        description = "\n".join(description)
+
+        color = await self.bot.get_embed_colour(ctx)
+        e = discord.Embed(
+            color=color,
+            title=f"Stored Embeds",
+            description=description
+        )
+        e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
+        await ctx.send(embed=e)
+
+    @global_store.command(name="simple")
+    async def global_store_simple(self, ctx, name: str, locked: bool, color: typing.Optional[discord.Color], title: str, *, description: str):
+        """Store a simple embed globally.
+
+        Put the title in quotes if it is multiple words.
+        The `locked` argument specifies whether the embed should be locked to owners only."""
+        if not color:
+            color = await self.bot.get_embed_color(ctx)
+        e = discord.Embed(
+            color=color,
+            title=title,
+            description=description
+        )
+        await ctx.send(embed=e)
+        await self.global_store_embed(ctx, name, e, locked)
+        await ctx.tick()
+
+    @global_store.command(name="mmdata", aliases=["fromjson"])
+    async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data):
+        """Store an embed from valid JSON globally.
+
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
+        The `locked` argument specifies whether the embed should be locked to owners only."""
+        e = await self.str_embed_converter(ctx, data)
+        if e:
+            await self.global_store_embed(ctx, name, e, locked)
+        await ctx.tick()
+
+    @global_store.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    async def global_store_fromfile(self, ctx, name: str, locked: bool):
+        """Store an embed from a valid JSON file globally.
+
+        This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
+        The `locked` argument specifies whether the embed should be locked to owners only."""
+        if not ctx.message.attachments:
+            return await ctx.send("You need to provide a file for this..")
+        attachment = ctx.message.attachments[0]
+        content = await attachment.read()
+        try:
+            data = content.decode("utf-8")
+        except UnicodeDecodeError:
+            return await ctx.send("That's not an actual embed file wyd")
+        e = await self.str_embed_converter(ctx, data)
+        if e:
+            await self.global_store_embed(ctx, name, e, locked)
+        await ctx.tick()
+
+    @global_store.command(name="frommsg", aliases=["frommessage"])
+    async def global_store_frommsg(self, ctx, name: str, message: discord.Message, locked: bool, index: int = 0):
+        """Store an embed from a message globally.
+
+        If the message has multiple embeds, you can pass a number to `index` to specify which embed.
+        The `locked` argument specifies whether the embed should be locked to owners only."""
+        embed = await self.frommsg(ctx, message, index)
+        if not embed:
+            return
+        await ctx.send(embed=embed)
+        await self.global_store_embed(ctx, name, embed, locked)
+
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
         async with self.config.guild(ctx.guild).embeds() as a:
@@ -267,10 +379,26 @@ class EmbedGenerator(commands.Cog):
         embed = embed.to_dict()
         async with self.config.guildembeds() as a:
             a[name] = {
+                "author": ctx.author.mention,
+                "uses": 0,
                 "locked": bool,
                 "embed": embed
             }
         await ctx.send(f"Global embed stored under the name `{name}`.")
+
+    async def get_global_stored_embed(self, ctx: commands.Context, name: str):
+        data = await self.config.embeds()
+        try:
+            data = data[name]
+            embed = data["embed"]
+            if data["locked"] and not await self.bot.is_owner(ctx.author):
+                await ctx.send("This is not a stored embed.")
+                return
+        except KeyError:
+            await ctx.send("This is not a stored embed.")
+            return
+        embed = discord.Embed.from_dict(embed)
+        return embed, data["author"], data["uses"], data["locked"]
 
     async def frommsg(self, ctx: commands.Context, message: discord.Message, index: int = 0):
         try:
