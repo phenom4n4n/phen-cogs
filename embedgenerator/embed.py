@@ -146,8 +146,6 @@ class EmbedGenerator(commands.Cog):
         embeds = await self.config.guild(ctx.guild).embeds()
         description = []
 
-        if not embeds:
-            return
         for embed in embeds:
             description.append(f"`{embed}`")
         description = "\n".join(description)
