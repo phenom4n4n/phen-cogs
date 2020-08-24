@@ -82,6 +82,7 @@ class EmbedGenerator(commands.Cog):
             return
         await ctx.send(embed=embed)
 
+    @checks.bot_has_permissions(attach_files=True)
     @embed.command()
     async def download(self, ctx, message: discord.Message, index: int = 0):
         """Download a JSON file for a message's embed.
