@@ -110,7 +110,7 @@ class EmbedGenerator(commands.Cog):
                 a[name]["uses"] += 1
 
     @embed.command(name="info")
-    async def com_drop(self, ctx, name: str):
+    async def com_info(self, ctx, name: str):
         """Get info about an embed that is stored on this server."""
         data = await self.get_stored_embed(ctx, name)
         if data:
@@ -119,7 +119,7 @@ class EmbedGenerator(commands.Cog):
                 description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}"
             )
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-            await ctx.send(embed=embed[0])
+            await ctx.send(embed=e)
 
     @embed.command(aliases=["delete", "rm", "del"])
     async def remove(self, ctx, name):
