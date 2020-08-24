@@ -379,7 +379,7 @@ class EmbedGenerator(commands.Cog):
 
     async def global_store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed, locked: bool):
         embed = embed.to_dict()
-        async with self.config.guildembeds() as a:
+        async with self.config.embeds() as a:
             a[name] = {
                 "author": ctx.author.mention,
                 "uses": 0,
