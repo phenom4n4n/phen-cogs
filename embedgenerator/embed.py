@@ -100,7 +100,7 @@ class EmbedGenerator(commands.Cog):
         fp = io.BytesIO(bytes(data, "utf-8"))
         await ctx.send(file=discord.File(fp, "embed.json"))
 
-    @embed.group(name="show", aliases=["view", "drop"])
+    @embed.group(name="show", aliases=["view", "drop"], autohelp=False)
     async def com_drop(self, ctx, name: str):
         """View an embed that is stored."""
         if not ctx.subcommand_passed:
