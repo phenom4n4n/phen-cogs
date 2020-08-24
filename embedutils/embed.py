@@ -115,10 +115,8 @@ class EmbedUtils(commands.Cog):
         embed = await self.get_global_stored_embed(ctx, name)
         if embed:
             await ctx.send(embed=embed[0])
-            async with self.config.guild(ctx.guild).embeds() as a:
+            async with self.config.embeds() as a:
                 a[name]["uses"] += 1
-        else:
-            await ctx.send(f"No embed found :thonk: I shouldn't be saying this, but I am.\n Here's your arg for debugging: `{name}`")
 
     @embed.command(name="info")
     async def com_info(self, ctx, name: str):
@@ -357,6 +355,18 @@ class EmbedUtils(commands.Cog):
         await ctx.send(embed=embed)
         await self.global_store_embed(ctx, name, embed, locked)
 
+    @global_store.command(name="info")
+    async def global_info(self, ctx, name: str):
+        """Get info about an embed that is stored globally."""
+        data = await self.get_global_stored_embed(ctx, name)
+        if data:
+            e = discord.Embed(
+                title=f"`{name}` Info",
+                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}\nLocked: {data[3]}"
+            )
+            e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
+            await ctx.send(embed=e)
+
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
         async with self.config.guild(ctx.guild).embeds() as a:
@@ -394,9 +404,10 @@ class EmbedUtils(commands.Cog):
         try:
             data = data[name]
             embed = data["embed"]
-            if data["locked"] == True and not await self.bot.is_owner(ctx.author):
-                await ctx.send("This is not a stored embed.")
-                return
+            if data["locked"] == True:
+                if not await self.bot.is_owner(ctx.author):
+                    await ctx.send("This is not a stored embed.")
+                    return
         except KeyError:
             await ctx.send("This is not a stored embed.")
             return
