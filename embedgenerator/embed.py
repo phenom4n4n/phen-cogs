@@ -1,5 +1,5 @@
 import discord
-import aiohttp
+import asyncio
 import typing
 import json
 import io
@@ -27,6 +27,7 @@ class EmbedGenerator(commands.Cog):
         self.config.register_global(**default_global)
         self.config.register_guild(**default_guild)
 
+    @checks.has_permissions(embed_links=True)
     @checks.bot_has_permissions(embed_links=True)
     @commands.group()
     async def embed(self, ctx):
@@ -119,6 +120,19 @@ class EmbedGenerator(commands.Cog):
             await ctx.send("Embed deleted.")
         except KeyError:
             await ctx.send("This is not a stored embed.")
+
+    @embed.command(name="clear", hidden=True)
+    async def clear(self, ctx):
+        """Remove ALL embed data from the bot."""
+        await ctx.send("This will remove ALL embed data, including global data, from the bot. Are you sure you want to continue? (yes/no)")
+        try:
+            message = await self.bot.wait_for("message", check=lambda x:x.channel == ctx.channel and x.author == ctx.author and (x.content.lower().startswith("yes") or x.content.lower().startswith("no")), timeout=30)
+            if message.content.lower().startswith("no"):
+                return await ctx.send("Ok, not removing this data..")
+            await self.config.clear_all()
+            await ctx.tick()
+        except asyncio.TimeoutError:
+            await ctx.send("Ok, not removing this data..")
 
     @checks.mod_or_permissions(manage_guild=True)
     @embed.group()
