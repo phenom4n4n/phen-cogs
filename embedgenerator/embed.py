@@ -104,12 +104,14 @@ class EmbedGenerator(commands.Cog):
         """View an embed that is stored on this server."""
         data = await self.config.guild(ctx.guild).embeds()
         try:
-            embed = data[name]
+            embed = data[name]["embed"]
         except KeyError:
             await ctx.send("This is not a stored embed.")
             return
         embed = discord.Embed.from_dict(embed)
         await ctx.send(embed=embed)
+        async with self.config.guild(ctx.guild).embeds() as a:
+            a[name]["uses"] += 1
 
     @embed.command(aliases=["delete", "rm", "del"])
     async def remove(self, ctx, name):
@@ -235,7 +237,11 @@ class EmbedGenerator(commands.Cog):
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
         async with self.config.guild(ctx.guild).embeds() as a:
-            a[name] = embed
+            a[name] = {
+                "author": ctx.author.mention,
+                "uses": 0,
+                "embed": embed
+            }
         await ctx.send(f"Embed stored under the name `{name}`.")
 
     async def global_store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed, locked: bool):
