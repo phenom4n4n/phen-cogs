@@ -36,7 +36,7 @@ class EmbedUtils(commands.Cog):
 
     @embed.command()
     async def simple(self, ctx, channel: typing.Optional[discord.TextChannel], color: typing.Optional[discord.Color], title: str, *, description: str):
-        """Make a simple embed.
+        """Post a simple embed.
 
         Put the title in quotes if it is multiple words."""
         if not channel:
@@ -52,7 +52,7 @@ class EmbedUtils(commands.Cog):
 
     @embed.command(aliases=["fromjson"])
     async def fromdata(self, ctx, *, data):
-        """Make an embed from valid JSON.
+        """Post an embed from valid JSON.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
@@ -61,7 +61,7 @@ class EmbedUtils(commands.Cog):
 
     @embed.command(aliases=["fromjsonfile", "fromdatafile"])
     async def fromfile(self, ctx):
-        """Make an embed from a valid JSON file.
+        """Post an embed from a valid JSON file.
 
         This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
@@ -274,6 +274,16 @@ class EmbedUtils(commands.Cog):
             )
             e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
             await ctx.send(embed=e)
+
+    @global_store.command(aliases=["delete", "rm", "del"])
+    async def remove(self, ctx, name):
+        """Remove a global embed."""
+        try:
+            async with self.config.guild.embeds() as a:
+                del a[name]
+            await ctx.send("Embed deleted.")
+        except KeyError:
+            await ctx.send("This is not a stored embed.")
 
     @global_store.command(name="list")
     async def global_list(self, ctx):
