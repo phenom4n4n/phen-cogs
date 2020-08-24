@@ -33,10 +33,12 @@ class EmbedGenerator(commands.Cog):
         """Manage embeds."""
 
     @embed.command()
-    async def simple(self, ctx, color: typing.Optional[discord.Color], title: str, *, description: str):
+    async def simple(self, ctx, channel: typing.Optional[discord.TextChannel], color: typing.Optional[discord.Color], title: str, *, description: str):
         """Make a simple embed.
 
         Put the title in quotes if it is multiple words."""
+        if not channel:
+            channel = ctx.channel
         if not color:
             color = await self.bot.get_embed_color(ctx)
         e = discord.Embed(
@@ -44,7 +46,7 @@ class EmbedGenerator(commands.Cog):
             title=title,
             description=description
         )
-        await ctx.send(embed=e)
+        await channel.send(embed=e)
 
     @embed.command(aliases=["fromjson"])
     async def fromdata(self, ctx, *, data):
@@ -68,7 +70,7 @@ class EmbedGenerator(commands.Cog):
         try:
             data = content.decode("utf-8")
         except UnicodeDecodeError:
-            return await ctx.send("Invalid file")
+            return await ctx.send("That's not an actual embed file wyd")
         await self.str_embed_converter(ctx, data)
         await ctx.tick()
 
@@ -95,7 +97,7 @@ class EmbedGenerator(commands.Cog):
         data = json.dumps(data, indent=4)
         fp = io.BytesIO(bytes(data, "utf-8"))
         await ctx.send(file=discord.File(fp, "embed.json"))
-    
+
     @embed.command(name="show", aliases=["view", "drop"])
     async def com_drop(self, ctx, name: str):
         """View an embed that is stored on this server."""
@@ -199,7 +201,7 @@ class EmbedGenerator(commands.Cog):
         try:
             data = content.decode("utf-8")
         except UnicodeDecodeError:
-            return await ctx.send("Invalid file")
+            return await ctx.send("That's not an actual embed file wyd")
         e = await self.str_embed_converter(ctx, data)
         if e:
             await self.store_embed(ctx, name, e)
@@ -221,6 +223,15 @@ class EmbedGenerator(commands.Cog):
         async with self.config.guild(ctx.guild).embeds() as a:
             a[name] = embed
         await ctx.send(f"Embed stored under the name `{name}`.")
+
+    async def global_store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed, locked: bool):
+        embed = embed.to_dict()
+        async with self.config.guildembeds() as a:
+            a[name] = {
+                "locked": bool,
+                "embed": embed
+            }
+        await ctx.send(f"Global embed stored under the name `{name}`.")
 
     async def frommsg(self, ctx: commands.Context, message: discord.Message, index: int = 0):
         try:
