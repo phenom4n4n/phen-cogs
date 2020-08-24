@@ -191,7 +191,7 @@ class EmbedGenerator(commands.Cog):
         await self.store_embed(ctx, name, e)
         await ctx.tick()
 
-    @store.command(name="fromdata", aliases=["fromjson"])
+    @store.command(name="mmdata", aliases=["fromjson"])
     async def store_fromdata(self, ctx, name: str, *, data):
         """Store an embed from valid JSON on this server.
 
@@ -250,7 +250,11 @@ class EmbedGenerator(commands.Cog):
     async def frommsg(self, ctx: commands.Context, message: discord.Message, index: int = 0):
         try:
             embed = message.embeds[index]
-            return embed
+            if embed.type == "rich":
+                return embed
+            else:
+                await ctx.send("This is not a valid embed/index.")
+                return
         except IndexError:
             await ctx.send("This is not a valid embed/index.")
             return
