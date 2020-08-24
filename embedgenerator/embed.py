@@ -109,7 +109,7 @@ class EmbedGenerator(commands.Cog):
             async with self.config.guild(ctx.guild).embeds() as a:
                 a[name]["uses"] += 1
 
-    @embed.command(name="info", aliases=["view", "drop"])
+    @embed.command(name="info")
     async def com_drop(self, ctx, name: str):
         """Get info about an embed that is stored on this server."""
         data = await self.get_stored_embed(ctx, name)
