@@ -141,6 +141,26 @@ class EmbedGenerator(commands.Cog):
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
+    @store.command(name="list")
+    async def store_list(self, ctx):
+        embeds = await self.config.guild(ctx.guild).embeds()
+        description = []
+
+        if not embeds:
+            return
+        for embed in embeds:
+            description.append(f"`{embed}`")
+        description = "\n".join(description)
+
+        color = await self.bot.get_embed_colour(ctx)
+        e = discord.Embed(
+            color=color,
+            title=f"Stored Embeds",
+            description=description
+        )
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        await ctx.send(embed=e)
+
     @store.command(name="simple")
     async def store_simple(self, ctx, name: str, color: typing.Optional[discord.Color], title: str, *, description: str):
         """Store a simple embed on this server.
