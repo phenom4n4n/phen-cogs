@@ -27,7 +27,7 @@ class EmbedGenerator(commands.Cog):
         self.config.register_global(**default_global)
         self.config.register_guild(**default_guild)
 
-    @checks.guild_only()
+    @commands.guild_only()
     @checks.has_permissions(embed_links=True)
     @checks.bot_has_permissions(embed_links=True)
     @commands.group()
