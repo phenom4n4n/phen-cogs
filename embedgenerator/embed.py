@@ -383,7 +383,7 @@ class EmbedGenerator(commands.Cog):
             a[name] = {
                 "author": ctx.author.mention,
                 "uses": 0,
-                "locked": bool,
+                "locked": locked,
                 "embed": embed
             }
         await ctx.send(f"Global embed stored under the name `{name}`.")
