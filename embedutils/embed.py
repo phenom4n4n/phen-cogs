@@ -100,15 +100,14 @@ class EmbedUtils(commands.Cog):
         fp = io.BytesIO(bytes(data, "utf-8"))
         await ctx.send(file=discord.File(fp, "embed.json"))
 
-    @embed.group(name="show", aliases=["view", "drop"], autohelp=False)
+    @embed.group(name="show", aliases=["view", "drop"], invoke_without_command=True)
     async def com_drop(self, ctx, name: str):
         """View an embed that is stored."""
-        if not ctx.subcommand_passed:
-            embed = await self.get_stored_embed(ctx, name)
-            if embed:
-                await ctx.send(embed=embed[0])
-                async with self.config.guild(ctx.guild).embeds() as a:
-                    a[name]["uses"] += 1
+        embed = await self.get_stored_embed(ctx, name)
+        if embed:
+            await ctx.send(embed=embed[0])
+            async with self.config.guild(ctx.guild).embeds() as a:
+                a[name]["uses"] += 1
 
     @com_drop.command(name="global")
     async def global_drop(self, ctx, name: str):
