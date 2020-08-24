@@ -116,7 +116,7 @@ class EmbedGenerator(commands.Cog):
         if data:
             e = discord.Embed(
                 title=f"{name} Info",
-                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data0)}"
+                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}"
             )
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=embed[0])
