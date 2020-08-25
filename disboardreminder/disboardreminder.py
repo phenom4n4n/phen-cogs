@@ -1,6 +1,5 @@
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import discord
-import calendar
 from datetime import datetime
 
 from redbot.core import Config, checks, commands
@@ -16,7 +15,6 @@ class DisboardReminder(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
         self.load_check = self.bot.loop.create_task(self.bump_worker())
-        self.waiting_guild = []
         self.config = Config.get_conf(self, identifier=9765573181940385953309, force_registration=True)
         default_guild = {
             "channel": None,
@@ -93,6 +91,25 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(ctx.guild).message.clear()
             await ctx.send("Reset this server's reminder message.")
     
+    @checks.is_owner()
+    @bumpreminder.command()
+    async def debug(self, ctx,):
+        """Debug command."""
+        data = await self.config.guild(ctx.guild).all()
+        description = []
+        for key, value in data.items():
+            description.append(f"{key}: {value}")
+        description = "\n".join(description)
+        e = discord.Embed(
+            title="DisboardReminder Debug",
+            description=description
+        )
+        if data["nextBump"]:
+            timestamp = datetime.utcfromtimestamp(data["nextBump"])
+            e.timestamp = timestamp
+            e.set_footer(text="Bump registered for")
+        await ctx.send(embed=e)
+
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         await asyncio.sleep(remaining)
         await self.bump_message(guild)
@@ -129,12 +146,16 @@ class DisboardReminder(commands.Cog):
         """
         try:
             await self.bot.wait_until_ready()
-            guilds = [self.bot.get_guild(guild) for guild in await self.config.all_guilds()]
+            guilds = []
+            for guild in await self.config.all_guilds():
+                guild = self.bot.get_guild(guild)
+                if guild:
+                    guilds.append(guild)
             coros = []
             for guild in guilds:
                 timer = await self.config.guild(guild).nextBump()
                 if timer:
-                    now = calendar.timegm(datetime.utcnow().utctimetuple())
+                    now = round(datetime.datetime.utcnow().timestamp())
                     remaining = timer - now
                     if remaining <= 0:
                         await self.bump_message(guild)
@@ -174,7 +195,7 @@ class DisboardReminder(commands.Cog):
         except discord.errors.Forbidden:
             pass
         
-        nextBump = calendar.timegm(message.created_at.utctimetuple()) + 7200
+        nextBump = round(message.created_at.timestamp()) + 7200
         await self.config.guild(message.guild).nextBump.set(nextBump)
 
         await self.bump_timer(message.guild, 7200)
