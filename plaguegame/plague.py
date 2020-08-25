@@ -20,7 +20,7 @@ class Plague(commands.Cog):
         self.config.register_global(**default_global)
         self.config.register_user(**default_user)
 
-    async def red_delete_data_for_user(self, *, requester: Literal["discord_deleted_user", "owner", "user", "user_strict"], user_id: int):
+    async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         await self.config.user_from_id(user_id).clear()
 
     async def is_infected(ctx):
