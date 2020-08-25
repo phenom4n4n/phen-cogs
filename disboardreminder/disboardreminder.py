@@ -21,7 +21,8 @@ class DisboardReminder(commands.Cog):
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
             "tyMessage": "{member} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild.id}>.",
             "nextBump": None,
-            "deleteFails": True
+            "deleteFails": True,
+            "deleteInvokes": False
         }
 
         self.config.register_guild(**default_guild)
@@ -105,6 +106,21 @@ class DisboardReminder(commands.Cog):
             await ctx.send("I will now delete failed bumps.")
         else:
             await ctx.send("I will no longer delete failed bumps.")
+
+    @bumpreminder.command()
+    async def deleteinvokes(self, ctx, true_or_false: bool=None):
+        """Toggle whether the bot should delete `!d bump` invocations."""
+        
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).deleteInvokes())
+        )
+        await self.config.guild(ctx.guild).deleteInvokes.set(target_state)
+        if target_state:
+            await ctx.send("I will now delete `!d bump` invocations.")
+        else:
+            await ctx.send("I will no longer delete `!d bump` invocations.")
 
     @bumpreminder.command(hidden=True)
     async def debug(self, ctx):
@@ -192,15 +208,21 @@ class DisboardReminder(commands.Cog):
 
     @commands.Cog.listener("on_message_without_command")
     async def disboard_remind(self, message):
-        if not message.guild or message.author.id != 302050872383242240:
+        if not message.guild:
             return
 
         data = await self.config.guild(message.guild).all()
 
         if not data["channel"]:
             return
+        if message.content.startswith("!d bump") and message.channel.permissions_for(message.guild.me).manage_messages and data["deleteInvokes"]:
+            await asyncio.sleep(5)
+            try:
+                await message.delete()
+            except (discord.errors.Forbidden, discord.errors.NotFound):
+                pass
 
-        if not message.embeds:
+        if not (message.author.id == 302050872383242240 and message.embeds):
             return
         embed = message.embeds[0]
         if "," not in embed.description:
