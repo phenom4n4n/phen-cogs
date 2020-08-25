@@ -380,17 +380,19 @@ class EmbedUtils(commands.Cog):
     @global_store.command(name="lock")
     async def global_lock(self, ctx, name: str, true_or_false: bool=None):
         """Lock/unlock a global embed."""
+        data = await self.config.embeds()
+        try:
+            embed = data[name]
+        except KeyError:
+            await ctx.send("This is not a stored embed.")
+            return
         target_state = (
             true_or_false
             if true_or_false is not None
-            else not (await self.config.guild(ctx.guild).something())
+            else not embed["locked"]
         )
         async with self.config.embeds() as a:
-            try:
-                a[name]["locked"] = target_state
-            except KeyError:
-                await ctx.send("This is not a stored embed.")
-                return
+            embed["locked"] = target_state
         if target_state:
             await ctx.send("`name` is now locked to owners only.")
         else:
