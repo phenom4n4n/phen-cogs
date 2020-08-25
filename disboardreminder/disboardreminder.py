@@ -102,9 +102,9 @@ class DisboardReminder(commands.Cog):
             title="DisboardReminder Debug")
         for key, value in data.items():
             if isinstance(value, str):
-                inline = True
-            else:
                 inline = False
+            else:
+                inline = True
             e.add_field(name=key, value=f"`{value}`", inline=inline)
         if data["nextBump"]:
             timestamp = datetime.utcfromtimestamp(data["nextBump"])
