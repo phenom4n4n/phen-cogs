@@ -392,11 +392,11 @@ class EmbedUtils(commands.Cog):
             else not embed["locked"]
         )
         async with self.config.embeds() as a:
-            embed["locked"] = target_state
+            a[name]["locked"] = target_state
         if target_state:
-            await ctx.send("`name` is now locked to owners only.")
+            await ctx.send(f"`{name}` is now locked to owners only.")
         else:
-            await ctx.send("`name` is now accessible to all users.")
+            await ctx.send(f"`{name}` is now accessible to all users.")
 
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
