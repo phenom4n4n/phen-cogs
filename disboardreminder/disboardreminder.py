@@ -21,8 +21,7 @@ class DisboardReminder(commands.Cog):
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
             "tyMessage": "{member} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild.id}>.",
             "nextBump": None,
-            "deleteFails": True,
-            "deleteInvokes": False
+            "clean": False
         }
 
         self.config.register_guild(**default_guild)
@@ -96,34 +95,21 @@ class DisboardReminder(commands.Cog):
             await ctx.send("Reset this server's reminder message.")
 
     @bumpreminder.command()
-    async def deletefails(self, ctx, true_or_false: bool=None):
-        """Toggle whether the bot should delete failed bumps after 5 seconds."""
+    async def clean(self, ctx, true_or_false: bool=None):
+        """Toggle whether the bot should keep the bump channel "clean."
+        
+        The bot will remove all messages in the channel except for bump messages."""
         
         target_state = (
             true_or_false
             if true_or_false is not None
-            else not (await self.config.guild(ctx.guild).deleteFails())
+            else not (await self.config.guild(ctx.guild).clean())
         )
-        await self.config.guild(ctx.guild).deleteFails.set(target_state)
+        await self.config.guild(ctx.guild).clean.set(target_state)
         if target_state:
-            await ctx.send("I will now delete failed bumps.")
+            await ctx.send("I will now clean the bump channel.")
         else:
-            await ctx.send("I will no longer delete failed bumps.")
-
-    @bumpreminder.command()
-    async def deleteinvokes(self, ctx, true_or_false: bool=None):
-        """Toggle whether the bot should delete `!d bump` invocations."""
-        
-        target_state = (
-            true_or_false
-            if true_or_false is not None
-            else not (await self.config.guild(ctx.guild).deleteInvokes())
-        )
-        await self.config.guild(ctx.guild).deleteInvokes.set(target_state)
-        if target_state:
-            await ctx.send("I will now delete `!d bump` invocations.")
-        else:
-            await ctx.send("I will no longer delete `!d bump` invocations.")
+            await ctx.send("I will no longer clean the bump channel.")
 
     @bumpreminder.command(hidden=True)
     async def debug(self, ctx):
@@ -218,18 +204,22 @@ class DisboardReminder(commands.Cog):
 
         if not data["channel"]:
             return
-        if message.content.startswith("!d bump") and message.channel.permissions_for(message.guild.me).manage_messages and data["deleteInvokes"]:
-            await asyncio.sleep(5)
-            try:
-                await message.delete()
-            except (discord.errors.Forbidden, discord.errors.NotFound):
-                pass
+        bumpChannel = message.guild.get_channel(data["channel"])
+        if not bumpChannel:
+            return
+        clean = data["clean"]
+
+        if clean and message.author != message.guild.me and message.author.id != 302050872383242240:
+            if message.channel.permissions_for(message.guild.me).manage_messages:
+                await asyncio.sleep(5)
+                try:
+                    await message.delete()
+                except (discord.errors.Forbidden, discord.errors.NotFound):
+                    pass
 
         if not (message.author.id == 302050872383242240 and message.embeds):
             return
         embed = message.embeds[0]
-        if "," not in embed.description:
-            return
         if "Bump done" in embed.description:
             words = embed.description.split(",")
             member = words[0]
@@ -243,8 +233,8 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(message.guild).nextBump.set(nextBump)
 
             await self.bump_timer(message.guild, 7200)
-        elif embed.description.split(",")[1].startswith(" Please wait another"):
-            if message.channel.permissions_for(message.guild.me).manage_messages and data["deleteFails"]:
+        else:
+            if message.channel.permissions_for(message.guild.me).manage_messages and clean:
                 await asyncio.sleep(5)
                 try:
                     await message.delete()
