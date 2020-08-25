@@ -90,7 +90,22 @@ class DisboardReminder(commands.Cog):
         else:
             await self.config.guild(ctx.guild).message.clear()
             await ctx.send("Reset this server's reminder message.")
-    
+
+    @bumpreminder.command()
+    async def deletefails(self, ctx, true_or_false: bool=None):
+        """Toggle whether the bot should delete failed bumps after 5 seconds."""
+        
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).deleteFails())
+        )
+        await self.config.guild(ctx.guild).deleteFails.set(target_state)
+        if target_state:
+            await ctx.send("I will now delete failed bumps.")
+        else:
+            await ctx.send("I will no longer delete failed bumps.")
+
     @bumpreminder.command(hidden=True)
     async def debug(self, ctx):
         """Debug command."""
