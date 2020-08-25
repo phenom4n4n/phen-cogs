@@ -27,6 +27,9 @@ class DisboardReminder(commands.Cog):
 
         self.config.register_guild(**default_guild)
 
+    async def red_delete_data_for_user(self, **kwargs):
+        return
+
     @checks.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
     @commands.group(aliases=["bprm"])

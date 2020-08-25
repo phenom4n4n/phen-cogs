@@ -7,5 +7,6 @@
     "description": "Create, post, and store embeds.",
     "tags": ["embed"],
     "requirements": [],
-    "hidden": false
+    "hidden": false,
+    "end_user_data_statement": "This cog stores End User Data when storing the author of an embed."
 }

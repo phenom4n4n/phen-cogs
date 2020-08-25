@@ -5,5 +5,5 @@
     "short" : "Manage guild prefixes.",
     "description" : "Manage guild prefixes more extensively.",
     "tags" : ["server", "prefix"],
-    "end_user_data_statement": "This cog does not store any End-User Data."
+    "end_user_data_statement": "This cog does not store any End User Data."
 }

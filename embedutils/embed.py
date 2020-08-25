@@ -27,6 +27,15 @@ class EmbedUtils(commands.Cog):
         self.config.register_global(**default_global)
         self.config.register_guild(**default_guild)
 
+    async def red_delete_data_for_user(self, *, requester: Literal["discord_deleted_user", "owner", "user", "user_strict"], user_id: int):
+        guilds = await self.config.all_guilds()
+        for guild in guilds:
+            embeds = guild["embed"]
+            for embed in embeds:
+                if user_id in embed["author"]:
+                    async with embed["author"] as e:
+                        e = "REDACTED"
+
     @commands.guild_only()
     @checks.has_permissions(embed_links=True)
     @checks.bot_has_permissions(embed_links=True)

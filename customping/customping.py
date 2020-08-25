@@ -17,6 +17,9 @@ class CustomPing(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    async def red_delete_data_for_user(self, **kwargs):
+        return
+        
     def cog_unload(self):
         global old_ping
         if old_ping:

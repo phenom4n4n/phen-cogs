@@ -13,6 +13,9 @@ class Calculator(commands.Cog):
         self.bot = bot
         self.calculator = SimpleCalculator()
 
+    async def red_delete_data_for_user(self, **kwargs):
+        return
+
     @commands.command(aliases=["calc"])
     async def calculate(self, ctx, *, query):
         """Math"""

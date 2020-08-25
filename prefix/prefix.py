@@ -8,6 +8,9 @@ class Prefix(commands.Cog):
     def __init__(self, bot: "Red"):
         self.bot = bot
 
+    async def red_delete_data_for_user(self, **kwargs):
+        return
+
     @checks.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     @commands.group()

@@ -31,6 +31,9 @@ class AltDentifier(commands.Cog):
 
         self.config.register_guild(**default_guild)
 
+    async def red_delete_data_for_user(self, **kwargs):
+        return
+        
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
 

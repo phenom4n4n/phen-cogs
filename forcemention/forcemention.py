@@ -15,6 +15,9 @@ class ForceMention(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
 
+    async def red_delete_data_for_user(self, **kwargs):
+        return
+        
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
     @commands.command(name="forcemention")
