@@ -376,6 +376,25 @@ class EmbedUtils(commands.Cog):
             )
             e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
             await ctx.send(embed=e)
+    
+    @global_store.command(name="lock")
+    async def global_lock(self, ctx, name: str, true_or_false: bool=None):
+        """Lock/unlock a global embed."""
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).something())
+        )
+        async with self.config.embeds() as a:
+            try:
+                a[name]["locked"] = target_state
+            except KeyError:
+                await ctx.send("This is not a stored embed.")
+                return
+        if target_state:
+            await ctx.send("`name` is now locked to owners only.")
+        else:
+            await ctx.send("`name` is now accessible to all users.")
 
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
