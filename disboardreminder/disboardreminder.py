@@ -101,7 +101,7 @@ class DisboardReminder(commands.Cog):
             description.append(f"`{key}`: {value}")
         description = "\n".join(description)
         e = discord.Embed(
-            color=self.bot.get_embed_color(ctx),
+            color=await self.bot.get_embed_color(ctx),
             title="DisboardReminder Debug",
             description=description
         )
