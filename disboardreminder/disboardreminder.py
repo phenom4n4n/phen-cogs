@@ -98,9 +98,10 @@ class DisboardReminder(commands.Cog):
         data = await self.config.guild(ctx.guild).all()
         description = []
         for key, value in data.items():
-            description.append(f"{key}: {value}")
+            description.append(f"`{key}`: {value}")
         description = "\n".join(description)
         e = discord.Embed(
+            color=self.bot.get_embed_color(ctx),
             title="DisboardReminder Debug",
             description=description
         )
@@ -108,6 +109,7 @@ class DisboardReminder(commands.Cog):
             timestamp = datetime.utcfromtimestamp(data["nextBump"])
             e.timestamp = timestamp
             e.set_footer(text="Bump registered for")
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
     async def bump_timer(self, guild: discord.Guild, remaining: int):
