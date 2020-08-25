@@ -101,7 +101,11 @@ class DisboardReminder(commands.Cog):
             color=await self.bot.get_embed_color(ctx),
             title="DisboardReminder Debug")
         for key, value in data.items():
-            e.add_field(name=key, value=f"`{value}`")
+            if isinstance(value, str):
+                inline = True
+            else:
+                inline = False
+            e.add_field(name=key, value=f"`{value}`", inline=inline)
         if data["nextBump"]:
             timestamp = datetime.utcfromtimestamp(data["nextBump"])
             e.timestamp = timestamp
