@@ -155,7 +155,7 @@ class DisboardReminder(commands.Cog):
             for guild in guilds:
                 timer = await self.config.guild(guild).nextBump()
                 if timer:
-                    now = round(datetime.datetime.utcnow().timestamp())
+                    now = round(datetime.utcnow().timestamp())
                     remaining = timer - now
                     if remaining <= 0:
                         await self.bump_message(guild)
