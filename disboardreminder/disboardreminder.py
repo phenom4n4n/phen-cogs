@@ -91,7 +91,6 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(ctx.guild).message.clear()
             await ctx.send("Reset this server's reminder message.")
     
-    @checks.mod_or_permissions(manage_guild=True)
     @bumpreminder.command()
     async def debug(self, ctx):
         """Debug command."""
