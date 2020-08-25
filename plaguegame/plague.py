@@ -15,7 +15,7 @@ class Plague(commands.Cog):
         default_user = {
             "gameRole": "User",
             "gameState": "healthy",
-            "notifications": True,
+            "notifications": False,
         }
         self.config.register_global(**default_global)
         self.config.register_user(**default_user)
