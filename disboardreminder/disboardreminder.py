@@ -96,19 +96,16 @@ class DisboardReminder(commands.Cog):
     async def debug(self, ctx,):
         """Debug command."""
         data = await self.config.guild(ctx.guild).all()
-        description = []
-        for key, value in data.items():
-            description.append(f"`{key}`: {value}")
-        description = "\n".join(description)
+
         e = discord.Embed(
             color=await self.bot.get_embed_color(ctx),
-            title="DisboardReminder Debug",
-            description=description
-        )
+            title="DisboardReminder Debug")
+        for key, value in data.items():
+            e.add_field(name=key, value=f"`{value}`", inline=False)
         if data["nextBump"]:
             timestamp = datetime.utcfromtimestamp(data["nextBump"])
             e.timestamp = timestamp
-            e.set_footer(text="Bump registered for")
+            e.set_footer(text="Next bump registered for")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
