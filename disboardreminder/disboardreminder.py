@@ -91,9 +91,9 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(ctx.guild).message.clear()
             await ctx.send("Reset this server's reminder message.")
     
-    @checks.is_owner()
+    @checks.mod_or_permissions(manage_guild=True)
     @bumpreminder.command()
-    async def debug(self, ctx,):
+    async def debug(self, ctx):
         """Debug command."""
         data = await self.config.guild(ctx.guild).all()
 
@@ -166,7 +166,7 @@ class DisboardReminder(commands.Cog):
                         coros.append(self.bump_timer(guild, remaining))
             await asyncio.gather(*coros)
         except Exception as e:
-            print(f"Bump Restart issue: {e}")
+            print(f"Bump Restart Issue: {e}")
 
     def cog_unload(self):
         self.__unload()
