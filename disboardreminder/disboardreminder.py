@@ -205,7 +205,7 @@ class DisboardReminder(commands.Cog):
             await self.bump_timer(message.guild, 7200)
         elif embed.description.split(",")[1].startswith(" Please wait another"):
             if message.channel.permissions_for(message.guild.me).manage_messages and data["deleteFails"]:
-                asyncio.sleep(5)
+                await asyncio.sleep(5)
                 try:
                     await message.delete()
                 except (discord.errors.Forbidden, discord.errors.NotFound):
