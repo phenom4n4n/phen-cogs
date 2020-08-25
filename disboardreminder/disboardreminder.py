@@ -1,11 +1,10 @@
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import discord
+import asyncio
 from datetime import datetime
 
 from redbot.core import Config, checks, commands
-
 from redbot.core.bot import Red
-import asyncio
 
 class DisboardReminder(commands.Cog):
     """
@@ -21,7 +20,8 @@ class DisboardReminder(commands.Cog):
             "role": None,
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
             "tyMessage": "{member} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild.id}>.",
-            "nextBump": None
+            "nextBump": None,
+            "deleteFails": True
         }
 
         self.config.register_guild(**default_guild)
@@ -188,18 +188,25 @@ class DisboardReminder(commands.Cog):
         if not message.embeds:
             return
         embed = message.embeds[0]
-        if "Bump done" not in embed.description:
+        if "," not in embed.description:
             return
-        
-        words = embed.description.split(",")
-        member = words[0]
-        tymessage = data["tyMessage"]
-        try:
-            await message.channel.send(tymessage.format(member=member, guild=message.guild))
-        except discord.errors.Forbidden:
-            pass
-        
-        nextBump = round(message.created_at.timestamp()) + 7200
-        await self.config.guild(message.guild).nextBump.set(nextBump)
+        if "Bump done" in embed.description:
+            words = embed.description.split(",")
+            member = words[0]
+            tymessage = data["tyMessage"]
+            try:
+                await message.channel.send(tymessage.format(member=member, guild=message.guild))
+            except discord.errors.Forbidden:
+                pass
+            
+            nextBump = round(message.created_at.timestamp()) + 7200
+            await self.config.guild(message.guild).nextBump.set(nextBump)
 
-        await self.bump_timer(message.guild, 7200)
+            await self.bump_timer(message.guild, 7200)
+        elif embed.description.split(",")[1].startswith(" Please wait another"):
+            if message.channel.permissions_for(message.guild.me).manage_messages and data["deleteFails"]:
+                asyncio.sleep(5)
+                try:
+                    await message.delete()
+                except (discord.errors.Forbidden, discord.errors.NotFound):
+                    pass
