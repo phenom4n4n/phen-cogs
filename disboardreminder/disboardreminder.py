@@ -209,7 +209,7 @@ class DisboardReminder(commands.Cog):
             return
         clean = data["clean"]
 
-        if clean and message.author != message.guild.me and message.author.id != 302050872383242240:
+        if clean and message.author != message.guild.me and message.author.id != 302050872383242240 and message.channel == clean:
             if message.channel.permissions_for(message.guild.me).manage_messages:
                 await asyncio.sleep(5)
                 try:
