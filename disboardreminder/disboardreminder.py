@@ -128,14 +128,15 @@ class DisboardReminder(commands.Cog):
                 value = f"`{value}`"
             e.add_field(name=key, value=value, inline=inline)
         if data["nextBump"]:
-            timestamp = datetime.utcfromtimestamp(data["nextBump"])
+            timestamp = datetime.fromtimestamp(data["nextBump"])
             e.timestamp = timestamp
             e.set_footer(text="Next bump registered for")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
     async def bump_timer(self, guild: discord.Guild, remaining: int):
-        await asyncio.sleep(remaining)
+        d = datetime.fromtimestamp(remaining)
+        await discord.utils.sleep_until(d)
         await self.bump_message(guild)
     
     async def bump_message(self, guild: discord.Guild):
@@ -179,12 +180,12 @@ class DisboardReminder(commands.Cog):
             for guild in guilds:
                 timer = await self.config.guild(guild).nextBump()
                 if timer:
-                    now = round(datetime.utcnow().timestamp())
+                    now = datetime.utcnow().timestamp()
                     remaining = timer - now
                     if remaining <= 0:
                         await self.bump_message(guild)
                     else:
-                        coros.append(self.bump_timer(guild, remaining))
+                        coros.append(self.bump_timer(guild, timer))
             await asyncio.gather(*coros)
         except Exception as e:
             print(f"Bump Restart Issue: {e}")
@@ -220,7 +221,7 @@ class DisboardReminder(commands.Cog):
         if not (message.author.id == 302050872383242240 and message.embeds):
             return
         embed = message.embeds[0]
-        if "Bump done" in embed.description:
+        if "Please wait another" in embed.description:
             words = embed.description.split(",")
             member = words[0]
             tymessage = data["tyMessage"]
@@ -229,10 +230,10 @@ class DisboardReminder(commands.Cog):
             except discord.errors.Forbidden:
                 pass
             
-            nextBump = round(message.created_at.timestamp()) + 7200
+            nextBump = message.created_at.timestamp() + 10
             await self.config.guild(message.guild).nextBump.set(nextBump)
 
-            await self.bump_timer(message.guild, 7200)
+            await self.bump_timer(message.guild, nextBump)
         else:
             if message.channel.permissions_for(message.guild.me).manage_messages and clean and message.channel == bumpChannel:
                 await asyncio.sleep(5)
