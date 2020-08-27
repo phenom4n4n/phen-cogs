@@ -221,7 +221,7 @@ class DisboardReminder(commands.Cog):
         if not (message.author.id == 302050872383242240 and message.embeds):
             return
         embed = message.embeds[0]
-        if "Please wait another" in embed.description:
+        if "Bump done" in embed.description:
             words = embed.description.split(",")
             member = words[0]
             tymessage = data["tyMessage"]
@@ -230,7 +230,7 @@ class DisboardReminder(commands.Cog):
             except discord.errors.Forbidden:
                 pass
             
-            nextBump = message.created_at.timestamp() + 10
+            nextBump = message.created_at.timestamp() + 7200
             await self.config.guild(message.guild).nextBump.set(nextBump)
 
             await self.bump_timer(message.guild, nextBump)
