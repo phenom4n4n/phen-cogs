@@ -82,7 +82,7 @@ class LinkQuoter(commands.Cog):
                 webhook = await ctx.channel.create_webhook(name=f"{self.bot.user} Webhook")
                 await webhook.send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
         else:
-            await ctx.send(embeds=embeds)
+            await ctx.send(embed=embeds[0][0])
     
     @linkquote.command()
     async def toggle(self, ctx, true_or_false: bool=None):
@@ -122,4 +122,4 @@ class LinkQuoter(commands.Cog):
                 webhook = await message.channel.create_webhook(name=f"{self.bot.user} Webhook")
                 await webhook.send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
         else:
-            await message.channel.send(embeds=embeds)
+            await message.channel.send(embed=embeds[0][0])
