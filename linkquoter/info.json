@@ -1,0 +1,11 @@
+{
+    "author": ["PhenoM4n4n"],
+    "install_msg": "",
+    "name": "LinkQuoter",
+    "disabled": false,
+    "short": "",
+    "description": "Quote Discord message links.",
+    "tags": [],
+    "requirements": [],
+    "hidden": false
+}
