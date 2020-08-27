@@ -57,10 +57,10 @@ class LinkQuoter(commands.Cog):
                 return
             e = discord.Embed(
                 color=message.author.color,
-                description=f"[{message.content}]({message.jump_url})",
+                description=f'[{message.content}]({message.jump_url} "Follow me to the original message!")',
                 timestamp=message.created_at
             )
-            e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url)
+            e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
             e.set_footer(text=f"#{message.channel.name}")
             embeds.append((e, message.author))
         return embeds
@@ -68,6 +68,7 @@ class LinkQuoter(commands.Cog):
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
     @commands.group(invoke_without_command=True)
     async def linkquote(self, ctx, link: str):
+        await ctx.trigger_typing()
         links = await self.regex_check(link)
         if not links:
             return await ctx.send("Invalid link.")
