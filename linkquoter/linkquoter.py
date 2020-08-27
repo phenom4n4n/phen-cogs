@@ -53,11 +53,22 @@ class LinkQuoter(commands.Cog):
     async def create_embeds(self, messages: list):
         embeds = []
         for message in messages:
-            if not message.content:
+            if not message.content and message.embeds:
+                if message.embeds[0].description:
+                    content = message.embeds[0].description
+                elif message.embeds[0].fields:
+                    content = message.embeds[0].fields[0].value
+                elif message.embeds[0].title:
+                    content = message.embeds[0].title
+                else:
+                    return
+            elif not message.content and not message.embeds:
                 return
+            else:
+                content = message.content
             e = discord.Embed(
                 color=message.author.color,
-                description=f'[{message.content}]({message.jump_url} "Follow me to the original message!")',
+                description=f'{content}\n[`Jump to message`]({message.jump_url} "Follow me to the original message!")',
                 timestamp=message.created_at
             )
             e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
@@ -76,6 +87,8 @@ class LinkQuoter(commands.Cog):
         if not messages:
             return await ctx.send("Invalid link.")
         embeds = await self.create_embeds(messages)
+        if not embeds:
+            return await ctx.send("Invalid link.")
         if ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
             webhooks = await ctx.channel.webhooks()
             if webhooks:
@@ -116,6 +129,8 @@ class LinkQuoter(commands.Cog):
         if not messages:
             return
         embeds = await self.create_embeds(messages)
+        if not embeds:
+            return
         if message.channel.permissions_for(message.guild.me).manage_webhooks:
             webhooks = await message.channel.webhooks()
             if webhooks:
