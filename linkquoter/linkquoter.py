@@ -57,7 +57,7 @@ class LinkQuoter(commands.Cog):
                 return
             e = discord.Embed(
                 color=message.author.color,
-                description=message.content,
+                description=f"[{message.content}]({message.jump_url})",
                 timestamp=message.created_at
             )
             e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url)
