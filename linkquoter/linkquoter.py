@@ -68,7 +68,7 @@ class LinkQuoter(commands.Cog):
                 content = message.content
             e = discord.Embed(
                 color=message.author.color,
-                description=f'{content[:1894]}\n[`Jump to message`]({message.jump_url} "Follow me to the original message!")',
+                description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
                 timestamp=message.created_at
             )
             e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
@@ -116,7 +116,7 @@ class LinkQuoter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if message.author.bot or not message.guild or not message.channel.permissions_for(message.guild.me).send_messages:
+        if message.author.bot or not (message.guild and message.channel.permissions_for(message.guild.me).send_messages and await self.bot.message_eligible_as_command(message)):
             return
 
         if not await self.config.guild(message.guild).on():
