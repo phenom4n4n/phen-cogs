@@ -146,7 +146,7 @@ class AltDentifier(commands.Cog):
         e = discord.Embed(
             color=color,
             title="AltDentifier Check",
-            description=f"{member.mention} is {trust[0]}\nTrust Factor: {trust[1]}"
+            description=f"{member.mention} is {trust[1]}\nTrust Factor: {trust[0]}"
         )
         if actions:
             e.add_field(name="Actions Taken", value=actions, inline=False)
