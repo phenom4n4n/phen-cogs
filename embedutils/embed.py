@@ -492,8 +492,8 @@ class EmbedUtils(commands.Cog):
             title=errorType,
             description=f"```py\n{error}\n```"
         )
+        embed.set_footer(text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example")
         emoji = self.bot.get_emoji(736038541364297738)
         if not emoji:
             emoji = "❌"
-        embed.set_footer(text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example")
         await menus.menu(ctx, [embed], {emoji: menus.close_menu})
