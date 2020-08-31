@@ -62,7 +62,7 @@ class LinkQuoter(commands.Cog):
                     content = message.embeds[0].title
                 else:
                     return
-            elif not (message.content and message.embeds) and not message.attachments:
+            elif not message.content and not message.embeds and not message.attachments:
                 return
             else:
                 content = message.content
