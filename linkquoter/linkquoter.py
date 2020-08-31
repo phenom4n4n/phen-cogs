@@ -62,7 +62,7 @@ class LinkQuoter(commands.Cog):
                     content = message.embeds[0].title
                 else:
                     return
-            elif not message.content and not message.embeds:
+            elif not (message.content and message.embeds) and not message.attachments:
                 return
             else:
                 content = message.content
@@ -71,6 +71,8 @@ class LinkQuoter(commands.Cog):
                 description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
                 timestamp=message.created_at
             )
+            if message.attachments:
+                e.set_image(url=message.attachments[0].proxy_url)
             e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
             e.set_footer(text=f"#{message.channel.name}")
             embeds.append((e, message.author))
