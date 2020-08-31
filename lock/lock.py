@@ -22,13 +22,12 @@ class Lock(commands.Cog):
         )
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
-        # TODO: Replace this with the proper end user data removal handling.
         return
 
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def lock(self, ctx, *, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, role: Optional[discord.Role] = None):
+    async def lock(self, ctx, *, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, role: discord.Role = None):
         """Lock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
             channel = ctx.channel
@@ -68,7 +67,7 @@ class Lock(commands.Cog):
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def unlock(self, ctx, *, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, role: Optional[discord.Role] = None):
+    async def unlock(self, ctx, *, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, role: discord.Role = None):
         """Unlock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
             channel = ctx.channel
