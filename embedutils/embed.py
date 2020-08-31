@@ -469,6 +469,10 @@ class EmbedUtils(commands.Cog):
         except json.decoder.JSONDecodeError as error:
             await self.embed_convert_error(ctx, "JSON Parse Error", error)
             return
+        if data.get("embed"):
+            data = data["embed"]
+        if data.get("timestamp"):
+            data["timestamp"] = data["timestamp"].strip("Z")
         try:
             e = discord.Embed.from_dict(data)
         except Exception as error:
