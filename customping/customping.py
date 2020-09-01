@@ -1,4 +1,4 @@
-# Remove command logic originally from : https://github.com/mikeshardmind/SinbadCogs/tree/v3/messagebox
+# Remove command logic originally from: https://github.com/mikeshardmind/SinbadCogs/tree/v3/messagebox
 # Speed test logic from https://github.com/PhasecoreX/PCXCogs/tree/master/netspeed
 
 import discord
@@ -34,9 +34,9 @@ class CustomPing(commands.Cog):
     @commands.command()
     async def ping(self, ctx):
         """Ping the bot..."""
-        start = time.perf_counter()
+        start = time.monotonic()
         message = await ctx.send("Pinging...")
-        end = time.perf_counter()
+        end = time.monotonic()
         totalPing = round((end - start) * 1000, 2)
 
         botPing = round(self.bot.latency * 1000, 2)
@@ -60,7 +60,7 @@ class CustomPing(commands.Cog):
         e = discord.Embed(
             color=color,
             title="Pong!",
-            description=f"Overall Command Latency: {totalPing}ms\nDiscord WebSocket Latency: {botPing}ms\nHost Latency: {hostPing}ms"
+            description=f"Overall Latency: {totalPing}ms\nDiscord WebSocket Latency: {botPing}ms\nHost Latency: {hostPing}ms"
         )
         await message.edit(content=None, embed=e)
 
