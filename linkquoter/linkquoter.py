@@ -53,6 +53,7 @@ class LinkQuoter(commands.Cog):
     async def create_embeds(self, messages: list):
         embeds = []
         for message in messages:
+            image = False
             if not message.content and message.embeds:
                 embed = message.embeds[0]
                 if str(embed.type) == "rich":
