@@ -64,7 +64,9 @@ class LinkQuoter(commands.Cog):
                         content = message.embeds[0].title
                     else:
                         return
-                elif str(embed.type) == "image":
+            elif message.content and message.embeds:
+                embed = message.embeds[0]
+                if str(embed.type) == "image":
                     image = embed.url
             elif not message.content and not message.embeds and not message.attachments:
                 return
