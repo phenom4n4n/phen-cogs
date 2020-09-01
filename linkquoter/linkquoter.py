@@ -54,14 +54,18 @@ class LinkQuoter(commands.Cog):
         embeds = []
         for message in messages:
             if not message.content and message.embeds:
-                if message.embeds[0].description:
-                    content = message.embeds[0].description
-                elif message.embeds[0].fields:
-                    content = message.embeds[0].fields[0].value
-                elif message.embeds[0].title:
-                    content = message.embeds[0].title
-                else:
-                    return
+                embed = message.embeds[0]
+                if str(embed.type) == "rich":
+                    if message.embeds[0].description:
+                        content = message.embeds[0].description
+                    elif message.embeds[0].fields:
+                        content = message.embeds[0].fields[0].value
+                    elif message.embeds[0].title:
+                        content = message.embeds[0].title
+                    else:
+                        return
+                elif str(embed.type) == "image":
+                    image = embed.url
             elif not message.content and not message.embeds and not message.attachments:
                 return
             else:
@@ -72,7 +76,9 @@ class LinkQuoter(commands.Cog):
                 timestamp=message.created_at
             )
             if message.attachments:
-                e.set_image(url=message.attachments[0].proxy_url)
+                image = message.attachments[0].proxy_url
+            if image:
+                e.set_image(url=image)
             e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
             e.set_footer(text=f"#{message.channel.name}")
             embeds.append((e, message.author))
