@@ -149,7 +149,7 @@ class Plague(commands.Cog):
         result = await self.cure_user(ctx=ctx, user=user)
         await ctx.send(result)
 
-    @plagueset.command()
+    @plagueset.group(invoke_without_command=True)
     async def infected(self, ctx):
         """Sends a list of the infected users."""
 
@@ -157,6 +157,23 @@ class Plague(commands.Cog):
         infected_list = []
         for user in user_list:
             user = ctx.bot.get_user(user)
+            if user:
+                userState = await self.config.user(user).gameState()
+                if userState == "infected":
+                    infected_list.append(user.mention)
+        embedDescription = "\n".join(infected_list[:93])
+        embed = discord.Embed(title="Infected Users", description=embedDescription)
+        await ctx.send(embed=embed)
+
+    @infected.command(name="guild")
+    async def guild_infected(self, ctx, *, guild: discord.Guild = None):
+        """Sends a list of the infected users in a guild."""
+        if not guild:
+            guild = ctx.guild
+        user_list = await self.config.all_users()
+        infected_list = []
+        for user in user_list:
+            user = guild.get_member(user)
             if user:
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
