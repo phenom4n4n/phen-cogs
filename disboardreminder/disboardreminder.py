@@ -73,6 +73,7 @@ class DisboardReminder(commands.Cog):
 
         Variables:
         `{member}` - Mentions the user who bumped
+        `{guild}` - This server
         
         Usage: `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`"""
 
@@ -111,14 +112,14 @@ class DisboardReminder(commands.Cog):
         else:
             await ctx.send("I will no longer clean the bump channel.")
 
-    @bumpreminder.command(hidden=True)
-    async def debug(self, ctx):
-        """Debug command."""
+    @bumpreminder.command()
+    async def settings(self, ctx):
+        """Show your Bump Reminder settings."""
         data = await self.config.guild(ctx.guild).all()
 
         e = discord.Embed(
             color=await self.bot.get_embed_color(ctx),
-            title="DisboardReminder Debug")
+            title="Bump Reminder Settings")
         for key, value in data.items():
             if isinstance(value, str):
                 inline = False
