@@ -2,6 +2,7 @@ import discord
 import asyncio
 
 from redbot.core import Config, checks, commands, bank
+from redbot.core.utils.menus import menu
 
 class Plague(commands.Cog):
     """A plague game."""
@@ -160,7 +161,7 @@ class Plague(commands.Cog):
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
                     infected_list.append(user.mention)
-        embedDescription = "\n".join(infected_list)
+        embedDescription = "\n".join(infected_list[:97])
         embed = discord.Embed(title="Infected Users", description=embedDescription)
         await ctx.send(embed=embed)
 
