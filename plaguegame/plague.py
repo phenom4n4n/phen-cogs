@@ -161,7 +161,8 @@ class Plague(commands.Cog):
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
                     infected_list.append(user.mention)
-        embedDescription = "\n".join(infected_list[:96])
+        infected_list = infected_list[:97]
+        embedDescription = "\n".join(infected_list)
         embed = discord.Embed(title="Infected Users", description=embedDescription)
         await ctx.send(embed=embed)
 
