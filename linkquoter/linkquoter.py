@@ -89,8 +89,10 @@ class LinkQuoter(commands.Cog):
         return embeds
 
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
+    @checks.guild_only()
     @commands.group(invoke_without_command=True)
     async def linkquote(self, ctx, link: str):
+        """Quote a message from a link."""
         await ctx.trigger_typing()
         links = await self.regex_check(link)
         if not links:
