@@ -54,37 +54,37 @@ class LinkQuoter(commands.Cog):
         embeds = []
         for message in messages:
             image = False
-            if not message.content and message.embeds:
+            e = False
+            if message.embeds:
                 embed = message.embeds[0]
                 if str(embed.type) == "rich":
-                    if message.embeds[0].description:
-                        content = message.embeds[0].description
-                    elif message.embeds[0].fields:
-                        content = message.embeds[0].fields[0].value
-                    elif message.embeds[0].title:
-                        content = message.embeds[0].title
+                    embed.color = message.author.color
+                    if embed.description:
+                        content = embed.description[:1894]
                     else:
-                        return
-            elif message.content and message.embeds:
-                embed = message.embeds[0]
-                content = message.content
+                        content = None
+                    embed.description = f'{content}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")'
+                    embed.timestamp = message.created_at
+                    embed.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
+                    embed.set_footer(text=f"#{message.channel.name}")
+                    e = embed
                 if str(embed.type) == "image":
                     image = embed.url
             elif not message.content and not message.embeds and not message.attachments:
                 return
-            else:
+            elif not e:
                 content = message.content
-            e = discord.Embed(
-                color=message.author.color,
-                description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
-                timestamp=message.created_at
-            )
+                e = discord.Embed(
+                    color=message.author.color,
+                    description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
+                    timestamp=message.created_at
+                )
+                e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
+                e.set_footer(text=f"#{message.channel.name}")
             if message.attachments:
                 image = message.attachments[0].proxy_url
             if image:
                 e.set_image(url=image)
-            e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
-            e.set_footer(text=f"#{message.channel.name}")
             embeds.append((e, message.author))
         return embeds
 
