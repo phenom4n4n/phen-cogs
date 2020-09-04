@@ -62,7 +62,7 @@ class LinkQuoter(commands.Cog):
                     if embed.description:
                         content = embed.description[:1894]
                     else:
-                        content = None
+                        content = ""
                     embed.description = f'{content}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")'
                     embed.timestamp = message.created_at
                     embed.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
@@ -72,7 +72,7 @@ class LinkQuoter(commands.Cog):
                     image = embed.url
             elif not message.content and not message.embeds and not message.attachments:
                 return
-            elif not e:
+            if not e:
                 content = message.content
                 e = discord.Embed(
                     color=message.author.color,
