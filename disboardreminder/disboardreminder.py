@@ -227,7 +227,7 @@ class DisboardReminder(commands.Cog):
             member = words[0]
             tymessage = data["tyMessage"]
             try:
-                await message.channel.send(tymessage.format(member=member, guild=message.guild))
+                await bumpChannel.send(tymessage.format(member=member, guild=message.guild))
             except discord.errors.Forbidden:
                 pass
             
