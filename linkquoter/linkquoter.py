@@ -53,34 +53,46 @@ class LinkQuoter(commands.Cog):
     async def create_embeds(self, messages: list):
         embeds = []
         for message in messages:
-            if not message.content and message.embeds:
-                if message.embeds[0].description:
-                    content = message.embeds[0].description
-                elif message.embeds[0].fields:
-                    content = message.embeds[0].fields[0].value
-                elif message.embeds[0].title:
-                    content = message.embeds[0].title
-                else:
-                    return
-            elif not (message.content and message.embeds) and not message.attachments:
+            image = False
+            e = False
+            if message.embeds:
+                embed = message.embeds[0]
+                if str(embed.type) == "rich":
+                    embed.color = message.author.color
+                    if embed.description:
+                        content = embed.description[:1894]
+                    else:
+                        content = ""
+                    embed.description = f'{content}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")'
+                    embed.timestamp = message.created_at
+                    embed.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
+                    embed.set_footer(text=f"#{message.channel.name}")
+                    e = embed
+                if str(embed.type) == "image":
+                    image = embed.url
+            elif not message.content and not message.embeds and not message.attachments:
                 return
-            else:
+            if not e:
                 content = message.content
-            e = discord.Embed(
-                color=message.author.color,
-                description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
-                timestamp=message.created_at
-            )
+                e = discord.Embed(
+                    color=message.author.color,
+                    description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
+                    timestamp=message.created_at
+                )
+                e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
+                e.set_footer(text=f"#{message.channel.name}")
             if message.attachments:
-                e.set_image(url=message.attachments[0].proxy_url)
-            e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
-            e.set_footer(text=f"#{message.channel.name}")
+                image = message.attachments[0].proxy_url
+            if image:
+                e.set_image(url=image)
             embeds.append((e, message.author))
         return embeds
 
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
-    @commands.group(invoke_without_command=True)
+    @commands.guild_only()
+    @commands.group(invoke_without_command=True, aliases=["linkmessage"])
     async def linkquote(self, ctx, link: str):
+        """Quote a message from a link."""
         await ctx.trigger_typing()
         links = await self.regex_check(link)
         if not links:

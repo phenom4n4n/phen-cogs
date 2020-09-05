@@ -5,6 +5,7 @@ import json
 import io
 
 from redbot.core import commands, checks, Config
+from redbot.core.utils import menus
 
 class EmbedUtils(commands.Cog):
     """
@@ -469,6 +470,10 @@ class EmbedUtils(commands.Cog):
         except json.decoder.JSONDecodeError as error:
             await self.embed_convert_error(ctx, "JSON Parse Error", error)
             return
+        if data.get("embed"):
+            data = data["embed"]
+        if data.get("timestamp"):
+            data["timestamp"] = data["timestamp"].strip("Z")
         try:
             e = discord.Embed.from_dict(data)
         except Exception as error:
@@ -488,4 +493,7 @@ class EmbedUtils(commands.Cog):
             description=f"```py\n{error}\n```"
         )
         embed.set_footer(text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example")
-        await ctx.send(embed=embed)
+        emoji = self.bot.get_emoji(736038541364297738)
+        if not emoji:
+            emoji = "❌"
+        await menus.menu(ctx, [embed], {emoji: menus.close_menu})

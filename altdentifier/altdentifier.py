@@ -146,10 +146,12 @@ class AltDentifier(commands.Cog):
         e = discord.Embed(
             color=color,
             title="AltDentifier Check",
-            description=f"{member.mention} is {trust[1]}\nTrust Factor: {trust[0]}"
+            description=f"{member.mention} is {trust[1]}\nTrust Factor: {trust[0]}",
+            timestamp=member.created_at
         )
         if actions:
             e.add_field(name="Actions Taken", value=actions, inline=False)
+        e.set_footer(text="Account created at")
         e.set_thumbnail(url=member.avatar_url)
         return e
 

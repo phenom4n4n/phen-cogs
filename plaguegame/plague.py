@@ -2,6 +2,7 @@ import discord
 import asyncio
 
 from redbot.core import Config, checks, commands, bank
+from redbot.core.utils.menus import menu
 
 class Plague(commands.Cog):
     """A plague game."""
@@ -54,7 +55,7 @@ class Plague(commands.Cog):
         
         result = await self.cure_user(ctx=ctx, user=member)
         await ctx.send(result)
-    
+
     @checks.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     @commands.command("plagueprofile")
@@ -62,12 +63,12 @@ class Plague(commands.Cog):
         """Show's your Plague Game profile"""
         if not member:
             member = ctx.author
-
-        userRole = await ctx.cog.config.user(member).gameRole()
-        userState = await ctx.cog.config.user(member).gameState()
+        data = await self.config.user(member).all()
+        userRole = data["gameRole"]
+        userState = data["gameState"]
 
         title = f"Plague Profile"
-        description = f"Role: {userRole}\nState: {userState}"
+        description = f"Role: {userRole}\nState: {userState}\nNotifications: {data['notifications']}"
         color = await ctx.embed_color()
         if userRole == "Doctor":
             thumbnail = "https://contestimg.wish.com/api/webimage/5b556e7ba225161706d6857a-large.jpg?cache_buster=e79a94ce3e105025c5655d67b3d5e1bd"
@@ -91,12 +92,12 @@ class Plague(commands.Cog):
     async def plaguenotify(self, ctx):
         """Enable/Disable Plague Game notifications."""
 
-        notifications = await self.config.user(ctx.author).notificationType()
+        notifications = await self.config.user(ctx.author).notifications()
         if notifications != False:
-            await self.config.user(ctx.author).notificationType.set(False)
+            await self.config.user(ctx.author).notifications.set(False)
             message = "You will no longer be sent Plague Game notifications."
         else:
-            await self.config.user(ctx.author).notificationType.set(True)
+            await self.config.user(ctx.author).notifications.set(True)
             message = "You will now be sent Plague Game notifications."
 
         await ctx.send(message)
@@ -148,7 +149,7 @@ class Plague(commands.Cog):
         result = await self.cure_user(ctx=ctx, user=user)
         await ctx.send(result)
 
-    @plagueset.command()
+    @plagueset.group(invoke_without_command=True)
     async def infected(self, ctx):
         """Sends a list of the infected users."""
 
@@ -160,7 +161,24 @@ class Plague(commands.Cog):
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
                     infected_list.append(user.mention)
-        embedDescription = "\n".join(infected_list)
+        embedDescription = "\n".join(infected_list[:93])
+        embed = discord.Embed(title="Infected Users", description=embedDescription)
+        await ctx.send(embed=embed)
+
+    @infected.command(name="guild")
+    async def guild_infected(self, ctx, *, guild: discord.Guild = None):
+        """Sends a list of the infected users in a guild."""
+        if not guild:
+            guild = ctx.guild
+        user_list = await self.config.all_users()
+        infected_list = []
+        for user in user_list:
+            user = guild.get_member(user)
+            if user:
+                userState = await self.config.user(user).gameState()
+                if userState == "infected":
+                    infected_list.append(user.mention)
+        embedDescription = "\n".join(infected_list[:93])
         embed = discord.Embed(title="Infected Users", description=embedDescription)
         await ctx.send(embed=embed)
 
@@ -263,8 +281,7 @@ class Plague(commands.Cog):
             return f"`{user.name}` has been cured from {plagueName}."
 
     async def notify_user(self, ctx, *, user: discord.User, notificationType: str):
-        userNotifyable = await self.config.user(user).notificationType()
-        if userNotifyable == False:
+        if not await self.config.user(user).notifications():
             return
         prefixes = await ctx.bot.get_valid_prefixes(ctx.guild)
 
