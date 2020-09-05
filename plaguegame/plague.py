@@ -239,7 +239,7 @@ class Plague(commands.Cog):
             await self.config.user(user).gameState.set("infected")
             await self.notify_user(ctx= ctx, user=user, notificationType="infect")
             if channel:
-                await channel.send(f"💀| Someone on `{ctx.guild}` was just infected with {plagueName}.")
+                await channel.send(f"💀| {user} on `{ctx.guild}` was just infected with {plagueName} by {ctx.author}.")
             return f"`{user.name}` has been infected with {plagueName}."
 
     async def cure_user(self, ctx, *, user: discord.User):
@@ -259,7 +259,7 @@ class Plague(commands.Cog):
             await self.config.user(user).gameState.set("healthy")
             await self.notify_user(ctx=ctx, user=user, notificationType="cure")
             if channel:
-                await channel.send(f"✨| Someone on `{ctx.guild}` was just cured from {plagueName}.")
+                await channel.send(f"✨| {user} on `{ctx.guild}` was just cured from {plagueName} by {ctx.author}.")
             return f"`{user.name}` has been cured from {plagueName}."
 
     async def notify_user(self, ctx, *, user: discord.User, notificationType: str):
