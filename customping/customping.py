@@ -38,8 +38,15 @@ class CustomPing(commands.Cog):
         message = await ctx.send("Pinging...")
         end = time.monotonic()
         totalPing = round((end - start) * 1000, 2)
+        e = discord.Embed(
+            title="Pinging..",
+            description=f"Overall Latency: {totalPing}ms"
+        )
+        await message.edit(content=None, embed=e)
 
         botPing = round(self.bot.latency * 1000, 2)
+        e.description = e.description + f"\nDiscord WebSocket Latency: {botPing}ms"
+        await message.edit(embed=e)
 
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         loop = asyncio.get_event_loop()
@@ -57,12 +64,10 @@ class CustomPing(commands.Cog):
         else:
             color = discord.Colour.green()
 
-        e = discord.Embed(
-            color=color,
-            title="Pong!",
-            description=f"Overall Latency: {totalPing}ms\nDiscord WebSocket Latency: {botPing}ms\nHost Latency: {hostPing}ms"
-        )
-        await message.edit(content=None, embed=e)
+        e.color = color
+        e.title = "Pong!"
+        e.description = e.description + f"\nHost Latency: {hostPing}ms"
+        await message.edit(embed=e)
 
 def setup(bot):
     ping = CustomPing(bot)
