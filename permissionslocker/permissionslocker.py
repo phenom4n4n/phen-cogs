@@ -67,7 +67,7 @@ class PermissionsLocker(commands.Cog):
             )
             e.add_field(name="Required Permissions", value=box(await self.humanize_perms(discord.Permissions(data["permissions"]), True), "diff"), inline=False)
             if data["whitelisted"]:
-                e.add_field(name="Whitelisted", value=", ".join(data["whitelisted"]), inline=False)
+                e.add_field(name="Whitelisted", value=", ".join(str(data["whitelisted"])), inline=False)
             await ctx.send(embed=e)
 
     @permlock.command()
