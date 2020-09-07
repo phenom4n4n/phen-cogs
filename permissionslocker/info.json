@@ -1,0 +1,19 @@
+{
+    "name": "PermissionsLocker",
+    "short": "Force permissions for the bot.",
+    "description": "Lock bot commands to a certain permissions set.",
+    "end_user_data_statement": "This cog does not persistently store any data or metadata about users.",
+    "install_msg": "Thanks for installing PermissionsLocker!",
+    "author": [
+        "PhenoM4n4n"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [
+        "permissions"
+    ],
+    "min_bot_version": "3.3.10",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
