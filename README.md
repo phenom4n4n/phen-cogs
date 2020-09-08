@@ -1,6 +1,5 @@
-# Repository Name
-Various phun and utility cogs for Red-Bot.
-
+# Phen-Cogs
+Various phun and utility cogs for [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot).
 # Installation
 `[p]repo add Phen-Cogs https://github.com/phenom4n4n/phen-cogs`
 # Cogs
@@ -18,7 +17,7 @@ Various phun and utility cogs for Red-Bot.
 | PlagueGame | Infect people in Discord. |
 | SimpleCalculator | Tbh it's really a shitty calculator which uses a Python module to calculate math equations. |
 # Contact
-If you have a feature request or found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).
-
+If you have a feature request or have found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).
 # Credits
-Red-Bot
+[Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot)
+All Cog Creators
