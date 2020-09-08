@@ -2,7 +2,7 @@
   Phen-Cogs
 </h1>
 
-<h4 align="center">Various phun and utility cogs for [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot).</h4>
+<h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
 
 <p align="center">
   <a href="https://discord.gg/cGJ8JmX">
