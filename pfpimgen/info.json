@@ -1,0 +1,19 @@
+{
+    "name": "PfpImgen",
+    "short": "Make images from avatars!",
+    "description": "Make images from avatars!",
+    "end_user_data_statement": "This cog does not persistently store any data or metadata about users.",
+    "install_msg": "Thanks for installing PfpImgen!",
+    "author": [
+        "PhenoM4n4n"
+    ],
+    "required_cogs": {},
+    "requirements": ["Pillow"],
+    "tags": [
+        "image"
+    ],
+    "min_bot_version": "3.3.10",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
