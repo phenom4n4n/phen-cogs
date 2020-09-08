@@ -1,7 +1,24 @@
-# Phen-Cogs
-Various phun and utility cogs for [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot).
+<h1 align="center">
+  Phen-Cogs
+</h1>
+
+<h4 align="center">Various phun and utility cogs for [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot).</h4>
+
+<p align="center">
+  <a href="https://discord.gg/cGJ8JmX">
+    <img src="https://discordapp.com/api/guilds/631306089366945821/widget.png?style=shield" alt="Discord Server">
+  </a>
+  <a href="https://www.python.org/downloads/">
+    <img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/Red-Discordbot">
+  </a>
+  <a href="https://github.com/Rapptz/discord.py/">
+     <img src="https://img.shields.io/badge/discord-py-blue.svg" alt="discord.py">
+  </a>
+</p>
+
 # Installation
 `[p]repo add Phen-Cogs https://github.com/phenom4n4n/phen-cogs`
+
 # Cogs
 | Cog | Description |
 | --- | --- |
@@ -16,8 +33,11 @@ Various phun and utility cogs for [Red-DiscordBot](https://github.com/Cog-Creato
 | PfpImgen | A couple fun commands that create memes/images using user avatars. |
 | PlagueGame | Infect people in Discord. |
 | SimpleCalculator | Tbh it's really a shitty calculator which uses a Python module to calculate math equations. |
+
 # Contact
 If you have a feature request or have found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).
+
 # Credits
 [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot)
+
 All Cog Creators
