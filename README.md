@@ -13,7 +13,7 @@ Various phun and utility cogs for Red-Bot.
 | ForceMention | Modified version of Bobloy's forcemention cog, which my other cogs use for mentioning roles. |
 | LinkQuoter | Quotes messages using message links, using webhooks when possible. |
 | Lock | A basic channel and server lock command which allows role locking. |
-| PermisssionsLocker | Forces configured permissions when a user tries running any command, and raises `CommandCheckFailure` if those permissions aren't met. |
+| PermissionsLocker | Forces configured permissions when a user tries running any command, and raises `CommandCheckFailure` if those permissions aren't met. |
 | PfpImgen | A couple fun commands that create memes/images using user avatars. |
 | PlagueGame | Infect people in Discord. |
 | SimpleCalculator | Tbh it's really a shitty calculator which uses a Python module to calculate math equations. |
