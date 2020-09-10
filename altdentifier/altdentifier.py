@@ -26,7 +26,8 @@ class AltDentifier(commands.Cog):
                 "1": None,
                 "2": None,
                 "3": None
-            }
+            },
+            "whitelist": []
         }
 
         self.config.register_guild(**default_guild)
@@ -125,6 +126,24 @@ class AltDentifier(commands.Cog):
                 a[level] = action.lower()
         await ctx.tick()
 
+    @altset.command(aliases=["wl"])
+    async def whitelist(self, ctx, user_id: int):
+        """Whitelist a user from AltDentifier actions."""
+        async with self.config.guild(ctx.guild).whitelist() as w:
+            w.append(user_id)
+        await ctx.tick()
+
+    @altset.command(aliases=["unwl"])
+    async def unwhitelist(self, ctx, user_id: int):
+        """Remove a user from the AltDentifier whitelist."""
+        async with self.config.guild(ctx.guild).whitelisted() as w:
+            try:
+                index = w.index(user_id)
+            except ValueError:
+                return await ctx.send("This user has not been whitelisted.")
+            w.pop(index)
+        await ctx.tick()
+
     async def alt_request(self, member: discord.Member):
         async with self.session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
             response = await response.json()
@@ -194,6 +213,8 @@ class AltDentifier(commands.Cog):
         data = await self.config.guild(member.guild).all()
         if not data["channel"]:
             return
+        if member.id in data["whitelist"]:
+            return
         channel = member.guild.get_channel(data["channel"])
         if not channel:
             await self.config.guild(member.guild).channel.clear()
@@ -201,4 +222,7 @@ class AltDentifier(commands.Cog):
         trust = await self.alt_request(member)
         action = await self.take_action(member, trust[0], data["actions"])
         e = await self.gen_alt_embed(trust, member, actions=action)
-        await channel.send(embed=e)
+        try:
+            await channel.send(embed=e)
+        except discord.errors.Forbidden:
+            await self.config.guild(member.guild).channel.clear()
