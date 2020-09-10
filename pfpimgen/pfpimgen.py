@@ -30,7 +30,7 @@ class PfpImgen(commands.Cog):
         return
 
     @checks.bot_has_permissions(attach_files=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(aliases=["catgirl"])
     async def neko(self, ctx, *, member: discord.Member = None):
         """Make a neko avatar..."""
@@ -48,7 +48,7 @@ class PfpImgen(commands.Cog):
         await ctx.send(file=discord.File(neko, "neko.png"))
         
     @checks.bot_has_permissions(attach_files=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command()
     async def bonk(self, ctx, *, member: discord.Member = None):
         """Bonk! Go to horny jail."""
@@ -74,7 +74,7 @@ class PfpImgen(commands.Cog):
         await ctx.send(file=discord.File(bonk, "bonk.png"))
 
     @checks.bot_has_permissions(attach_files=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command()
     async def simp(self, ctx, *, member: discord.Member = None):
         """You are now a simp."""
@@ -91,7 +91,7 @@ class PfpImgen(commands.Cog):
         await ctx.send(file=discord.File(simp, "simp.png"))
 
     @checks.bot_has_permissions(attach_files=True)
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command()
     async def banner(self, ctx, *, member: discord.Member = None):
         """Banner"""
@@ -135,7 +135,7 @@ class PfpImgen(commands.Cog):
         im = Image.open(f"{bundled_data_path(ctx.cog)}/bonk/bonkbase.png", mode="r").convert("RGBA")
 
         # pasting the victim
-        victim_avatar = victim_avatar.rotate(angle=10)
+        victim_avatar = victim_avatar.rotate(angle=10, resample=Image.BILINEAR)
         im.paste(victim_avatar, (650, 225), victim_avatar)
         
         # pasting the bonker
