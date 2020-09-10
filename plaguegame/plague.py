@@ -172,7 +172,7 @@ class Plague(commands.Cog):
                     embeds.append(discord.Embed(color=await ctx.embed_color(), title="Infected Users", description=page))
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(discord.Embed(color=await ctx.embed_color(), title="Infected Users", description=infected_list))
+                await ctx.send(embed=discord.Embed(color=await ctx.embed_color(), title="Infected Users", description=infected_list))
         else:
             await ctx.send("No one has been infected yet..")
 
@@ -197,7 +197,7 @@ class Plague(commands.Cog):
                     embeds.append(discord.Embed(color=await ctx.embed_color(), title="Infected Members", description=page))
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(discord.Embed(color=await ctx.embed_color(), title="Infected Members", description=infected_list))
+                await ctx.send(embed=discord.Embed(color=await ctx.embed_color(), title="Infected Members", description=infected_list))
         else:
             await ctx.send("No one has been infected yet..")
 
@@ -221,7 +221,7 @@ class Plague(commands.Cog):
                     embeds.append(discord.Embed(color=await ctx.embed_color(), title="Healthy Users", description=page))
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(discord.Embed(color=await ctx.embed_color(), title="Healthy Users", description=healthy_list))
+                await ctx.send(embed=discord.Embed(color=await ctx.embed_color(), title="Healthy Users", description=healthy_list))
         else:
             await ctx.send("No one stored is healthy..")
 
