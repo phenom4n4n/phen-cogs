@@ -83,6 +83,7 @@ class LinkQuoter(commands.Cog):
                 e.set_footer(text=f"#{message.channel.name}")
             if message.attachments:
                 image = message.attachments[0].proxy_url
+                e.add_field(name="Attachments", value=message.attachments[0].filename)
             if image:
                 e.set_image(url=image)
             embeds.append((e, message.author))
