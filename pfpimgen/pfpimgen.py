@@ -157,7 +157,7 @@ class PfpImgen(commands.Cog):
         card = Image.open(f"{bundled_data_path(ctx.cog)}/simp/simp.png", mode="r").convert("RGBA")
 
         # pasting the pfp
-        member_avatar = member_avatar.rotate(angle=3, expand=True)
+        member_avatar = member_avatar.rotate(angle=3, resample=Image.BILINEAR, expand=True)
         im.paste(member_avatar, (73, 105))
         
         # pasting the card
@@ -172,17 +172,17 @@ class PfpImgen(commands.Cog):
         im = Image.open(f"{bundled_data_path(ctx.cog)}/banner/banner.png", mode="r").convert("RGBA")
         
         # 2nd slide
-        av = member_avatar.rotate(angle=7, expand=True)
+        av = member_avatar.rotate(angle=7, resample=Image.BILINEAR, expand=True)
         av = av.resize((90, 90), Image.LANCZOS)
         im.paste(av, (448, 38), av)
 
         # 3rd slide
-        av2 = member_avatar.rotate(angle=7, expand=True)
+        av2 = member_avatar.rotate(angle=7, resample=Image.BILINEAR, expand=True)
         av2 = av2.resize((122, 124), Image.LANCZOS)
         im.paste(av2, (47, 271), av2)
 
         # 4th slide
-        av2 = member_avatar.rotate(angle=26, expand=True)
+        av2 = member_avatar.rotate(angle=26, resample=Image.BILINEAR, expand=True)
         av2 = av2.resize((147, 148), Image.LANCZOS)
         im.paste(av2, (325, 233), av2)
 
