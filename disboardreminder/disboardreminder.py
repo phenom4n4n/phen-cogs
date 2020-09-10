@@ -143,18 +143,18 @@ class DisboardReminder(commands.Cog):
     async def bump_message(self, guild: discord.Guild):
         data = await self.config.guild(guild).all()
         channel = guild.get_channel(data["channel"])
-        if data["role"]:
+        if not channel or not channel.permissions_for(guild.me).send_messages:
+            await self.config.guild(guild).channel.clear()
+        elif data["role"]:
             role = guild.get_role(data["role"])
             if role:
-                message = data["message"]
-                message = f"{role.mention}: {message}"
+                message = f"{role.mention}: {data['message']}"
+                await self.bot.get_cog("ForceMention").forcemention(channel, role, message)
             else:
                 await self.config.guild(guild).role.clear()
-                message = data["message"]
-        else:
+        elif channel:
             message = data["message"]
-        mentionPerms = discord.AllowedMentions(roles=True)
-        if channel:
+            mentionPerms = discord.AllowedMentions(roles=True)
             try:
                 await channel.send(message, allowed_mentions=mentionPerms)
             except discord.errors.Forbidden:
