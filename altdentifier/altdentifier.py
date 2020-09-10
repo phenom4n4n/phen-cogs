@@ -4,7 +4,7 @@ import asyncio
 import typing
 
 from redbot.core import commands, checks, Config
-from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.chat_formatting import box, humanize_list
 
 class AltDentifier(commands.Cog):
     """
@@ -82,6 +82,8 @@ class AltDentifier(commands.Cog):
                 description=description
             )
             e.add_field(name="Actions", value=actions, inline=False)
+            if data["whitelist"]:
+                e.add_field(name="Whitelist", value=humanize_list(data["whitelist"]), inline=False)
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
