@@ -198,7 +198,7 @@ class DisboardReminder(commands.Cog):
         self.load_check.cancel()
 
     @commands.Cog.listener("on_message_without_command")
-    async def disboard_remind(self, message):
+    async def disboard_remind(self, message: discord.Message):
         if not message.guild:
             return
 
@@ -227,7 +227,7 @@ class DisboardReminder(commands.Cog):
             member = words[0]
             tymessage = data["tyMessage"]
             try:
-                await bumpChannel.send(tymessage.format(member=member, guild=message.guild))
+                await bumpChannel.send(tymessage.replace("{member}", str(member)).replace("{guild}", message.guild.name).replace("{guild.id}", str(message.guild.id)))
             except discord.errors.Forbidden:
                 pass
             
