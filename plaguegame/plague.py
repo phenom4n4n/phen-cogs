@@ -169,10 +169,10 @@ class Plague(commands.Cog):
             infected_list = "\n".join(infected_list)
             if len(infected_list) > 2000:
                 for page in pagify(infected_list):
-                    embeds.append(discord.Embed(color=await ctx.embed_color, title="Infected Users", description=page))
+                    embeds.append(discord.Embed(color=await ctx.embed_color(), title="Infected Users", description=page))
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(discord.Embed(color=await ctx.embed_color, title="Infected Users", description=infected_list))
+                await ctx.send(discord.Embed(color=await ctx.embed_color(), title="Infected Users", description=infected_list))
         else:
             await ctx.send("No one has been infected yet..")
 
@@ -194,10 +194,10 @@ class Plague(commands.Cog):
             infected_list = "\n".join(infected_list)
             if len(infected_list) > 2000:
                 for page in pagify(infected_list):
-                    embeds.append(discord.Embed(color=await ctx.embed_color, title="Infected Members", description=page))
+                    embeds.append(discord.Embed(color=await ctx.embed_color(), title="Infected Members", description=page))
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(discord.Embed(color=await ctx.embed_color, title="Infected Members", description=infected_list))
+                await ctx.send(discord.Embed(color=await ctx.embed_color(), title="Infected Members", description=infected_list))
         else:
             await ctx.send("No one has been infected yet..")
 
@@ -218,10 +218,10 @@ class Plague(commands.Cog):
             healthy_list = "\n".join(healthy_list)
             if len(healthy_list) > 2000:
                 for page in pagify(healthy_list):
-                    embeds.append(discord.Embed(color=await ctx.embed_color, title="Healthy Users", description=page))
+                    embeds.append(discord.Embed(color=await ctx.embed_color(), title="Healthy Users", description=page))
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(discord.Embed(color=await ctx.embed_color, title="Healthy Users", description=healthy_list))
+                await ctx.send(discord.Embed(color=await ctx.embed_color(), title="Healthy Users", description=healthy_list))
         else:
             await ctx.send("No one stored is healthy..")
 
