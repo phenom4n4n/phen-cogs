@@ -4,7 +4,7 @@ import asyncio
 import typing
 
 from redbot.core import commands, checks, Config
-from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.chat_formatting import box, humanize_list
 
 class AltDentifier(commands.Cog):
     """
@@ -26,7 +26,8 @@ class AltDentifier(commands.Cog):
                 "1": None,
                 "2": None,
                 "3": None
-            }
+            },
+            "whitelist": []
         }
 
         self.config.register_guild(**default_guild)
@@ -81,6 +82,8 @@ class AltDentifier(commands.Cog):
                 description=description
             )
             e.add_field(name="Actions", value=actions, inline=False)
+            if data["whitelist"]:
+                e.add_field(name="Whitelist", value=humanize_list(data["whitelist"]), inline=False)
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
@@ -125,6 +128,24 @@ class AltDentifier(commands.Cog):
                 a[level] = action.lower()
         await ctx.tick()
 
+    @altset.command(aliases=["wl"])
+    async def whitelist(self, ctx, user_id: int):
+        """Whitelist a user from AltDentifier actions."""
+        async with self.config.guild(ctx.guild).whitelist() as w:
+            w.append(user_id)
+        await ctx.tick()
+
+    @altset.command(aliases=["unwl"])
+    async def unwhitelist(self, ctx, user_id: int):
+        """Remove a user from the AltDentifier whitelist."""
+        async with self.config.guild(ctx.guild).whitelist() as w:
+            try:
+                index = w.index(user_id)
+            except ValueError:
+                return await ctx.send("This user has not been whitelisted.")
+            w.pop(index)
+        await ctx.tick()
+
     async def alt_request(self, member: discord.Member):
         async with self.session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
             response = await response.json()
@@ -161,13 +182,13 @@ class AltDentifier(commands.Cog):
         if action == "ban":
             try:
                 await member.ban(reason=reason)
-                return f"Banned for being Trust Level {trust}"
+                return f"Banned for being Trust Level {trust}."
             except discord.errors.Forbidden:
                 await self.clear_action(member.guild, trust)
         elif action == "kick":
             try:
                 await member.kick(reason=reason)
-                return f"Kicked for being Trust Level {trust}"
+                return f"Kicked for being Trust Level {trust}."
             except discord.errors.Forbidden:
                 await self.clear_action(member.guild, trust)
         elif action:
@@ -175,7 +196,7 @@ class AltDentifier(commands.Cog):
             if role:
                 try:
                     await member.add_roles(role, reason=reason)
-                    return f"{role.mention} given for being Trust Level {trust}"
+                    return f"{role.mention} given for being Trust Level {trust}."
                 except discord.errors.Forbidden:
                     await self.clear_action(member.guild, trust)
             else:
@@ -199,6 +220,12 @@ class AltDentifier(commands.Cog):
             await self.config.guild(member.guild).channel.clear()
             return
         trust = await self.alt_request(member)
-        action = await self.take_action(member, trust[0], data["actions"])
+        if member.id in data["whitelist"]:
+            action = "This user was whitelisted so no actions were taken."
+        else:
+            action = await self.take_action(member, trust[0], data["actions"])
         e = await self.gen_alt_embed(trust, member, actions=action)
-        await channel.send(embed=e)
+        try:
+            await channel.send(embed=e)
+        except discord.errors.Forbidden:
+            await self.config.guild(member.guild).channel.clear()
