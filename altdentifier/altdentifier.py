@@ -136,7 +136,7 @@ class AltDentifier(commands.Cog):
     @altset.command(aliases=["unwl"])
     async def unwhitelist(self, ctx, user_id: int):
         """Remove a user from the AltDentifier whitelist."""
-        async with self.config.guild(ctx.guild).whitelisted() as w:
+        async with self.config.guild(ctx.guild).whitelist() as w:
             try:
                 index = w.index(user_id)
             except ValueError:
