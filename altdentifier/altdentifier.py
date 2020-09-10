@@ -180,13 +180,13 @@ class AltDentifier(commands.Cog):
         if action == "ban":
             try:
                 await member.ban(reason=reason)
-                return f"Banned for being Trust Level {trust}"
+                return f"Banned for being Trust Level {trust}."
             except discord.errors.Forbidden:
                 await self.clear_action(member.guild, trust)
         elif action == "kick":
             try:
                 await member.kick(reason=reason)
-                return f"Kicked for being Trust Level {trust}"
+                return f"Kicked for being Trust Level {trust}."
             except discord.errors.Forbidden:
                 await self.clear_action(member.guild, trust)
         elif action:
@@ -194,7 +194,7 @@ class AltDentifier(commands.Cog):
             if role:
                 try:
                     await member.add_roles(role, reason=reason)
-                    return f"{role.mention} given for being Trust Level {trust}"
+                    return f"{role.mention} given for being Trust Level {trust}."
                 except discord.errors.Forbidden:
                     await self.clear_action(member.guild, trust)
             else:
@@ -213,14 +213,15 @@ class AltDentifier(commands.Cog):
         data = await self.config.guild(member.guild).all()
         if not data["channel"]:
             return
-        if member.id in data["whitelist"]:
-            return
         channel = member.guild.get_channel(data["channel"])
         if not channel:
             await self.config.guild(member.guild).channel.clear()
             return
         trust = await self.alt_request(member)
-        action = await self.take_action(member, trust[0], data["actions"])
+        if member.id in data["whitelist"]:
+            action = "This user was whitelisted so no actions were taken."
+        else:
+            action = await self.take_action(member, trust[0], data["actions"])
         e = await self.gen_alt_embed(trust, member, actions=action)
         try:
             await channel.send(embed=e)
