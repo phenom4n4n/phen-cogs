@@ -2,7 +2,8 @@ import discord
 import asyncio
 
 from redbot.core import Config, checks, commands, bank
-from redbot.core.utils.menus import menu
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
+from redbot.core.utils.chat_formatting import pagify
 
 class Plague(commands.Cog):
     """A plague game."""
@@ -35,6 +36,10 @@ class Plague(commands.Cog):
     async def is_doctor(ctx):
         userRole = await ctx.cog.config.user(ctx.author).gameRole()
         return userRole == "Doctor"
+
+    async def not_doctor(ctx):
+        userRole = await ctx.cog.config.user(ctx.author).gameRole()
+        return userRole != "Doctor"
 
     @commands.check(is_infected)
     @commands.cooldown(1, 60, commands.BucketType.user)
@@ -103,6 +108,7 @@ class Plague(commands.Cog):
         await ctx.send(message)
 
     @bank.cost(5000)
+    @commands.check(not_doctor)
     @commands.check(is_healthy)
     @commands.command(aliases=["plaguedoc"])
     async def plaguedoctor(self, ctx):
@@ -111,9 +117,6 @@ class Plague(commands.Cog):
         You must not be infected to run this command."""
     
         currency = await bank.get_currency_name(ctx.guild)
-        gameRole = await self.config.user(ctx.author).gameRole()
-        if gameRole == "Doctor":
-            return await ctx.send(f"You are already a Doctor! Why waste another 5,000 {currency} buying it again?")
         await self.config.user(ctx.author).gameRole.set("Doctor")
         await self.notify_user(ctx=ctx, user=ctx.author, notificationType="doctor")
         await ctx.send(f"{ctx.author} has spent 5,000 {currency} and become a Doctor.")
@@ -161,9 +164,17 @@ class Plague(commands.Cog):
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
                     infected_list.append(user.mention)
-        embedDescription = "\n".join(infected_list[:93])
-        embed = discord.Embed(title="Infected Users", description=embedDescription)
-        await ctx.send(embed=embed)
+        if infected_list:
+            embeds = []
+            infected_list = "\n".join(infected_list)
+            if len(infected_list) > 2000:
+                for page in pagify(infected_list):
+                    embeds.append(discord.Embed(color=await ctx.embed_color, title="Infected Users", description=page))
+                await menu(ctx, embeds, DEFAULT_CONTROLS)
+            else:
+                await ctx.send(discord.Embed(color=await ctx.embed_color, title="Infected Users", description=infected_list))
+        else:
+            await ctx.send("No one has been infected yet..")
 
     @infected.command(name="guild")
     async def guild_infected(self, ctx, *, guild: discord.Guild = None):
@@ -178,9 +189,17 @@ class Plague(commands.Cog):
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
                     infected_list.append(user.mention)
-        embedDescription = "\n".join(infected_list[:93])
-        embed = discord.Embed(title="Infected Users", description=embedDescription)
-        await ctx.send(embed=embed)
+        if infected_list:
+            embeds = []
+            infected_list = "\n".join(infected_list)
+            if len(infected_list) > 2000:
+                for page in pagify(infected_list):
+                    embeds.append(discord.Embed(color=await ctx.embed_color, title="Infected Members", description=page))
+                await menu(ctx, embeds, DEFAULT_CONTROLS)
+            else:
+                await ctx.send(discord.Embed(color=await ctx.embed_color, title="Infected Members", description=infected_list))
+        else:
+            await ctx.send("No one has been infected yet..")
 
     @plagueset.command()
     async def healthy(self, ctx):
@@ -194,9 +213,17 @@ class Plague(commands.Cog):
                 userState = await self.config.user(user).gameState()
                 if userState == "healthy":
                     healthy_list.append(user.mention)
-        embedDescription = "\n".join(healthy_list)
-        embed = discord.Embed(title="Healthy Users", description=embedDescription)
-        await ctx.send(embed=embed)
+        if healthy_list:
+            embeds = []
+            healthy_list = "\n".join(healthy_list)
+            if len(healthy_list) > 2000:
+                for page in pagify(healthy_list):
+                    embeds.append(discord.Embed(color=await ctx.embed_color, title="Healthy Users", description=page))
+                await menu(ctx, embeds, DEFAULT_CONTROLS)
+            else:
+                await ctx.send(discord.Embed(color=await ctx.embed_color, title="Healthy Users", description=healthy_list))
+        else:
+            await ctx.send("No one stored is healthy..")
 
     @plagueset.command("doctor")
     async def set_doctor(self, ctx, user: discord.User):
