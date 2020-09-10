@@ -37,13 +37,13 @@ class ForceMention(commands.Cog):
     async def forcemention(self, channel: discord.TextChannel, role: discord.Role, message: str, embed: typing.Optional[discord.Embed] = None):
         mentionPerms = discord.AllowedMentions(roles=True)
         if role.mentionable:
-            await channel.send(message, allowed_mentions=mentionPerms)
+            await channel.send(message, allowed_mentions=mentionPerms, embed=embed if embed else None)
         elif channel.permissions_for(channel.guild.me).mention_everyone:
-            await channel.send(message, allowed_mentions=mentionPerms)
+            await channel.send(message, allowed_mentions=mentionPerms, embed=embed if embed else None)
         elif channel.permissions_for(channel.guild.me).manage_roles:
             await role.edit(mentionable=True)
-            await channel.send(message, allowed_mentions=mentionPerms)
+            await channel.send(message, allowed_mentions=mentionPerms, embed=embed if embed else None)
             await asyncio.sleep(5)
             await role.edit(mentionable=False)
         else:
-            await channel.send(message, allowed_mentions=mentionPerms)
+            await channel.send(message, allowed_mentions=mentionPerms, embed=embed if embed else None)
