@@ -163,7 +163,7 @@ class Plague(commands.Cog):
             if user:
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
-                    infected_list.append(user.mention)
+                    infected_list.append(f"{user.mention} - {user}")
         if infected_list:
             embeds = []
             infected_list = "\n".join(infected_list)
@@ -188,7 +188,7 @@ class Plague(commands.Cog):
             if user:
                 userState = await self.config.user(user).gameState()
                 if userState == "infected":
-                    infected_list.append(user.mention)
+                    infected_list.append(f"{user.mention} - {user}")
         if infected_list:
             embeds = []
             infected_list = "\n".join(infected_list)
@@ -212,7 +212,7 @@ class Plague(commands.Cog):
             if user:
                 userState = await self.config.user(user).gameState()
                 if userState == "healthy":
-                    healthy_list.append(user.mention)
+                    healthy_list.append(f"{user.mention} - {user}")
         if healthy_list:
             embeds = []
             healthy_list = "\n".join(healthy_list)
