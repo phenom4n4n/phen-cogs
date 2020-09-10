@@ -85,10 +85,27 @@ class PfpImgen(commands.Cog):
             task = functools.partial(self.gen_simp, ctx, avatar)
             task = self.bot.loop.run_in_executor(None, task)
             try:
-                bonk = await asyncio.wait_for(task, timeout=60)
+                simp = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
                 return await ctx.send("An error occurred while generating this image. Try again later.")
-        await ctx.send(file=discord.File(bonk, "simp.png"))
+        await ctx.send(file=discord.File(simp, "simp.png"))
+
+    @checks.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.command()
+    async def banner(self, ctx, *, member: discord.Member = None):
+        """Banner"""
+        if not member:
+            member = ctx.author
+        async with ctx.typing():
+            avatar = await self.get_avatar(member, 200)
+            task = functools.partial(self.gen_banner, ctx, avatar)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                banner = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send("An error occurred while generating this image. Try again later.")
+        await ctx.send(file=discord.File(banner, "banner.png"))
 
     async def get_avatar(self, member: discord.Member, size: int):
         avatar = BytesIO()
@@ -145,6 +162,32 @@ class PfpImgen(commands.Cog):
         
         # pasting the card
         im.paste(card, (0, 0), card)
+
+        fp = BytesIO()
+        im.save(fp, "PNG")
+        fp.seek(0)
+        return fp
+
+    def gen_banner(self, ctx, member_avatar):
+        im = Image.open(f"{bundled_data_path(ctx.cog)}/banner/banner.png", mode="r").convert("RGBA")
+        
+        # 2nd slide
+        av = member_avatar.rotate(angle=7, expand=True)
+        av = av.resize((90, 90), Image.LANCZOS)
+        im.paste(av, (448, 38), av)
+
+        # 3rd slide
+        av2 = member_avatar.rotate(angle=7, expand=True)
+        av2 = av2.resize((122, 124), Image.LANCZOS)
+        im.paste(av2, (47, 271), av2)
+
+        # 4th slide
+        av2 = member_avatar.rotate(angle=26, expand=True)
+        av2 = av2.resize((147, 148), Image.LANCZOS)
+        im.paste(av2, (325, 233), av2)
+
+        cover = Image.open(f"{bundled_data_path(ctx.cog)}/banner/bannercover.png", mode="r").convert("RGBA")
+        im.paste(cover, (240, 159), cover)
 
         fp = BytesIO()
         im.save(fp, "PNG")
