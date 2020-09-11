@@ -119,7 +119,7 @@ class PfpImgen(commands.Cog):
             member = ctx.author
         async with ctx.typing():
             avatar = await self.get_avatar(member, 182)
-            task = functools.partial(self.gen_nickel, ctx, avatar, text)
+            task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 banner = await asyncio.wait_for(task, timeout=60)
@@ -229,7 +229,7 @@ class PfpImgen(commands.Cog):
         font = ImageFont.truetype(f"{bundled_data_path(ctx.cog)}/arial.ttf", 30)
         canvas = ImageDraw.Draw(im)
         text_width, text_height = canvas.textsize(text, font, stroke_width=2)
-        canvas.text(((im.width - text_width) / 2, 280), text, font=font, fill=(206, 194, 114), align="center", stroke_width=2, stroke_fill=(0, 0, 0))
+        canvas.text(((im.width - text_width) / 2, 290), text, font=font, fill=(206, 194, 114), align="center", stroke_width=2, stroke_fill=(0, 0, 0))
 
         fp = BytesIO()
         im.save(fp, "PNG")
