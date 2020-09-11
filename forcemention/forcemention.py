@@ -31,7 +31,10 @@ class ForceMention(commands.Cog):
             message = f"{role.mention}\n{message}"
         else:
             message = role.mention
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except:
+            pass
         await self.forcemention(ctx.channel, role, message)
 
     async def forcemention(self, channel: discord.TextChannel, role: discord.Role, message: str, embed: typing.Optional[discord.Embed] = None):
