@@ -229,7 +229,7 @@ class PfpImgen(commands.Cog):
         font = ImageFont.truetype(f"{bundled_data_path(ctx.cog)}/arial.ttf", 30)
         canvas = ImageDraw.Draw(im)
         text_width, text_height = canvas.textsize(text, font, stroke_width=2)
-        canvas.text(((im.width - text_width) / 2, 290), text, font=font, fill=(206, 194, 114), align="center", stroke_width=2, stroke_fill=(0, 0, 0))
+        canvas.text(((im.width - text_width) / 2, 285), text, font=font, fill=(206, 194, 114), align="center", stroke_width=2, stroke_fill=(0, 0, 0))
 
         fp = BytesIO()
         im.save(fp, "PNG")
