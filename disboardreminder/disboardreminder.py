@@ -1,10 +1,13 @@
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import discord
 import asyncio
+import logging
 from datetime import datetime
 
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
+
+log = logging.getLogger("red.phenom4n4n.disboardreminder")
 
 class DisboardReminder(commands.Cog):
     """
@@ -189,7 +192,7 @@ class DisboardReminder(commands.Cog):
                         coros.append(self.bump_timer(guild, timer))
             await asyncio.gather(*coros)
         except Exception as e:
-            print(f"Bump Restart Issue: {e}")
+            log.debug(f"Bump Restart Issue: {e}")
 
     def cog_unload(self):
         self.__unload()
