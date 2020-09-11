@@ -105,7 +105,7 @@ class LinkQuoter(commands.Cog):
         embeds = await self.create_embeds(messages)
         if not embeds:
             return await ctx.send("Invalid link.")
-        if (await self.config.guild(message.guild).webhooks()) and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
+        if (await self.config.guild(ctx.guild).webhooks()) and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
             webhooks = await ctx.channel.webhooks()
             if webhooks:
                 await webhooks[0].send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
