@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Literal, Optional
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import functools
 import asyncio
 
@@ -107,6 +107,26 @@ class PfpImgen(commands.Cog):
                 return await ctx.send("An error occurred while generating this image. Try again later.")
         await ctx.send(file=discord.File(banner, "banner.png"))
 
+    @checks.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command()
+    async def nickel(self, ctx, member: Optional[discord.Member] = None, *, text: commands.clean_content(fix_channel_mentions=True)):
+        """If I had a nickel for everytime someone ran this command..
+        
+        I'd probably have a lot."""
+        text = " ".join(text.split())
+        if not member:
+            member = ctx.author
+        async with ctx.typing():
+            avatar = await self.get_avatar(member, 182)
+            task = functools.partial(self.gen_nickel, ctx, avatar, text)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                banner = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send("An error occurred while generating this image. Try again later.")
+        await ctx.send(file=discord.File(banner, "nickel.png"))
+
     async def get_avatar(self, member: discord.Member, size: int):
         avatar = BytesIO()
         await member.avatar_url.save(avatar, seek_begin=True)
@@ -190,6 +210,26 @@ class PfpImgen(commands.Cog):
         #cover = Image.open(f"{bundled_data_path(ctx.cog)}/banner/bannercover.png", mode="r").convert("RGBA")
         #im.paste(cover, (240, 159), cover)
         im.paste(comic, (0, 0), comic)
+
+        fp = BytesIO()
+        im.save(fp, "PNG")
+        fp.seek(0)
+        return fp
+
+    def gen_nickel(self, ctx, member_avatar, text: str):
+        # base canvas
+        im = Image.open(f"{bundled_data_path(ctx.cog)}/nickel/nickel.png", mode="r").convert("RGBA")
+
+        # avatars
+        im.paste(member_avatar, (69, 70), member_avatar)
+        im.paste(member_avatar, (69, 407), member_avatar)
+        im.paste(member_avatar, (104, 758), member_avatar)
+
+        # text
+        font = ImageFont.truetype(f"{bundled_data_path(ctx.cog)}/arial.ttf", 30)
+        canvas = ImageDraw.Draw(im)
+        text_width, text_height = canvas.textsize(text, font, stroke_width=2)
+        canvas.text(((im.width - text_width) / 2, 280), text, font=font, fill=(206, 194, 114), align="center", stroke_width=2, stroke_fill=(0, 0, 0))
 
         fp = BytesIO()
         im.save(fp, "PNG")
