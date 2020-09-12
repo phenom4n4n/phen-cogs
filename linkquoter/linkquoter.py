@@ -19,7 +19,8 @@ class LinkQuoter(commands.Cog):
         )
 
         default_guild = {
-            "on": False
+            "on": False,
+            "webhooks": True
             }
         self.config.register_guild(**default_guild)
 
@@ -104,7 +105,7 @@ class LinkQuoter(commands.Cog):
         embeds = await self.create_embeds(messages)
         if not embeds:
             return await ctx.send("Invalid link.")
-        if ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
+        if (await self.config.guild(ctx.guild).webhooks()) and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
             webhooks = await ctx.channel.webhooks()
             if webhooks:
                 await webhooks[0].send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
@@ -115,7 +116,7 @@ class LinkQuoter(commands.Cog):
             await ctx.send(embed=embeds[0][0])
     
     @linkquote.command()
-    async def toggle(self, ctx, true_or_false: bool=None):
+    async def auto(self, ctx, true_or_false: bool=None):
         """Toggle automatic quoting."""
         
         target_state = (
@@ -128,6 +129,22 @@ class LinkQuoter(commands.Cog):
             await ctx.send("I will now automatically quote links.")
         else:
             await ctx.send("I will no longer automatically quote links.")
+
+    @checks.bot_has_permissions(manage_webhooks=True)
+    @linkquote.command()
+    async def webhook(self, ctx, true_or_false: bool=None):
+        """Toggle whether the bot should use webhooks to quote."""
+        
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).webhooks())
+        )
+        await self.config.guild(ctx.guild).webhooks.set(target_state)
+        if target_state:
+            await ctx.send("I will now use webhooks to quote.")
+        else:
+            await ctx.send("I will no longer use webhooks to quote.")
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
@@ -146,7 +163,7 @@ class LinkQuoter(commands.Cog):
         embeds = await self.create_embeds(messages)
         if not embeds:
             return
-        if message.channel.permissions_for(message.guild.me).manage_webhooks:
+        if (await self.config.guild(message.guild).webhooks()) and message.channel.permissions_for(message.guild.me).manage_webhooks:
             webhooks = await message.channel.webhooks()
             if webhooks:
                 await webhooks[0].send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
