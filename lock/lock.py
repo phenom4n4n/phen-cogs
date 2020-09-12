@@ -108,7 +108,9 @@ class Lock(commands.Cog):
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
     async def unlock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, state: Optional[channel_toggle] = None, roles: commands.Greedy[discord.Role] = None):
-        """Unlock a channel. Provide a role if you would like to unlock it for that role."""
+        """Unlock a channel. Provide a role if you would like to unlock it for that role.
+        
+        If you would like to override-unlock for a roles, you can do so by pass `true` as the state argument."""
         if not channel:
             channel = ctx.channel
         if not roles:
