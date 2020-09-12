@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont,ImageOps
 import functools
 import asyncio
 
@@ -122,10 +122,27 @@ class PfpImgen(commands.Cog):
             task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
             task = self.bot.loop.run_in_executor(None, task)
             try:
-                banner = await asyncio.wait_for(task, timeout=60)
+                nickel = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
                 return await ctx.send("An error occurred while generating this image. Try again later.")
-        await ctx.send(file=discord.File(banner, "nickel.png"))
+        await ctx.send(file=discord.File(nickel, "nickel.png"))
+
+    @checks.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command()
+    async def shutup(self, ctx, member: Optional[discord.Member] = None, *, text: commands.clean_content(fix_channel_mentions=True)):
+        """Tell someone to shut up"""
+        if not member:
+            member = ctx.author
+        async with ctx.typing():
+            avatar = await self.get_avatar(member, 140)
+            task = functools.partial(self.gen_shut, ctx, avatar, text)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                shut = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send("An error occurred while generating this image. Try again later.")
+        await ctx.send(file=discord.File(shut, "shut.png"))
 
     async def get_avatar(self, member: discord.Member, size: int):
         avatar = BytesIO()
@@ -230,6 +247,33 @@ class PfpImgen(commands.Cog):
         canvas = ImageDraw.Draw(im)
         text_width, text_height = canvas.textsize(text, font, stroke_width=2)
         canvas.text(((im.width - text_width) / 2, 285), text, font=font, fill=(206, 194, 114), align="center", stroke_width=2, stroke_fill=(0, 0, 0))
+
+        fp = BytesIO()
+        im.save(fp, "PNG")
+        fp.seek(0)
+        return fp
+
+    def circle_avatar(self, avatar):
+        mask = Image.new("L", avatar.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0) + avatar.size, fill=255)
+        avatar.putalpha(mask)
+        return avatar
+
+    def gen_shut(self, ctx, member_avatar, text: str):
+        # base canvas
+        im = Image.open(f"{bundled_data_path(ctx.cog)}/shutup/shutup.png", mode="r").convert("RGBA")
+
+        # avatars
+        circle_main = self.circle_avatar(member_avatar).rotate(angle=57, resample=Image.BILINEAR, expand=True)
+        im.paste(circle_main, (84, 207), circle_main)
+        im.paste(circle_main, (42, 864), circle_main)
+
+        # text
+        font = ImageFont.truetype(f"{bundled_data_path(ctx.cog)}/arial.ttf", 25)
+        canvas = ImageDraw.Draw(im)
+        text_width, text_height = canvas.textsize(text, font, stroke_width=2)
+        canvas.multiline_text((((im.width - text_width) / 2) + 25, 75), text, font=font, fill=(255, 255, 255), align="center", spacing=2, stroke_width=2, stroke_fill=(0, 0, 0))
 
         fp = BytesIO()
         im.save(fp, "PNG")
