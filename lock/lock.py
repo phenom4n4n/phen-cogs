@@ -1,9 +1,11 @@
 from typing import Literal, Union, Optional
-
 import discord
+
 from redbot.core import commands, checks
 from redbot.core.bot import Red
 from redbot.core.config import Config
+
+from .converters import channel_toggle
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -67,7 +69,7 @@ class Lock(commands.Cog):
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def unlock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, *, role: Optional[discord.Role] = None):
+    async def unlock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, state: Optional[channel_toggle] = None, *, role: Optional[discord.Role] = None):
         """Unlock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
             channel = ctx.channel
@@ -75,18 +77,18 @@ class Lock(commands.Cog):
             role = ctx.guild.default_role
         if isinstance(channel, discord.TextChannel):
             current_perms = channel.overwrites_for(role)
-            if current_perms.send_messages != False:
-                return await ctx.send(f"{channel.mention} is already unlocked for `{role}`.")
-            current_perms.update(send_messages=None)
+            if current_perms.send_messages != False and current_perms.send_messages == state:
+                return await ctx.send(f"{channel.mention} is already unlocked for `{role}` with state `{'true' if state else 'default'}`.")
+            current_perms.update(send_messages=state)
             await channel.set_permissions(role, overwrite=current_perms)
-            await ctx.tick()
+            await ctx.send(f"{channel.mention} has unlocked for `{role}` with state `{'true' if state else 'default'}`.")
         elif isinstance(channel, discord.VoiceChannel):
             current_perms = channel.overwrites_for(role)
-            if current_perms.connect != False:
+            if current_perms.connect != False and current_perms.connect != state:
                 return await ctx.send(f"{channel.mention} is already locked for `{role}`.")
-            current_perms.update(connect=False)
+            current_perms.update(connect=state)
             await channel.set_permissions(role, overwrite=current_perms)
-            await ctx.tick()
+            await ctx.send(f"{channel.mention} has unlocked for `{role}` with state `{'true' if state else 'default'}`.")
 
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
