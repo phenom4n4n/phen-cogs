@@ -4,6 +4,7 @@ import discord
 from redbot.core import commands, checks
 from redbot.core.bot import Red
 from redbot.core.config import Config
+from redbot.core.utils.chat_formatting import humanize_list, inline
 
 from .converters import channel_toggle
 
@@ -29,79 +30,153 @@ class Lock(commands.Cog):
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def lock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, *, role: Optional[discord.Role] = None):
+    async def lock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, roles: commands.Greedy[discord.Role] = None):
         """Lock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
             channel = ctx.channel
-        if not role:
-            role = ctx.guild.default_role
+        if not roles:
+            roles = [ctx.guild.default_role]
+        succeeded = []
+        cancelled = []
+        failed = []
+
         if isinstance(channel, discord.TextChannel):
-            current_perms = channel.overwrites_for(role)
-            if current_perms.send_messages == False:
-                return await ctx.send(f"{channel.mention} is already locked for `{role}`.")
-            current_perms.update(send_messages=False)
-            await channel.set_permissions(role, overwrite=current_perms)
-            await ctx.tick()
+            for role in roles:
+                current_perms = channel.overwrites_for(role)
+                if current_perms.send_messages == False:
+                    cancelled.append(inline(role.name))
+                else:
+                    current_perms.update(send_messages=False)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
         elif isinstance(channel, discord.VoiceChannel):
-            current_perms = channel.overwrites_for(role)
-            if current_perms.connect == False:
-                return await ctx.send(f"{channel.mention} is already locked for `{role}`.")
-            current_perms.update(connect=False)
-            await channel.set_permissions(role, overwrite=current_perms)
-            await ctx.tick()
+            for role in roles:
+                current_perms = channel.overwrites_for(role)
+                if current_perms.connect == False:
+                    cancelled.append(inline(role.name))
+                else:
+                    current_perms.update(connect=False)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
+
+        if cancelled:
+            await ctx.send(f"{channel.mention} was already locked for {humanize_list(cancelled)}.")
+        if succeeded:
+            await ctx.send(f"{channel.mention} has locked for {humanize_list(succeeded)}.")
+        if failed:
+            await ctx.send(f"I failed to lock {channel.mention} for {humanize_list(failed)}")
 
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
     @lock.command(name="server")
-    async def lock_server(self, ctx, *, role: Optional[discord.Role] = None):
+    async def lock_server(self, ctx, roles: commands.Greedy[discord.Role] = None):
         """Lock the server. Provide a role if you would like to lock it for that role."""
-        if not role:
-            role = ctx.guild.default_role
-        if ctx.guild.me.top_role.position <= role.position:
-            return await ctx.send("I cannot unlock the server for that role, as I am below it in heirarchy.")
-        current_perms = role.permissions 
-        if current_perms.send_messages == False:
-            return await ctx.send(f"The server is already locked for `{role.name}`.")
-        current_perms.update(send_messages=False)
-        await role.edit(permissions=current_perms)
-        await ctx.tick()
+        if not roles:
+            roles = [ctx.guild.default_role]
+        succeeded = []
+        cancelled = []
+        failed = []
+        
+        for role in roles:
+            current_perms = role.permissions 
+            if ctx.guild.me.top_role.position <= role.position:
+                failed.append(inline(role.name))
+            elif current_perms.send_messages == False:
+                cancelled.append(inline(role.name))
+            else:
+                current_perms.update(send_messages=False)
+                try:
+                    await role.edit(permissions=current_perms)
+                    succeeded.append(inline(role.name))
+                except:
+                    failed.append(inline(role.name))
+
+        if cancelled:
+            await ctx.send(f"The server was already locked for {humanize_list(cancelled)}.")
+        if succeeded:
+            await ctx.send(f"The server has locked for {humanize_list(succeeded)}.")
+        if failed:
+            await ctx.send(f"I failed to lock the server for {humanize_list(failed)}, probably because I was lower than the roles in heirarchy.")
 
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def unlock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, state: Optional[channel_toggle] = None, *, role: Optional[discord.Role] = None):
+    async def unlock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, state: Optional[channel_toggle] = None, roles: commands.Greedy[discord.Role] = None):
         """Unlock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
             channel = ctx.channel
-        if not role:
-            role = ctx.guild.default_role
+        if not roles:
+            roles = [ctx.guild.default_role]
+        succeeded = []
+        cancelled = []
+        failed = []
+
         if isinstance(channel, discord.TextChannel):
-            current_perms = channel.overwrites_for(role)
-            if current_perms.send_messages != False and current_perms.send_messages == state:
-                return await ctx.send(f"{channel.mention} is already unlocked for `{role}` with state `{'true' if state else 'default'}`.")
-            current_perms.update(send_messages=state)
-            await channel.set_permissions(role, overwrite=current_perms)
-            await ctx.send(f"{channel.mention} has unlocked for `{role}` with state `{'true' if state else 'default'}`.")
+            for role in roles:
+                current_perms = channel.overwrites_for(role)
+                if current_perms.send_messages != False and current_perms.send_messages == state:
+                    cancelled.append(inline(role.name))
+                else:
+                    current_perms.update(send_messages=state)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
         elif isinstance(channel, discord.VoiceChannel):
-            current_perms = channel.overwrites_for(role)
-            if current_perms.connect != False and current_perms.connect != state:
-                return await ctx.send(f"{channel.mention} is already locked for `{role}`.")
-            current_perms.update(connect=state)
-            await channel.set_permissions(role, overwrite=current_perms)
-            await ctx.send(f"{channel.mention} has unlocked for `{role}` with state `{'true' if state else 'default'}`.")
+            for role in roles:
+                current_perms = channel.overwrites_for(role)
+                if current_perms.connect != False and current_perms.connect != state:
+                    cancelled.append(inline(role.name))
+                else:
+                    current_perms.update(connect=state)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
+
+        if cancelled:
+            await ctx.send(f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`.")
+        if succeeded:
+            await ctx.send(f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.")
+        if failed:
+            await ctx.send(f"I failed to unlock {channel.mention} for {humanize_list(failed)}")
 
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
     @unlock.command(name="server")
-    async def unlock_server(self, ctx, *, role: Optional[discord.Role] = None):
+    async def unlock_server(self, ctx, roles: commands.Greedy[discord.Role] = None):
         """Unlock the server. Provide a role if you would like to unlock it for that role."""
-        if not role:
-            role = ctx.guild.default_role
-        if ctx.guild.me.top_role.position <= role.position:
-            return await ctx.send("I cannot unlock the server for that role, as I am below it in heirarchy.")
-        current_perms = role.permissions 
-        if current_perms.send_messages == True:
-            return await ctx.send(f"The server is already unlocked for `{role.name}`.")
-        current_perms.update(send_messages=True)
-        await role.edit(permissions=current_perms)
-        await ctx.tick()
+        if not roles:
+            roles = [ctx.guild.default_role]
+        succeeded = []
+        cancelled = []
+        failed = []
+        
+        for role in roles:
+            current_perms = role.permissions 
+            if ctx.guild.me.top_role.position <= role.position:
+                failed.append(inline(role.name))
+            elif current_perms.send_messages == True:
+                cancelled.append(inline(role.name))
+            else:
+                current_perms.update(send_messages=True)
+                try:
+                    await role.edit(permissions=current_perms)
+                    succeeded.append(inline(role.name))
+                except:
+                    failed.append(inline(role.name))
+
+        if cancelled:
+            await ctx.send(f"The server was already unlocked for {humanize_list(cancelled)}.")
+        if succeeded:
+            await ctx.send(f"The server has unlocked for {humanize_list(succeeded)}.")
+        if failed:
+            await ctx.send(f"I failed to unlock the server for {humanize_list(failed)}, probably because I was lower than the roles in heirarchy.")
