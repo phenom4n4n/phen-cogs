@@ -6,7 +6,7 @@ from redbot.core import Config, checks, commands
 class Prefix(commands.Cog):
     """Prefix management."""
 
-    def __init__(self, bot: "Red"):
+    def __init__(self, bot):
         self.bot = bot
 
     async def red_delete_data_for_user(self, **kwargs):
