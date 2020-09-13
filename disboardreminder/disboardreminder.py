@@ -236,6 +236,9 @@ class DisboardReminder(commands.Cog):
             return
         embed = message.embeds[0]
         if "Bump done" in embed.description:
+            if data["nextBump"]:
+                if not (data["nextBump"] - message.created_at.timestamp() <= 0):
+                    return
             words = embed.description.split(",")
             member = words[0]
             tymessage = data["tyMessage"]
