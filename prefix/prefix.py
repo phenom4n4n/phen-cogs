@@ -2,6 +2,7 @@ import discord
 
 from redbot.core import Config, checks, commands
 
+
 class Prefix(commands.Cog):
     """Prefix management."""
 
@@ -64,7 +65,7 @@ class Prefix(commands.Cog):
     @prefix.command(name="clear", aliases=["reset"])
     async def reset_prefixes(self, ctx):
         """Reset the prefixes for this server."""
-        
+
         await ctx.bot.set_prefixes(guild=ctx.guild, prefixes=[])
         embed = await self.gen_prefixes(ctx)
         await ctx.send(f"Reset this server's prefixes.", embed=embed)
@@ -79,9 +80,5 @@ class Prefix(commands.Cog):
             prefix_list.append(description)
         prefix_list = "\n".join(prefix_list)
         color = await self.bot.get_embed_color(ctx)
-        embed = discord.Embed(
-            color=color,
-            title="Prefixes:",
-            description=prefix_list
-        )
+        embed = discord.Embed(color=color, title="Prefixes:", description=prefix_list)
         return embed

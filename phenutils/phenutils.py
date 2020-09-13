@@ -35,7 +35,7 @@ class PhenUtils(commands.Cog):
         msg.content = ctx.prefix + command
 
         new_ctx = await self.bot.get_context(msg, cls=type(ctx))
-        #new_ctx._db = ctx._db
+        # new_ctx._db = ctx._db
 
         try:
             for i in range(times):
@@ -85,7 +85,7 @@ class PhenUtils(commands.Cog):
         msg.content = ctx.prefix + command_string
         alt_ctx = await self.bot.get_context(msg, cls=type(ctx))
 
-        #alt_ctx = await copy_context_with(ctx, content=ctx.prefix + command_string)
+        # alt_ctx = await copy_context_with(ctx, content=ctx.prefix + command_string)
 
         if alt_ctx.command is None:
             return await ctx.send(f'Command "{alt_ctx.invoked_with}" is not found')
@@ -94,7 +94,7 @@ class PhenUtils(commands.Cog):
 
         await alt_ctx.reinvoke()
 
-        #async with ReplResponseReactor(ctx.message):
+        # async with ReplResponseReactor(ctx.message):
         #    with self.submit(ctx):
         #        await alt_ctx.command.invoke(alt_ctx)
 

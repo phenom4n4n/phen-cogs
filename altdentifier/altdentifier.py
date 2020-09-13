@@ -6,6 +6,7 @@ import typing
 from redbot.core import commands, checks, Config
 from redbot.core.utils.chat_formatting import box, humanize_list
 
+
 class AltDentifier(commands.Cog):
     """
     Check new users with AltDentifier API
@@ -21,20 +22,15 @@ class AltDentifier(commands.Cog):
         )
         default_guild = {
             "channel": None,
-            "actions": {
-                "0": None,
-                "1": None,
-                "2": None,
-                "3": None
-            },
-            "whitelist": []
+            "actions": {"0": None, "1": None, "2": None, "3": None},
+            "whitelist": [],
         }
 
         self.config.register_guild(**default_guild)
 
     async def red_delete_data_for_user(self, **kwargs):
         return
-        
+
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
 
@@ -66,7 +62,7 @@ class AltDentifier(commands.Cog):
                 channel = f"<#{data['channel']}>"
             else:
                 channel = "None"
-            
+
             description.append(f"AltDentifier Check Channel: {channel}")
             description = "\n".join(description)
             actionsDict = data["actions"]
@@ -76,11 +72,7 @@ class AltDentifier(commands.Cog):
             actions = box("\n".join(actions))
 
             color = await self.bot.get_embed_colour(ctx)
-            e = discord.Embed(
-                color=color,
-                title=f"AltDentifier Settings",
-                description=description
-            )
+            e = discord.Embed(color=color, title=f"AltDentifier Settings", description=description)
             e.add_field(name="Actions", value=actions, inline=False)
             if data["whitelist"]:
                 e.add_field(name="Whitelist", value=humanize_list(data["whitelist"]), inline=False)
@@ -98,7 +90,9 @@ class AltDentifier(commands.Cog):
             await ctx.send("Disabled AltDentifier join checks in this server.")
         else:
             try:
-                await channel.send("Set this channel as the message channel for AltDentifier join checks")
+                await channel.send(
+                    "Set this channel as the message channel for AltDentifier join checks"
+                )
                 await self.config.guild(ctx.guild).channel.set(channel.id)
             except discord.errors.Forbidden:
                 await ctx.send("I do not have permission to talk in that channel.")
@@ -108,13 +102,15 @@ class AltDentifier(commands.Cog):
     async def action(self, ctx, level: int, action: typing.Union[discord.Role, str] = None):
         """Specify what actions to take when a member joins and has a certain Trust Level.
 
-        Leave this empty to remove actions for the Level.        
+        Leave this empty to remove actions for the Level.
         The available actions are:
         `kick`
         `ban`
         `role` (don't say 'role' for this, pass an actual role."""
         if not level in range(4):
-            return await ctx.send("This is not a valid Trust Level. The valid Levels are: 0, 1, 2, and 3.")
+            return await ctx.send(
+                "This is not a valid Trust Level. The valid Levels are: 0, 1, 2, and 3."
+            )
         if not action:
             await self.clear_action(ctx.guild, level)
             return await ctx.send(f"Removed actions for Trust Level {level}.")
@@ -122,7 +118,9 @@ class AltDentifier(commands.Cog):
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.id
         elif isinstance(action, str) and action.lower() not in ["kick", "ban"]:
-            return await ctx.send("This is not a valid action. The valid actions are kick and ban. For roles, supply a role.")
+            return await ctx.send(
+                "This is not a valid action. The valid actions are kick and ban. For roles, supply a role."
+            )
         else:
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.lower()
@@ -147,9 +145,11 @@ class AltDentifier(commands.Cog):
         await ctx.tick()
 
     async def alt_request(self, member: discord.Member):
-        async with self.session.get(f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor") as response:
+        async with self.session.get(
+            f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor"
+        ) as response:
             response = await response.json()
-        return response['trustfactor'], response['formatted_trustfactor']
+        return response["trustfactor"], response["formatted_trustfactor"]
 
     async def pick_color(self, trustfactor: int):
         if trustfactor == 0:
@@ -162,13 +162,15 @@ class AltDentifier(commands.Cog):
             color = discord.Color.dark_green()
         return color
 
-    async def gen_alt_embed(self, trust: tuple, member: discord.Member, *, actions: typing.Optional[str] = None):
+    async def gen_alt_embed(
+        self, trust: tuple, member: discord.Member, *, actions: typing.Optional[str] = None
+    ):
         color = await self.pick_color(trust[0])
         e = discord.Embed(
             color=color,
             title="AltDentifier Check",
             description=f"{member.mention} is {trust[1]}\nTrust Factor: {trust[0]}",
-            timestamp=member.created_at
+            timestamp=member.created_at,
         )
         if actions:
             e.add_field(name="Actions Taken", value=actions, inline=False)

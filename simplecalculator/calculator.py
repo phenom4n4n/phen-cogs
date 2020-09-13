@@ -4,6 +4,7 @@ from calculator.simple import SimpleCalculator
 
 from redbot.core import commands, checks
 
+
 class Calculator(commands.Cog):
     """
     Do math
@@ -24,20 +25,17 @@ class Calculator(commands.Cog):
 
         calculator = SimpleCalculator()
         calculator.run(query)
-        
+
         result_dict = {}
         for item in calculator.log:
             item = item.split(": ")
             if len(item) >= 2:
-                result_dict.update({item[0]:item[1]})
+                result_dict.update({item[0]: item[1]})
 
         try:
             query = result_dict["input string"]
             result = result_dict["result"]
         except KeyError:
             return await ctx.send("Invalid math operation")
-        result_embed = discord.Embed(
-            title=query,
-            description=result
-        )
+        result_embed = discord.Embed(title=query, description=result)
         await ctx.send(embed=result_embed)

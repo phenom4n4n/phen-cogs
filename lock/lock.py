@@ -30,7 +30,12 @@ class Lock(commands.Cog):
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def lock(self, ctx: commands.Context, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, roles: commands.Greedy[discord.Role] = None):
+    async def lock(
+        self,
+        ctx: commands.Context,
+        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        roles: commands.Greedy[discord.Role] = None,
+    ):
         """Lock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
             channel = ctx.channel
@@ -86,9 +91,9 @@ class Lock(commands.Cog):
         succeeded = []
         cancelled = []
         failed = []
-        
+
         for role in roles:
-            current_perms = role.permissions 
+            current_perms = role.permissions
             if ctx.guild.me.top_role.position <= role.position:
                 failed.append(inline(role.name))
             elif current_perms.send_messages == False:
@@ -106,14 +111,22 @@ class Lock(commands.Cog):
         if succeeded:
             await ctx.send(f"The server has locked for {humanize_list(succeeded)}.")
         if failed:
-            await ctx.send(f"I failed to lock the server for {humanize_list(failed)}, probably because I was lower than the roles in heirarchy.")
+            await ctx.send(
+                f"I failed to lock the server for {humanize_list(failed)}, probably because I was lower than the roles in heirarchy."
+            )
 
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def unlock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, state: Optional[channel_toggle] = None, roles: commands.Greedy[discord.Role] = None):
+    async def unlock(
+        self,
+        ctx,
+        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        state: Optional[channel_toggle] = None,
+        roles: commands.Greedy[discord.Role] = None,
+    ):
         """Unlock a channel. Provide a role if you would like to unlock it for that role.
-        
+
         If you would like to override-unlock for a roles, you can do so by pass `true` as the state argument."""
         if not channel:
             channel = ctx.channel
@@ -149,9 +162,13 @@ class Lock(commands.Cog):
                         failed.append(inline(role.name))
 
         if cancelled:
-            await ctx.send(f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`.")
+            await ctx.send(
+                f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`."
+            )
         if succeeded:
-            await ctx.send(f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.")
+            await ctx.send(
+                f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`."
+            )
         if failed:
             await ctx.send(f"I failed to unlock {channel.mention} for {humanize_list(failed)}")
 
@@ -165,9 +182,9 @@ class Lock(commands.Cog):
         succeeded = []
         cancelled = []
         failed = []
-        
+
         for role in roles:
-            current_perms = role.permissions 
+            current_perms = role.permissions
             if ctx.guild.me.top_role.position <= role.position:
                 failed.append(inline(role.name))
             elif current_perms.send_messages == True:
@@ -185,4 +202,6 @@ class Lock(commands.Cog):
         if succeeded:
             await ctx.send(f"The server has unlocked for {humanize_list(succeeded)}.")
         if failed:
-            await ctx.send(f"I failed to unlock the server for {humanize_list(failed)}, probably because I was lower than the roles in heirarchy.")
+            await ctx.send(
+                f"I failed to unlock the server for {humanize_list(failed)}, probably because I was lower than the roles in heirarchy."
+            )

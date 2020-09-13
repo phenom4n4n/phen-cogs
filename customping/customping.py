@@ -11,6 +11,7 @@ from redbot.core import commands, checks
 
 old_ping = None
 
+
 class CustomPing(commands.Cog):
     """A more information rich ping message."""
 
@@ -19,7 +20,7 @@ class CustomPing(commands.Cog):
 
     async def red_delete_data_for_user(self, **kwargs):
         return
-        
+
     def cog_unload(self):
         global old_ping
         if old_ping:
@@ -38,10 +39,7 @@ class CustomPing(commands.Cog):
         message = await ctx.send("Pinging...")
         end = time.monotonic()
         totalPing = round((end - start) * 1000, 2)
-        e = discord.Embed(
-            title="Pinging..",
-            description=f"Overall Latency: {totalPing}ms"
-        )
+        e = discord.Embed(title="Pinging..", description=f"Overall Latency: {totalPing}ms")
         await message.edit(content=None, embed=e)
 
         botPing = round(self.bot.latency * 1000, 2)
@@ -68,6 +66,7 @@ class CustomPing(commands.Cog):
         e.title = "Pong!"
         e.description = e.description + f"\nHost Latency: {hostPing}ms"
         await message.edit(embed=e)
+
 
 def setup(bot):
     ping = CustomPing(bot)

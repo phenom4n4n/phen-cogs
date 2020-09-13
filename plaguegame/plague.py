@@ -5,15 +5,13 @@ from redbot.core import Config, checks, commands, bank
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from redbot.core.utils.chat_formatting import pagify
 
+
 class Plague(commands.Cog):
     """A plague game."""
 
     def __init__(self, bot):
         self.config = Config.get_conf(self, identifier=2395486659)
-        default_global = {
-            "plagueName": "Plague",
-            "logChannel": None
-        }
+        default_global = {"plagueName": "Plague", "logChannel": None}
         default_user = {
             "gameRole": "User",
             "gameState": "healthy",
@@ -57,7 +55,7 @@ class Plague(commands.Cog):
     @commands.command()
     async def cure(self, ctx, *, member: discord.Member):
         """Cure a user. You must be a Doctor to use this command."""
-        
+
         result = await self.cure_user(ctx=ctx, user=member)
         await ctx.send(result)
 
@@ -73,26 +71,26 @@ class Plague(commands.Cog):
         userState = data["gameState"]
 
         title = f"Plague Profile"
-        description = f"Role: {userRole}\nState: {userState}\nNotifications: {data['notifications']}"
+        description = (
+            f"Role: {userRole}\nState: {userState}\nNotifications: {data['notifications']}"
+        )
         color = await ctx.embed_color()
         if userRole == "Doctor":
             thumbnail = "https://contestimg.wish.com/api/webimage/5b556e7ba225161706d6857a-large.jpg?cache_buster=e79a94ce3e105025c5655d67b3d5e1bd"
         elif userRole == "Plaguebearer":
             thumbnail = "https://vignette.wikia.nocookie.net/warhammer40k/images/c/c2/Plaguebearer1.png/revision/latest/scale-to-width-down/340?cb=20170829232116"
         elif userState == "infected":
-            thumbnail = "https://cdn.pixabay.com/photo/2020/04/29/07/54/coronavirus-5107715_960_720.png"
+            thumbnail = (
+                "https://cdn.pixabay.com/photo/2020/04/29/07/54/coronavirus-5107715_960_720.png"
+            )
         else:
             thumbnail = "https://static.thenounproject.com/png/2090399-200.png"
 
-        embed = discord.Embed(
-            title=title,
-            colour=color,
-            description=description
-            )
+        embed = discord.Embed(title=title, colour=color, description=description)
         embed.set_thumbnail(url=thumbnail)
         embed.set_author(name=member, icon_url=member.avatar_url)
         await ctx.send(embed=embed)
-    
+
     @commands.command()
     async def plaguenotify(self, ctx):
         """Enable/Disable Plague Game notifications."""
@@ -113,9 +111,9 @@ class Plague(commands.Cog):
     @commands.command(aliases=["plaguedoc"])
     async def plaguedoctor(self, ctx):
         """Become a doctor for 5,000 currency.
-        
+
         You must not be infected to run this command."""
-    
+
         currency = await bank.get_currency_name(ctx.guild)
         await self.config.user(ctx.author).gameRole.set("Doctor")
         await self.notify_user(ctx=ctx, user=ctx.author, notificationType="doctor")
@@ -137,7 +135,7 @@ class Plague(commands.Cog):
             await self.config.plagueName.set(name)
             message = f"Set the current plague's name to `{name}`."
         await ctx.send(message)
-    
+
     @plagueset.command("infect")
     async def manual_infect(self, ctx, *, user: discord.User):
         """Manually infect a user."""
@@ -169,10 +167,20 @@ class Plague(commands.Cog):
             infected_list = "\n".join(infected_list)
             if len(infected_list) > 2000:
                 for page in pagify(infected_list):
-                    embeds.append(discord.Embed(color=await ctx.embed_color(), title="Infected Users", description=page))
+                    embeds.append(
+                        discord.Embed(
+                            color=await ctx.embed_color(), title="Infected Users", description=page
+                        )
+                    )
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(embed=discord.Embed(color=await ctx.embed_color(), title="Infected Users", description=infected_list))
+                await ctx.send(
+                    embed=discord.Embed(
+                        color=await ctx.embed_color(),
+                        title="Infected Users",
+                        description=infected_list,
+                    )
+                )
         else:
             await ctx.send("No one has been infected yet..")
 
@@ -194,10 +202,22 @@ class Plague(commands.Cog):
             infected_list = "\n".join(infected_list)
             if len(infected_list) > 2000:
                 for page in pagify(infected_list):
-                    embeds.append(discord.Embed(color=await ctx.embed_color(), title="Infected Members", description=page))
+                    embeds.append(
+                        discord.Embed(
+                            color=await ctx.embed_color(),
+                            title="Infected Members",
+                            description=page,
+                        )
+                    )
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(embed=discord.Embed(color=await ctx.embed_color(), title="Infected Members", description=infected_list))
+                await ctx.send(
+                    embed=discord.Embed(
+                        color=await ctx.embed_color(),
+                        title="Infected Members",
+                        description=infected_list,
+                    )
+                )
         else:
             await ctx.send("No one has been infected yet..")
 
@@ -218,10 +238,20 @@ class Plague(commands.Cog):
             healthy_list = "\n".join(healthy_list)
             if len(healthy_list) > 2000:
                 for page in pagify(healthy_list):
-                    embeds.append(discord.Embed(color=await ctx.embed_color(), title="Healthy Users", description=page))
+                    embeds.append(
+                        discord.Embed(
+                            color=await ctx.embed_color(), title="Healthy Users", description=page
+                        )
+                    )
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
-                await ctx.send(embed=discord.Embed(color=await ctx.embed_color(), title="Healthy Users", description=healthy_list))
+                await ctx.send(
+                    embed=discord.Embed(
+                        color=await ctx.embed_color(),
+                        title="Healthy Users",
+                        description=healthy_list,
+                    )
+                )
         else:
             await ctx.send("No one stored is healthy..")
 
@@ -251,11 +281,11 @@ class Plague(commands.Cog):
             channel = ctx.channel
         await self.config.logChannel.set(channel.id)
         await ctx.send(f"Set {channel.mention} as the log channel.")
-    
+
     @plagueset.command()
     async def reset(self, ctx):
         """Reset the entire Plague Game."""
-        
+
         await self.config.clear_all()
         await ctx.tick()
 
@@ -282,9 +312,11 @@ class Plague(commands.Cog):
             channel = ctx.bot.get_channel(channel)
 
             await self.config.user(user).gameState.set("infected")
-            await self.notify_user(ctx= ctx, user=user, notificationType="infect")
+            await self.notify_user(ctx=ctx, user=user, notificationType="infect")
             if channel:
-                await channel.send(f"💀| {user} on `{ctx.guild}` was just infected with {plagueName} by {ctx.author}.")
+                await channel.send(
+                    f"💀| {user} on `{ctx.guild}` was just infected with {plagueName} by {ctx.author}."
+                )
             return f"`{user.name}` has been infected with {plagueName}."
 
     async def cure_user(self, ctx, *, user: discord.User):
@@ -304,7 +336,9 @@ class Plague(commands.Cog):
             await self.config.user(user).gameState.set("healthy")
             await self.notify_user(ctx=ctx, user=user, notificationType="cure")
             if channel:
-                await channel.send(f"✨| {user} on `{ctx.guild}` was just cured from {plagueName} by {ctx.author}.")
+                await channel.send(
+                    f"✨| {user} on `{ctx.guild}` was just cured from {plagueName} by {ctx.author}."
+                )
             return f"`{user.name}` has been cured from {plagueName}."
 
     async def notify_user(self, ctx, *, user: discord.User, notificationType: str):
@@ -315,7 +349,9 @@ class Plague(commands.Cog):
         plagueName = await self.config.plagueName()
         if notificationType == "infect":
             title = f"You have been infected with {plagueName}!"
-            description = f"{ctx.author} infected you. You now have access to `{prefixes[-1]}infect`."
+            description = (
+                f"{ctx.author} infected you. You now have access to `{prefixes[-1]}infect`."
+            )
         if notificationType == "cure":
             title = f"You have been cured from {plagueName}!"
             description = f"{ctx.author} cured you."
@@ -325,7 +361,7 @@ class Plague(commands.Cog):
         if notificationType == "plaguebearer":
             title = f"You are now a Plaguebearer!"
             description = f"{ctx.author} has set you as a Plaguebearer. You now have access to `{prefixes[-1]}infect`."
-        embed = discord.Embed(title = title, description = description)
+        embed = discord.Embed(title=title, description=description)
         embed.set_footer(text=f"Use `{prefixes[-1]}plaguenotify` to disable these notifications.")
         try:
             await user.send(embed=embed)

@@ -13,5 +13,6 @@ async def setup(bot: Red) -> None:
     bot.add_cog(PermissionsLocker(bot))
     bot.before_invoke(PermissionsLocker.before_invoke_hook)
 
+
 def teardown(bot: Red):
     bot.remove_before_invoke_hook(PermissionsLocker.before_invoke_hook)
