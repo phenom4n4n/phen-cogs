@@ -30,7 +30,7 @@ class Lock(commands.Cog):
     @checks.bot_has_permissions(manage_channels=True)
     @checks.admin_or_permissions(manage_channels=True)
     @commands.group(invoke_without_command=True)
-    async def lock(self, ctx, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, roles: commands.Greedy[discord.Role] = None):
+    async def lock(self, ctx: commands.Context, channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None, roles: commands.Greedy[discord.Role] = None):
         """Lock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
             channel = ctx.channel
@@ -43,6 +43,10 @@ class Lock(commands.Cog):
         if isinstance(channel, discord.TextChannel):
             for role in roles:
                 current_perms = channel.overwrites_for(role)
+                my_perms = channel.overwrites_for(ctx.me)
+                if my_perms.send_messages != True:
+                    my_perms.update(send_messages=True)
+                    await channel.set_permissions(ctx.me, overwrite=my_perms)
                 if current_perms.send_messages == False:
                     cancelled.append(inline(role.name))
                 else:
@@ -68,7 +72,7 @@ class Lock(commands.Cog):
         if cancelled:
             await ctx.send(f"{channel.mention} was already locked for {humanize_list(cancelled)}.")
         if succeeded:
-            await ctx.send(f"{channel.mention} has locked for {humanize_list(succeeded)}.")
+            await ctx.send(f"{channel.mention} has been locked for {humanize_list(succeeded)}.")
         if failed:
             await ctx.send(f"I failed to lock {channel.mention} for {humanize_list(failed)}")
 
