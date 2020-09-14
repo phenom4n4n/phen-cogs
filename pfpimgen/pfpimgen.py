@@ -195,9 +195,7 @@ class PfpImgen(commands.Cog):
 
     def gen_bonk(self, ctx, victim_avatar, bonker_avatar=None):
         # base canvas
-        im = Image.open(f"{bundled_data_path(self)}/bonk/bonkbase.png", mode="r").convert(
-            "RGBA"
-        )
+        im = Image.open(f"{bundled_data_path(self)}/bonk/bonkbase.png", mode="r").convert("RGBA")
 
         # pasting the victim
         victim_avatar = victim_avatar.rotate(angle=10, resample=Image.BILINEAR)
@@ -267,9 +265,7 @@ class PfpImgen(commands.Cog):
 
     def gen_nickel(self, ctx, member_avatar, text: str):
         # base canvas
-        im = Image.open(f"{bundled_data_path(self)}/nickel/nickel.png", mode="r").convert(
-            "RGBA"
-        )
+        im = Image.open(f"{bundled_data_path(self)}/nickel/nickel.png", mode="r").convert("RGBA")
 
         # avatars
         im.paste(member_avatar, (69, 70), member_avatar)
@@ -304,9 +300,7 @@ class PfpImgen(commands.Cog):
 
     def gen_shut(self, ctx, member_avatar, text: str):
         # base canvas
-        im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert(
-            "RGBA"
-        )
+        im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert("RGBA")
 
         # avatars
         circle_main = self.circle_avatar(member_avatar).rotate(
