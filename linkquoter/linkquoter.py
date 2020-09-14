@@ -93,6 +93,7 @@ class LinkQuoter(commands.Cog):
             e.add_field(
                 name="Source",
                 value=f'\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
+                inline=False
             )
             embeds.append((e, message.author))
         return embeds
