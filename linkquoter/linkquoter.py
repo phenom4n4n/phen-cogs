@@ -60,11 +60,6 @@ class LinkQuoter(commands.Cog):
                 embed = message.embeds[0]
                 if str(embed.type) == "rich":
                     embed.color = message.author.color
-                    if embed.description:
-                        content = embed.description[:1894]
-                    else:
-                        content = ""
-                    embed.description = f'{content}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")'
                     embed.timestamp = message.created_at
                     embed.set_author(
                         name=f"{message.author} said..",
@@ -81,7 +76,7 @@ class LinkQuoter(commands.Cog):
                 content = message.content
                 e = discord.Embed(
                     color=message.author.color,
-                    description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
+                    description=content,
                     timestamp=message.created_at,
                 )
                 e.set_author(
@@ -95,6 +90,7 @@ class LinkQuoter(commands.Cog):
                 e.add_field(name="Attachments", value=message.attachments[0].filename)
             if image:
                 e.set_image(url=image)
+            e.add_field(name="Source", value=f'\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")')
             embeds.append((e, message.author))
         return embeds
 
