@@ -168,7 +168,7 @@ class PfpImgen(commands.Cog):
                 )
         await ctx.send(file=discord.File(shut, "shut.png"))
 
-    async def get_avatar(self, member: discord.Member, size: int):
+    async def get_avatar(self, member: discord.User, size: int):
         avatar = BytesIO()
         await member.avatar_url.save(avatar, seek_begin=True)
         avatar = Image.open(avatar).convert("RGBA")
@@ -178,8 +178,8 @@ class PfpImgen(commands.Cog):
     def gen_neko(self, ctx, member_avatar):
         # base canvas
         im = Image.new("RGBA", (500, 750), None)
-        # neko = Image.open(f"{bundled_data_path(ctx.cog)}/neko/neko.png", mode="r").convert("RGBA")
-        nekomask = Image.open(f"{bundled_data_path(ctx.cog)}/neko/nekomask.png", mode="r").convert(
+        # neko = Image.open(f"{bundled_data_path(self)}/neko/neko.png", mode="r").convert("RGBA")
+        nekomask = Image.open(f"{bundled_data_path(self)}/neko/nekomask.png", mode="r").convert(
             "RGBA"
         )
         # im.paste(neko, (0, 0), neko)
@@ -195,7 +195,7 @@ class PfpImgen(commands.Cog):
 
     def gen_bonk(self, ctx, victim_avatar, bonker_avatar=None):
         # base canvas
-        im = Image.open(f"{bundled_data_path(ctx.cog)}/bonk/bonkbase.png", mode="r").convert(
+        im = Image.open(f"{bundled_data_path(self)}/bonk/bonkbase.png", mode="r").convert(
             "RGBA"
         )
 
@@ -208,7 +208,7 @@ class PfpImgen(commands.Cog):
             im.paste(bonker_avatar, (206, 69), bonker_avatar)
 
         # pasting the bat
-        bonkbat = Image.open(f"{bundled_data_path(ctx.cog)}/bonk/bonkbat.png", mode="r").convert(
+        bonkbat = Image.open(f"{bundled_data_path(self)}/bonk/bonkbat.png", mode="r").convert(
             "RGBA"
         )
         im.paste(bonkbat, (452, 132), bonkbat)
@@ -221,7 +221,7 @@ class PfpImgen(commands.Cog):
     def gen_simp(self, ctx, member_avatar):
         # base canvas
         im = Image.new("RGBA", (500, 319), None)
-        card = Image.open(f"{bundled_data_path(ctx.cog)}/simp/simp.png", mode="r").convert("RGBA")
+        card = Image.open(f"{bundled_data_path(self)}/simp/simp.png", mode="r").convert("RGBA")
 
         # pasting the pfp
         member_avatar = member_avatar.rotate(angle=3, resample=Image.BILINEAR, expand=True)
@@ -237,7 +237,7 @@ class PfpImgen(commands.Cog):
 
     def gen_banner(self, ctx, member_avatar, color: discord.Color):
         im = Image.new("RGBA", (489, 481), color.to_rgb())
-        comic = Image.open(f"{bundled_data_path(ctx.cog)}/banner/banner.png", mode="r").convert(
+        comic = Image.open(f"{bundled_data_path(self)}/banner/banner.png", mode="r").convert(
             "RGBA"
         )
 
@@ -256,7 +256,7 @@ class PfpImgen(commands.Cog):
         av2 = av2.resize((147, 148), Image.LANCZOS)
         im.paste(av2, (325, 233), av2)
 
-        # cover = Image.open(f"{bundled_data_path(ctx.cog)}/banner/bannercover.png", mode="r").convert("RGBA")
+        # cover = Image.open(f"{bundled_data_path(self)}/banner/bannercover.png", mode="r").convert("RGBA")
         # im.paste(cover, (240, 159), cover)
         im.paste(comic, (0, 0), comic)
 
@@ -267,7 +267,7 @@ class PfpImgen(commands.Cog):
 
     def gen_nickel(self, ctx, member_avatar, text: str):
         # base canvas
-        im = Image.open(f"{bundled_data_path(ctx.cog)}/nickel/nickel.png", mode="r").convert(
+        im = Image.open(f"{bundled_data_path(self)}/nickel/nickel.png", mode="r").convert(
             "RGBA"
         )
 
@@ -277,7 +277,7 @@ class PfpImgen(commands.Cog):
         im.paste(member_avatar, (104, 758), member_avatar)
 
         # text
-        font = ImageFont.truetype(f"{bundled_data_path(ctx.cog)}/arial.ttf", 30)
+        font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 30)
         canvas = ImageDraw.Draw(im)
         text_width, text_height = canvas.textsize(text, font, stroke_width=2)
         canvas.text(
@@ -304,7 +304,7 @@ class PfpImgen(commands.Cog):
 
     def gen_shut(self, ctx, member_avatar, text: str):
         # base canvas
-        im = Image.open(f"{bundled_data_path(ctx.cog)}/shutup/shutup.png", mode="r").convert(
+        im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert(
             "RGBA"
         )
 
@@ -316,7 +316,7 @@ class PfpImgen(commands.Cog):
         im.paste(circle_main, (42, 864), circle_main)
 
         # text
-        font = ImageFont.truetype(f"{bundled_data_path(ctx.cog)}/arial.ttf", 25)
+        font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 25)
         canvas = ImageDraw.Draw(im)
         text_width, text_height = canvas.textsize(text, font, stroke_width=2)
         canvas.multiline_text(
