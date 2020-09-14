@@ -2,8 +2,6 @@
   Phen-Cogs
 </h1>
 
-<h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
-
 <p align="center">
   <a href="https://discord.gg/cGJ8JmX">
     <img src="https://discordapp.com/api/guilds/631306089366945821/widget.png?style=shield" alt="Discord Server">
@@ -18,6 +16,7 @@
     <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style: Black">
   </a>
 </p>
+<h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
 
 # Installation
 `[p]repo add Phen-Cogs https://github.com/phenom4n4n/phen-cogs`
