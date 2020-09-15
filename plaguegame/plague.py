@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import random
 
 from redbot.core import Config, checks, commands, bank
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
@@ -297,7 +298,7 @@ class Plague(commands.Cog):
         await user.send(f"Your Plague Game data was reset by {ctx.author}.")
         await ctx.send(f"`{user}` has been reset.")
 
-    async def infect_user(self, ctx, *, user: discord.User):
+    async def infect_user(self, ctx, user: discord.User):
         plagueName = await self.config.plagueName()
         state = await self.config.user(user).gameState()
         role = await self.config.user(user).gameRole()
@@ -319,7 +320,7 @@ class Plague(commands.Cog):
                 )
             return f"`{user.name}` has been infected with {plagueName}."
 
-    async def cure_user(self, ctx, *, user: discord.User):
+    async def cure_user(self, ctx, user: discord.User):
         plagueName = await self.config.plagueName()
         state = await self.config.user(user).gameState()
         role = await self.config.user(user).gameRole()
@@ -341,7 +342,7 @@ class Plague(commands.Cog):
                 )
             return f"`{user.name}` has been cured from {plagueName}."
 
-    async def notify_user(self, ctx, *, user: discord.User, notificationType: str):
+    async def notify_user(self, ctx, user: discord.User, notificationType: str):
         if not await self.config.user(user).notifications():
             return
         prefixes = await ctx.bot.get_valid_prefixes(ctx.guild)
@@ -367,3 +368,20 @@ class Plague(commands.Cog):
             await user.send(embed=embed)
         except discord.errors.Forbidden:
             pass
+
+    @commands.Cog.listener()
+    async def random_infecter(self, ctx):
+        if not ctx.guild or not ctx.message.mentions:
+            return
+        number = random.randint(1, 100)
+        #if number < 4:
+        #    return
+        state = await self.config.user(ctx.author).gameState()
+        if state != "infected":
+            return
+        not_bots = [user for user in ctx.message.mentions if not user.bot]
+        infectables = [user for user in not_bots if ((await self.config.user(user).gameState()) != "infected") and ((await self.config.user(user).gameRole() != "Doctor"))]
+        if not infectables:
+            return
+        victim = random.choice(infectables)
+        await self.infect_user(ctx, victim)
