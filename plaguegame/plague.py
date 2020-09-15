@@ -311,14 +311,14 @@ class Plague(commands.Cog):
         else:
             channel = await self.config.logChannel()
             channel = ctx.bot.get_channel(channel)
+            autoInfect = f" since they didn't social distance from `{ctx.author}`" if auto else ""
 
             await self.config.user(user).gameState.set("infected")
             await self.notify_user(ctx=ctx, user=user, notificationType="infect")
             if channel:
                 await channel.send(
-                    f"💀| {user} on `{ctx.guild}` was just infected with {plagueName} by {ctx.author}."
+                    f"💀| `{user}` on `{ctx.guild}` was just infected with {plagueName} by `{ctx.author}`{autoInfect}."
                 )
-            autoInfect = f" since they didn't social distance from `{ctx.author}`" if auto else ""
             return f"`{user.name}` has been infected with {plagueName}{autoInfect}."
 
     async def cure_user(self, ctx, user: discord.User):
