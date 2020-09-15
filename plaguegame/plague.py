@@ -372,7 +372,7 @@ class Plague(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command(self, ctx):
-        if not ctx.guild or not ctx.message.mentions:
+        if not ctx.guild or ctx.cog == self or not ctx.message.mentions:
             return
         number = random.randint(1, 10)
         if number > 3:
