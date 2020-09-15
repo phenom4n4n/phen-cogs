@@ -171,7 +171,6 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
 
-    # sometimes this works but sometimes it doesnt?? pls help
     async def bump_worker(self):
         """Restarts bump timers
         This worker will attempt to restart bump timers incase of a cog reload or
