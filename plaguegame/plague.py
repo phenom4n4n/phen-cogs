@@ -298,7 +298,7 @@ class Plague(commands.Cog):
         await user.send(f"Your Plague Game data was reset by {ctx.author}.")
         await ctx.send(f"`{user}` has been reset.")
 
-    async def infect_user(self, ctx, user: discord.User, auto = False):
+    async def infect_user(self, ctx, user: discord.User, auto=False):
         plagueName = await self.config.plagueName()
         state = await self.config.user(user).gameState()
         role = await self.config.user(user).gameRole()
