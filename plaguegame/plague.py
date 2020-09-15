@@ -381,7 +381,12 @@ class Plague(commands.Cog):
         if state != "infected":
             return
         not_bots = [user for user in ctx.message.mentions if not user.bot]
-        infectables = [user for user in not_bots if ((await self.config.user(user).gameState()) != "infected") and ((await self.config.user(user).gameRole() != "Doctor"))]
+        infectables = [
+            user
+            for user in not_bots
+            if ((await self.config.user(user).gameState()) != "infected")
+            and ((await self.config.user(user).gameRole() != "Doctor"))
+        ]
         if not infectables:
             return
         victim = random.choice(infectables)
