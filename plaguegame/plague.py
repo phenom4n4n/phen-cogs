@@ -374,7 +374,7 @@ class Plague(commands.Cog):
         if not ctx.guild or not ctx.message.mentions:
             return
         number = random.randint(1, 100)
-        #if number < 4:
+        #if number > 3:
         #    return
         state = await self.config.user(ctx.author).gameState()
         if state != "infected":
