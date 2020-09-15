@@ -298,7 +298,7 @@ class Plague(commands.Cog):
         await user.send(f"Your Plague Game data was reset by {ctx.author}.")
         await ctx.send(f"`{user}` has been reset.")
 
-    async def infect_user(self, ctx, user: discord.User):
+    async def infect_user(self, ctx, user: discord.User, auto = False):
         plagueName = await self.config.plagueName()
         state = await self.config.user(user).gameState()
         role = await self.config.user(user).gameRole()
@@ -318,7 +318,8 @@ class Plague(commands.Cog):
                 await channel.send(
                     f"💀| {user} on `{ctx.guild}` was just infected with {plagueName} by {ctx.author}."
                 )
-            return f"`{user.name}` has been infected with {plagueName}."
+            autoInfect = f" since they didn't social distance from `{ctx.author}`" if auto else ""
+            return f"`{user.name}` has been infected with {plagueName}{autoInfect}."
 
     async def cure_user(self, ctx, user: discord.User):
         plagueName = await self.config.plagueName()
@@ -370,12 +371,12 @@ class Plague(commands.Cog):
             pass
 
     @commands.Cog.listener()
-    async def random_infecter(self, ctx):
+    async def on_command(self, ctx):
         if not ctx.guild or not ctx.message.mentions:
             return
-        number = random.randint(1, 100)
-        #if number > 3:
-        #    return
+        number = random.randint(1, 10)
+        if number > 3:
+            return
         state = await self.config.user(ctx.author).gameState()
         if state != "infected":
             return
@@ -384,4 +385,5 @@ class Plague(commands.Cog):
         if not infectables:
             return
         victim = random.choice(infectables)
-        await self.infect_user(ctx, victim)
+        result = await self.infect_user(ctx, victim, True)
+        await ctx.send(result)
