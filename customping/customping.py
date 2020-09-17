@@ -79,6 +79,7 @@ class CustomPing(commands.Cog):
         except discord.NotFound:
             return
 
+
 def setup(bot):
     ping = CustomPing(bot)
     global old_ping
