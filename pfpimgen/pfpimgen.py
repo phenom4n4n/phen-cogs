@@ -31,7 +31,7 @@ class PfpImgen(commands.Cog):
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command(aliases=["catgirl"])
+    @commands.command(aliases=["catgirl"], cooldown_after_parsing=True)
     async def neko(self, ctx, *, member: discord.Member = None):
         """Make a neko avatar..."""
         if not member:
@@ -51,7 +51,7 @@ class PfpImgen(commands.Cog):
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def bonk(self, ctx, *, member: discord.Member = None):
         """Bonk! Go to horny jail."""
         await ctx.trigger_typing()
@@ -79,7 +79,7 @@ class PfpImgen(commands.Cog):
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def simp(self, ctx, *, member: discord.Member = None):
         """You are now a simp."""
         if not member:
@@ -98,7 +98,7 @@ class PfpImgen(commands.Cog):
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def banner(self, ctx, *, member: discord.Member = None):
         """Banner"""
         if not member:
@@ -117,7 +117,7 @@ class PfpImgen(commands.Cog):
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def nickel(
         self,
         ctx,

@@ -43,7 +43,7 @@ class Plague(commands.Cog):
     @commands.check(is_infected)
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.guild_only()
-    @commands.command(aliases=["cough"])
+    @commands.command(aliases=["cough"], cooldown_after_parsing=True)
     async def infect(self, ctx, *, member: discord.Member):
         """Infect another user. You must be infected to use this command."""
 
@@ -53,7 +53,7 @@ class Plague(commands.Cog):
     @commands.check(is_doctor)
     @commands.cooldown(1, 15, commands.BucketType.user)
     @commands.guild_only()
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def cure(self, ctx, *, member: discord.Member):
         """Cure a user. You must be a Doctor to use this command."""
 
