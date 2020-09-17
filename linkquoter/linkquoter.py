@@ -42,7 +42,7 @@ class LinkQuoter(commands.Cog):
             channel = guild.get_channel(link_ids[1])
             if not channel:
                 return
-            if not channel.permissions_for(guild.me).read_messages:
+            if not (channel.permissions_for(guild.me).read_messages and channel.permissions_for(guild.me).read_message_history):
                 return
             try:
                 message = await channel.fetch_message(link_ids[2])
@@ -168,7 +168,6 @@ class LinkQuoter(commands.Cog):
     async def on_message_without_command(self, message: discord.Message):
         if message.author.bot or not (
             message.guild
-            and message.channel.permissions_for(message.guild.me).send_messages
             and await self.bot.message_eligible_as_command(message)
         ):
             return
