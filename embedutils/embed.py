@@ -26,9 +26,20 @@ class EmbedUtils(commands.Cog):
         self.config.register_guild(**default_guild)
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
-        """The only EUD stored is that of embed creators.
-        In order to keep users accountable for any inappropriate embeds they make, we do not remove that data."""
-        return
+        guilds_data = await self.config.all_guilds()
+        for guild_id, data in guilds_data.items():
+            guild = self.bot.get_guild(guild_id)
+            if guild and data["embeds"]:
+                for name, embed in data["embeds"].items():
+                    if str(user_id) in embed["author"]:
+                        async with self.config.guild(guild).embeds() as e:
+                            del e[name]
+        global_data = await self.config.all()
+        if global_data["embeds"]:
+            for name, embed in global_data["embeds"].items():
+                if str(user_id) in embed["author"]:
+                    async with self.config.embeds() as e:
+                        del e[name]
 
     @commands.guild_only()
     @checks.has_permissions(embed_links=True)
@@ -282,8 +293,8 @@ class EmbedUtils(commands.Cog):
             e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
             await ctx.send(embed=e)
 
-    @global_store.command(aliases=["delete", "rm", "del"])
-    async def remove(self, ctx, name):
+    @global_store.command(name="remove", aliases=["delete", "rm", "del"])
+    async def global_remove(self, ctx, name):
         """Remove a global embed."""
         try:
             async with self.config.embeds() as a:
@@ -407,7 +418,7 @@ class EmbedUtils(commands.Cog):
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
         async with self.config.guild(ctx.guild).embeds() as a:
-            a[name] = {"author": ctx.author.mention, "uses": 0, "embed": embed}
+            a[name] = {"author": ctx.author.id, "uses": 0, "embed": embed}
         await ctx.send(f"Embed stored under the name `{name}`.")
 
     async def get_stored_embed(self, ctx: commands.Context, name: str):
@@ -426,7 +437,7 @@ class EmbedUtils(commands.Cog):
     ):
         embed = embed.to_dict()
         async with self.config.embeds() as a:
-            a[name] = {"author": ctx.author.mention, "uses": 0, "locked": locked, "embed": embed}
+            a[name] = {"author": ctx.author.id, "uses": 0, "locked": locked, "embed": embed}
         await ctx.send(f"Global embed stored under the name `{name}`.")
 
     async def get_global_stored_embed(self, ctx: commands.Context, name: str):
