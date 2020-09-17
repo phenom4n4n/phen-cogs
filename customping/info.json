@@ -1,6 +1,6 @@
 {
 	"author": ["PhenoM4n4n"],
-	"install_msg": "Thank you for installing CustomPing.",
+	"install_msg": "Thank you for installing CustomPing.\n Note that this replaces the `ping` command with a new embedded one, so users will be unable to run the command if the bot doesn't have embed permissions.",
 	"description": "Creates a custom ping embed to display latency statistics.",
 	"short": "Creates a custom ping embed to display latency statistics.",
 	"tags": ["ping"],
