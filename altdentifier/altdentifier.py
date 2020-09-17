@@ -115,6 +115,12 @@ class AltDentifier(commands.Cog):
             await self.clear_action(ctx.guild, level)
             return await ctx.send(f"Removed actions for Trust Level {level}.")
         if isinstance(action, discord.Role):
+            if action.position >= ctx.author.top_role.position:
+                await ctx.send(f"That role is higher than you in heirarchy, so you can't set it to be the role for this action.")
+                return
+            elif action.position >= ctx.me.top_role.position:
+                await ctx.send(f"That role is higher than me in heirarchy, so I can't give it to members for this action.")
+                return
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.id
         elif isinstance(action, str) and action.lower() not in ["kick", "ban"]:
