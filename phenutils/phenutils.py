@@ -2,11 +2,14 @@ import typing
 from copy import copy
 import time
 import asyncio
-
+import datetime
 import discord
+from discord.utils import sleep_until
+
 from redbot.core import commands, checks
 from redbot.core.bot import Red
 from redbot.core.config import Config
+from redbot.core.commands.converter import TimedeltaConverter
 
 RequestType = typing.Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -102,3 +105,13 @@ class PhenUtils(commands.Cog):
         return await ctx.send(
             f"Command `{alt_ctx.command.qualified_name}` finished in {end - start:.3f}s."
         )
+
+    @checks.is_owner()
+    @commands.command(aliases=["taskcmd"])
+    async def schedulecmd(self, ctx, time: TimedeltaConverter, *, command):
+        """Schedule a command to be done later."""
+        end = ctx.message.created_at + time
+        new_message = copy(ctx.message)
+        new_message.content = ctx.prefix + command.strip()
+        await sleep_until(end)
+        await self.bot.process_commands(new_message)
