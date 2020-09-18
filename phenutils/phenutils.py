@@ -32,20 +32,20 @@ class PhenUtils(commands.Cog):
 
     @checks.is_owner()
     @commands.command()
-    async def do(self, ctx, times: int, *, command):
+    async def do(self, ctx, times: int, sequential: typing.Optional[bool] = True, *, command):
         """Repeats a command a specified number of times."""
-        msg = copy(ctx.message)
-        msg.content = ctx.prefix + command
-
-        new_ctx = await self.bot.get_context(msg, cls=type(ctx))
-        # new_ctx._db = ctx._db
-
-        try:
-            for i in range(times):
-                await new_ctx.reinvoke()
+        new_message = copy(ctx.message)
+        new_message.content = ctx.prefix + command.strip()
+        if sequential:
+            for i in range(int):
+                await self.bot.process_commands(new_message)
                 await asyncio.sleep(1)
-        except Exception as e:
-            await ctx.send(embed=discord.Embed(title="Oops!", description=f"```\n{e}\n```"))
+        else:
+            todo = []
+            for i in range(int):
+                todo.append(self.bot.process_commands(new_message))
+            await asyncio.gather(*todo)
+
 
     @checks.is_owner()
     @commands.command()
