@@ -46,7 +46,6 @@ class PhenUtils(commands.Cog):
                 todo.append(self.bot.process_commands(new_message))
             await asyncio.gather(*todo)
 
-
     @checks.is_owner()
     @commands.command()
     async def execute(self, ctx, sequential: typing.Optional[bool] = False, *, commands):
