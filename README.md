@@ -36,7 +36,7 @@
 | PfpImgen | A couple fun commands that create memes/images using user avatars. |
 | PlagueGame | Infect people in Discord. |
 | Prefix | Easier server prefix management. |
-| SimpleCalculator | Tbh it's really a shitty calculator which uses a Python module to calculate math equations. |
+| SimpleCalculator | Math calculator that uses [TagScriptEngine](https://github.com/JonSnowbd/TagScript). Random and range blocks are supported, queries will automatically be wrapped into a math block for you. |
 
 # Contact
 If you have a feature request or have found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).
