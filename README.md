@@ -1,5 +1,5 @@
 <h1 align="center">
-  Phen-Cogs
+  <a href="https://github.com/phenom4n4n/phen-cogs"><img src="https://i.imgur.com/wPQwqYi.png" alt="Phen-Cogs"></a>
 </h1>
 
 <p align="center">
