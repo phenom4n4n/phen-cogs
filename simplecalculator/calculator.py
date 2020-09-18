@@ -1,6 +1,7 @@
 import discord
 import asyncio
-from calculator.simple import SimpleCalculator
+import time
+from TagScriptEngine import block, Interpreter, adapter
 
 from redbot.core import commands, checks
 
@@ -12,7 +13,12 @@ class Calculator(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.calculator = SimpleCalculator()
+        blocks = [
+            block.MathBlock(),
+            block.RandomBlock(),
+            block.RangeBlock(),
+        ]
+        self.engine = Interpreter(blocks)
 
     async def red_delete_data_for_user(self, **kwargs):
         return
@@ -20,22 +26,16 @@ class Calculator(commands.Cog):
     @commands.command(aliases=["calc"])
     async def calculate(self, ctx, *, query):
         """Math"""
-        query = query.strip()
-        query = query.replace(",", "")
+        engine_input = "{m:" + query + "}"
+        start = time.monotonic()
+        output = self.engine.process(engine_input)
+        end = time.monotonic()
 
-        calculator = SimpleCalculator()
-        calculator.run(query)
-
-        result_dict = {}
-        for item in calculator.log:
-            item = item.split(": ")
-            if len(item) >= 2:
-                result_dict.update({item[0]: item[1]})
-
-        try:
-            query = result_dict["input string"]
-            result = result_dict["result"]
-        except KeyError:
-            return await ctx.send("Invalid math operation")
-        result_embed = discord.Embed(title=query, description=result)
-        await ctx.send(embed=result_embed)
+        output_string = output.body.replace("{m:", "").replace("}", "")
+        e = discord.Embed(
+            color = await ctx.embed_color(),
+            title=f"Input: `{query}`",
+            description=f"Output: `{output_string}`"
+        )
+        e.set_footer(text=f"Calculated in {round((end - start) * 1000, 3)} ms")
+        await ctx.send(embed=e)
