@@ -38,7 +38,7 @@ class PfpImgen(commands.Cog):
             member = ctx.author
 
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 156)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_neko, ctx, avatar)
             task = self.bot.loop.run_in_executor(None, task)
             try:
@@ -62,9 +62,9 @@ class PfpImgen(commands.Cog):
             member = ctx.author
 
         async with ctx.typing():
-            victim_avatar = await self.get_avatar(member, 256)
+            victim_avatar = await self.get_avatar(member)
             if bonker:
-                bonker_avatar = await self.get_avatar(bonker, 223)
+                bonker_avatar = await self.get_avatar(bonker)
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar, bonker_avatar)
             else:
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar)
@@ -85,7 +85,7 @@ class PfpImgen(commands.Cog):
         if not member:
             member = ctx.author
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 136)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_simp, ctx, avatar)
             task = self.bot.loop.run_in_executor(None, task)
             try:
@@ -104,7 +104,7 @@ class PfpImgen(commands.Cog):
         if not member:
             member = ctx.author
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 200)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_banner, ctx, avatar, member.color)
             task = self.bot.loop.run_in_executor(None, task)
             try:
@@ -132,7 +132,7 @@ class PfpImgen(commands.Cog):
         if not member:
             member = ctx.author
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 182)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
             task = self.bot.loop.run_in_executor(None, task)
             try:
@@ -157,7 +157,7 @@ class PfpImgen(commands.Cog):
         if not member:
             member = ctx.author
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 140)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_shut, ctx, avatar, text)
             task = self.bot.loop.run_in_executor(None, task)
             try:
@@ -168,14 +168,18 @@ class PfpImgen(commands.Cog):
                 )
         await ctx.send(file=discord.File(shut, "shut.png"))
 
-    async def get_avatar(self, member: discord.User, size: int):
+    async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
         await member.avatar_url.save(avatar, seek_begin=True)
-        avatar = Image.open(avatar).convert("RGBA")
-        avatar = avatar.resize((size, size), Image.ANTIALIAS)
         return avatar
 
+    def bytes_to_image(self, image: BytesIO, size: int):
+        image = Image.open(image).convert("RGBA")
+        image = image.resize((size, size), Image.ANTIALIAS)
+        return image
+
     def gen_neko(self, ctx, member_avatar):
+        member_avatar = self.bytes_to_image(member_avatar, 156)
         # base canvas
         im = Image.new("RGBA", (500, 750), None)
         # neko = Image.open(f"{bundled_data_path(self)}/neko/neko.png", mode="r").convert("RGBA")
@@ -198,11 +202,13 @@ class PfpImgen(commands.Cog):
         im = Image.open(f"{bundled_data_path(self)}/bonk/bonkbase.png", mode="r").convert("RGBA")
 
         # pasting the victim
+        victim_avatar = self.bytes_to_image(victim_avatar, 256)
         victim_avatar = victim_avatar.rotate(angle=10, resample=Image.BILINEAR)
         im.paste(victim_avatar, (650, 225), victim_avatar)
 
         # pasting the bonker
         if bonker_avatar:
+            bonker_avatar = self.bytes_to_image(bonker_avatar, 223)
             im.paste(bonker_avatar, (206, 69), bonker_avatar)
 
         # pasting the bat
@@ -217,6 +223,7 @@ class PfpImgen(commands.Cog):
         return fp
 
     def gen_simp(self, ctx, member_avatar):
+        member_avatar = self.bytes_to_image(member_avatar, 136)
         # base canvas
         im = Image.new("RGBA", (500, 319), None)
         card = Image.open(f"{bundled_data_path(self)}/simp/simp.png", mode="r").convert("RGBA")
@@ -238,6 +245,7 @@ class PfpImgen(commands.Cog):
         comic = Image.open(f"{bundled_data_path(self)}/banner/banner.png", mode="r").convert(
             "RGBA"
         )
+        member_avatar = self.bytes_to_image(member_avatar, 200)
 
         # 2nd slide
         av = member_avatar.rotate(angle=7, resample=Image.BILINEAR, expand=True)
@@ -264,6 +272,7 @@ class PfpImgen(commands.Cog):
         return fp
 
     def gen_nickel(self, ctx, member_avatar, text: str):
+        member_avatar = self.bytes_to_image(member_avatar, 182)
         # base canvas
         im = Image.open(f"{bundled_data_path(self)}/nickel/nickel.png", mode="r").convert("RGBA")
 
@@ -299,6 +308,7 @@ class PfpImgen(commands.Cog):
         return avatar
 
     def gen_shut(self, ctx, member_avatar, text: str):
+        member_avatar = self.bytes_to_image(member_avatar, 140)
         # base canvas
         im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert("RGBA")
 
