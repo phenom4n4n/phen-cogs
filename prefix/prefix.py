@@ -73,12 +73,7 @@ class Prefix(commands.Cog):
     async def gen_prefixes(self, ctx: commands.Context):
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         count = 0
-        prefix_list = []
-        for prefix in prefixes:
-            count += 1
-            description = f"{count}. {prefix}"
-            prefix_list.append(description)
-        prefix_list = "\n".join(prefix_list)
+        prefix_list = "\n".join([f"{index}. {prefix}" for index, prefix in enumerate(prefixes, 1)])
         color = await self.bot.get_embed_color(ctx)
         embed = discord.Embed(color=color, title="Prefixes:", description=prefix_list)
         return embed
