@@ -33,9 +33,9 @@ class Calculator(commands.Cog):
 
         output_string = output.body.replace("{m:", "").replace("}", "")
         e = discord.Embed(
-            color = await ctx.embed_color(),
+            color=await ctx.embed_color(),
             title=f"Input: `{query}`",
-            description=f"Output: `{output_string}`"
+            description=f"Output: `{output_string}`",
         )
         e.set_footer(text=f"Calculated in {round((end - start) * 1000, 3)} ms")
         await ctx.send(embed=e)
