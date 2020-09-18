@@ -143,7 +143,7 @@ class EmbedUtils(commands.Cog):
         if data:
             e = discord.Embed(
                 title=f"`{name}` Info",
-                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}",
+                description=f"Author: <@!{data[1]}>\nUses: {data[2]}\nLength: {len(data[0])}",
             )
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
@@ -393,7 +393,7 @@ class EmbedUtils(commands.Cog):
         if data:
             e = discord.Embed(
                 title=f"`{name}` Info",
-                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}\nLocked: {data[3]}",
+                description=f"Author: <@!{data[1]}>\nUses: {data[2]}\nLength: {len(data[0])}\nLocked: {data[3]}",
             )
             e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
             await ctx.send(embed=e)
