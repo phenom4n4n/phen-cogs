@@ -1,0 +1,22 @@
+{
+    "name": "Tags",
+    "short": "Create and use tags.",
+    "description": "Create and use tags.",
+    "end_user_data_statement": "This cog does not persistently store any data or metadata about users.",
+    "install_msg": "Thanks for installing Tags!\nGet started by reading the documentation found here.\n<https://github.com/JonSnowbd/TagScript/blob/v2/Documentation/Using%20TSE.md>",
+    "author": [
+        "PhenoM4n4n"
+    ],
+    "required_cogs": {},
+    "requirements": [
+        "PyParsing",
+        "git+https://github.com/JonSnowbd/TagScript.git"
+    ],
+    "tags": [
+        "tags"
+    ],
+    "min_bot_version": "3.3.10",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
