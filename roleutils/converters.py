@@ -45,6 +45,8 @@ class FuzzyRole(IDConverter):
         if not result:
             raise BadArgument('Role "{}" not found'.format(argument))
 
-        calculated_result = [(role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result]
+        calculated_result = [
+            (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result
+        ]
         sorted_result = sorted(calculated_result, key=lambda r: r[1], reverse=True)
         return sorted_result[0][0]
