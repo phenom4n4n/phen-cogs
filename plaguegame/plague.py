@@ -311,7 +311,7 @@ class Plague(commands.Cog):
         else:
             channel = await self.config.logChannel()
             channel = ctx.bot.get_channel(channel)
-            autoInfect = f" since they didn't social distance from `{ctx.author}`" if auto else ""
+            autoInfect = f" since `{ctx.author}` didn't wear a mask" if auto else ""
 
             await self.config.user(user).gameState.set("infected")
             await self.notify_user(ctx=ctx, user=user, notificationType="infect")
@@ -373,6 +373,8 @@ class Plague(commands.Cog):
     @commands.Cog.listener()
     async def on_command(self, ctx):
         if not ctx.guild or ctx.cog == self or not ctx.message.mentions:
+            return
+        if await self.bot.cog_disabled_in_guild(self, ctx.guild):
             return
         number = random.randint(1, 10)
         if number > 3:
