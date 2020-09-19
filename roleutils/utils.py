@@ -2,13 +2,13 @@ import discord
 
 
 async def is_allowed_by_hierarchy(
-    bot: "Red", mod: discord.Member, member: discord.Member
+    bot, mod: discord.Member, member: discord.Member
 ):
     return mod.top_role.position > member.top_role.position or await bot.is_owner(mod)
 
 
 def is_allowed_by_role_hierarchy(
-    bot: "Red",
+    bot,
     bot_me: discord.Member,
     mod: discord.Member,
     role: discord.Role,
