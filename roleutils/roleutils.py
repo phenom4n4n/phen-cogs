@@ -17,6 +17,7 @@ log = logging.getLogger("redbot.phenom4n4n.roleutils")
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
+
 class CompositeMetaClass(type(commands.Cog), type(ABC)):
     """
     This allows the metaclass used for proper type detection to
@@ -25,13 +26,14 @@ class CompositeMetaClass(type(commands.Cog), type(ABC)):
 
     pass
 
+
 class RoleUtils(
     Roles,
     commands.Cog,
     metaclass=CompositeMetaClass,
 ):
     """
-     Useful role commands.
+    Useful role commands.
     """
 
     def __init__(self, bot: Red) -> None:

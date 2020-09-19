@@ -15,14 +15,16 @@ from .converters import FuzzyRole
 
 class Roles(MixinMeta):
     """
-     Useful role commands.
+    Useful role commands.
     """
 
     @commands.group(invoke_without_command=True)
     async def role(self, ctx: commands.Context, member: discord.Member, *, role: FuzzyRole):
         """Role management."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send("You are cannot do that since you aren't higher than that user in hierarchy.")
+            await ctx.send(
+                "You are cannot do that since you aren't higher than that user in hierarchy."
+            )
             return
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
@@ -36,21 +38,24 @@ class Roles(MixinMeta):
             await member.add_roles(*[role], reason=reason)
             await ctx.send(f"Added `{role.name}` to `{member}`.")
 
-
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
     async def add(self, ctx: commands.Context, member: discord.Member, *, role: FuzzyRole):
         """Add a role to a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send("You are cannot do that since you aren't higher than that user in hierarchy.")
+            await ctx.send(
+                "You are cannot do that since you aren't higher than that user in hierarchy."
+            )
             return
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
             await ctx.send(allowed[1])
             return
         if role in member.roles:
-            await ctx.send(f"`{member}` already has the role `{role}`. Maybe try removing it instead.")
+            await ctx.send(
+                f"`{member}` already has the role `{role}`. Maybe try removing it instead."
+            )
             return
         reason = get_audit_reason(ctx.author)
         await member.add_roles(*[role], reason=reason)
@@ -62,14 +67,18 @@ class Roles(MixinMeta):
     async def remove(self, ctx: commands.Context, member: discord.Member, *, role: FuzzyRole):
         """Remove a role from a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send("You are cannot do that since you aren't higher than that user in hierarchy.")
+            await ctx.send(
+                "You are cannot do that since you aren't higher than that user in hierarchy."
+            )
             return
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
             await ctx.send(allowed[1])
             return
         if role not in member.roles:
-            await ctx.send(f"`{member}` doesn't have the role `{role}`. Maybe try adding it instead.")
+            await ctx.send(
+                f"`{member}` doesn't have the role `{role}`. Maybe try adding it instead."
+            )
             return
         reason = get_audit_reason(ctx.author)
         await member.remove_roles(*[role], reason=reason)
@@ -91,7 +100,7 @@ class Roles(MixinMeta):
         await ctx.send(
             f"Beginning to add `{role.name}` to **{len(member_list)}** members."
             f"This will take {humanize_timedelta(timedelta=datetime.timedelta(seconds=len(member_list)))}."
-            )
+        )
         async with ctx.typing():
             result = await self.massrole(member_list, [role], get_audit_reason(ctx.author), True)
             result_text = f"Added `{role.name}` to **{len(result['completed'])}** members."
@@ -117,12 +126,14 @@ class Roles(MixinMeta):
         await ctx.send(
             f"Beginning to remove `{role.name}` from **{len(member_list)}** members."
             f"This will take {humanize_timedelta(timedelta=datetime.timedelta(seconds=len(member_list)))}."
-            )
+        )
         async with ctx.typing():
             result = await self.massrole(member_list, [role], get_audit_reason(ctx.author), False)
             result_text = f"Removed `{role.name}` from **{len(result['completed'])}** members."
             if result["skipped"]:
-                result_text += f"\nSkipped removing roles for **{len(result['skipped'])}** members."
+                result_text += (
+                    f"\nSkipped removing roles for **{len(result['skipped'])}** members."
+                )
             if result["failed"]:
                 result_text += f"\nFailed removing roles for **{len(result['failed'])}** members."
         await ctx.send(result_text)
