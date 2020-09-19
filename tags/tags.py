@@ -72,7 +72,9 @@ class Tags(commands.Cog):
             tag = tag_data["tag"]
             query = tag.replace("{args}", args)
             output = self.engine.process(query)
-            await ctx.send(output.body[:2000])
+            result = output.body[:2000]
+            if result:
+                await ctx.send(result)
             async with self.config.guild(ctx.guild).tags() as t:
                 t[tag_name]["uses"] += 1
 
