@@ -180,7 +180,7 @@ class Tags(commands.Cog):
             e.add_field(name="Actions", value=output.actions)
         if output.variables:
             e.add_field(name="Variables", value=output.variables)
-        e.add_field(name="Output", value=output.body, inline=False)
+        e.add_field(name="Output", value=output.body or discord.Embed.Empty, inline=False)
 
         m = await ctx.send(embed=e)
 
