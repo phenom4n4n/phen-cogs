@@ -6,7 +6,7 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import humanize_list, inline
 
-from .converters import channel_toggle
+from .converters import channel_toggle, FuzzyRole
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -34,7 +34,7 @@ class Lock(commands.Cog):
         self,
         ctx: commands.Context,
         channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
-        roles: commands.Greedy[discord.Role] = None,
+        roles: commands.Greedy[FuzzyRole] = None,
     ):
         """Lock a channel. Provide a role if you would like to unlock it for that role."""
         if not channel:
@@ -84,7 +84,7 @@ class Lock(commands.Cog):
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
     @lock.command(name="server")
-    async def lock_server(self, ctx, roles: commands.Greedy[discord.Role] = None):
+    async def lock_server(self, ctx, roles: commands.Greedy[FuzzyRole] = None):
         """Lock the server. Provide a role if you would like to lock it for that role."""
         if not roles:
             roles = [ctx.guild.default_role]
@@ -123,7 +123,7 @@ class Lock(commands.Cog):
         ctx,
         channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
         state: Optional[channel_toggle] = None,
-        roles: commands.Greedy[discord.Role] = None,
+        roles: commands.Greedy[FuzzyRole] = None,
     ):
         """Unlock a channel. Provide a role if you would like to unlock it for that role.
 
@@ -175,7 +175,7 @@ class Lock(commands.Cog):
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
     @unlock.command(name="server")
-    async def unlock_server(self, ctx, roles: commands.Greedy[discord.Role] = None):
+    async def unlock_server(self, ctx, roles: commands.Greedy[FuzzyRole] = None):
         """Unlock the server. Provide a role if you would like to unlock it for that role."""
         if not roles:
             roles = [ctx.guild.default_role]
