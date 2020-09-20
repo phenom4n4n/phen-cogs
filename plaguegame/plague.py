@@ -11,6 +11,7 @@ class Plague(commands.Cog):
     """A plague game."""
 
     def __init__(self, bot):
+        self.bot = bot
         self.config = Config.get_conf(self, identifier=2395486659)
         default_global = {"plagueName": "Plague", "logChannel": None}
         default_user = {
