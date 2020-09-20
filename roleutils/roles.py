@@ -171,7 +171,7 @@ class Roles(MixinMeta):
         if not allowed[0]:
             await ctx.send(allowed[1])
             return
-        await self.super_massrole(ctx, [member for member in ctx.guild.members if member.bot], role, "None of the bot in the server have this role.", False)
+        await self.super_massrole(ctx, [member for member in ctx.guild.members if member.bot], role, "None of the bots in the server have this role.", False)
 
     async def super_massrole(
         self,
