@@ -11,6 +11,7 @@ from discord.ext.commands.converter import IDConverter, _get_from_guilds
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
 
+
 def channel_toggle(arg: str):
     arg = arg.lower()
     if arg not in ["true", "default", "nuetral"]:
@@ -22,6 +23,7 @@ def channel_toggle(arg: str):
     elif arg == "true":
         arg = True
     return arg
+
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
 class FuzzyRole(IDConverter):
