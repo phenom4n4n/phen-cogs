@@ -127,7 +127,9 @@ class Roles(MixinMeta):
             await ctx.send(allowed[1])
             return
         member_list = self.get_member_list(ctx.guild.members, role, False)
-        await self.super_massrole(ctx, ctx.guild.members, role, "No one on the server has this role.", False)
+        await self.super_massrole(
+            ctx, ctx.guild.members, role, "No one on the server has this role.", False
+        )
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -138,7 +140,12 @@ class Roles(MixinMeta):
         if not allowed[0]:
             await ctx.send(allowed[1])
             return
-        await self.super_massrole(ctx, [member for member in ctx.guild.members if not member.bot], role, "Every human in the server has this role.")
+        await self.super_massrole(
+            ctx,
+            [member for member in ctx.guild.members if not member.bot],
+            role,
+            "Every human in the server has this role.",
+        )
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -149,7 +156,13 @@ class Roles(MixinMeta):
         if not allowed[0]:
             await ctx.send(allowed[1])
             return
-        await self.super_massrole(ctx, [member for member in ctx.guild.members if not member.bot], role, "None of the humans in the server have this role.", False)
+        await self.super_massrole(
+            ctx,
+            [member for member in ctx.guild.members if not member.bot],
+            role,
+            "None of the humans in the server have this role.",
+            False,
+        )
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -160,7 +173,12 @@ class Roles(MixinMeta):
         if not allowed[0]:
             await ctx.send(allowed[1])
             return
-        await self.super_massrole(ctx, [member for member in ctx.guild.members if member.bot], role, "Every bot in the server has this role.")
+        await self.super_massrole(
+            ctx,
+            [member for member in ctx.guild.members if member.bot],
+            role,
+            "Every bot in the server has this role.",
+        )
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -171,7 +189,13 @@ class Roles(MixinMeta):
         if not allowed[0]:
             await ctx.send(allowed[1])
             return
-        await self.super_massrole(ctx, [member for member in ctx.guild.members if member.bot], role, "None of the bot in the server have this role.", False)
+        await self.super_massrole(
+            ctx,
+            [member for member in ctx.guild.members if member.bot],
+            role,
+            "None of the bot in the server have this role.",
+            False,
+        )
 
     async def super_massrole(
         self,
@@ -195,9 +219,13 @@ class Roles(MixinMeta):
             result = await self.massrole(member_list, [role], get_audit_reason(ctx.author), adding)
             result_text = f"{verb.title()[:5]}ed `{role.name}` {word} **{len(result['completed'])}** members."
             if result["skipped"]:
-                result_text += f"\nSkipped {verb[:5]}ing roles for **{len(result['skipped'])}** members."
+                result_text += (
+                    f"\nSkipped {verb[:5]}ing roles for **{len(result['skipped'])}** members."
+                )
             if result["failed"]:
-                result_text += f"\nFailed {verb[:5]}ing roles for **{len(result['failed'])}** members."
+                result_text += (
+                    f"\nFailed {verb[:5]}ing roles for **{len(result['failed'])}** members."
+                )
         await ctx.send(result_text)
 
     def get_member_list(self, members: list, role: discord.Role, adding: bool = True):
