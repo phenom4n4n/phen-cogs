@@ -3,7 +3,6 @@ import asyncio
 import logging
 import re
 from abc import ABC
-from collections import defaultdict
 from typing import List, Tuple, Literal
 import discord
 
@@ -12,8 +11,9 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 
 from .roles import Roles
+from .reactroles import ReactRoles
 
-log = logging.getLogger("redbot.phenom4n4n.roleutils")
+log = logging.getLogger("red.phenom4n4n.roleutils")
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -29,6 +29,7 @@ class CompositeMetaClass(type(commands.Cog), type(ABC)):
 
 class RoleUtils(
     Roles,
+    ReactRoles,
     commands.Cog,
     metaclass=CompositeMetaClass,
 ):
@@ -43,6 +44,10 @@ class RoleUtils(
             identifier=326235423452394523,
             force_registration=True,
         )
+        default_guild = {
+            "reactroles": {}
+        }
+        self.config.register_guild(**default_guild)
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return

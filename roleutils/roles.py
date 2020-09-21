@@ -13,7 +13,7 @@ from .abc import MixinMeta
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
 from .converters import FuzzyRole
 
-log = logging.getLogger("redbot.phenom4n4n.roleutils")
+log = logging.getLogger("red.phenom4n4n.roleutils")
 
 
 class Roles(MixinMeta):
