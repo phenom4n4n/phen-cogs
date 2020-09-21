@@ -27,7 +27,7 @@ class ReactRoles(MixinMeta):
         """Reaction Role management."""
         await ctx.send("This command is incomplete. Stop running it.")
 
-    #async def add(self, ctx: commands.Context, message: discord.Message, emoji: Union[discord.Emoji, discord.PartialEmoji], role: FuzzyRole):
+    # async def add(self, ctx: commands.Context, message: discord.Message, emoji: Union[discord.Emoji, discord.PartialEmoji], role: FuzzyRole):
     #    """Add a reaction role to a message."""
     #    async with self.config.guild(ctx.guild).reactroles() as r:
     #        r[str(message.id)] = {
@@ -42,7 +42,7 @@ class ReactRoles(MixinMeta):
     async def react_list(self, ctx: commands.Context):
         """View the reaction roles on this server."""
 
-    #@commands.Cog.listener()
+    # @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if not payload.guild_id:
             return
