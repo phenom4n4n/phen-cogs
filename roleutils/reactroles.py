@@ -50,6 +50,6 @@ class ReactRoles(MixinMeta):
         if not guild.me.guild_permissions.manage_roles:
             return
         data = await self.config.guild(guild).all()
-        if payload.message_id not in data["reactroles"].keys()
+        if payload.message_id not in data["reactroles"].keys():
             return
         channel = guild.get_channel(payload.channel_id)
