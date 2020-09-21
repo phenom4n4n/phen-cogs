@@ -1,8 +1,6 @@
 <h1 align="center">
-  Phen-Cogs
+  <a href="https://github.com/phenom4n4n/phen-cogs"><img src="https://i.imgur.com/wPQwqYi.png" alt="Phen-Cogs"></a>
 </h1>
-
-<h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
 
 <p align="center">
   <a href="https://discord.gg/cGJ8JmX">
@@ -14,7 +12,11 @@
   <a href="https://github.com/Rapptz/discord.py/">
      <img src="https://img.shields.io/badge/discord-py-blue.svg" alt="discord.py">
   </a>
+  <a href="https://github.com/ambv/black">
+    <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style: Black">
+  </a>
 </p>
+<h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
 
 # Installation
 `[p]repo add Phen-Cogs https://github.com/phenom4n4n/phen-cogs`
@@ -30,9 +32,11 @@
 | LinkQuoter | Quotes messages using message links, using webhooks when possible. |
 | Lock | A basic channel and server lock command which allows role locking. |
 | PermissionsLocker | Forces configured permissions when a user tries running any command, and raises `CommandCheckFailure` if those permissions aren't met. |
+| PhenUtils | Developer utility commands. |
 | PfpImgen | A couple fun commands that create memes/images using user avatars. |
 | PlagueGame | Infect people in Discord. |
-| SimpleCalculator | Tbh it's really a shitty calculator which uses a Python module to calculate math equations. |
+| Prefix | Easier server prefix management. |
+| SimpleCalculator | Math calculator that uses [TagScriptEngine](https://github.com/JonSnowbd/TagScript). Random and range blocks are supported, queries will automatically be wrapped into a math block for you. |
 
 # Contact
 If you have a feature request or have found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).

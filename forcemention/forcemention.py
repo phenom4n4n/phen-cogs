@@ -7,6 +7,7 @@ from redbot.core.bot import Red
 import typing
 import asyncio
 
+
 class ForceMention(commands.Cog):
     """
     Mention the unmentionables
@@ -17,16 +18,18 @@ class ForceMention(commands.Cog):
 
     async def red_delete_data_for_user(self, **kwargs):
         return
-        
+
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
     @commands.command(name="forcemention")
-    async def cmd_forcemention(self, ctx: commands.Context, role: discord.Role, *, message: str = None):
+    async def cmd_forcemention(
+        self, ctx: commands.Context, role: discord.Role, *, message: str = None
+    ):
         """
-       Mentions that role, regardless if it's unmentionable. 
+        Mentions that role, regardless if it's unmentionable.
 
-       Will automatically delete the command invocation.
-       """
+        Will automatically delete the command invocation.
+        """
         if message:
             message = f"{role.mention}\n{message}"
         else:

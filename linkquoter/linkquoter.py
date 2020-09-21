@@ -3,7 +3,10 @@ import re
 
 from redbot.core import commands, checks, Config
 
-r = re.compile(r"https://(?:canary\.|ptb\.)?discord(?:app)?\.com/channels/\d{17,19}/\d{17,19}/\d{17,19}")
+r = re.compile(
+    r"https://(?:canary\.|ptb\.)?discord(?:app)?\.com/channels/\d{17,19}/\d{17,19}/\d{17,19}"
+)
+
 
 class LinkQuoter(commands.Cog):
     """
@@ -18,10 +21,7 @@ class LinkQuoter(commands.Cog):
             force_registration=True,
         )
 
-        default_guild = {
-            "on": False,
-            "webhooks": True
-            }
+        default_guild = {"on": False, "webhooks": True}
         self.config.register_guild(**default_guild)
 
     async def regex_check(self, content: str):
@@ -42,7 +42,10 @@ class LinkQuoter(commands.Cog):
             channel = guild.get_channel(link_ids[1])
             if not channel:
                 return
-            if not channel.permissions_for(guild.me).read_messages:
+            if not (
+                channel.permissions_for(guild.me).read_messages
+                and channel.permissions_for(guild.me).read_message_history
+            ):
                 return
             try:
                 message = await channel.fetch_message(link_ids[2])
@@ -60,16 +63,15 @@ class LinkQuoter(commands.Cog):
                 embed = message.embeds[0]
                 if str(embed.type) == "rich":
                     embed.color = message.author.color
-                    if embed.description:
-                        content = embed.description[:1894]
-                    else:
-                        content = ""
-                    embed.description = f'{content}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")'
                     embed.timestamp = message.created_at
-                    embed.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
+                    embed.set_author(
+                        name=f"{message.author} said..",
+                        icon_url=message.author.avatar_url,
+                        url=message.jump_url,
+                    )
                     embed.set_footer(text=f"#{message.channel.name}")
                     e = embed
-                if str(embed.type) == "image":
+                if str(embed.type) == "image" or str(embed.type) == "article":
                     image = embed.url
             elif not message.content and not message.embeds and not message.attachments:
                 return
@@ -77,16 +79,25 @@ class LinkQuoter(commands.Cog):
                 content = message.content
                 e = discord.Embed(
                     color=message.author.color,
-                    description=f'{content[:1894]}\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
-                    timestamp=message.created_at
+                    description=content,
+                    timestamp=message.created_at,
                 )
-                e.set_author(name=f"{message.author} said..", icon_url=message.author.avatar_url, url=message.jump_url)
+                e.set_author(
+                    name=f"{message.author} said..",
+                    icon_url=message.author.avatar_url,
+                    url=message.jump_url,
+                )
                 e.set_footer(text=f"#{message.channel.name}")
             if message.attachments:
                 image = message.attachments[0].proxy_url
                 e.add_field(name="Attachments", value=message.attachments[0].filename)
             if image:
                 e.set_image(url=image)
+            e.add_field(
+                name="Source",
+                value=f'\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
+                inline=False,
+            )
             embeds.append((e, message.author))
         return embeds
 
@@ -105,20 +116,30 @@ class LinkQuoter(commands.Cog):
         embeds = await self.create_embeds(messages)
         if not embeds:
             return await ctx.send("Invalid link.")
-        if (await self.config.guild(ctx.guild).webhooks()) and ctx.channel.permissions_for(ctx.guild.me).manage_webhooks:
+        if (await self.config.guild(ctx.guild).webhooks()) and ctx.channel.permissions_for(
+            ctx.guild.me
+        ).manage_webhooks:
             webhooks = await ctx.channel.webhooks()
             if webhooks:
-                await webhooks[0].send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
+                await webhooks[0].send(
+                    embed=embeds[0][0],
+                    username=embeds[0][1].display_name,
+                    avatar_url=embeds[0][1].avatar_url,
+                )
             else:
                 webhook = await ctx.channel.create_webhook(name=f"{self.bot.user} Webhook")
-                await webhook.send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
+                await webhook.send(
+                    embed=embeds[0][0],
+                    username=embeds[0][1].display_name,
+                    avatar_url=embeds[0][1].avatar_url,
+                )
         else:
             await ctx.send(embed=embeds[0][0])
-    
+
     @linkquote.command()
-    async def auto(self, ctx, true_or_false: bool=None):
+    async def auto(self, ctx, true_or_false: bool = None):
         """Toggle automatic quoting."""
-        
+
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -132,9 +153,9 @@ class LinkQuoter(commands.Cog):
 
     @checks.bot_has_permissions(manage_webhooks=True)
     @linkquote.command()
-    async def webhook(self, ctx, true_or_false: bool=None):
+    async def webhook(self, ctx, true_or_false: bool = None):
         """Toggle whether the bot should use webhooks to quote."""
-        
+
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -148,7 +169,9 @@ class LinkQuoter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if message.author.bot or not (message.guild and message.channel.permissions_for(message.guild.me).send_messages and await self.bot.message_eligible_as_command(message)):
+        if message.author.bot or not (
+            message.guild and await self.bot.message_eligible_as_command(message)
+        ):
             return
 
         if not await self.config.guild(message.guild).on():
@@ -163,12 +186,22 @@ class LinkQuoter(commands.Cog):
         embeds = await self.create_embeds(messages)
         if not embeds:
             return
-        if (await self.config.guild(message.guild).webhooks()) and message.channel.permissions_for(message.guild.me).manage_webhooks:
+        if (await self.config.guild(message.guild).webhooks()) and message.channel.permissions_for(
+            message.guild.me
+        ).manage_webhooks:
             webhooks = await message.channel.webhooks()
             if webhooks:
-                await webhooks[0].send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
+                await webhooks[0].send(
+                    embed=embeds[0][0],
+                    username=embeds[0][1].display_name,
+                    avatar_url=embeds[0][1].avatar_url,
+                )
             else:
                 webhook = await message.channel.create_webhook(name=f"{self.bot.user} Webhook")
-                await webhook.send(embed=embeds[0][0], username=embeds[0][1].display_name, avatar_url=embeds[0][1].avatar_url)
+                await webhook.send(
+                    embed=embeds[0][0],
+                    username=embeds[0][1].display_name,
+                    avatar_url=embeds[0][1].avatar_url,
+                )
         else:
             await message.channel.send(embed=embeds[0][0])

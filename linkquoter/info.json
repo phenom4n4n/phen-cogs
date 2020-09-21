@@ -3,7 +3,7 @@
     "install_msg": "",
     "name": "LinkQuoter",
     "disabled": false,
-    "short": "",
+    "short": "Quote Discord message links.",
     "description": "Quote Discord message links.",
     "tags": [],
     "requirements": [],

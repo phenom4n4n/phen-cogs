@@ -7,6 +7,7 @@ import io
 from redbot.core import commands, checks, Config
 from redbot.core.utils import menus
 
+
 class EmbedUtils(commands.Cog):
     """
     Create, post, and store embeds.
@@ -19,19 +20,26 @@ class EmbedUtils(commands.Cog):
             identifier=43248937299564234735284,
             force_registration=True,
         )
-        default_global = {
-            "embeds": {}
-        }
-        default_guild = {
-            "embeds": {}
-        }
+        default_global = {"embeds": {}}
+        default_guild = {"embeds": {}}
         self.config.register_global(**default_global)
         self.config.register_guild(**default_guild)
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
-        """The only EUD stored is that of embed creators.
-        In order to keep users accountable for any inappropriate embeds they make, we do not remove that data."""
-        return 
+        guilds_data = await self.config.all_guilds()
+        for guild_id, data in guilds_data.items():
+            guild = self.bot.get_guild(guild_id)
+            if guild and data["embeds"]:
+                for name, embed in data["embeds"].items():
+                    if str(user_id) in embed["author"]:
+                        async with self.config.guild(guild).embeds() as e:
+                            del e[name]
+        global_data = await self.config.all()
+        if global_data["embeds"]:
+            for name, embed in global_data["embeds"].items():
+                if str(user_id) in embed["author"]:
+                    async with self.config.embeds() as e:
+                        del e[name]
 
     @commands.guild_only()
     @checks.has_permissions(embed_links=True)
@@ -41,7 +49,15 @@ class EmbedUtils(commands.Cog):
         """Manage embeds."""
 
     @embed.command()
-    async def simple(self, ctx, channel: typing.Optional[discord.TextChannel], color: typing.Optional[discord.Color], title: str, *, description: str):
+    async def simple(
+        self,
+        ctx,
+        channel: typing.Optional[discord.TextChannel],
+        color: typing.Optional[discord.Color],
+        title: str,
+        *,
+        description: str,
+    ):
         """Post a simple embed.
 
         Put the title in quotes if it is multiple words."""
@@ -49,11 +65,7 @@ class EmbedUtils(commands.Cog):
             channel = ctx.channel
         if not color:
             color = await self.bot.get_embed_color(ctx)
-        e = discord.Embed(
-            color=color,
-            title=title,
-            description=description
-        )
+        e = discord.Embed(color=color, title=title, description=description)
         await channel.send(embed=e)
 
     @embed.command(aliases=["fromjson"])
@@ -131,7 +143,7 @@ class EmbedUtils(commands.Cog):
         if data:
             e = discord.Embed(
                 title=f"`{name}` Info",
-                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}"
+                description=f"Author: <@!{data[1]}>\nUses: {data[2]}\nLength: {len(data[0])}",
             )
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
@@ -149,9 +161,17 @@ class EmbedUtils(commands.Cog):
     @embed.command(name="clear", hidden=True)
     async def clear(self, ctx):
         """Remove ALL embed data from the bot."""
-        await ctx.send("This will remove ALL embed data, including global data, from the bot. Are you sure you want to continue? (yes/no)")
+        await ctx.send(
+            "This will remove ALL embed data, including global data, from the bot. Are you sure you want to continue? (yes/no)"
+        )
         try:
-            message = await self.bot.wait_for("message", check=lambda x:x.channel == ctx.channel and x.author == ctx.author and (x.content.lower().startswith("yes") or x.content.lower().startswith("no")), timeout=30)
+            message = await self.bot.wait_for(
+                "message",
+                check=lambda x: x.channel == ctx.channel
+                and x.author == ctx.author
+                and (x.content.lower().startswith("yes") or x.content.lower().startswith("no")),
+                timeout=30,
+            )
             if message.content.lower().startswith("no"):
                 return await ctx.send("Ok, not removing this data..")
             await self.config.clear_all()
@@ -174,11 +194,7 @@ class EmbedUtils(commands.Cog):
             description = "\n".join(description)
 
             color = await self.bot.get_embed_colour(ctx)
-            e = discord.Embed(
-                color=color,
-                title=f"Stored Embeds",
-                description=description
-            )
+            e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
@@ -193,26 +209,26 @@ class EmbedUtils(commands.Cog):
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(
-            color=color,
-            title=f"Stored Embeds",
-            description=description
-        )
+        e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
     @store.command(name="simple")
-    async def store_simple(self, ctx, name: str, color: typing.Optional[discord.Color], title: str, *, description: str):
+    async def store_simple(
+        self,
+        ctx,
+        name: str,
+        color: typing.Optional[discord.Color],
+        title: str,
+        *,
+        description: str,
+    ):
         """Store a simple embed on this server.
 
         Put the title in quotes if it is multiple words."""
         if not color:
             color = await self.bot.get_embed_color(ctx)
-        e = discord.Embed(
-            color=color,
-            title=title,
-            description=description
-        )
+        e = discord.Embed(color=color, title=title, description=description)
         await ctx.send(embed=e)
         await self.store_embed(ctx, name, e)
         await ctx.tick()
@@ -273,16 +289,12 @@ class EmbedUtils(commands.Cog):
             description = "\n".join(description)
 
             color = await self.bot.get_embed_colour(ctx)
-            e = discord.Embed(
-                color=color,
-                title=f"Stored Embeds",
-                description=description
-            )
+            e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
             e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
             await ctx.send(embed=e)
 
-    @global_store.command(aliases=["delete", "rm", "del"])
-    async def remove(self, ctx, name):
+    @global_store.command(name="remove", aliases=["delete", "rm", "del"])
+    async def global_remove(self, ctx, name):
         """Remove a global embed."""
         try:
             async with self.config.embeds() as a:
@@ -302,27 +314,28 @@ class EmbedUtils(commands.Cog):
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(
-            color=color,
-            title=f"Stored Embeds",
-            description=description
-        )
+        e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
 
     @global_store.command(name="simple")
-    async def global_store_simple(self, ctx, name: str, locked: bool, color: typing.Optional[discord.Color], title: str, *, description: str):
+    async def global_store_simple(
+        self,
+        ctx,
+        name: str,
+        locked: bool,
+        color: typing.Optional[discord.Color],
+        title: str,
+        *,
+        description: str,
+    ):
         """Store a simple embed globally.
 
         Put the title in quotes if it is multiple words.
         The `locked` argument specifies whether the embed should be locked to owners only."""
         if not color:
             color = await self.bot.get_embed_color(ctx)
-        e = discord.Embed(
-            color=color,
-            title=title,
-            description=description
-        )
+        e = discord.Embed(color=color, title=title, description=description)
         await ctx.send(embed=e)
         await self.global_store_embed(ctx, name, e, locked)
         await ctx.tick()
@@ -360,7 +373,9 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @global_store.command(name="frommsg", aliases=["frommessage"])
-    async def global_store_frommsg(self, ctx, name: str, message: discord.Message, locked: bool, index: int = 0):
+    async def global_store_frommsg(
+        self, ctx, name: str, message: discord.Message, locked: bool, index: int = 0
+    ):
         """Store an embed from a message globally.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed.
@@ -378,13 +393,13 @@ class EmbedUtils(commands.Cog):
         if data:
             e = discord.Embed(
                 title=f"`{name}` Info",
-                description=f"Author: {data[1]}\nUses: {data[2]}\nLength: {len(data[0])}\nLocked: {data[3]}"
+                description=f"Author: <@!{data[1]}>\nUses: {data[2]}\nLength: {len(data[0])}\nLocked: {data[3]}",
             )
             e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
             await ctx.send(embed=e)
-    
+
     @global_store.command(name="lock")
-    async def global_lock(self, ctx, name: str, true_or_false: bool=None):
+    async def global_lock(self, ctx, name: str, true_or_false: bool = None):
         """Lock/unlock a global embed."""
         data = await self.config.embeds()
         try:
@@ -392,11 +407,7 @@ class EmbedUtils(commands.Cog):
         except KeyError:
             await ctx.send("This is not a stored embed.")
             return
-        target_state = (
-            true_or_false
-            if true_or_false is not None
-            else not embed["locked"]
-        )
+        target_state = true_or_false if true_or_false is not None else not embed["locked"]
         async with self.config.embeds() as a:
             a[name]["locked"] = target_state
         if target_state:
@@ -407,11 +418,7 @@ class EmbedUtils(commands.Cog):
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
         async with self.config.guild(ctx.guild).embeds() as a:
-            a[name] = {
-                "author": ctx.author.mention,
-                "uses": 0,
-                "embed": embed
-            }
+            a[name] = {"author": ctx.author.id, "uses": 0, "embed": embed}
         await ctx.send(f"Embed stored under the name `{name}`.")
 
     async def get_stored_embed(self, ctx: commands.Context, name: str):
@@ -425,15 +432,12 @@ class EmbedUtils(commands.Cog):
         embed = discord.Embed.from_dict(embed)
         return embed, data["author"], data["uses"]
 
-    async def global_store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed, locked: bool):
+    async def global_store_embed(
+        self, ctx: commands.Context, name: str, embed: discord.Embed, locked: bool
+    ):
         embed = embed.to_dict()
         async with self.config.embeds() as a:
-            a[name] = {
-                "author": ctx.author.mention,
-                "uses": 0,
-                "locked": locked,
-                "embed": embed
-            }
+            a[name] = {"author": ctx.author.id, "uses": 0, "locked": locked, "embed": embed}
         await ctx.send(f"Global embed stored under the name `{name}`.")
 
     async def get_global_stored_embed(self, ctx: commands.Context, name: str):
@@ -490,9 +494,11 @@ class EmbedUtils(commands.Cog):
         embed = discord.Embed(
             color=await self.bot.get_embed_color(ctx),
             title=errorType,
-            description=f"```py\n{error}\n```"
+            description=f"```py\n{error}\n```",
         )
-        embed.set_footer(text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example")
+        embed.set_footer(
+            text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example"
+        )
         emoji = self.bot.get_emoji(736038541364297738)
         if not emoji:
             emoji = "❌"

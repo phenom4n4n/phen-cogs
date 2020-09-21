@@ -6,7 +6,10 @@
     "short": "Calculate stuff",
     "description": "Calculate stuff",
     "tags": ["utility", "calculator"],
-    "requirements": ["simplecalculator"],
+    "requirements": [
+        "PyParsing",
+        "git+https://github.com/JonSnowbd/TagScript.git"
+    ],
     "hidden": false,
     "end_user_data_statement": "This cog does not store any End User Data."
 }

@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 import functools
 import asyncio
 
@@ -31,25 +31,27 @@ class PfpImgen(commands.Cog):
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command(aliases=["catgirl"])
+    @commands.command(aliases=["catgirl"], cooldown_after_parsing=True)
     async def neko(self, ctx, *, member: discord.Member = None):
         """Make a neko avatar..."""
         if not member:
             member = ctx.author
-        
+
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 156)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_neko, ctx, avatar)
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 neko = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
-                return await ctx.send("An error occurred while generating this image. Try again later.")
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
         await ctx.send(file=discord.File(neko, "neko.png"))
-        
+
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def bonk(self, ctx, *, member: discord.Member = None):
         """Bonk! Go to horny jail."""
         await ctx.trigger_typing()
@@ -60,9 +62,9 @@ class PfpImgen(commands.Cog):
             member = ctx.author
 
         async with ctx.typing():
-            victim_avatar = await self.get_avatar(member, 256)
+            victim_avatar = await self.get_avatar(member)
             if bonker:
-                bonker_avatar = await self.get_avatar(bonker, 223)
+                bonker_avatar = await self.get_avatar(bonker)
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar, bonker_avatar)
             else:
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar)
@@ -70,76 +72,121 @@ class PfpImgen(commands.Cog):
             try:
                 bonk = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
-                return await ctx.send("An error occurred while generating this image. Try again later.")
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
         await ctx.send(file=discord.File(bonk, "bonk.png"))
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def simp(self, ctx, *, member: discord.Member = None):
         """You are now a simp."""
         if not member:
             member = ctx.author
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 136)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_simp, ctx, avatar)
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 simp = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
-                return await ctx.send("An error occurred while generating this image. Try again later.")
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
         await ctx.send(file=discord.File(simp, "simp.png"))
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.command(cooldown_after_parsing=True)
     async def banner(self, ctx, *, member: discord.Member = None):
         """Banner"""
         if not member:
             member = ctx.author
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 200)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_banner, ctx, avatar, member.color)
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 banner = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
-                return await ctx.send("An error occurred while generating this image. Try again later.")
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
         await ctx.send(file=discord.File(banner, "banner.png"))
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.command()
-    async def nickel(self, ctx, member: Optional[discord.Member] = None, *, text: commands.clean_content(fix_channel_mentions=True)):
+    @commands.command(cooldown_after_parsing=True)
+    async def nickel(
+        self,
+        ctx,
+        member: Optional[discord.Member] = None,
+        *,
+        text: commands.clean_content(fix_channel_mentions=True),
+    ):
         """If I had a nickel for everytime someone ran this command..
-        
+
         I'd probably have a lot."""
         text = " ".join(text.split())
         if not member:
             member = ctx.author
         async with ctx.typing():
-            avatar = await self.get_avatar(member, 182)
+            avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
             task = self.bot.loop.run_in_executor(None, task)
             try:
-                banner = await asyncio.wait_for(task, timeout=60)
+                nickel = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
-                return await ctx.send("An error occurred while generating this image. Try again later.")
-        await ctx.send(file=discord.File(banner, "nickel.png"))
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
+        await ctx.send(file=discord.File(nickel, "nickel.png"))
 
-    async def get_avatar(self, member: discord.Member, size: int):
+    @checks.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command()
+    async def shutup(
+        self,
+        ctx,
+        member: Optional[discord.Member] = None,
+        *,
+        text: commands.clean_content(fix_channel_mentions=True),
+    ):
+        """Tell someone to shut up"""
+        if not member:
+            member = ctx.author
+        async with ctx.typing():
+            avatar = await self.get_avatar(member)
+            task = functools.partial(self.gen_shut, ctx, avatar, text)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                shut = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
+        await ctx.send(file=discord.File(shut, "shut.png"))
+
+    async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
         await member.avatar_url.save(avatar, seek_begin=True)
-        avatar = Image.open(avatar).convert("RGBA")
-        avatar = avatar.resize((size, size), Image.ANTIALIAS)
         return avatar
 
+    def bytes_to_image(self, image: BytesIO, size: int):
+        image = Image.open(image).convert("RGBA")
+        image = image.resize((size, size), Image.ANTIALIAS)
+        return image
+
     def gen_neko(self, ctx, member_avatar):
+        member_avatar = self.bytes_to_image(member_avatar, 156)
         # base canvas
         im = Image.new("RGBA", (500, 750), None)
-        #neko = Image.open(f"{bundled_data_path(ctx.cog)}/neko/neko.png", mode="r").convert("RGBA")
-        nekomask = Image.open(f"{bundled_data_path(ctx.cog)}/neko/nekomask.png", mode="r").convert("RGBA")
-        #im.paste(neko, (0, 0), neko)
+        # neko = Image.open(f"{bundled_data_path(self)}/neko/neko.png", mode="r").convert("RGBA")
+        nekomask = Image.open(f"{bundled_data_path(self)}/neko/nekomask.png", mode="r").convert(
+            "RGBA"
+        )
+        # im.paste(neko, (0, 0), neko)
 
         # pasting the pfp
         im.paste(member_avatar, (149, 122), member_avatar)
@@ -152,18 +199,22 @@ class PfpImgen(commands.Cog):
 
     def gen_bonk(self, ctx, victim_avatar, bonker_avatar=None):
         # base canvas
-        im = Image.open(f"{bundled_data_path(ctx.cog)}/bonk/bonkbase.png", mode="r").convert("RGBA")
+        im = Image.open(f"{bundled_data_path(self)}/bonk/bonkbase.png", mode="r").convert("RGBA")
 
         # pasting the victim
+        victim_avatar = self.bytes_to_image(victim_avatar, 256)
         victim_avatar = victim_avatar.rotate(angle=10, resample=Image.BILINEAR)
         im.paste(victim_avatar, (650, 225), victim_avatar)
-        
+
         # pasting the bonker
         if bonker_avatar:
+            bonker_avatar = self.bytes_to_image(bonker_avatar, 223)
             im.paste(bonker_avatar, (206, 69), bonker_avatar)
 
         # pasting the bat
-        bonkbat = Image.open(f"{bundled_data_path(ctx.cog)}/bonk/bonkbat.png", mode="r").convert("RGBA")
+        bonkbat = Image.open(f"{bundled_data_path(self)}/bonk/bonkbat.png", mode="r").convert(
+            "RGBA"
+        )
         im.paste(bonkbat, (452, 132), bonkbat)
 
         fp = BytesIO()
@@ -172,14 +223,15 @@ class PfpImgen(commands.Cog):
         return fp
 
     def gen_simp(self, ctx, member_avatar):
+        member_avatar = self.bytes_to_image(member_avatar, 136)
         # base canvas
         im = Image.new("RGBA", (500, 319), None)
-        card = Image.open(f"{bundled_data_path(ctx.cog)}/simp/simp.png", mode="r").convert("RGBA")
+        card = Image.open(f"{bundled_data_path(self)}/simp/simp.png", mode="r").convert("RGBA")
 
         # pasting the pfp
         member_avatar = member_avatar.rotate(angle=3, resample=Image.BILINEAR, expand=True)
         im.paste(member_avatar, (73, 105))
-        
+
         # pasting the card
         im.paste(card, (0, 0), card)
 
@@ -190,8 +242,11 @@ class PfpImgen(commands.Cog):
 
     def gen_banner(self, ctx, member_avatar, color: discord.Color):
         im = Image.new("RGBA", (489, 481), color.to_rgb())
-        comic = Image.open(f"{bundled_data_path(ctx.cog)}/banner/banner.png", mode="r").convert("RGBA")
-        
+        comic = Image.open(f"{bundled_data_path(self)}/banner/banner.png", mode="r").convert(
+            "RGBA"
+        )
+        member_avatar = self.bytes_to_image(member_avatar, 200)
+
         # 2nd slide
         av = member_avatar.rotate(angle=7, resample=Image.BILINEAR, expand=True)
         av = av.resize((90, 90), Image.LANCZOS)
@@ -207,8 +262,8 @@ class PfpImgen(commands.Cog):
         av2 = av2.resize((147, 148), Image.LANCZOS)
         im.paste(av2, (325, 233), av2)
 
-        #cover = Image.open(f"{bundled_data_path(ctx.cog)}/banner/bannercover.png", mode="r").convert("RGBA")
-        #im.paste(cover, (240, 159), cover)
+        # cover = Image.open(f"{bundled_data_path(self)}/banner/bannercover.png", mode="r").convert("RGBA")
+        # im.paste(cover, (240, 159), cover)
         im.paste(comic, (0, 0), comic)
 
         fp = BytesIO()
@@ -217,8 +272,9 @@ class PfpImgen(commands.Cog):
         return fp
 
     def gen_nickel(self, ctx, member_avatar, text: str):
+        member_avatar = self.bytes_to_image(member_avatar, 182)
         # base canvas
-        im = Image.open(f"{bundled_data_path(ctx.cog)}/nickel/nickel.png", mode="r").convert("RGBA")
+        im = Image.open(f"{bundled_data_path(self)}/nickel/nickel.png", mode="r").convert("RGBA")
 
         # avatars
         im.paste(member_avatar, (69, 70), member_avatar)
@@ -226,10 +282,57 @@ class PfpImgen(commands.Cog):
         im.paste(member_avatar, (104, 758), member_avatar)
 
         # text
-        font = ImageFont.truetype(f"{bundled_data_path(ctx.cog)}/arial.ttf", 30)
+        font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 30)
         canvas = ImageDraw.Draw(im)
         text_width, text_height = canvas.textsize(text, font, stroke_width=2)
-        canvas.text(((im.width - text_width) / 2, 285), text, font=font, fill=(206, 194, 114), align="center", stroke_width=2, stroke_fill=(0, 0, 0))
+        canvas.text(
+            ((im.width - text_width) / 2, 285),
+            text,
+            font=font,
+            fill=(206, 194, 114),
+            align="center",
+            stroke_width=2,
+            stroke_fill=(0, 0, 0),
+        )
+
+        fp = BytesIO()
+        im.save(fp, "PNG")
+        fp.seek(0)
+        return fp
+
+    def circle_avatar(self, avatar):
+        mask = Image.new("L", avatar.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0) + avatar.size, fill=255)
+        avatar.putalpha(mask)
+        return avatar
+
+    def gen_shut(self, ctx, member_avatar, text: str):
+        member_avatar = self.bytes_to_image(member_avatar, 140)
+        # base canvas
+        im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert("RGBA")
+
+        # avatars
+        circle_main = self.circle_avatar(member_avatar).rotate(
+            angle=57, resample=Image.BILINEAR, expand=True
+        )
+        im.paste(circle_main, (84, 207), circle_main)
+        im.paste(circle_main, (42, 864), circle_main)
+
+        # text
+        font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 25)
+        canvas = ImageDraw.Draw(im)
+        text_width, text_height = canvas.textsize(text, font, stroke_width=2)
+        canvas.multiline_text(
+            (((im.width - text_width) / 2) + 25, 75),
+            text,
+            font=font,
+            fill=(255, 255, 255),
+            align="center",
+            spacing=2,
+            stroke_width=2,
+            stroke_fill=(0, 0, 0),
+        )
 
         fp = BytesIO()
         im.save(fp, "PNG")

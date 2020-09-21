@@ -9,6 +9,7 @@ from redbot.core.bot import Red
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
 
+
 class DisboardReminder(commands.Cog):
     """
     Set a reminder to bump on Disboard.
@@ -17,14 +18,16 @@ class DisboardReminder(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
         self.load_check = self.bot.loop.create_task(self.bump_worker())
-        self.config = Config.get_conf(self, identifier=9765573181940385953309, force_registration=True)
+        self.config = Config.get_conf(
+            self, identifier=9765573181940385953309, force_registration=True
+        )
         default_guild = {
             "channel": None,
             "role": None,
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
             "tyMessage": "{member} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild.id}>.",
             "nextBump": None,
-            "clean": False
+            "clean": False,
         }
 
         self.config.register_guild(**default_guild)
@@ -37,11 +40,11 @@ class DisboardReminder(commands.Cog):
     @commands.group(aliases=["bprm"])
     async def bumpreminder(self, ctx):
         """Set a reminder to bump on Disboard.
-        
+
         This sends a reminder to bump in a specified channel 2 hours after someone successfully bumps, thus making it more accurate than a repeating schedule."""
 
     @bumpreminder.command()
-    async def channel(self, ctx, channel: discord.TextChannel=None):
+    async def channel(self, ctx, channel: discord.TextChannel = None):
         """Set the channel to send bump reminders to.
 
         This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
@@ -51,16 +54,18 @@ class DisboardReminder(commands.Cog):
             await ctx.send("Disabled bump reminders in this server.")
         else:
             try:
-                await channel.send("Set this channel as the reminder channel for bumps. "
-                                   "I will not send my first reminder until a successful bump is registered.")
+                await channel.send(
+                    "Set this channel as the reminder channel for bumps. "
+                    "I will not send my first reminder until a successful bump is registered."
+                )
                 await self.config.guild(ctx.guild).channel.set(channel.id)
             except discord.errors.Forbidden:
                 await ctx.send("I do not have permission to talk in that channel.")
         await ctx.tick()
-    
+
     @checks.has_permissions(mention_everyone=True)
     @bumpreminder.command()
-    async def pingrole(self, ctx, role: discord.Role=None):
+    async def pingrole(self, ctx, role: discord.Role = None):
         """Set a role to ping for bump reminders. If no role is provided, it will clear the current role."""
 
         if not role:
@@ -69,7 +74,7 @@ class DisboardReminder(commands.Cog):
         else:
             await self.config.guild(ctx.guild).role.set(role.id)
             await ctx.send(f"Set {role.name} to ping for bump reminders.")
-    
+
     @bumpreminder.command(aliases=["ty"])
     async def thankyou(self, ctx, *, message: str = None):
         """Change the message used for 'Thank You' messages. Providing no message will reset to the default message.
@@ -77,7 +82,7 @@ class DisboardReminder(commands.Cog):
         Variables:
         `{member}` - Mentions the user who bumped
         `{guild}` - This server
-        
+
         Usage: `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`"""
 
         if message:
@@ -99,11 +104,11 @@ class DisboardReminder(commands.Cog):
             await ctx.send("Reset this server's reminder message.")
 
     @bumpreminder.command()
-    async def clean(self, ctx, true_or_false: bool=None):
+    async def clean(self, ctx, true_or_false: bool = None):
         """Toggle whether the bot should keep the bump channel "clean."
-        
+
         The bot will remove all messages in the channel except for bump messages."""
-        
+
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -121,8 +126,8 @@ class DisboardReminder(commands.Cog):
         data = await self.config.guild(ctx.guild).all()
 
         e = discord.Embed(
-            color=await self.bot.get_embed_color(ctx),
-            title="Bump Reminder Settings")
+            color=await self.bot.get_embed_color(ctx), title="Bump Reminder Settings"
+        )
         for key, value in data.items():
             if isinstance(value, str):
                 inline = False
@@ -142,7 +147,7 @@ class DisboardReminder(commands.Cog):
         d = datetime.fromtimestamp(remaining)
         await discord.utils.sleep_until(d)
         await self.bump_message(guild)
-    
+
     async def bump_message(self, guild: discord.Guild):
         data = await self.config.guild(guild).all()
         channel = guild.get_channel(data["channel"])
@@ -166,7 +171,6 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
 
-# sometimes this works but sometimes it doesnt?? pls help
     async def bump_worker(self):
         """Restarts bump timers
         This worker will attempt to restart bump timers incase of a cog reload or
@@ -214,7 +218,12 @@ class DisboardReminder(commands.Cog):
             return
         clean = data["clean"]
 
-        if clean and message.author != message.guild.me and message.author.id != 302050872383242240 and message.channel == bumpChannel:
+        if (
+            clean
+            and message.author != message.guild.me
+            and message.author.id != 302050872383242240
+            and message.channel == bumpChannel
+        ):
             if message.channel.permissions_for(message.guild.me).manage_messages:
                 await asyncio.sleep(5)
                 try:
@@ -226,20 +235,31 @@ class DisboardReminder(commands.Cog):
             return
         embed = message.embeds[0]
         if "Bump done" in embed.description:
+            if data["nextBump"]:
+                if not (data["nextBump"] - message.created_at.timestamp() <= 0):
+                    return
             words = embed.description.split(",")
             member = words[0]
             tymessage = data["tyMessage"]
             try:
-                await bumpChannel.send(tymessage.replace("{member}", str(member)).replace("{guild}", message.guild.name).replace("{guild.id}", str(message.guild.id)))
+                await bumpChannel.send(
+                    tymessage.replace("{member}", str(member))
+                    .replace("{guild}", message.guild.name)
+                    .replace("{guild.id}", str(message.guild.id))
+                )
             except discord.errors.Forbidden:
                 pass
-            
+
             nextBump = message.created_at.timestamp() + 7200
             await self.config.guild(message.guild).nextBump.set(nextBump)
 
             await self.bump_timer(message.guild, nextBump)
         else:
-            if message.channel.permissions_for(message.guild.me).manage_messages and clean and message.channel == bumpChannel:
+            if (
+                message.channel.permissions_for(message.guild.me).manage_messages
+                and clean
+                and message.channel == bumpChannel
+            ):
                 await asyncio.sleep(5)
                 try:
                     await message.delete()

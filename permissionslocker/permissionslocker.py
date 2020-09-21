@@ -6,6 +6,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box
+
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 
@@ -21,12 +22,8 @@ class PermissionsLocker(commands.Cog):
             identifier=4235969345783789456,
             force_registration=True,
         )
-        default_global = {
-            "permissions": 387136,
-            "whitelisted": []
-        }
+        default_global = {"permissions": 387136, "whitelisted": []}
         self.config.register_global(**default_global)
-
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -39,7 +36,7 @@ class PermissionsLocker(commands.Cog):
             return
         if await ctx.bot.is_owner(ctx.author):
             return
-        data = await ctx.bot.get_cog('PermissionsLocker').config.all()
+        data = await ctx.bot.get_cog("PermissionsLocker").config.all()
         if guild.id in data["whitelisted"]:
             return
         author, me = ctx.author, guild.me
@@ -48,11 +45,16 @@ class PermissionsLocker(commands.Cog):
         requiredPerms = discord.Permissions(data["permissions"])
         myPerms = ctx.channel.permissions_for(me)
         if not myPerms.is_superset(requiredPerms):
-            missingPerms = await ctx.bot.get_cog('PermissionsLocker').humanize_perms(discord.Permissions((myPerms.value ^ requiredPerms.value) & requiredPerms.value), True)
+            missingPerms = await ctx.bot.get_cog("PermissionsLocker").humanize_perms(
+                discord.Permissions((myPerms.value ^ requiredPerms.value) & requiredPerms.value),
+                True,
+            )
             await ctx.send(
                 "Hello there!\nI'm missing the following permissions. Without these permissions, I cannot function properly. "
                 "Please check your guild and channel permissions to ensure I have these permissions:"
-                f"\n{box(missingPerms, 'diff')}", delete_after=60)
+                f"\n{box(missingPerms, 'diff')}",
+                delete_after=60,
+            )
             raise commands.CheckFailure()
 
     @commands.is_owner()
@@ -61,11 +63,15 @@ class PermissionsLocker(commands.Cog):
         """Permissions locker group command."""
         if not ctx.subcommand_passed:
             data = await self.config.all()
-            e = discord.Embed(
-                color=await ctx.embed_color(),
-                title="PermissionsLocker"
+            e = discord.Embed(color=await ctx.embed_color(), title="PermissionsLocker")
+            e.add_field(
+                name="Required Permissions",
+                value=box(
+                    await self.humanize_perms(discord.Permissions(data["permissions"]), True),
+                    "diff",
+                ),
+                inline=False,
             )
-            e.add_field(name="Required Permissions", value=box(await self.humanize_perms(discord.Permissions(data["permissions"]), True), "diff"), inline=False)
             if data["whitelisted"]:
                 whitelisted = []
                 for item in data["whitelisted"]:
@@ -78,7 +84,9 @@ class PermissionsLocker(commands.Cog):
         """Set the permissions value that is required for the bot to work."""
         permissions = discord.Permissions(permissions)
         await self.config.permissions.set(permissions.value)
-        await ctx.send(f"I will now require these permissions on commands:\n{box(await self.humanize_perms(permissions, True), 'diff')}")
+        await ctx.send(
+            f"I will now require these permissions on commands:\n{box(await self.humanize_perms(permissions, True), 'diff')}"
+        )
 
     @permlock.command(aliases=["wl"])
     async def whitelist(self, ctx, guild: int):
