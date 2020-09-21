@@ -40,7 +40,9 @@ class ForceMention(commands.Cog):
             pass
         await self.forcemention(ctx.channel, role, message)
 
-    async def forcemention(self, channel: discord.TextChannel, role: discord.Role, message: str, **kwargs):
+    async def forcemention(
+        self, channel: discord.TextChannel, role: discord.Role, message: str, **kwargs
+    ):
         mentionPerms = discord.AllowedMentions(roles=True)
         if role.mentionable:
             await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
