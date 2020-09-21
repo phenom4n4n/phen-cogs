@@ -71,7 +71,7 @@ class LinkQuoter(commands.Cog):
                     )
                     embed.set_footer(text=f"#{message.channel.name}")
                     e = embed
-                if str(embed.type) == "image":
+                if str(embed.type) == ("image" or "article"):
                     image = embed.url
             elif not message.content and not message.embeds and not message.attachments:
                 return
