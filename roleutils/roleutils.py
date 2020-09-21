@@ -44,9 +44,7 @@ class RoleUtils(
             identifier=326235423452394523,
             force_registration=True,
         )
-        default_guild = {
-            "reactroles": {}
-        }
+        default_guild = {"reactroles": {}}
         self.config.register_guild(**default_guild)
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
