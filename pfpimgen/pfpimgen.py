@@ -328,7 +328,7 @@ class PfpImgen(commands.Cog):
         pages = list(pagify(text, [" "], page_length=30))[:4]
         for page in pages:
             text_width, text_height = canvas.textsize(page, font, stroke_width=2)
-            x = (((im.width + 40) - text_width) / 2)
+            x = ((im.width + 40) - text_width) / 2
             canvas.text(
                 (x, y),
                 page,
