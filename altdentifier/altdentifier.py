@@ -94,6 +94,8 @@ class AltDentifier(commands.Cog):
                 and channel.permissions_for(ctx.me).send_messages
             ):
                 await ctx.send("I do not have permission to talk/send embeds in that channel.")
+            else:
+                await self.config.guild(ctx.guild).channel.set(channel.id)
         await ctx.tick()
 
     @altset.command()
