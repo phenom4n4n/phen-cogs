@@ -89,13 +89,8 @@ class AltDentifier(commands.Cog):
             await self.config.guild(ctx.guild).channel.clear()
             await ctx.send("Disabled AltDentifier join checks in this server.")
         else:
-            try:
-                await channel.send(
-                    "Set this channel as the message channel for AltDentifier join checks"
-                )
-                await self.config.guild(ctx.guild).channel.set(channel.id)
-            except discord.errors.Forbidden:
-                await ctx.send("I do not have permission to talk in that channel.")
+            if not (channel.permissions_for(ctx.me).send_messages and channel.permissions_for(ctx.me).send_messages):
+                await ctx.send("I do not have permission to talk/send embeds in that channel.")
         await ctx.tick()
 
     @altset.command()
