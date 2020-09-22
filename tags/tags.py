@@ -209,7 +209,13 @@ class Tags(commands.Cog):
         if ctx.prefix is None:
             return
 
-        new_message = copy(message)
         tag_command = message.content.lstrip(ctx.prefix)
-        new_message.content = f"{ctx.prefix}tag False {tag_command}"
-        await self.bot.process_commands(new_message)
+        tag_split = tag_command.split(" ")
+        if not tag_split:
+            return
+        tag_name = tag_split[0]
+        tag = await self.get_stored_tag(ctx, tag_name, False)
+        if tag:
+            new_message = copy(message)
+            new_message.content = f"{ctx.prefix}tag False {tag_command}"
+            await self.bot.process_commands(new_message)
