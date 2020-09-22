@@ -32,7 +32,9 @@ class FuzzyRole(IDConverter):
             # Not a mention
             if guild:
                 for r in guild.roles:
-                    if argument.lower().replace(" ", "") in unidecode.unidecode(r.name.lower().replace(" ", "")):
+                    if argument.lower().replace(" ", "") in unidecode.unidecode(
+                        r.name.lower().replace(" ", "")
+                    ):
                         result.append(r)
                         continue
         else:
