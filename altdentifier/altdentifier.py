@@ -83,7 +83,7 @@ class AltDentifier(commands.Cog):
     async def channel(self, ctx, channel: discord.TextChannel = None):
         """Set the channel to send AltDentifier join checks to.
 
-        This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
+        This also works as a toggle, so if no channel is provided, it will disable join checks for this server."""
 
         if not channel:
             await self.config.guild(ctx.guild).channel.clear()
