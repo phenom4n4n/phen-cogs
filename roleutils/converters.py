@@ -32,7 +32,7 @@ class FuzzyRole(IDConverter):
             # Not a mention
             if guild:
                 for r in guild.roles:
-                    if argument.lower() in unidecode.unidecode(r.name.lower().replace(" ", "")):
+                    if argument.lower().replace(" ", "") in unidecode.unidecode(r.name.lower().replace(" ", "")):
                         result.append(r)
                         continue
         else:
@@ -43,7 +43,7 @@ class FuzzyRole(IDConverter):
                 result.append(_get_from_guilds(bot, "get_role", role_id))
 
         if not result:
-            raise BadArgument('Role "{}" not found'.format(argument))
+            raise BadArgument('Role "{}" not found.'.format(argument))
 
         calculated_result = [
             (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result
