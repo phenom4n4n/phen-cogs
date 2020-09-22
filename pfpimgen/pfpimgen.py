@@ -9,6 +9,7 @@ from redbot.core import commands, checks
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.data_manager import bundled_data_path
+from redbot.core.utils.chat_formatting import pagify
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -154,6 +155,7 @@ class PfpImgen(commands.Cog):
         text: commands.clean_content(fix_channel_mentions=True),
     ):
         """Tell someone to shut up"""
+        text = " ".join(text.split())
         if not member:
             member = ctx.author
         async with ctx.typing():
@@ -322,17 +324,22 @@ class PfpImgen(commands.Cog):
         # text
         font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 25)
         canvas = ImageDraw.Draw(im)
-        text_width, text_height = canvas.textsize(text, font, stroke_width=2)
-        canvas.multiline_text(
-            (((im.width - text_width) / 2) + 25, 75),
-            text,
-            font=font,
-            fill=(255, 255, 255),
-            align="center",
-            spacing=2,
-            stroke_width=2,
-            stroke_fill=(0, 0, 0),
-        )
+        y = 70
+        pages = list(pagify(text, [" "], page_length=30))[:4]
+        for page in pages:
+            text_width, text_height = canvas.textsize(page, font, stroke_width=2)
+            x = (((im.width + 40) - text_width) / 2)
+            canvas.text(
+                (x, y),
+                page,
+                font=font,
+                fill=(255, 255, 255),
+                align="center",
+                spacing=2,
+                stroke_width=2,
+                stroke_fill=(0, 0, 0),
+            )
+            y += 25
 
         fp = BytesIO()
         im.save(fp, "PNG")
