@@ -165,10 +165,10 @@ class Plague(commands.Cog):
                 if userState == "infected":
                     infected_list.append(f"{user.mention} - {user}")
         if infected_list:
-            embeds = []
             infected_list = "\n".join(infected_list)
             color = await ctx.embed_color()
             if len(infected_list) > 2000:
+                embeds = []
                 infected_pages = list(pagify(infected_list))
                 for index, page in enumerate(infected_pages, start=1):
                     embed = discord.Embed(
@@ -197,29 +197,31 @@ class Plague(commands.Cog):
             guild = ctx.guild
         user_list = await self.config.all_users()
         infected_list = []
-        for user in user_list:
+        for user, data in user_list.items():
             user = guild.get_member(user)
             if user:
-                userState = await self.config.user(user).gameState()
+                userState = data["gameState"]
                 if userState == "infected":
                     infected_list.append(f"{user.mention} - {user}")
         if infected_list:
-            embeds = []
             infected_list = "\n".join(infected_list)
+            color = await ctx.embed_color()
             if len(infected_list) > 2000:
-                for page in pagify(infected_list):
-                    embeds.append(
-                        discord.Embed(
-                            color=await ctx.embed_color(),
-                            title="Infected Members",
-                            description=page,
-                        )
+                embeds = []
+                infected_pages = list(pagify(infected_list))
+                for index, page in enumerate(infected_pages, start=1):
+                    embed = discord.Embed(
+                        color=color,
+                        title="Infected Members",
+                        description=page
                     )
+                    embed.set_footer(text=f"{index}/{len(infected_pages)}")
+                    embeds.append(embed)
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
                 await ctx.send(
                     embed=discord.Embed(
-                        color=await ctx.embed_color(),
+                        color=color,
                         title="Infected Members",
                         description=infected_list,
                     )
@@ -233,27 +235,30 @@ class Plague(commands.Cog):
 
         user_list = await self.config.all_users()
         healthy_list = []
-        for user in user_list:
+        for user, data in user_list.items():
             user = ctx.bot.get_user(user)
             if user:
-                userState = await self.config.user(user).gameState()
+                userState = data["userState"]
                 if userState == "healthy":
                     healthy_list.append(f"{user.mention} - {user}")
         if healthy_list:
-            embeds = []
             healthy_list = "\n".join(healthy_list)
+            color = await ctx.embed_color()
             if len(healthy_list) > 2000:
-                for page in pagify(healthy_list):
-                    embeds.append(
-                        discord.Embed(
-                            color=await ctx.embed_color(), title="Healthy Users", description=page
-                        )
+                embeds = []
+                healthy_pages = list(pagify(healthy_list))
+                for index, page in enumerate(healthy_pages, start=1):
+                    embed = discord.Embed(
+                        color=color,
+                        title="Healthy Users",
+                        description=page
                     )
+                    embed.set_footer(text=f"{index}/{len(healthy_pages)}")
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
                 await ctx.send(
                     embed=discord.Embed(
-                        color=await ctx.embed_color(),
+                        color=color,
                         title="Healthy Users",
                         description=healthy_list,
                     )
@@ -304,17 +309,21 @@ class Plague(commands.Cog):
         await ctx.send(f"`{user}` has been reset.")
 
     async def infect_user(self, ctx, user: discord.User, auto=False):
-        plagueName = await self.config.plagueName()
-        state = await self.config.user(user).gameState()
-        role = await self.config.user(user).gameRole()
         if user.bot:
             return "You can't infect bots."
+
+        game_data = await self.config.all()
+        plagueName = game_data["plagueName"]
+        data = await self.config.user(user).all()
+        state = data["gameState"]
+        role = data["gameRole"]
+
         if state == "infected":
             return f"`{user.name}` is already infected with {plagueName}."
         elif role == "Doctor":
             return f"You cannot infect a Doctor!"
         else:
-            channel = await self.config.logChannel()
+            channel = game_data["logChannel"]
             channel = ctx.bot.get_channel(channel)
             autoInfect = f" since `{ctx.author}` didn't wear a mask" if auto else ""
 
@@ -327,17 +336,21 @@ class Plague(commands.Cog):
             return f"`{user.name}` has been infected with {plagueName}{autoInfect}."
 
     async def cure_user(self, ctx, user: discord.User):
-        plagueName = await self.config.plagueName()
-        state = await self.config.user(user).gameState()
-        role = await self.config.user(user).gameRole()
         if user.bot:
             return "You can't cure bots."
+
+        data = await self.config.user(user).all()
+        state = data["gameState"]
+        role = data["gameRole"]
+
         if state == "healthy":
             return f"`{user.name}` is already healthy."
         elif role == "Plaguebearer":
             return f"You cannot cure a Plaguebearer!"
         else:
-            channel = await self.config.logChannel()
+            game_data = await self.config.all()
+            plagueName = game_data["plagueName"]
+            channel = game_data["logChannel"]
             channel = ctx.bot.get_channel(channel)
 
             await self.config.user(user).gameState.set("healthy")
@@ -368,6 +381,7 @@ class Plague(commands.Cog):
         if notificationType == "plaguebearer":
             title = f"You are now a Plaguebearer!"
             description = f"{ctx.author} has set you as a Plaguebearer. You now have access to `{prefixes[-1]}infect`."
+
         embed = discord.Embed(title=title, description=description)
         embed.set_footer(text=f"Use `{prefixes[-1]}plaguenotify` to disable these notifications.")
         try:
@@ -384,16 +398,17 @@ class Plague(commands.Cog):
         number = random.randint(1, 10)
         if number > 3:
             return
-        state = await self.config.user(ctx.author).gameState()
+        perp = await self.config.user(ctx.author).all()
+        state = perp["gameState"]
         if state != "infected":
             return
+        
         not_bots = [user for user in ctx.message.mentions if not user.bot]
-        infectables = [
-            user
-            for user in not_bots
-            if ((await self.config.user(user).gameState()) != "infected")
-            and ((await self.config.user(user).gameRole() != "Doctor"))
-        ]
+        infectables = []
+        for user in not_bots:
+            victim_data = await self.config.user(user).all()
+            if (victim_data["gameState"] != "infected") and (victim_data["gameRole"] != "Doctor"):
+                infectables.append(user)
         if not infectables:
             return
         victim = random.choice(infectables)
