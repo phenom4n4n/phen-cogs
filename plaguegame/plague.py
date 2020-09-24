@@ -107,9 +107,9 @@ class Plague(commands.Cog):
 
         await ctx.send(message)
 
-    @bank.cost(5000)
     @commands.check(not_doctor)
     @commands.check(is_healthy)
+    @bank.cost(5000)
     @commands.command(aliases=["plaguedoc"])
     async def plaguedoctor(self, ctx):
         """Become a doctor for 5,000 currency.
@@ -158,22 +158,26 @@ class Plague(commands.Cog):
 
         user_list = await self.config.all_users()
         infected_list = []
-        for user in user_list:
+        for user, data in user_list.items():
             user = ctx.bot.get_user(user)
             if user:
-                userState = await self.config.user(user).gameState()
+                userState = data["gameState"]
                 if userState == "infected":
                     infected_list.append(f"{user.mention} - {user}")
         if infected_list:
             embeds = []
             infected_list = "\n".join(infected_list)
+            color = await ctx.embed_color()
             if len(infected_list) > 2000:
-                for page in pagify(infected_list):
-                    embeds.append(
-                        discord.Embed(
-                            color=await ctx.embed_color(), title="Infected Users", description=page
-                        )
+                infected_pages = list(pagify(infected_list))
+                for index, page in enumerate(infected_pages, start=1):
+                    embed = discord.Embed(
+                        color=color,
+                        title="Infected Users",
+                        description=page
                     )
+                    embed.set_footer(text=f"{index}/{len(infected_pages)}")
+                    embeds.append(embed)
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
                 await ctx.send(
