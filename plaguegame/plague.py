@@ -171,11 +171,7 @@ class Plague(commands.Cog):
                 embeds = []
                 infected_pages = list(pagify(infected_list))
                 for index, page in enumerate(infected_pages, start=1):
-                    embed = discord.Embed(
-                        color=color,
-                        title="Infected Users",
-                        description=page
-                    )
+                    embed = discord.Embed(color=color, title="Infected Users", description=page)
                     embed.set_footer(text=f"{index}/{len(infected_pages)}")
                     embeds.append(embed)
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
