@@ -242,6 +242,7 @@ class Plague(commands.Cog):
                 for index, page in enumerate(healthy_pages, start=1):
                     embed = discord.Embed(color=color, title="Healthy Users", description=page)
                     embed.set_footer(text=f"{index}/{len(healthy_pages)}")
+                    embeds.append(embed)
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
                 await ctx.send(
