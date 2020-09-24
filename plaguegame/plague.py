@@ -230,7 +230,7 @@ class Plague(commands.Cog):
         for user, data in user_list.items():
             user = ctx.bot.get_user(user)
             if user:
-                userState = data["userState"]
+                userState = data["gameState"]
                 if userState == "healthy":
                     healthy_list.append(f"{user.mention} - {user}")
         if healthy_list:
