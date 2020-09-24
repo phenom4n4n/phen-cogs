@@ -1,0 +1,21 @@
+{
+    "name": "Ratings",
+    "short": "Find out how (simp|sane|smart) you are.",
+    "description": "Rate yourself on many things.",
+    "end_user_data_statement": "This cog does not persistently store any data or metadata about users.",
+    "install_msg": "Thanks for installing Ratings!\nThis cog uses custom emoji for some responses, if you want to have those, request to have your bot invited here <https://discord.gg/W6CE7Wy>",
+    "author": [
+        "PhenoM4n4n"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [
+        "tag1",
+        "tag2",
+        "tag3"
+    ],
+    "min_bot_version": "3.3.10",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
