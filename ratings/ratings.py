@@ -53,7 +53,7 @@ class Ratings(commands.Cog):
     async def iqrate(self, ctx: commands.Context, member: Optional[discord.Member]):
         """100% legit IQ test."""
         member = member or ctx.author
-        random.seed(member.id)
+        random.seed(member.id + self.bot.user.id)
         if await self.bot.is_owner(member):
             iq = random.randint(200, 500)
         else:
@@ -73,7 +73,7 @@ class Ratings(commands.Cog):
     async def sanitycheck(self, ctx: commands.Context, member: Optional[discord.Member]):
         """Check your sanity."""
         member = member or ctx.author
-        random.seed(str(member.id) + str(date.today().strftime("%j")))
+        random.seed(str(member.id) + str(date.today().strftime("%j")) + str(self.bot.user.id))
         sanity = random.randint(0, 100)
         await ctx.send(
             f"{member.mention} is {sanity}% sane today.",
