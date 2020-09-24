@@ -206,11 +206,7 @@ class Plague(commands.Cog):
                 embeds = []
                 infected_pages = list(pagify(infected_list))
                 for index, page in enumerate(infected_pages, start=1):
-                    embed = discord.Embed(
-                        color=color,
-                        title="Infected Members",
-                        description=page
-                    )
+                    embed = discord.Embed(color=color, title="Infected Members", description=page)
                     embed.set_footer(text=f"{index}/{len(infected_pages)}")
                     embeds.append(embed)
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
@@ -244,11 +240,7 @@ class Plague(commands.Cog):
                 embeds = []
                 healthy_pages = list(pagify(healthy_list))
                 for index, page in enumerate(healthy_pages, start=1):
-                    embed = discord.Embed(
-                        color=color,
-                        title="Healthy Users",
-                        description=page
-                    )
+                    embed = discord.Embed(color=color, title="Healthy Users", description=page)
                     embed.set_footer(text=f"{index}/{len(healthy_pages)}")
                 await menu(ctx, embeds, DEFAULT_CONTROLS)
             else:
@@ -398,7 +390,7 @@ class Plague(commands.Cog):
         state = perp["gameState"]
         if state != "infected":
             return
-        
+
         not_bots = [user for user in ctx.message.mentions if not user.bot]
         infectables = []
         for user in not_bots:
