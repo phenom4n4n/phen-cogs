@@ -1,6 +1,6 @@
 from .disboardreminder import DisboardReminder
 
-__red_end_user_data_statement__ = "This cog does not store any End User Data."
+__red_end_user_data_statement__ = "This cog stores the number of times a member has bumped."
 
 
 def setup(bot):
