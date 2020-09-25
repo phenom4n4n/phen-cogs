@@ -171,7 +171,7 @@ class DisboardReminder(commands.Cog):
 
         color = await ctx.embed_color()
         leaderboard_string = "\n".join(mapped_strings)
-        if len(leaderboard_string > 2048):
+        if len(leaderboard_string) > 2048:
             embeds = []
             leaderboard_pages = list(pagify(leaderboard_string))
             for index, page in enumerate(leaderboard_pages, start=1):
@@ -288,7 +288,7 @@ class DisboardReminder(commands.Cog):
             words = embed.description.split(",")
             member_mention = words[0]
             member_id = int(member_mention.lstrip("<@!").lstrip("<@").rstrip(">"))
-            member = message.guild.get_member(member_mention.lstrip("<@!").lstri("<@").rstrip(">"))
+            member = message.guild.get_member(member_id)
             tymessage = data["tyMessage"]
             try:
                 await bumpChannel.send(
@@ -303,8 +303,9 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(message.guild).nextBump.set(nextBump)
 
             if member:
-                async with self.config.member(member).count() as c:
-                    c += 1
+                current_count = await self.config.member(member).count()
+                current_count += 1
+                await self.config.member(member).count.set(current_count)
 
             await self.bump_timer(message.guild, nextBump)
         else:
