@@ -178,7 +178,7 @@ class PfpImgen(commands.Cog):
         member = member or ctx.author
         async with ctx.typing():
             avatar = await self.get_avatar(member)
-            task = functools.partial(self.gen_horny, ctx, avatar)
+            task = functools.partial(self.gen_horny, avatar)
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 horny = await asyncio.wait_for(task, timeout=60)
@@ -228,14 +228,13 @@ class PfpImgen(commands.Cog):
         victim_avatar = self.bytes_to_image(victim_avatar, 256)
         victim_avatar = victim_avatar.rotate(angle=10, resample=Image.BILINEAR)
         im.paste(victim_avatar, (650, 225), victim_avatar)
+        victim_avatar.close()
 
         # pasting the bonker
         if bonker_avatar:
             bonker_avatar = self.bytes_to_image(bonker_avatar, 223)
             im.paste(bonker_avatar, (206, 69), bonker_avatar)
-
-        bonker_avatar.close()
-        victim_avatar.close()
+            bonker_avatar.close()
 
         # pasting the bat
         bonkbat = Image.open(f"{bundled_data_path(self)}/bonk/bonkbat.png", mode="r").convert(
@@ -263,6 +262,7 @@ class PfpImgen(commands.Cog):
 
         # pasting the card
         im.paste(card, (0, 0), card)
+        card.close()
 
         fp = BytesIO()
         im.save(fp, "PNG")
