@@ -37,7 +37,6 @@ class DisboardReminder(commands.Cog):
 
         self.config.register_member(**default_member)
         self.config.register_guild(**default_guild)
-        self.reloaded = False
 
     async def red_delete_data_for_user(self, requester, user_id):
         for guild, members in await self.config.all_members():
@@ -221,8 +220,6 @@ class DisboardReminder(commands.Cog):
         if the bot has been restart or shutdown. The task is only created when the cog
         is loaded, and is destroyed when it has finished.
         """
-        if self.reloaded:
-            return
         try:
             await self.bot.wait_until_ready()
             guilds = []
@@ -240,7 +237,6 @@ class DisboardReminder(commands.Cog):
                         await self.bump_message(guild)
                     else:
                         coros.append(self.bump_timer(guild, timer))
-            self.reloaded = True
             await asyncio.gather(*coros)
         except Exception as e:
             log.debug(f"Bump Restart Issue: {e}")
