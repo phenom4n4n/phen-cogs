@@ -178,7 +178,7 @@ class Plague(commands.Cog):
             else:
                 await ctx.send(
                     embed=discord.Embed(
-                        color=await ctx.embed_color(),
+                        color=color,
                         title="Infected Users",
                         description=infected_list,
                     )

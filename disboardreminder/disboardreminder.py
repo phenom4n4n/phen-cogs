@@ -6,6 +6,8 @@ from datetime import datetime
 
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
+from redbot.core.utils.chat_formatting import pagify
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
 
@@ -29,11 +31,18 @@ class DisboardReminder(commands.Cog):
             "nextBump": None,
             "clean": False,
         }
+        default_member = {
+            "count": 0,
+        }
 
+        self.config.register_member(**default_member)
         self.config.register_guild(**default_guild)
+        self.reloaded = False
 
-    async def red_delete_data_for_user(self, **kwargs):
-        return
+    async def red_delete_data_for_user(self, requester, user_id):
+        for guild, members in await self.config.all_members():
+            if user_id in members:
+                await self.config.member_from_ids(guild, user_id).clear()
 
     @checks.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
@@ -143,6 +152,47 @@ class DisboardReminder(commands.Cog):
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
+    @bumpreminder.command()
+    async def top(self, ctx, amount: int = 10):
+        """View the top Bumpers in the server."""
+        if amount < 1:
+            raise commands.BadArgument
+
+        members_data = await self.config.all_members(ctx.guild)
+        members_list = [(member, data["count"]) for member, data in members_data.items()]
+        ordered_list = sorted(members_list[:(amount - 1)], key=lambda m: m[1], reverse=True)
+
+        mapped_strings = []
+        for index, member in enumerate(ordered_list, start=1):
+            mapped_string.append(f"{index}. <@{member[0]}>: {member[1]}")
+        if not mapped_strings:
+            await ctx.send("There are no tracked members in this server.")
+            return
+
+        color = await ctx.embed_color()
+        leaderboard_string = "\n".join(mapped_strings)
+        if len(leaderboard_string > 2048):
+            embeds = []
+            leaderboard_pages = list(pagify(leaderboard_string))
+            for index, page in enumerate(leaderboard_pages, start=1):
+                embed = discord.Embed(
+                    color=color,
+                    title="Bump Leaderboard",
+                    description=page
+                )
+                embed.set_footer(text=f"{index}/{len(leaderboard_pages)}")
+                embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            embed = discord.Embed(
+                color=color,
+                title="Bump Leaderboard",
+                description=leaderboard_string
+            )
+            embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+            await ctx.send(embed=embed)
+
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         d = datetime.fromtimestamp(remaining)
         await discord.utils.sleep_until(d)
@@ -177,6 +227,8 @@ class DisboardReminder(commands.Cog):
         if the bot has been restart or shutdown. The task is only created when the cog
         is loaded, and is destroyed when it has finished.
         """
+        if self.reloaded:
+            return
         try:
             await self.bot.wait_until_ready()
             guilds = []
@@ -194,6 +246,7 @@ class DisboardReminder(commands.Cog):
                         await self.bump_message(guild)
                     else:
                         coros.append(self.bump_timer(guild, timer))
+            self.reloaded = True
             await asyncio.gather(*coros)
         except Exception as e:
             log.debug(f"Bump Restart Issue: {e}")
@@ -239,11 +292,13 @@ class DisboardReminder(commands.Cog):
                 if not (data["nextBump"] - message.created_at.timestamp() <= 0):
                     return
             words = embed.description.split(",")
-            member = words[0]
+            member_mention = words[0]
+            member_id = int(member_mention.lstrip("<@!").lstrip("<@").rstrip(">"))
+            member = message.guild.get_member(member_mention.lstrip("<@!").lstri("<@").rstrip(">"))
             tymessage = data["tyMessage"]
             try:
                 await bumpChannel.send(
-                    tymessage.replace("{member}", str(member))
+                    tymessage.replace("{member}", member_mention)
                     .replace("{guild}", message.guild.name)
                     .replace("{guild.id}", str(message.guild.id))
                 )
@@ -252,6 +307,10 @@ class DisboardReminder(commands.Cog):
 
             nextBump = message.created_at.timestamp() + 7200
             await self.config.guild(message.guild).nextBump.set(nextBump)
+
+            if member:
+                async with self.config.member(member).count() as c:
+                    c += 1
 
             await self.bump_timer(message.guild, nextBump)
         else:
