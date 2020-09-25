@@ -164,7 +164,7 @@ class DisboardReminder(commands.Cog):
 
         mapped_strings = []
         for index, member in enumerate(ordered_list, start=1):
-            mapped_string.append(f"{index}. <@{member[0]}>: {member[1]}")
+            mapped_strings.append(f"{index}. <@{member[0]}>: {member[1]}")
         if not mapped_strings:
             await ctx.send("There are no tracked members in this server.")
             return
