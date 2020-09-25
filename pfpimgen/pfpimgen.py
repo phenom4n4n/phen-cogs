@@ -134,7 +134,7 @@ class PfpImgen(commands.Cog):
             member = ctx.author
         async with ctx.typing():
             avatar = await self.get_avatar(member)
-            task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
+            task = functools.partial(self.gen_nickel, avatar, text[:29])
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 nickel = await asyncio.wait_for(task, timeout=60)
@@ -170,6 +170,24 @@ class PfpImgen(commands.Cog):
                 )
         await ctx.send(file=discord.File(shut, "shut.png"))
 
+    @checks.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command(cooldown_after_parsing=True)
+    async def horny(self, ctx, *, member: discord.Member = None):
+        """Assign someone a horny license."""
+        member = member or ctx.author
+        async with ctx.typing():
+            avatar = await self.get_avatar(member)
+            task = functools.partial(self.gen_horny, ctx, avatar)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                horny = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
+        await ctx.send(file=discord.File(horny, "horny.png"))
+
     async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
         await member.avatar_url.save(avatar, seek_begin=True)
@@ -193,10 +211,13 @@ class PfpImgen(commands.Cog):
         # pasting the pfp
         im.paste(member_avatar, (149, 122), member_avatar)
         im.paste(nekomask, (0, 0), nekomask)
+        nekomask.close()
+        member_avatar.close()
 
         fp = BytesIO()
         im.save(fp, "PNG")
         fp.seek(0)
+        im.close()
         return fp
 
     def gen_bonk(self, ctx, victim_avatar, bonker_avatar=None):
@@ -213,15 +234,20 @@ class PfpImgen(commands.Cog):
             bonker_avatar = self.bytes_to_image(bonker_avatar, 223)
             im.paste(bonker_avatar, (206, 69), bonker_avatar)
 
+        bonker_avatar.close()
+        victim_avatar.close()
+
         # pasting the bat
         bonkbat = Image.open(f"{bundled_data_path(self)}/bonk/bonkbat.png", mode="r").convert(
             "RGBA"
         )
         im.paste(bonkbat, (452, 132), bonkbat)
+        bonkbat.close()
 
         fp = BytesIO()
         im.save(fp, "PNG")
         fp.seek(0)
+        im.close()
         return fp
 
     def gen_simp(self, ctx, member_avatar):
@@ -233,6 +259,7 @@ class PfpImgen(commands.Cog):
         # pasting the pfp
         member_avatar = member_avatar.rotate(angle=3, resample=Image.BILINEAR, expand=True)
         im.paste(member_avatar, (73, 105))
+        member_avatar.close()
 
         # pasting the card
         im.paste(card, (0, 0), card)
@@ -240,6 +267,7 @@ class PfpImgen(commands.Cog):
         fp = BytesIO()
         im.save(fp, "PNG")
         fp.seek(0)
+        im.close()
         return fp
 
     def gen_banner(self, ctx, member_avatar, color: discord.Color):
@@ -260,9 +288,14 @@ class PfpImgen(commands.Cog):
         im.paste(av2, (47, 271), av2)
 
         # 4th slide
-        av2 = member_avatar.rotate(angle=26, resample=Image.BILINEAR, expand=True)
-        av2 = av2.resize((147, 148), Image.LANCZOS)
+        av3 = member_avatar.rotate(angle=26, resample=Image.BILINEAR, expand=True)
+        av3 = av3.resize((147, 148), Image.LANCZOS)
         im.paste(av2, (325, 233), av2)
+
+        av.close()
+        av2.close()
+        av3.close()
+        member_avatar.close()
 
         # cover = Image.open(f"{bundled_data_path(self)}/banner/bannercover.png", mode="r").convert("RGBA")
         # im.paste(cover, (240, 159), cover)
@@ -271,6 +304,7 @@ class PfpImgen(commands.Cog):
         fp = BytesIO()
         im.save(fp, "PNG")
         fp.seek(0)
+        im.close()
         return fp
 
     def gen_nickel(self, ctx, member_avatar, text: str):
@@ -282,6 +316,7 @@ class PfpImgen(commands.Cog):
         im.paste(member_avatar, (69, 70), member_avatar)
         im.paste(member_avatar, (69, 407), member_avatar)
         im.paste(member_avatar, (104, 758), member_avatar)
+        member_avatar.close()
 
         # text
         font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 30)
@@ -300,6 +335,7 @@ class PfpImgen(commands.Cog):
         fp = BytesIO()
         im.save(fp, "PNG")
         fp.seek(0)
+        im.close()
         return fp
 
     def circle_avatar(self, avatar):
@@ -320,6 +356,8 @@ class PfpImgen(commands.Cog):
         )
         im.paste(circle_main, (84, 207), circle_main)
         im.paste(circle_main, (42, 864), circle_main)
+        member_avatar.close()
+        circle_main.close()
 
         # text
         font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 25)
@@ -344,4 +382,26 @@ class PfpImgen(commands.Cog):
         fp = BytesIO()
         im.save(fp, "PNG")
         fp.seek(0)
+        im.close()
+        return fp
+
+    def gen_horny(self, member_avatar):
+        member_avatar = self.bytes_to_image(member_avatar, 85)
+        # base canvas
+        im = Image.new("RGBA", (360, 300), None)
+        card = Image.open(f"{bundled_data_path(self)}/horny/horny.png", mode="r").convert("RGBA")
+
+        # pasting the pfp
+        member_avatar = member_avatar.rotate(angle=22, resample=Image.BILINEAR, expand=True)
+        im.paste(member_avatar, (43, 117))
+        member_avatar.close()
+
+        # pasting the card
+        im.paste(card, (0, 0), card)
+        card.close()
+
+        fp = BytesIO()
+        im.save(fp, "PNG")
+        fp.seek(0)
+        im.close()
         return fp
