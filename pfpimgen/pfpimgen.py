@@ -134,7 +134,7 @@ class PfpImgen(commands.Cog):
             member = ctx.author
         async with ctx.typing():
             avatar = await self.get_avatar(member)
-            task = functools.partial(self.gen_nickel, avatar, text[:29])
+            task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 nickel = await asyncio.wait_for(task, timeout=60)
