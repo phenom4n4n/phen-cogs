@@ -160,7 +160,7 @@ class DisboardReminder(commands.Cog):
 
         members_data = await self.config.all_members(ctx.guild)
         members_list = [(member, data["count"]) for member, data in members_data.items()]
-        ordered_list = sorted(members_list[:(amount - 1)], key=lambda m: m[1], reverse=True)
+        ordered_list = sorted(members_list[: (amount - 1)], key=lambda m: m[1], reverse=True)
 
         mapped_strings = []
         for index, member in enumerate(ordered_list, start=1):
@@ -175,20 +175,14 @@ class DisboardReminder(commands.Cog):
             embeds = []
             leaderboard_pages = list(pagify(leaderboard_string))
             for index, page in enumerate(leaderboard_pages, start=1):
-                embed = discord.Embed(
-                    color=color,
-                    title="Bump Leaderboard",
-                    description=page
-                )
+                embed = discord.Embed(color=color, title="Bump Leaderboard", description=page)
                 embed.set_footer(text=f"{index}/{len(leaderboard_pages)}")
                 embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
                 embeds.append(embed)
             await menu(ctx, embeds, DEFAULT_CONTROLS)
         else:
             embed = discord.Embed(
-                color=color,
-                title="Bump Leaderboard",
-                description=leaderboard_string
+                color=color, title="Bump Leaderboard", description=leaderboard_string
             )
             embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=embed)
