@@ -66,7 +66,7 @@ class PermissionsLocker(commands.Cog):
             e = discord.Embed(color=await ctx.embed_color(), title="PermissionsLocker")
             e.add_field(
                 name="Required Permissions",
-                value=box(
+                value=str(data["permissions"]) + box(
                     await self.humanize_perms(discord.Permissions(data["permissions"]), True),
                     "diff",
                 ),
