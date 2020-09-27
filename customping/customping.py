@@ -91,10 +91,11 @@ class CustomPing(commands.Cog):
         typing_start = time.monotonic()
         typing_ping = round((typing_start - typing_start) * 1000, 2)
 
-        e = discord.Embed(title="Pinging..", description=(
-            f"Receival Latency: {receival_ping}ms"
-            f"\nTyping Latency: {typing_ping}ms"
-            )
+        e = discord.Embed(
+            title="Pinging..",
+            description=(
+                f"Receival Latency: {receival_ping}ms" f"\nTyping Latency: {typing_ping}ms"
+            ),
         )
 
         send_start = time.monotonic()
@@ -118,6 +119,7 @@ class CustomPing(commands.Cog):
             await message.edit(embed=e)
         except discord.NotFound:
             return
+
 
 def setup(bot):
     ping = CustomPing(bot)
