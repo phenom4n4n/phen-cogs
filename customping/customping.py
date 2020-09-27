@@ -33,7 +33,7 @@ class CustomPing(commands.Cog):
 
     @checks.bot_has_permissions(embed_links=True)
     @commands.cooldown(5, 5, commands.BucketType.user)
-    @commands.group()
+    @commands.group(invoke_without_command=True)
     async def ping(self, ctx):
         """Ping the bot..."""
         start = time.monotonic()
@@ -114,10 +114,10 @@ class CustomPing(commands.Cog):
         edit_ping = round((edit_end - edit_start) * 1000, 2)
         e.description += f"\Edit Latency: {edit_ping}ms"
 
-        averagePing = (receival_ping + typing_ping + send_ping + edit_ping) / 4
-        if averagePing >= 1000:
+        average_ping = (receival_ping + typing_ping + send_ping + edit_ping) / 4
+        if average_ping >= 1000:
             color = discord.Colour.red()
-        elif averagePing >= 200:
+        elif average_ping >= 200:
             color = discord.Colour.orange()
         else:
             color = discord.Colour.green()
