@@ -98,11 +98,11 @@ class CustomPing(commands.Cog):
         )
 
         send_start = time.monotonic()
-        await ctx.send(embed=e)
+        message = await ctx.send(embed=e)
         send_end = time.monotonic()
         send_ping = round((send_end - send_start) * 1000, 2)
         e.description += f"\nSend Latency: {send_ping}ms"
-        message = await asyncio.sleep(0.25)
+        await asyncio.sleep(0.25)
 
         edit_start = time.monotonic()
         try:
@@ -113,7 +113,18 @@ class CustomPing(commands.Cog):
         edit_ping = round((edit_end - edit_start) * 1000, 2)
         e.description += f"\Edit Latency: {edit_ping}ms"
 
-        message = await asyncio.sleep(0.25)
+        averagePing = (receival_ping + typing_ping + send_ping + edit_ping) / 4
+        if averagePing >= 1000:
+            color = discord.Colour.red()
+        elif averagePing >= 200:
+            color = discord.Colour.orange()
+        else:
+            color = discord.Colour.green()
+
+        e.color = color
+        e.title = "Pong!"
+
+        await asyncio.sleep(0.25)
         try:
             await message.edit(embed=e)
         except discord.NotFound:
