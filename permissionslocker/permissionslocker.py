@@ -9,6 +9,7 @@ from redbot.core.utils.chat_formatting import box
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
+
 async def before_invoke_hook(ctx: commands.Context):
     if not ctx.guild:
         return
