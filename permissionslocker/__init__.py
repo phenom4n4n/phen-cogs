@@ -11,8 +11,8 @@ with open(Path(__file__).parent / "info.json") as fp:
 
 async def setup(bot: Red) -> None:
     bot.add_cog(PermissionsLocker(bot))
-    bot.before_invoke(before_invoke_hook)
+    bot.before_invoke(PermissionsLocker.before_invoke_hook)
 
 
 def teardown(bot: Red):
-    bot.remove_before_invoke_hook(before_invoke_hook)
+    bot.remove_before_invoke_hook(PermissionsLocker.before_invoke_hook)

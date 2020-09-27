@@ -10,36 +10,6 @@ from redbot.core.utils.chat_formatting import box
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 
-async def before_invoke_hook(ctx: commands.Context):
-    if not ctx.guild:
-        return
-    guild = ctx.guild
-    if guild.me == guild.owner:
-        return
-    if await ctx.bot.is_owner(ctx.author):
-        return
-    data = await ctx.bot.get_cog("PermissionsLocker").config.all()
-    if guild.id in data["whitelisted"]:
-        return
-    author, me = ctx.author, guild.me
-    assert isinstance(author, discord.Member)  # nosec
-
-    requiredPerms = discord.Permissions(data["permissions"])
-    myPerms = ctx.channel.permissions_for(me)
-    if not myPerms.is_superset(requiredPerms):
-        missingPerms = await ctx.bot.get_cog("PermissionsLocker").humanize_perms(
-            discord.Permissions((myPerms.value ^ requiredPerms.value) & requiredPerms.value),
-            True,
-        )
-        await ctx.send(
-            "Hello there!\nI'm missing the following permissions. Without these permissions, I cannot function properly. "
-            "Please check your guild and channel permissions to ensure I have these permissions:"
-            f"\n{box(missingPerms, 'diff')}",
-            delete_after=60,
-        )
-        raise commands.CheckFailure()
-
-
 class PermissionsLocker(commands.Cog):
     """
     Force permissions for the bot.
@@ -58,6 +28,35 @@ class PermissionsLocker(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
+    async def before_invoke_hook(ctx: commands.Context):
+        if not ctx.guild:
+            return
+        guild = ctx.guild
+        if guild.me == guild.owner:
+            return
+        if await ctx.bot.is_owner(ctx.author):
+            return
+        data = await ctx.bot.get_cog("PermissionsLocker").config.all()
+        if guild.id in data["whitelisted"]:
+            return
+        author, me = ctx.author, guild.me
+        assert isinstance(author, discord.Member)  # nosec
+
+        requiredPerms = discord.Permissions(data["permissions"])
+        myPerms = ctx.channel.permissions_for(me)
+        if not myPerms.is_superset(requiredPerms):
+            missingPerms = await ctx.bot.get_cog("PermissionsLocker").humanize_perms(
+                discord.Permissions((myPerms.value ^ requiredPerms.value) & requiredPerms.value),
+                True,
+            )
+            await ctx.send(
+                "Hello there!\nI'm missing the following permissions. Without these permissions, I cannot function properly. "
+                "Please check your guild and channel permissions to ensure I have these permissions:"
+                f"\n{box(missingPerms, 'diff')}",
+                delete_after=60,
+            )
+            raise commands.CheckFailure()
+
     @commands.is_owner()
     @commands.group()
     async def permlock(self, ctx):
@@ -67,8 +66,7 @@ class PermissionsLocker(commands.Cog):
             e = discord.Embed(color=await ctx.embed_color(), title="PermissionsLocker")
             e.add_field(
                 name="Required Permissions",
-                value=str(data["permissions"])
-                + box(
+                value=str(data["permissions"]) + box(
                     await self.humanize_perms(discord.Permissions(data["permissions"]), True),
                     "diff",
                 ),
