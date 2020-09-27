@@ -6,6 +6,7 @@ import time
 import asyncio
 import concurrent
 import speedtest
+import datetime
 
 from redbot.core import commands, checks
 
@@ -31,8 +32,8 @@ class CustomPing(commands.Cog):
             self.bot.add_command(old_ping)
 
     @checks.bot_has_permissions(embed_links=True)
-    @commands.cooldown(5, 10, commands.BucketType.user)
-    @commands.command()
+    @commands.cooldown(5, 5, commands.BucketType.user)
+    @commands.group()
     async def ping(self, ctx):
         """Ping the bot..."""
         start = time.monotonic()
@@ -79,6 +80,44 @@ class CustomPing(commands.Cog):
         except discord.NotFound:
             return
 
+    @ping.command()
+    async def moreinfo(self, ctx: commands.Context):
+        """Ping with additional latency stastics."""
+        now = datetime.datetime.utcnow().timestamp()
+        receival_ping = round((now - ctx.message.created_at.timestamp()) * 1000, 2)
+
+        typing_start = time.monotonic()
+        await ctx.trigger_typing()
+        typing_start = time.monotonic()
+        typing_ping = round((typing_start - typing_start) * 1000, 2)
+
+        e = discord.Embed(title="Pinging..", description=(
+            f"Receival Latency: {receival_ping}ms"
+            f"\nTyping Latency: {typing_ping}ms"
+            )
+        )
+
+        send_start = time.monotonic()
+        await ctx.send(embed=e)
+        send_end = time.monotonic()
+        send_ping = round((send_end - send_start) * 1000, 2)
+        e.description += f"\nSend Latency: {send_ping}ms"
+        message = await asyncio.sleep(0.25)
+
+        edit_start = time.monotonic()
+        try:
+            await message.edit(embed=e)
+        except discord.NotFound:
+            return
+        edit_end = time.monotonic()
+        edit_ping = round((edit_end - edit_start) * 1000, 2)
+        e.description += f"\Edit Latency: {edit_ping}ms"
+
+        message = await asyncio.sleep(0.25)
+        try:
+            await message.edit(embed=e)
+        except discord.NotFound:
+            return
 
 def setup(bot):
     ping = CustomPing(bot)
