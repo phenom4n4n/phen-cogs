@@ -86,16 +86,9 @@ class CustomPing(commands.Cog):
         now = datetime.datetime.utcnow().timestamp()
         receival_ping = round((now - ctx.message.created_at.timestamp()) * 1000, 2)
 
-        typing_start = time.monotonic()
-        await ctx.trigger_typing()
-        typing_start = time.monotonic()
-        typing_ping = round((typing_start - typing_start) * 1000, 2)
-
         e = discord.Embed(
             title="Pinging..",
-            description=(
-                f"Receival Latency: {receival_ping}ms" f"\nTyping Latency: {typing_ping}ms"
-            ),
+            description=f"Receival Latency: {receival_ping}ms",
         )
 
         send_start = time.monotonic()
@@ -112,9 +105,9 @@ class CustomPing(commands.Cog):
             return
         edit_end = time.monotonic()
         edit_ping = round((edit_end - edit_start) * 1000, 2)
-        e.description += f"\Edit Latency: {edit_ping}ms"
+        e.description += f"\nEdit Latency: {edit_ping}ms"
 
-        average_ping = (receival_ping + typing_ping + send_ping + edit_ping) / 4
+        average_ping = (receival_ping + send_ping + edit_ping) / 3
         if average_ping >= 1000:
             color = discord.Colour.red()
         elif average_ping >= 200:
