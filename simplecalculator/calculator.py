@@ -26,7 +26,7 @@ class Calculator(commands.Cog):
     @commands.command(aliases=["calc"])
     async def calculate(self, ctx, *, query):
         """Math"""
-        query.replace(",", "")
+        query = query.replace(",", "")
         engine_input = "{m:" + query + "}"
         start = time.monotonic()
         output = self.engine.process(engine_input)
