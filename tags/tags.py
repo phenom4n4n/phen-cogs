@@ -1,10 +1,11 @@
 from TagScriptEngine import block, Interpreter, adapter
-
 from typing import Literal, Optional
 import discord
 from discord.utils import escape_markdown
 import time
+import re
 from copy import copy
+import asyncio
 
 from redbot.core import commands
 from redbot.core.bot import Red
@@ -16,6 +17,8 @@ from redbot.core.utils.chat_formatting import pagify, humanize_list, box
 from .converters import tag_name
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
+
+COM_RE = re.compile(r"{(?:c|com|command): ?(\S+)}")
 
 
 class Tags(commands.Cog):
@@ -184,6 +187,12 @@ class Tags(commands.Cog):
 
         m = await ctx.send(embed=e)
 
+    @commands.is_owner()
+    @tag.command()
+    async def process(self, ctx: commands.Context, *, tagscript: str):
+        """Process TagScript without storing."""
+        await self.process_tag(ctx, tagscript, "")
+
     async def store_tag(self, ctx: commands.Context, name: str, tagscript: str):
         async with self.config.guild(ctx.guild).tags() as t:
             t[name] = {"author": ctx.author.id, "uses": 0, "tag": tagscript}
@@ -219,3 +228,19 @@ class Tags(commands.Cog):
             new_message = copy(message)
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
             await self.bot.process_commands(new_message)
+
+    async def process_tag(self, ctx: commands.Context, tagscript: str, args: str) -> str:
+        output = self.engine.process(tagscript)
+        if output.body:
+            o = output.body.replace("{args}", args)
+            commands = COM_RE.findall(o)
+            to_process = []
+            if commands:
+                o = COM_RE.sub(o, "")
+                for command in commands:
+                    new = copy(ctx.message)
+                    new.content = ctx.prefix + command
+                    to_process.append(self.bot.process_commands(new))
+            if o:
+                await ctx.send(o)
+            await asyncio.gather(to_process)
