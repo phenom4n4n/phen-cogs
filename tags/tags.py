@@ -236,7 +236,7 @@ class Tags(commands.Cog):
             commands = COM_RE.findall(o)
             to_process = []
             if commands:
-                o = COM_RE.sub(o, "")
+                o = re.sub(COM_RE, "", o)
                 for command in commands:
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
