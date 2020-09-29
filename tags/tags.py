@@ -64,7 +64,7 @@ class Tags(commands.Cog):
                             del t[name]
 
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]")
-    async def tag(self, ctx, response: Optional[bool], tag_name: tag_name, *, args: str = "None"):
+    async def tag(self, ctx, response: Optional[bool], tag_name: tag_name, *, args: str = ""):
         """Tag management with TagScript.
 
         These commands use TagScriptEngine. [This site](https://github.com/JonSnowbd/TagScript/blob/v2/Documentation/Using%20TSE.md) has documentation on how to use TagScript blocks."""
@@ -73,13 +73,9 @@ class Tags(commands.Cog):
         tag_data = await self.get_stored_tag(ctx, tag_name, response)
         if tag_data:
             tag = tag_data["tag"]
-            query = tag.replace("{args}", args)
-            output = self.engine.process(query)
-            result = output.body[:2000]
-            if result:
-                await ctx.send(result)
             async with self.config.guild(ctx.guild).tags() as t:
                 t[tag_name]["uses"] += 1
+            await self.process_tag(ctx, tag, args)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command()
@@ -237,7 +233,9 @@ class Tags(commands.Cog):
             to_process = []
             if commands:
                 o = re.sub(COM_RE, "", o)
-                for command in commands:
+                for index, command in enumerate(commands):
+                    if index > 2:
+                        break
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
                     to_process.append(self.bot.process_commands(new))
