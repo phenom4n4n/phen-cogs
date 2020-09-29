@@ -243,4 +243,4 @@ class Tags(commands.Cog):
                     to_process.append(self.bot.process_commands(new))
             if o:
                 await ctx.send(o)
-            await asyncio.gather(to_process)
+            await asyncio.gather(*to_process)
