@@ -7,6 +7,8 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box
 
+from ..utils.utils import tick
+
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 
@@ -94,7 +96,7 @@ class PermissionsLocker(commands.Cog):
         """Whitelist a guild from permission checks."""
         async with self.config.whitelisted() as w:
             w.append(guild)
-        await ctx.tick()
+        await tick(ctx)
 
     @permlock.command(aliases=["unwl"])
     async def unwhitelist(self, ctx, guild: int):
@@ -105,7 +107,7 @@ class PermissionsLocker(commands.Cog):
             except ValueError:
                 return await ctx.send("This is not a guild in the whitelist")
             w.pop(index)
-        await ctx.tick()
+        await tick(ctx)
 
     async def humanize_perms(self, permissions: discord.Permissions, check: bool):
         perms = dict(iter(permissions))
