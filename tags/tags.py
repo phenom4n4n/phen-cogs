@@ -18,7 +18,7 @@ from .converters import tag_name
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
-COM_RE = re.compile(r"{(?:c|com|command): ?(.+)}")
+COM_RE = re.compile(r"{(?:c|com|command): ?([^{}]+)}")
 
 
 class Tags(commands.Cog):
