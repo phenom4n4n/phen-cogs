@@ -141,7 +141,7 @@ class Roles(MixinMeta):
             return
         member_list = self.get_member_list(ctx.guild.members, role, False)
         await self.super_massrole(
-            ctx, ctx.guild.members, role, "No one on the server has this role.", False
+            ctx, member_list, role, "No one on the server has this role.", False
         )
 
     @commands.admin_or_permissions(manage_roles=True)
