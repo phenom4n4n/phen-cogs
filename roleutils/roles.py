@@ -7,7 +7,7 @@ import logging
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.utils.mod import get_audit_reason
-from redbot.core.utils.chat_formatting import humanize_timedelta
+from redbot.core.utils.chat_formatting import humanize_timedelta, text_to_file
 
 from .abc import MixinMeta
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
@@ -23,7 +23,9 @@ class Roles(MixinMeta):
 
     @commands.group(invoke_without_command=True)
     async def role(self, ctx: commands.Context, member: discord.Member, *, role: FuzzyRole):
-        """Role management."""
+        """Role management.
+        
+        Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             await ctx.send(
                 "You cannot do that since you aren't higher than that user in hierarchy."
@@ -59,6 +61,17 @@ class Roles(MixinMeta):
         )
         e.set_footer(text=role.id)
         await ctx.send(embed=e)
+
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.admin_or_permissions(manage_roles=True)
+    @role.command()
+    async def dump(self, ctx: commands.Context, *, role: FuzzyRole):
+        """Sends a list of members in a role."""
+        members = "\n".join([f"{member} - {member.id}" for member in role.members])
+        if len(members) > 2000:
+            await ctx.send(file=text_to_file(members, f"members.txt"))
+        else:
+            await ctx.send(members)
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
