@@ -24,7 +24,7 @@ class Roles(MixinMeta):
     @commands.group(invoke_without_command=True)
     async def role(self, ctx: commands.Context, member: discord.Member, *, role: FuzzyRole):
         """Role management.
-        
+
         Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             await ctx.send(
