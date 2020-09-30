@@ -32,7 +32,7 @@ class CustomPing(commands.Cog):
             self.bot.add_command(old_ping)
 
     @checks.bot_has_permissions(embed_links=True)
-    @commands.cooldown(5, 5, commands.BucketType.user)
+    @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.group(invoke_without_command=True)
     async def ping(self, ctx):
         """Ping the bot..."""
