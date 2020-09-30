@@ -239,7 +239,7 @@ class Tags(commands.Cog):
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
                     to_process.append(self.bot.process_commands(new))
-            if o:
+            if "".join(o.strip()):
                 await ctx.send(o)
             if to_process:
                 await asyncio.gather(*to_process)
