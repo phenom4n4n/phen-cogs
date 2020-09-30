@@ -45,7 +45,7 @@ class FuzzyRole(IDConverter):
                 result.append(_get_from_guilds(bot, "get_role", role_id))
 
         if not result:
-            raise BadArgument('Role "{}" not found.'.format(argument))
+            raise BadArgument('Role "{}" not found'.format(argument))
 
         calculated_result = [
             (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result
