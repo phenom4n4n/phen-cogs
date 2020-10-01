@@ -98,7 +98,7 @@ class LinkQuoter(commands.Cog):
                 e.set_image(url=image)
             e.add_field(
                 name="Source",
-                value=f'\n[`[jump to message]`]({message.jump_url} "Follow me to the original message!")',
+                value=f'\n[[jump to message]]({message.jump_url} "Follow me to the original message!")',
                 inline=False,
             )
             embeds.append((e, message.author))
