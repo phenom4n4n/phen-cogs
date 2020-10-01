@@ -63,6 +63,7 @@ class Tags(commands.Cog):
                         async with self.config.guild(guild).tags() as t:
                             del t[name]
 
+    @commands.guild_only()
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]")
     async def tag(self, ctx, response: Optional[bool], tag_name: tag_name, *, args: str = ""):
         """Tag management with TagScript.

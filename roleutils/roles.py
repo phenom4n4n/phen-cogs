@@ -21,6 +21,7 @@ class Roles(MixinMeta):
     Useful role commands.
     """
 
+    @commands.guild_only()
     @commands.group(invoke_without_command=True)
     async def role(self, ctx: commands.Context, member: discord.Member, *, role: FuzzyRole):
         """Role management.
