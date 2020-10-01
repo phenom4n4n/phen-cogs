@@ -18,7 +18,7 @@ from .converters import tag_name
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
-COM_RE = re.compile(r"{(?:c|com|command): ?([^{}]+)}")
+COM_RE = re.compile(r"{(?:c|com|command): ?([^{}]+) ?}")
 
 
 class Tags(commands.Cog):
@@ -237,6 +237,9 @@ class Tags(commands.Cog):
                 for index, command in enumerate(commands):
                     if index > 2:
                         break
+                    if command.startswith("tag"):
+                        await ctx.send("Looping isn't allowed.")
+                        return
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
                     to_process.append(self.bot.process_commands(new))
