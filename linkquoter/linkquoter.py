@@ -27,7 +27,7 @@ class LinkQuoter(commands.Cog):
     async def regex_check(self, content: str):
         return r.findall(content)
 
-    async def get_messages(self, guild: discord.Guild, links: list):
+    async def get_messages(self, guild: discord.Guild, author: discord.Member, links: list):
         messages = []
         for link in links:
             link_segments = link.split("/")
@@ -36,22 +36,22 @@ class LinkQuoter(commands.Cog):
                 try:
                     link_ids.append(int(segment))
                 except ValueError:
-                    return
+                    continue
             if link_ids[0] != guild.id:
-                return
+                continue
             channel = guild.get_channel(link_ids[1])
-            if not channel:
-                return
+            if not channel or channel.is_nsfw() or not channel.permissions_for(member).read_messages:
+                continue
             if not (
                 channel.permissions_for(guild.me).read_messages
                 and channel.permissions_for(guild.me).read_message_history
             ):
-                return
+                continue
             try:
                 message = await channel.fetch_message(link_ids[2])
                 messages.append(message)
             except discord.errors.NotFound:
-                return
+                continue
         return messages
 
     async def create_embeds(self, messages: list):
@@ -110,7 +110,7 @@ class LinkQuoter(commands.Cog):
         links = await self.regex_check(link)
         if not links:
             return await ctx.send("Invalid link.")
-        messages = await self.get_messages(ctx.guild, links)
+        messages = await self.get_messages(ctx.guild, ctx.author, links)
         if not messages:
             return await ctx.send("Invalid link.")
         embeds = await self.create_embeds(messages)
@@ -180,7 +180,7 @@ class LinkQuoter(commands.Cog):
         links = await self.regex_check(message.content)
         if not links:
             return
-        messages = await self.get_messages(message.guild, links)
+        messages = await self.get_messages(message.guild, message.author, links)
         if not messages:
             return
         embeds = await self.create_embeds(messages)
