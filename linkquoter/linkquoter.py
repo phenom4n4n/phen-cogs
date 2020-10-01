@@ -40,7 +40,10 @@ class LinkQuoter(commands.Cog):
             if link_ids[0] != guild.id:
                 continue
             channel = guild.get_channel(link_ids[1])
-            if not channel or channel.is_nsfw() or not channel.permissions_for(author).read_messages:
+            if not channel or channel.is_nsfw() or not (
+                channel.permissions_for(author).read_messages
+                and channel.permissions_for(author).read_message_history
+            ):
                 continue
             if not (
                 channel.permissions_for(guild.me).read_messages
