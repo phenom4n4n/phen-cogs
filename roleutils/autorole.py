@@ -1,6 +1,6 @@
 import discord
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from redbot.core import commands
 from redbot.core.bot import Red
@@ -23,9 +23,59 @@ class AutoRole(MixinMeta):
         """Manage autoroles and sticky roles."""
         pass
 
+    @autorole.command()
+    async def add(self, ctx: commands.Context, *, role: FuzzyRole):
+        """Add a role to be added to all new members on join."""
+        pass
+
+    @autorole.command()
+    async def remove(self, ctx: commands.Context, *, role: Union[FuzzyRole, int]):
+        """Remove an autorole."""
+        pass
+
+    @autorole.group()
+    async def humans(self, ctx: commands.Context):
+        """Manage autoroles for humans."""
+        pass
+
+    @humans.command(name="add")
+    async def humans_add(self, ctx: commands.Context, *, role: FuzzyRole):
+        """Add a role to be added to all new humans on join."""
+        pass
+
+    @humans.command(name="remove")
+    async def humans_remove(self, ctx: commands.Context, *, role: Union[FuzzyRole, int]):
+        """Remove an autorole for humans."""
+        pass
+
+    @autorole.group()
+    async def bots(self, ctx: commands.Context):
+        """Manage autoroles for bots."""
+        pass
+
+    @bots.command(name="add")
+    async def bots_add(self, ctx: commands.Context, *, role: FuzzyRole):
+        """Add a role to be added to all new bots on join."""
+        pass
+
+    @bots.command(name="remove")
+    async def bots_remove(self, ctx: commands.Context, *, role: Union[FuzzyRole, int]):
+        """Remove an autorole for bots."""
+        pass
+
     @autorole.group(invoke_without_command=True)
     async def sticky(self, ctx: commands.Context, true_or_false: bool = None):
         """Toggle whether the bot should reapply roles on member joins and leaves."""
+        pass
+
+    @sticky.command(aliases=["bl"])
+    async def blacklist(self, ctx: commands.Context, *, role: FuzzyRole):
+        """Blacklist a role from being reapplied on joins."""
+        pass
+
+    @sticky.command(aliases=["unbl"])
+    async def unblacklist(self, ctx: commands.Context, *, role: Union[FuzzyRole, int]):
+        """Remove a role from the sticky blacklist."""
         pass
 
     #@commands.Cog.listener()
