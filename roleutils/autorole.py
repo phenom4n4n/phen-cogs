@@ -82,6 +82,6 @@ class AutoRole(MixinMeta):
     async def on_member_join(self, member: discord.Member):
         pass
 
-    @commands.Cog.listener()
+    #@commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         pass
