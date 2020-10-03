@@ -1,17 +1,17 @@
 import asyncio
-from typing import Literal, Optional
-import discord
 import datetime
 import logging
+from typing import Literal, Optional
 
+import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.mod import get_audit_reason
 from redbot.core.utils.chat_formatting import humanize_timedelta, text_to_file
+from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
-from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
 from .converters import FuzzyRole
+from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 

@@ -1,12 +1,12 @@
-from typing import Literal, Union, Optional
-import discord
+from typing import Literal, Optional, Union
 
-from redbot.core import commands, checks
+import discord
+from redbot.core import checks, commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import humanize_list, inline
 
-from .converters import channel_toggle, FuzzyRole
+from .converters import FuzzyRole, channel_toggle
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 

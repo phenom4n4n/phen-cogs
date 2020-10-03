@@ -1,15 +1,13 @@
 import re
-import discord
-import unidecode
-
 from typing import List, Union
 
-from redbot.core import commands
-
+import discord
+import unidecode
 from discord.ext.commands.converter import IDConverter, _get_from_guilds
-
+from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
+
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
 class FuzzyRole(IDConverter):

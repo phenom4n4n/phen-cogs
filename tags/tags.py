@@ -1,18 +1,19 @@
-from TagScriptEngine import block, Interpreter, adapter
+import asyncio
+import re
+import time
+from copy import copy
 from typing import Literal, Optional
+
 import discord
 from discord.utils import escape_markdown
-import time
-import re
-from copy import copy
-import asyncio
-
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
+from redbot.core.utils.chat_formatting import box, humanize_list, pagify
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
+                                     start_adding_reactions)
 from redbot.core.utils.predicates import ReactionPredicate
-from redbot.core.utils.menus import menu, DEFAULT_CONTROLS, start_adding_reactions, close_menu
-from redbot.core.utils.chat_formatting import pagify, humanize_list, box
+from TagScriptEngine import Interpreter, adapter, block
 
 from .converters import tag_name
 

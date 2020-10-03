@@ -3,15 +3,15 @@ import asyncio
 import logging
 import re
 from abc import ABC
-from typing import List, Tuple, Literal
-import discord
+from typing import List, Literal, Tuple
 
+import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 
-from .roles import Roles
 from .reactroles import ReactRoles
+from .roles import Roles
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 

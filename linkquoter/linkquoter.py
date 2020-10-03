@@ -1,7 +1,7 @@
-import discord
 import re
 
-from redbot.core import commands, checks, Config
+import discord
+from redbot.core import Config, checks, commands
 
 r = re.compile(
     r"https://(?:canary\.|ptb\.)?discord(?:app)?\.com/channels/\d{17,19}/\d{17,19}/\d{17,19}"

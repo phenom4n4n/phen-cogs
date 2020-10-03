@@ -1,10 +1,10 @@
-import discord
 import asyncio
-import typing
-import json
 import io
+import json
+import typing
 
-from redbot.core import commands, checks, Config
+import discord
+from redbot.core import Config, checks, commands
 from redbot.core.utils import menus
 
 

@@ -1,15 +1,15 @@
-import typing
-from copy import copy
-import time
 import asyncio
 import datetime
+import time
+import typing
+from copy import copy
+
 import discord
 from discord.utils import sleep_until
-
-from redbot.core import commands, checks
+from redbot.core import checks, commands
 from redbot.core.bot import Red
-from redbot.core.config import Config
 from redbot.core.commands.converter import TimedeltaConverter
+from redbot.core.config import Config
 
 RequestType = typing.Literal["discord_deleted_user", "owner", "user", "user_strict"]
 

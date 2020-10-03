@@ -1,14 +1,14 @@
 # Remove command logic originally from: https://github.com/mikeshardmind/SinbadCogs/tree/v3/messagebox
 # Speed test logic from https://github.com/PhasecoreX/PCXCogs/tree/master/netspeed
 
-import discord
-import time
 import asyncio
 import concurrent
-import speedtest
 import datetime
+import time
 
-from redbot.core import commands, checks
+import discord
+import speedtest
+from redbot.core import checks, commands
 
 old_ping = None
 

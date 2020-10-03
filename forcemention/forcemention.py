@@ -1,11 +1,10 @@
 # this is a modified version of Bobloy's forcemention cog
-import discord
-
-from redbot.core import checks, commands
-
-from redbot.core.bot import Red
-import typing
 import asyncio
+import typing
+
+import discord
+from redbot.core import checks, commands
+from redbot.core.bot import Red
 
 
 class ForceMention(commands.Cog):

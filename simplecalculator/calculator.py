@@ -1,9 +1,9 @@
-import discord
 import asyncio
 import time
-from TagScriptEngine import block, Interpreter, adapter
 
-from redbot.core import commands, checks
+import discord
+from redbot.core import checks, commands
+from TagScriptEngine import Interpreter, adapter, block
 
 
 class Calculator(commands.Cog):

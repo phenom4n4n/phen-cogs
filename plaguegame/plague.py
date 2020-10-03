@@ -1,10 +1,10 @@
-import discord
 import asyncio
 import random
 
-from redbot.core import Config, checks, commands, bank
-from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
+import discord
+from redbot.core import Config, bank, checks, commands
 from redbot.core.utils.chat_formatting import pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 
 
 class Plague(commands.Cog):
