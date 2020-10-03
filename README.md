@@ -25,6 +25,7 @@
 | Cog | Description |
 | --- | --- |
 | AltDentifier | Uses the AltDentifier API to check user's trust levels and take actions on users that join the server. |
+| Baron | Manage guild joins and leaves with a variety of auto leave options, and guild blacklisting. |
 | CustomPing | Just a ping command with bot, host and websocket latency. |
 | DisboardReminder | Reminds servers to run `!d bump` every 2 hours after the last bump. |
 | EmbedUtils | A variety of embed utility commands, including posting embeds from JSON, download embed JSON, and storing them for later use.|
@@ -32,11 +33,14 @@
 | LinkQuoter | Quotes messages using message links, using webhooks when possible. |
 | Lock | A basic channel and server lock command which allows role locking. |
 | PermissionsLocker | Forces configured permissions when a user tries running any command, and raises `CommandCheckFailure` if those permissions aren't met. |
-| PhenUtils | Developer utility commands. |
 | PfpImgen | A couple fun commands that create memes/images using user avatars. |
+| PhenUtils | Developer utility commands. |
 | PlagueGame | Infect people in Discord. |
 | Prefix | Easier server prefix management. |
+| Ratings | Rate members on multiple scales including their iq, sanity, and how much they simp for something. |
+| RoleUtils | Role management commands. |
 | SimpleCalculator | Math calculator that uses [TagScriptEngine](https://github.com/JonSnowbd/TagScript). Random and range blocks are supported, queries will automatically be wrapped into a math block for you. |
+| Tags | An alternative to core CustomCom with [TagScriptEngine](https://github.com/JonSnowbd/TagScript) blocks. |
 
 # Contact
 If you have a feature request or have found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).
