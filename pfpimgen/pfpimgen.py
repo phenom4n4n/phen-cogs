@@ -451,7 +451,7 @@ class PfpImgen(commands.Cog):
         fp.close()
         return _file
 
-    def gen_shut(self, ctx, member_avatar, text: str, *, biden_avatar = None):
+    def gen_shut(self, ctx, member_avatar, text: str, *, biden_avatar=None):
         member_avatar = self.bytes_to_image(member_avatar, 135)
         # base canvas
         im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert("RGBA")
