@@ -1,5 +1,5 @@
 import asyncio
-from typing import Literal
+from typing import Literal, Optional
 import discord
 import datetime
 import logging
@@ -48,20 +48,7 @@ class Roles(MixinMeta):
     @role.command()
     async def info(self, ctx: commands.Context, *, role: FuzzyRole):
         """Get information about a role."""
-        description = (
-            f"{role.mention}\n"  # monkaSTEER
-            f"Members: {len(role.members)} | Position: {role.position}\n"
-            f"Color: {role.color}\n"
-            f"Hoisted: {role.hoist}\n"
-            f"Mentionable: {role.mentionable}\n"
-        )
-        if role.managed:
-            description += f"Managed: {role.managed}"
-        e = discord.Embed(
-            color=role.color, title=role.name, description=description, timestamp=role.created_at
-        )
-        e.set_footer(text=role.id)
-        await ctx.send(embed=e)
+        await ctx.send(embed=self.get_info(role))
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
@@ -73,6 +60,40 @@ class Roles(MixinMeta):
             await ctx.send(file=text_to_file(members, f"members.txt"))
         else:
             await ctx.send(members)
+
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.admin_or_permissions(manage_roles=True)
+    @role.command()
+    async def create(
+        self,
+        ctx: commands.Context,
+        color: Optional[discord.Color] = None,
+        hoist: Optional[bool] = False,
+        *,
+        name: str = None,
+    ):
+        """Creates a role.
+
+        Color and whether it is hoisted can be specified."""
+        role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
+        await ctx.send(f"**{role}** created!", embed=self.get_info(role))
+
+    @staticmethod
+    def get_info(role: discord.Role) -> discord.Embed:
+        description = (
+            f"{role.mention}\n"
+            f"Members: {len(role.members)} | Position: {role.position}\n"
+            f"Color: {role.color}\n"
+            f"Hoisted: {role.hoist}\n"
+            f"Mentionable: {role.mentionable}\n"
+        )
+        if role.managed:
+            description += f"Managed: {role.managed}"
+        e = discord.Embed(
+            color=role.color, title=role.name, description=description, timestamp=role.created_at
+        )
+        e.set_footer(text=role.id)
+        return e
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
