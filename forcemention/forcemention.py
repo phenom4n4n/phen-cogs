@@ -50,7 +50,7 @@ class ForceMention(commands.Cog):
         elif channel.permissions_for(channel.guild.me).manage_roles:
             await role.edit(mentionable=True)
             await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
-            await asyncio.sleep(5)
+            await asyncio.sleep(1.5)
             await role.edit(mentionable=False)
         else:
             await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
