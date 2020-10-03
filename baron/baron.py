@@ -18,7 +18,7 @@ def comstats_cog(ctx: commands.Context):
 
 class Baron(commands.Cog):
     """
-   Tools for managing guild joins and leaves.
+    Tools for managing guild joins and leaves.
     """
 
     def __init__(self, bot: Red) -> None:
