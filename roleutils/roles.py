@@ -75,6 +75,7 @@ class Roles(MixinMeta):
         """Creates a role.
 
         Color and whether it is hoisted can be specified."""
+        color = color or discord.Color.default()
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
         await ctx.send(f"**{role}** created!", embed=self.get_info(role))
 
