@@ -48,7 +48,7 @@ class PfpImgen(commands.Cog):
                 return await ctx.send(
                     "An error occurred while generating this image. Try again later."
                 )
-        await ctx.send(file=discord.File(neko, "neko.png"))
+        await ctx.send(file=neko)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -76,7 +76,7 @@ class PfpImgen(commands.Cog):
                 return await ctx.send(
                     "An error occurred while generating this image. Try again later."
                 )
-        await ctx.send(file=discord.File(bonk, "bonk.png"))
+        await ctx.send(file=bonk)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -95,7 +95,7 @@ class PfpImgen(commands.Cog):
                 return await ctx.send(
                     "An error occurred while generating this image. Try again later."
                 )
-        await ctx.send(file=discord.File(simp, "simp.png"))
+        await ctx.send(file=simp)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -114,7 +114,7 @@ class PfpImgen(commands.Cog):
                 return await ctx.send(
                     "An error occurred while generating this image. Try again later."
                 )
-        await ctx.send(file=discord.File(banner, "banner.png"))
+        await ctx.send(file=banner)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -142,33 +142,33 @@ class PfpImgen(commands.Cog):
                 return await ctx.send(
                     "An error occurred while generating this image. Try again later."
                 )
-        await ctx.send(file=discord.File(nickel, "nickel.png"))
+        await ctx.send(file=nickel)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command()
-    async def shutup(
+    async def stop(
         self,
         ctx,
         member: Optional[discord.Member] = None,
         *,
         text: commands.clean_content(fix_channel_mentions=True),
     ):
-        """Tell someone to shut up"""
+        """Tell someone to stop blabbering away"""
         text = " ".join(text.split())
         if not member:
             member = ctx.author
         async with ctx.typing():
             avatar = await self.get_avatar(member)
-            task = functools.partial(self.gen_shut, ctx, avatar, text)
+            task = functools.partial(self.gen_stop, ctx, avatar, text)
             task = self.bot.loop.run_in_executor(None, task)
             try:
-                shut = await asyncio.wait_for(task, timeout=60)
+                stop = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
                 return await ctx.send(
                     "An error occurred while generating this image. Try again later."
                 )
-        await ctx.send(file=discord.File(shut, "shut.png"))
+        await ctx.send(file=stop)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -186,7 +186,38 @@ class PfpImgen(commands.Cog):
                 return await ctx.send(
                     "An error occurred while generating this image. Try again later."
                 )
-        await ctx.send(file=discord.File(horny, "horny.png"))
+        await ctx.send(file=horny)
+
+    @checks.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command()
+    async def shutup(
+        self,
+        ctx,
+        member: Optional[discord.Member] = None,
+        *,
+        text: commands.clean_content(fix_channel_mentions=True),
+    ):
+        """Will you shutup, man"""
+        text = " ".join(text.split())
+        if not member:
+            biden = None
+            member = ctx.author
+        else:
+            biden = ctx.author
+        async with ctx.typing():
+            trump = await self.get_avatar(member)
+            if biden:
+                biden = await self.get_avatar(biden)
+            task = functools.partial(self.gen_shut, ctx, trump, text, biden_avatar=biden)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                shutup = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
+        await ctx.send(file=shutup)
 
     async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
@@ -218,7 +249,9 @@ class PfpImgen(commands.Cog):
         im.save(fp, "PNG")
         fp.seek(0)
         im.close()
-        return fp
+        _file = discord.File(fp, "neko.png")
+        fp.close()
+        return _file
 
     def gen_bonk(self, ctx, victim_avatar, bonker_avatar=None):
         # base canvas
@@ -247,7 +280,9 @@ class PfpImgen(commands.Cog):
         im.save(fp, "PNG")
         fp.seek(0)
         im.close()
-        return fp
+        _file = discord.File(fp, "bonk.png")
+        fp.close()
+        return _file
 
     def gen_simp(self, ctx, member_avatar):
         member_avatar = self.bytes_to_image(member_avatar, 136)
@@ -268,7 +303,9 @@ class PfpImgen(commands.Cog):
         im.save(fp, "PNG")
         fp.seek(0)
         im.close()
-        return fp
+        _file = discord.File(fp, "simp.png")
+        fp.close()
+        return _file
 
     def gen_banner(self, ctx, member_avatar, color: discord.Color):
         im = Image.new("RGBA", (489, 481), color.to_rgb())
@@ -305,7 +342,9 @@ class PfpImgen(commands.Cog):
         im.save(fp, "PNG")
         fp.seek(0)
         im.close()
-        return fp
+        _file = discord.File(fp, "banner.png")
+        fp.close()
+        return _file
 
     def gen_nickel(self, ctx, member_avatar, text: str):
         member_avatar = self.bytes_to_image(member_avatar, 182)
@@ -336,7 +375,9 @@ class PfpImgen(commands.Cog):
         im.save(fp, "PNG")
         fp.seek(0)
         im.close()
-        return fp
+        _file = discord.File(fp, "nickel.png")
+        fp.close()
+        return _file
 
     def circle_avatar(self, avatar):
         mask = Image.new("L", avatar.size, 0)
@@ -345,10 +386,10 @@ class PfpImgen(commands.Cog):
         avatar.putalpha(mask)
         return avatar
 
-    def gen_shut(self, ctx, member_avatar, text: str):
+    def gen_stop(self, ctx, member_avatar, text: str):
         member_avatar = self.bytes_to_image(member_avatar, 140)
         # base canvas
-        im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert("RGBA")
+        im = Image.open(f"{bundled_data_path(self)}/stop/stop.png", mode="r").convert("RGBA")
 
         # avatars
         circle_main = self.circle_avatar(member_avatar).rotate(
@@ -383,7 +424,9 @@ class PfpImgen(commands.Cog):
         im.save(fp, "PNG")
         fp.seek(0)
         im.close()
-        return fp
+        _file = discord.File(fp, "horny.png")
+        fp.close()
+        return _file
 
     def gen_horny(self, member_avatar):
         member_avatar = self.bytes_to_image(member_avatar, 85)
@@ -404,4 +447,46 @@ class PfpImgen(commands.Cog):
         im.save(fp, "PNG")
         fp.seek(0)
         im.close()
-        return fp
+        _file = discord.File(fp, "horny.png")
+        fp.close()
+        return _file
+
+    def gen_shut(self, ctx, member_avatar, text: str, *, biden_avatar = None):
+        member_avatar = self.bytes_to_image(member_avatar, 135)
+        # base canvas
+        im = Image.open(f"{bundled_data_path(self)}/shutup/shutup.png", mode="r").convert("RGBA")
+
+        # avatars
+        im.paste(member_avatar, (49, 2), member_avatar)
+        member_avatar.close()
+        if biden_avatar:
+            biden_avatar = self.bytes_to_image(biden_avatar, 178)
+            im.paste(biden_avatar, (372, 0), biden_avatar)
+
+        # text
+        font = ImageFont.truetype(f"{bundled_data_path(self)}/arial.ttf", 20)
+        canvas = ImageDraw.Draw(im)
+        pages = list(pagify(text, [" "], page_length=40))[:2]
+        y = 250 - (len(pages) * 25)
+        for page in pages:
+            text_width, text_height = canvas.textsize(page, font, stroke_width=2)
+            x = ((im.width - 300) - text_width) / 2
+            canvas.text(
+                (x, y),
+                page,
+                font=font,
+                fill=(255, 255, 255),
+                align="center",
+                spacing=2,
+                stroke_width=2,
+                stroke_fill=(0, 0, 0),
+            )
+            y += 25
+
+        fp = BytesIO()
+        im.save(fp, "PNG")
+        fp.seek(0)
+        im.close()
+        _file = discord.File(fp, "shutup.png")
+        fp.close()
+        return _file
