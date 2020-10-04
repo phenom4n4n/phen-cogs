@@ -23,7 +23,6 @@ class CompositeMetaClass(type(commands.Cog), type(ABC)):
     """
 
 
-
 class RoleUtils(
     Roles,
     ReactRoles,
