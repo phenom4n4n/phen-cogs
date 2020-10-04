@@ -34,19 +34,24 @@ class Lock(commands.Cog):
         self,
         ctx: commands.Context,
         channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
-        roles: commands.Greedy[FuzzyRole] = None,
+        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
-        """Lock a channel. Provide a role if you would like to unlock it for that role."""
+        """Lock a channel. Provide a role or member if you would like to unlock it for them.
+        
+        You can only lock for a maximum of 10 things at once."""
+        await ctx.trigger_typing()
         if not channel:
             channel = ctx.channel
-        if not roles:
-            roles = [ctx.guild.default_role]
+        if not roles_or_members:
+            roles_or_members = [ctx.guild.default_role]
+        else:
+            roles_or_members = roles_or_members[:9]
         succeeded = []
         cancelled = []
         failed = []
 
         if isinstance(channel, discord.TextChannel):
-            for role in roles:
+            for role in roles_or_members:
                 current_perms = channel.overwrites_for(role)
                 my_perms = channel.overwrites_for(ctx.me)
                 if my_perms.send_messages != True:
@@ -62,7 +67,7 @@ class Lock(commands.Cog):
                     except:
                         failed.append(inline(role.name))
         elif isinstance(channel, discord.VoiceChannel):
-            for role in roles:
+            for role in roles_or_members:
                 current_perms = channel.overwrites_for(role)
                 if current_perms.connect == False:
                     cancelled.append(inline(role.name))
@@ -74,12 +79,15 @@ class Lock(commands.Cog):
                     except:
                         failed.append(inline(role.name))
 
+        msg = ""
         if cancelled:
-            await ctx.send(f"{channel.mention} was already locked for {humanize_list(cancelled)}.")
+            msg += f"{channel.mention} was already locked for {humanize_list(cancelled)}."
         if succeeded:
-            await ctx.send(f"{channel.mention} has been locked for {humanize_list(succeeded)}.")
+            msg += f"{channel.mention} has been locked for {humanize_list(succeeded)}."
         if failed:
-            await ctx.send(f"I failed to lock {channel.mention} for {humanize_list(failed)}")
+            msg += f"I failed to lock {channel.mention} for {humanize_list(failed)}"
+        if msg:
+            await ctx.send(msg)
 
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
@@ -105,6 +113,7 @@ class Lock(commands.Cog):
                     succeeded.append(inline(role.name))
                 except:
                     failed.append(inline(role.name))
+        msg = ""
 
         if cancelled:
             await ctx.send(f"The server was already locked for {humanize_list(cancelled)}.")
@@ -123,21 +132,25 @@ class Lock(commands.Cog):
         ctx,
         channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
         state: Optional[channel_toggle] = None,
-        roles: commands.Greedy[FuzzyRole] = None,
+        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
-        """Unlock a channel. Provide a role if you would like to unlock it for that role.
+        """Unlock a channel. Provide a role or member if you would like to unlock it for them.
 
-        If you would like to override-unlock for a roles, you can do so by pass `true` as the state argument."""
+        If you would like to override-unlock for a roles, you can do so by pass `true` as the state argument.
+        You can only lock for a maximum of 10 things at once."""
+        await ctx.trigger_typing()
         if not channel:
             channel = ctx.channel
-        if not roles:
-            roles = [ctx.guild.default_role]
+        if not roles_or_members:
+            roles_or_members = [ctx.guild.default_role]
+        else:
+            roles_or_members = roles_or_members[:9]
         succeeded = []
         cancelled = []
         failed = []
 
         if isinstance(channel, discord.TextChannel):
-            for role in roles:
+            for role in roles_or_members:
                 current_perms = channel.overwrites_for(role)
                 if current_perms.send_messages != False and current_perms.send_messages == state:
                     cancelled.append(inline(role.name))
@@ -149,7 +162,7 @@ class Lock(commands.Cog):
                     except:
                         failed.append(inline(role.name))
         elif isinstance(channel, discord.VoiceChannel):
-            for role in roles:
+            for role in roles_or_members:
                 current_perms = channel.overwrites_for(role)
                 if current_perms.connect != False and current_perms.connect != state:
                     cancelled.append(inline(role.name))
@@ -161,16 +174,15 @@ class Lock(commands.Cog):
                     except:
                         failed.append(inline(role.name))
 
+        msg = ""
         if cancelled:
-            await ctx.send(
-                f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`."
-            )
+            msg += f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`."
         if succeeded:
-            await ctx.send(
-                f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`."
-            )
+            msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`."
         if failed:
-            await ctx.send(f"I failed to unlock {channel.mention} for {humanize_list(failed)}")
+            msg += f"I failed to unlock {channel.mention} for {humanize_list(failed)}"
+        if msg:
+            await ctx.send(msg)
 
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(manage_roles=True)
