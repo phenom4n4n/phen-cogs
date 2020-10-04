@@ -37,7 +37,7 @@ class Lock(commands.Cog):
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
         """Lock a channel. Provide a role or member if you would like to unlock it for them.
-        
+
         You can only lock for a maximum of 10 things at once."""
         await ctx.trigger_typing()
         if not channel:
