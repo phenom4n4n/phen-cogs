@@ -1,5 +1,4 @@
 import re
-from typing import List, Union
 
 import discord
 import unidecode

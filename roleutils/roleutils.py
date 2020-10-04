@@ -1,9 +1,7 @@
 # Multi-file class combining taken from https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/cogs/mod/mod.py
-import asyncio
 import logging
-import re
 from abc import ABC
-from typing import List, Literal, Tuple
+from typing import Literal
 
 import discord
 from redbot.core import commands
@@ -24,7 +22,6 @@ class CompositeMetaClass(type(commands.Cog), type(ABC)):
     coexist with discord.py's metaclass
     """
 
-    pass
 
 
 class RoleUtils(

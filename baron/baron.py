@@ -345,7 +345,6 @@ class Baron(commands.Cog):
     @baron.group()
     async def leave(self, ctx: commands.Context):
         """Manage leaving servers."""
-        pass
 
     @leave.command()
     async def mass(self, ctx: commands.Context, guilds: commands.Greedy[commands.GuildConverter]):

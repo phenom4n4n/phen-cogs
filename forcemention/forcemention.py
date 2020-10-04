@@ -1,6 +1,5 @@
 # this is a modified version of Bobloy's forcemention cog
 import asyncio
-import typing
 
 import discord
 from redbot.core import checks, commands

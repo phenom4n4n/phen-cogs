@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 import logging
-from typing import Literal, Optional
+from typing import Optional
 
 import discord
 from redbot.core import commands

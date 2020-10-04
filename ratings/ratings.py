@@ -1,5 +1,5 @@
 import random
-from datetime import date, datetime
+from datetime import date
 from typing import Literal, Optional
 
 import discord
