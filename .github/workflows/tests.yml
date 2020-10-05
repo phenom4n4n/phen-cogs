@@ -6,23 +6,18 @@ on: [push, pull_request]
 
 jobs:
   black:
-    name: Reformat with Black and Isort
+    name: Style Reformatting
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-python@v1
         with:
           python_version: "3.8"
-      - run: "python -m pip install black"
-        name: Install black
-      - run: "python -m black -l 99 ."
+      - run: "make install"
+        name: Install requirements
+      - run: "make reformat"
         continue-on-error: true
-        name: Reformatting with black
-      - run: "python -m pip install isort"
-        name: Install Isort
-      - run: "python -m isort ."
-        continue-on-error: true
-        name: Reformatting with Isort
+        name: Style reformatting
       - name: Commit changes
         continue-on-error: true
         run: |
