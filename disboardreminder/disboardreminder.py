@@ -252,7 +252,8 @@ class DisboardReminder(commands.Cog):
         if not message.guild:
             return
 
-        data = await self.config.guild(message.guild).all()
+        guild = message.guild
+        data = await self.config.guild(guild).all()
 
         if not data["channel"]:
             return
@@ -267,7 +268,7 @@ class DisboardReminder(commands.Cog):
             and message.author.id != 302050872383242240
             and message.channel == bumpChannel
         ):
-            if message.channel.permissions_for(message.guild.me).manage_messages:
+            if message.channel.permissions_for(guild.me).manage_messages:
                 await asyncio.sleep(5)
                 try:
                     await message.delete()
@@ -284,29 +285,27 @@ class DisboardReminder(commands.Cog):
             words = embed.description.split(",")
             member_mention = words[0]
             member_id = int(member_mention.lstrip("<@!").lstrip("<@").rstrip(">"))
-            member = message.guild.get_member(member_id)
             tymessage = data["tyMessage"]
             try:
                 await bumpChannel.send(
                     tymessage.replace("{member}", member_mention)
-                    .replace("{guild}", message.guild.name)
-                    .replace("{guild.id}", str(message.guild.id))
+                    .replace("{guild}", guild.name)
+                    .replace("{guild.id}", str(guild.id))
                 )
             except discord.errors.Forbidden:
                 pass
 
             nextBump = message.created_at.timestamp() + 7200
-            await self.config.guild(message.guild).nextBump.set(nextBump)
+            await self.config.guild(guild).nextBump.set(nextBump)
 
-            if member:
-                current_count = await self.config.member(member).count()
-                current_count += 1
-                await self.config.member(member).count.set(current_count)
+            current_count = await self.config.member_from_ids(guild.id, member_id).count()
+            current_count += 1
+            await self.config.member_from_ids(guild.id, member_id).count.set(current_count)
 
             await self.bump_timer(message.guild, nextBump)
         else:
             if (
-                message.channel.permissions_for(message.guild.me).manage_messages
+                message.channel.permissions_for(guild.me).manage_messages
                 and clean
                 and message.channel == bumpChannel
             ):
