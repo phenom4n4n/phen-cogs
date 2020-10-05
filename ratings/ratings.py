@@ -2,7 +2,6 @@ import random
 from datetime import date
 from typing import Literal, Optional
 
-import re
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
