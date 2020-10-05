@@ -63,7 +63,7 @@ class Ratings(commands.Cog):
         elif iq >= 100:
             emoji = self.bot.get_emoji(758821993768026142) or "🤯"
         else:
-            emoji = self.bot.get_emoji(758821993768026142) or "😔"
+            emoji = self.bot.get_emoji(758821971319586838) or "😔"
         await ctx.send(
             f"{member.mention} has an IQ of {iq} {emoji}",
             allowed_mentions=discord.AllowedMentions(users=False),
