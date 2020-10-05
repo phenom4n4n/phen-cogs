@@ -5,7 +5,7 @@ More info on PRs with GitHub can be found [here](https://opensource.com/article/
 
 # Style
 
-Before pushing to your PR, make sure to run a style reformat. This can be done with the by running the following commands in the repo directory:
+Before pushing to your PR, make sure to run a style reformat. This can be done with by running the following commands in the repo directory:
 ```
 make install
 make reformat
