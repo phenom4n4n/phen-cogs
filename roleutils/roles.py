@@ -52,8 +52,8 @@ class Roles(MixinMeta):
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
-    @role.command()
-    async def dump(self, ctx: commands.Context, *, role: FuzzyRole):
+    @role.command(aliases=["dump"])
+    async def members(self, ctx: commands.Context, *, role: FuzzyRole):
         """Sends a list of members in a role."""
         members = "\n".join([f"{member} - {member.id}" for member in role.members])
         if len(members) > 2000:
@@ -145,7 +145,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
-    async def all(self, ctx: commands.Context, role: FuzzyRole):
+    async def all(self, ctx: commands.Context, *, role: FuzzyRole):
         """Add a role to all members of the server."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
@@ -156,7 +156,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command(aliases=["removeall"])
-    async def rall(self, ctx: commands.Context, role: FuzzyRole):
+    async def rall(self, ctx: commands.Context, *, role: FuzzyRole):
         """Remove a role from all members of the server."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
@@ -170,7 +170,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
-    async def humans(self, ctx: commands.Context, role: FuzzyRole):
+    async def humans(self, ctx: commands.Context, *, role: FuzzyRole):
         """Add a role to all humans (non-bots) in the server."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
@@ -186,7 +186,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
-    async def rhumans(self, ctx: commands.Context, role: FuzzyRole):
+    async def rhumans(self, ctx: commands.Context, *, role: FuzzyRole):
         """Remove a role from all humans (non-bots) in the server."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
@@ -203,7 +203,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
-    async def bots(self, ctx: commands.Context, role: FuzzyRole):
+    async def bots(self, ctx: commands.Context, *, role: FuzzyRole):
         """Add a role to all bots in the server."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
@@ -219,7 +219,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
-    async def rbots(self, ctx: commands.Context, role: FuzzyRole):
+    async def rbots(self, ctx: commands.Context, *, role: FuzzyRole):
         """Remove a role from all bots in the server."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
         if not allowed[0]:
@@ -230,6 +230,39 @@ class Roles(MixinMeta):
             [member for member in ctx.guild.members if member.bot],
             role,
             "None of the bots in the server have this role.",
+            False,
+        )
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @role.command(name="in")
+    async def role_in(self, ctx: commands.Context, target_role: FuzzyRole, *, add_role: FuzzyRole):
+        """Add a role to all members of a another role."""
+        allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, add_role)
+        if not allowed[0]:
+            await ctx.send(allowed[1])
+            return
+        await self.super_massrole(
+            ctx,
+            [member for member in target_role.members],
+            add_role,
+            f"Every member of `{target_role}` has this role.",
+        )
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @role.command(name="rin")
+    async def role_rin(self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: FuzzyRole):
+        """Remove a role all members of a another role."""
+        allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, remove_role)
+        if not allowed[0]:
+            await ctx.send(allowed[1])
+            return
+        await self.super_massrole(
+            ctx,
+            [member for member in target_role.members],
+            remove_role,
+            f"No one in `{target_role}` has this role.",
             False,
         )
 
