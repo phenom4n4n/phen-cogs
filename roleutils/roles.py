@@ -252,7 +252,9 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command(name="rin")
-    async def role_rin(self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: FuzzyRole):
+    async def role_rin(
+        self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: FuzzyRole
+    ):
         """Remove a role all members of a another role."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, remove_role)
         if not allowed[0]:
