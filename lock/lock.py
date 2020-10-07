@@ -81,11 +81,11 @@ class Lock(commands.Cog):
 
         msg = ""
         if cancelled:
-            msg += f"{channel.mention} was already locked for {humanize_list(cancelled)}."
+            msg += f"{channel.mention} was already locked for {humanize_list(cancelled)}.\n"
         if succeeded:
-            msg += f"{channel.mention} has been locked for {humanize_list(succeeded)}."
+            msg += f"{channel.mention} has been locked for {humanize_list(succeeded)}.\n"
         if failed:
-            msg += f"I failed to lock {channel.mention} for {humanize_list(failed)}"
+            msg += f"I failed to lock {channel.mention} for {humanize_list(failed)}.\n"
         if msg:
             await ctx.send(msg)
 
@@ -176,11 +176,11 @@ class Lock(commands.Cog):
 
         msg = ""
         if cancelled:
-            msg += f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`."
+            msg += f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`.\n"
         if succeeded:
-            msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`."
+            msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
         if failed:
-            msg += f"I failed to unlock {channel.mention} for {humanize_list(failed)}"
+            msg += f"I failed to unlock {channel.mention} for {humanize_list(failed)}.\n"
         if msg:
             await ctx.send(msg)
 
