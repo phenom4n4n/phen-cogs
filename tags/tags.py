@@ -111,7 +111,9 @@ class Tags(commands.Cog):
         if not tag:
             return
 
-        await self.store_tag(ctx, tag_name, tagscript)
+        async with self.config.guild(ctx.guild).tags() as t:
+            t[tag_name]["tag"] = tagscript
+        await ctx.send(f"Tag `{tag_name}` edited.")
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["delete"])
