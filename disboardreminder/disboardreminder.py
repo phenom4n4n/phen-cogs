@@ -206,12 +206,18 @@ class DisboardReminder(commands.Cog):
             if not members_data:
                 await ctx.send("I have no bump data for this server.")
                 return
+                
             for member, data in members_data.items():
                 _member = ctx.guild.get_member(member)
                 if _member:
-                    counter[_member.name] = data["count"]
+                    if len(_member.display_name) >= 23:
+                        whole_name = "{}...".format(_member.display_name[:20]).replace("$", "\\$")
+                    else:
+                        whole_name = _member.display_name.replace("$", "\\$")
+                    counter[whole_name] = data["count"]
                 else:
                     counter[str(member)] = data["count"]
+
             task = functools.partial(self.create_chart, counter, ctx.guild)
             task = self.bot.loop.run_in_executor(None, task)
             try:
@@ -351,12 +357,13 @@ class DisboardReminder(commands.Cog):
                 except (discord.errors.Forbidden, discord.errors.NotFound):
                     pass
 
+    # original from https://github.com/aikaterna/aikaterna-cogs/tree/v3/chatchart
     def create_chart(self, data: Counter, guild: discord.Guild):
         plt.clf()
         most_common = data.most_common()
         total = sum(data.values())
         sizes = [(x[1] / total) * 100 for x in most_common][:20]
-        labels = [f"{x[0]} {sizes[index]:g}%" for index, x in enumerate(most_common[:20])]
+        labels = [f"{x[0]} {round(sizes[index]:g, 1)}%" for index, x in enumerate(most_common[:20])]
         if len(most_common) >= 20:
             others = sum([total / x[1] for x in most_common][20:])
             sizes = sizes.append(others)

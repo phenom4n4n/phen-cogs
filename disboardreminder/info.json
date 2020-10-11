@@ -1,5 +1,5 @@
 {
-  "author" : ["PhenoM4n4n"],
+  "author" : ["PhenoM4n4n", "aikaterna"],
   "install_msg" : "Thank you for installing DisboardReminder. This requires the ForceMention cog to be installed and loaded from **this** repo.\n`[p]cog install Phen-Cogs forcemention`",
   "name" : "DisboardReminder",
   "short" : "Set a reminder to bump on Disboard.",
