@@ -362,14 +362,14 @@ class DisboardReminder(commands.Cog):
         plt.clf()
         most_common = data.most_common()
         total = sum(data.values())
-        sizes = [int(x[1] / total) * 100 for x in most_common][:20]
+        sizes = [(x[1] / total) * 100 for x in most_common][:20]
         labels = [
             f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])
         ]
         if len(most_common) >= 20:
             others = sum([total / x[1] for x in most_common][20:])
-            sizes = sizes.append(others)
-            labels = labels + ["Others {:g}%".format(others)]
+            sizes.append(others)
+            labels.append("Others {:g}%".format(others))
         title = plt.title(f"Top Bumpers", color="white")
         title.set_va("top")
         title.set_ha("center")
