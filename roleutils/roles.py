@@ -171,9 +171,9 @@ class Roles(MixinMeta):
             await member.add_roles(*to_add, reason=reason)
             msg += f"Added {humanize_roles(to_add)} to {member}."
         if already_added:
-            msg += f"`{member}` already had {humanize_roles(already_added)}."
+            msg += f"\n`{member}` already had {humanize_roles(already_added)}."
         if not_allowed:
-            msg += f"You do not have permission to assign the roles {humanize_roles(not_allowed)}."
+            msg += f"\nYou do not have permission to assign the roles {humanize_roles(not_allowed)}."
         if msg:
             await ctx.send(msg)
 
@@ -206,9 +206,9 @@ class Roles(MixinMeta):
             await member.remove_roles(*to_rm, reason=reason)
             msg += f"Removed {humanize_roles(to_rm)} from {member}."
         if not_added:
-            msg += f"`{member}` didn't have {humanize_roles(not_added)}."
+            msg += f"\n`{member}` didn't have {humanize_roles(not_added)}."
         if not_allowed:
-            msg += f"You do not have permission to assign the roles {humanize_roles(not_allowed)}."
+            msg += f"\nYou do not have permission to assign the roles {humanize_roles(not_allowed)}."
         if msg:
             await ctx.send(msg)
 
