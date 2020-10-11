@@ -184,7 +184,9 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @multirole.command(name="remove")
-    async def multirole_remove(self, ctx: commands.Context, member: discord.Member, *roles: FuzzyRole):
+    async def multirole_remove(
+        self, ctx: commands.Context, member: discord.Member, *roles: FuzzyRole
+    ):
         """Remove multiple roles from a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             await ctx.send(
