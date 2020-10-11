@@ -8,6 +8,15 @@ from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
+import matplotlib
+import functools
+from io import BytesIO
+
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
+
+plt.switch_backend("agg")
+from collections import Counter
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
 
@@ -186,6 +195,28 @@ class DisboardReminder(commands.Cog):
             embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=embed)
 
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.cooldown(1, 15, commands.BucketType.guild)
+    @bumpreminder.command()
+    async def chart(self, ctx: commands.Context):
+        """View the top bumpers in a chart."""
+        counter = Counter()
+        members_data = await self.config.all_members(ctx.guild)
+        for member, data in members_data.items():
+            member = ctx.guild.get_member(member)
+            if member:
+                counter[member.name] = data["count"]
+        task = functools.partial(self.create_chart, counter)
+        task = self.bot.loop.run_in_executor(None, task)
+        try:
+            chart = await asyncio.wait_for(task, timeout=60)
+        except asyncio.TimeoutError:
+            return await ctx.send(
+                "An error occurred while generating this image. Try again later."
+            )
+        else:
+            await ctx.send(file=discord.File(chart, "chart.png"))
+
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         d = datetime.fromtimestamp(remaining)
         await discord.utils.sleep_until(d)
@@ -314,3 +345,56 @@ class DisboardReminder(commands.Cog):
                     await message.delete()
                 except (discord.errors.Forbidden, discord.errors.NotFound):
                     pass
+
+    def create_chart(self, data: Counter):
+        plt.clf()
+        most_common = data.most_common()
+        total = sum(data.values())
+        sizes = [(x[1] / total) * 100 for x in most_common][:20]
+        labels = [f"{x[0]} {sizes[index]:g}%" for index, x in enumerate(most_common)][:20]
+        if len(most_common) >= 20:
+            others = sum([total / x[1] for x in most_common][20:])
+            sizes = sizes.append(others)
+            labels = labels + ["Others {:g}%".format(others)]
+        title = plt.title("Sale Item Stats", color="white")
+        title.set_va("top")
+        title.set_ha("center")
+        plt.gca().axis("equal")
+        colors = [
+            "r",
+            "darkorange",
+            "gold",
+            "y",
+            "olivedrab",
+            "green",
+            "darkcyan",
+            "mediumblue",
+            "darkblue",
+            "blueviolet",
+            "indigo",
+            "orchid",
+            "mediumvioletred",
+            "crimson",
+            "chocolate",
+            "yellow",
+            "limegreen",
+            "forestgreen",
+            "dodgerblue",
+            "slateblue",
+            "gray",
+        ]
+        pie = plt.pie(sizes, colors=colors, startangle=0)
+        plt.legend(
+            pie[0],
+            labels,
+            bbox_to_anchor=(0.7, 0.5),
+            loc="center",
+            fontsize=10,
+            bbox_transform=plt.gcf().transFigure,
+            facecolor="#ffffff",
+        )
+        plt.subplots_adjust(left=0.0, bottom=0.1, right=0.45)
+        image_object = BytesIO()
+        plt.savefig(image_object, format="PNG", facecolor="#36393E")
+        image_object.seek(0)
+        return image_object
