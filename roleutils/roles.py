@@ -13,7 +13,8 @@ from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
 from .converters import FuzzyRole
-from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy, humanize_roles
+from .utils import (humanize_roles, is_allowed_by_hierarchy,
+                    is_allowed_by_role_hierarchy)
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 
