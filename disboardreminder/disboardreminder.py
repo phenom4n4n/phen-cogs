@@ -202,6 +202,9 @@ class DisboardReminder(commands.Cog):
         """View the top bumpers in a chart."""
         counter = Counter()
         members_data = await self.config.all_members(ctx.guild)
+        if not members_data:
+            await ctx.send("I have no bump data for this server.")
+            return
         for member, data in members_data.items():
             _member = ctx.guild.get_member(member)
             if _member:
