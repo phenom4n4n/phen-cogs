@@ -206,7 +206,7 @@ class DisboardReminder(commands.Cog):
             if not members_data:
                 await ctx.send("I have no bump data for this server.")
                 return
-                
+
             for member, data in members_data.items():
                 _member = ctx.guild.get_member(member)
                 if _member:
@@ -363,7 +363,9 @@ class DisboardReminder(commands.Cog):
         most_common = data.most_common()
         total = sum(data.values())
         sizes = [(x[1] / total) * 100 for x in most_common][:20]
-        labels = [f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])]
+        labels = [
+            f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])
+        ]
         if len(most_common) >= 20:
             others = sum([total / x[1] for x in most_common][20:])
             sizes = sizes.append(others)
