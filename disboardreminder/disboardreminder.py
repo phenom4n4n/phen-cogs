@@ -362,7 +362,7 @@ class DisboardReminder(commands.Cog):
         plt.clf()
         most_common = data.most_common()
         total = sum(data.values())
-        sizes = [(x[1] / total) * 100 for x in most_common][:20]
+        sizes = [int(x[1] / total) * 100 for x in most_common][:20]
         labels = [
             f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])
         ]
