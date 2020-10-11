@@ -150,7 +150,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @commands.command()
+    @commands.group(invoke_without_command=True)
     async def multirole(self, ctx: commands.Context, member: discord.Member, *roles: FuzzyRole):
         """Add multiple roles to a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
@@ -176,6 +176,39 @@ class Roles(MixinMeta):
             msg += f"Added {self.humanize_roles(to_add)} to {member}."
         if already_added:
             msg += f"`{member}` already had {self.humanize_roles(already_added)}."
+        if not_allowed:
+            msg += f"You do not have permission to assign the roles {self.humanize_roles(not_allowed)}."
+        if msg:
+            await ctx.send(msg)
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @multirole.command(name="remove")
+    async def multirole_remove(self, ctx: commands.Context, member: discord.Member, *roles: FuzzyRole):
+        """Remove multiple roles from a member."""
+        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
+            await ctx.send(
+                "You cannot do that since you aren't higher than that user in hierarchy."
+            )
+            return
+        not_allowed = []
+        not_added = []
+        to_rm = []
+        for role in roles:
+            allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
+            if not allowed[0]:
+                not_allowed.append(role)
+            elif role in member.roles:
+                not_added.append(role)
+            else:
+                to_rm.append(role)
+        reason = get_audit_reason(ctx.author)
+        msg = ""
+        if to_rm:
+            await member.add_roles(*to_rm, reason=reason)
+            msg += f"Removed {self.humanize_roles(to_rm)} from {member}."
+        if not_added:
+            msg += f"`{member}` already had {self.humanize_roles(not_added)}."
         if not_allowed:
             msg += f"You do not have permission to assign the roles {self.humanize_roles(not_allowed)}."
         if msg:
