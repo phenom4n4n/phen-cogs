@@ -6,7 +6,9 @@ from typing import Optional
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import humanize_timedelta, text_to_file, humanize_list
+from redbot.core.utils.chat_formatting import (humanize_list,
+                                               humanize_timedelta,
+                                               text_to_file)
 from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
@@ -98,7 +100,7 @@ class Roles(MixinMeta):
 
     @staticmethod
     def humanize_roles(roles: list) -> str:
-        return humanize_list([f'`{role.name}`' for role in roles])
+        return humanize_list([f"`{role.name}`" for role in roles])
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
