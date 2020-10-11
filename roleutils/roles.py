@@ -148,7 +148,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command()
+    @commands.command()
     async def multirole(self, ctx: commands.Context, member: discord.Member, *roles: FuzzyRole):
         """Add multiple roles to a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
