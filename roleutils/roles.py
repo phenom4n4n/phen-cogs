@@ -42,10 +42,10 @@ class Roles(MixinMeta):
         reason = get_audit_reason(ctx.author)
         if role in member.roles:
             await member.remove_roles(*[role], reason=reason)
-            await ctx.send(f"Removed `{role.name}` from `{member}`.")
+            await ctx.send(f"Removed `{role.name}` from **{member}**.")
         else:
             await member.add_roles(*[role], reason=reason)
-            await ctx.send(f"Added `{role.name}` to `{member}`.")
+            await ctx.send(f"Added `{role.name}` to **{member}**.")
 
     @commands.bot_has_permissions(embed_links=True)
     @role.command()
@@ -115,12 +115,12 @@ class Roles(MixinMeta):
             return
         if role in member.roles:
             await ctx.send(
-                f"`{member}` already has the role `{role}`. Maybe try removing it instead."
+                f"**{member}** already has the role `{role}`. Maybe try removing it instead."
             )
             return
         reason = get_audit_reason(ctx.author)
         await member.add_roles(*[role], reason=reason)
-        await ctx.send(f"Added `{role.name}` to `{member}`.")
+        await ctx.send(f"Added `{role.name}` to **{member}**.")
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -138,12 +138,12 @@ class Roles(MixinMeta):
             return
         if role not in member.roles:
             await ctx.send(
-                f"`{member}` doesn't have the role `{role}`. Maybe try adding it instead."
+                f"**{member}** doesn't have the role `{role}`. Maybe try adding it instead."
             )
             return
         reason = get_audit_reason(ctx.author)
         await member.remove_roles(*[role], reason=reason)
-        await ctx.send(f"Removed `{role.name}` from `{member}`.")
+        await ctx.send(f"Removed `{role.name}` from **{member}**.")
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -172,7 +172,7 @@ class Roles(MixinMeta):
             await member.add_roles(*to_add, reason=reason)
             msg += f"Added {humanize_roles(to_add)} to {member}."
         if already_added:
-            msg += f"\n`{member}` already had {humanize_roles(already_added)}."
+            msg += f"\n**{member}** already had {humanize_roles(already_added)}."
         if not_allowed:
             msg += f"\nYou do not have permission to assign the roles {humanize_roles(not_allowed)}."
         if msg:
@@ -207,7 +207,7 @@ class Roles(MixinMeta):
             await member.remove_roles(*to_rm, reason=reason)
             msg += f"Removed {humanize_roles(to_rm)} from {member}."
         if not_added:
-            msg += f"\n`{member}` didn't have {humanize_roles(not_added)}."
+            msg += f"\n**{member}** didn't have {humanize_roles(not_added)}."
         if not_allowed:
             msg += f"\nYou do not have permission to assign the roles {humanize_roles(not_allowed)}."
         if msg:
