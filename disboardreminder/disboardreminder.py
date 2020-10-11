@@ -200,27 +200,27 @@ class DisboardReminder(commands.Cog):
     @bumpreminder.command()
     async def chart(self, ctx: commands.Context):
         """View the top bumpers in a chart."""
-        counter = Counter()
-        members_data = await self.config.all_members(ctx.guild)
-        if not members_data:
-            await ctx.send("I have no bump data for this server.")
-            return
-        for member, data in members_data.items():
-            _member = ctx.guild.get_member(member)
-            if _member:
-                counter[_member.name] = data["count"]
-            else:
-                counter[str(member)] = data["count"]
-        task = functools.partial(self.create_chart, counter, ctx.guild)
-        task = self.bot.loop.run_in_executor(None, task)
-        try:
-            chart = await asyncio.wait_for(task, timeout=60)
-        except asyncio.TimeoutError:
-            return await ctx.send(
-                "An error occurred while generating this image. Try again later."
-            )
-        else:
-            await ctx.send(file=discord.File(chart, "chart.png"))
+        async with ctx.typing():
+            counter = Counter()
+            members_data = await self.config.all_members(ctx.guild)
+            if not members_data:
+                await ctx.send("I have no bump data for this server.")
+                return
+            for member, data in members_data.items():
+                _member = ctx.guild.get_member(member)
+                if _member:
+                    counter[_member.name] = data["count"]
+                else:
+                    counter[str(member)] = data["count"]
+            task = functools.partial(self.create_chart, counter, ctx.guild)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                chart = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
+        await ctx.send(file=discord.File(chart, "chart.png"))
 
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         d = datetime.fromtimestamp(remaining)
