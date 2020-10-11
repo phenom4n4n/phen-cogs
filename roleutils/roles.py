@@ -6,7 +6,7 @@ from typing import Optional
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import humanize_timedelta, text_to_file
+from redbot.core.utils.chat_formatting import humanize_timedelta, text_to_file, humanize_list
 from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
@@ -96,6 +96,10 @@ class Roles(MixinMeta):
         e.set_footer(text=role.id)
         return e
 
+    @staticmethod
+    def humanize_roles(roles: list) -> str:
+        return humanize_list([f'`{role.name}`' for role in roles])
+
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
@@ -141,6 +145,39 @@ class Roles(MixinMeta):
         reason = get_audit_reason(ctx.author)
         await member.remove_roles(*[role], reason=reason)
         await ctx.send(f"Removed `{role.name}` from `{member}`.")
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @role.command()
+    async def multirole(self, ctx: commands.Context, member: discord.Member, *roles: FuzzyRole):
+        """Add multiple roles to a member."""
+        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
+            await ctx.send(
+                "You cannot do that since you aren't higher than that user in hierarchy."
+            )
+            return
+        not_allowed = []
+        already_added = []
+        to_add = []
+        for role in roles:
+            allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
+            if not allowed[0]:
+                not_allowed.append(role)
+            elif role in member.roles:
+                already_added.append(role)
+            else:
+                to_add.append(role)
+        reason = get_audit_reason(ctx.author)
+        msg = ""
+        if to_add:
+            await member.add_roles(*to_add, reason=reason)
+            msg += f"Added {self.humanize_roles(to_add)} to {member}."
+        if already_added:
+            msg += f"`{member}` already had {self.humanize_roles(already_added)}."
+        if not_allowed:
+            msg += f"You do not have permission to assign the roles {self.humanize_roles(not_allowed)}."
+        if msg:
+            await ctx.send(msg)
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
