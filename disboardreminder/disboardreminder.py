@@ -168,7 +168,7 @@ class DisboardReminder(commands.Cog):
 
         members_data = await self.config.all_members(ctx.guild)
         members_list = [(member, data["count"]) for member, data in members_data.items()]
-        ordered_list = sorted(members_list[: (amount)], key=lambda m: m[1], reverse=True)
+        ordered_list = sorted(members_list[:(amount)], key=lambda m: m[1], reverse=True)
 
         mapped_strings = []
         for index, member in enumerate(ordered_list, start=1):
