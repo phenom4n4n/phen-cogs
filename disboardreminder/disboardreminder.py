@@ -356,7 +356,7 @@ class DisboardReminder(commands.Cog):
         most_common = data.most_common()
         total = sum(data.values())
         sizes = [(x[1] / total) * 100 for x in most_common][:20]
-        labels = [f"{x[0]} {sizes[index]:g}%" for index, x in enumerate(most_common)][:20]
+        labels = [f"{x[0]} {sizes[index]:g}%" for index, x in enumerate(most_common[:20])]
         if len(most_common) >= 20:
             others = sum([total / x[1] for x in most_common][20:])
             sizes = sizes.append(others)
