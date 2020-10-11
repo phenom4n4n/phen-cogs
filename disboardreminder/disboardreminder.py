@@ -203,10 +203,12 @@ class DisboardReminder(commands.Cog):
         counter = Counter()
         members_data = await self.config.all_members(ctx.guild)
         for member, data in members_data.items():
-            member = ctx.guild.get_member(member)
-            if member:
-                counter[member.name] = data["count"]
-        task = functools.partial(self.create_chart, counter)
+            _member = ctx.guild.get_member(member)
+            if _member:
+                counter[_member.name] = data["count"]
+            else:
+                counter[str(member)] = data["count"]
+        task = functools.partial(self.create_chart, counter, ctx.guild)
         task = self.bot.loop.run_in_executor(None, task)
         try:
             chart = await asyncio.wait_for(task, timeout=60)
@@ -346,7 +348,7 @@ class DisboardReminder(commands.Cog):
                 except (discord.errors.Forbidden, discord.errors.NotFound):
                     pass
 
-    def create_chart(self, data: Counter):
+    def create_chart(self, data: Counter, guild: discord.Guild):
         plt.clf()
         most_common = data.most_common()
         total = sum(data.values())
@@ -356,7 +358,7 @@ class DisboardReminder(commands.Cog):
             others = sum([total / x[1] for x in most_common][20:])
             sizes = sizes.append(others)
             labels = labels + ["Others {:g}%".format(others)]
-        title = plt.title("Sale Item Stats", color="white")
+        title = plt.title(f"{guild.name}'s Top Bumpers", color="white")
         title.set_va("top")
         title.set_ha("center")
         plt.gca().axis("equal")
