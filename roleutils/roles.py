@@ -13,7 +13,7 @@ from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
 from .converters import FuzzyRole
-from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
+from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy, humanize_roles
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 
@@ -98,10 +98,6 @@ class Roles(MixinMeta):
         e.set_footer(text=role.id)
         return e
 
-    @staticmethod
-    def humanize_roles(roles: list) -> str:
-        return humanize_list([f"`{role.name}`" for role in roles])
-
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
@@ -173,11 +169,11 @@ class Roles(MixinMeta):
         msg = ""
         if to_add:
             await member.add_roles(*to_add, reason=reason)
-            msg += f"Added {self.humanize_roles(to_add)} to {member}."
+            msg += f"Added {humanize_roles(to_add)} to {member}."
         if already_added:
-            msg += f"`{member}` already had {self.humanize_roles(already_added)}."
+            msg += f"`{member}` already had {humanize_roles(already_added)}."
         if not_allowed:
-            msg += f"You do not have permission to assign the roles {self.humanize_roles(not_allowed)}."
+            msg += f"You do not have permission to assign the roles {humanize_roles(not_allowed)}."
         if msg:
             await ctx.send(msg)
 
@@ -200,19 +196,19 @@ class Roles(MixinMeta):
             allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
             if not allowed[0]:
                 not_allowed.append(role)
-            elif role in member.roles:
+            elif role not in member.roles:
                 not_added.append(role)
             else:
                 to_rm.append(role)
         reason = get_audit_reason(ctx.author)
         msg = ""
         if to_rm:
-            await member.add_roles(*to_rm, reason=reason)
-            msg += f"Removed {self.humanize_roles(to_rm)} from {member}."
+            await member.remove_roles(*to_rm, reason=reason)
+            msg += f"Removed {humanize_roles(to_rm)} from {member}."
         if not_added:
-            msg += f"`{member}` already had {self.humanize_roles(not_added)}."
+            msg += f"`{member}` didn't have {humanize_roles(not_added)}."
         if not_allowed:
-            msg += f"You do not have permission to assign the roles {self.humanize_roles(not_allowed)}."
+            msg += f"You do not have permission to assign the roles {humanize_roles(not_allowed)}."
         if msg:
             await ctx.send(msg)
 
