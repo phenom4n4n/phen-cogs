@@ -361,7 +361,7 @@ class DisboardReminder(commands.Cog):
             others = sum([total / x[1] for x in most_common][20:])
             sizes = sizes.append(others)
             labels = labels + ["Others {:g}%".format(others)]
-        title = plt.title(f"{guild.name}'s Top Bumpers", color="white")
+        title = plt.title(f"Top Bumpers", color="white")
         title.set_va("top")
         title.set_ha("center")
         plt.gca().axis("equal")
