@@ -366,8 +366,8 @@ class DisboardReminder(commands.Cog):
         labels = [
             f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])
         ]
-        if len(most_common) >= 20:
-            others = sum([total / x[1] for x in most_common][20:])
+        if len(most_common) > 20:
+            others = sum([x[1] / total for x in most_common[20:]])
             sizes.append(others)
             labels.append("Others {:g}%".format(others))
         title = plt.title(f"Top Bumpers", color="white")
