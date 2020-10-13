@@ -359,7 +359,7 @@ class Roles(MixinMeta):
         word = "to" if adding else "from"
         await ctx.send(
             f"Beginning to {verb} `{role.name}` {word} **{len(member_list)}** members. "
-            f"This will take {humanize_timedelta(timedelta=datetime.timedelta(seconds=len(member_list)))}."
+            f"This will take around {humanize_timedelta(timedelta=datetime.timedelta(seconds=len(member_list) * 0.75))}."
         )
         async with ctx.typing():
             result = await self.massrole(member_list, [role], get_audit_reason(ctx.author), adding)
@@ -409,5 +409,5 @@ class Roles(MixinMeta):
                         completed.append(member)
                 else:
                     skipped.append(member)
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
         return {"completed": completed, "skipped": skipped, "failed": failed}
