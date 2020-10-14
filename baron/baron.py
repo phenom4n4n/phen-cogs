@@ -1,8 +1,9 @@
 import asyncio
-from typing import Literal
+from typing import Literal, Optional
 
 import discord
 from redbot.core import commands
+from redbot.core.commands import GuildConverter
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
@@ -145,7 +146,7 @@ class Baron(commands.Cog):
         await ctx.tick()
 
     @baron.command()
-    async def minmembers(self, ctx: commands.Context, limit: int = 0):
+    async def minmembers(self, ctx: commands.Context, limit: Optional[int] = 0):
         """Set the minimum number of members a server should have for the bot to stay in it.
 
         Pass 0 to disable."""
@@ -157,7 +158,7 @@ class Baron(commands.Cog):
         )
 
     @baron.command()
-    async def botratio(self, ctx: commands.Context, ratio: int = 0):
+    async def botratio(self, ctx: commands.Context, ratio: Optional[int] = 0):
         """Set the bot ratio for servers for the bot to leave.
 
         Pass 0 to disable."""
@@ -171,7 +172,7 @@ class Baron(commands.Cog):
         )
 
     @baron.command()
-    async def botfarms(self, ctx: commands.Context, rate: int = 75, page_limit: int = 500):
+    async def botfarms(self, ctx: commands.Context, rate: Optional[int] = 75, page_limit: Optional[int] = 500):
         """View servers that have a bot to member ratio with the given rate."""
         if rate not in range(1, 100):
             raise commands.BadArgument
@@ -221,7 +222,7 @@ class Baron(commands.Cog):
 
     @baron.command()
     async def members(
-        self, ctx: commands.Context, members: int, less_than: bool = True, page_limit: int = 500
+        self, ctx: commands.Context, members: int, less_than: Optional[bool] = True, page_limit: Optional[int] = 500
     ):
         """View servers that have a member count less than the specified number.
 
@@ -278,8 +279,8 @@ class Baron(commands.Cog):
         self,
         ctx: commands.Context,
         commands: int,
-        highest_first: bool = False,
-        page_limit: int = 500,
+        highest_first: Optional[bool] = False,
+        page_limit: Optional[int] = 500,
     ):
         """View servers that have command usage less than the specified number.
 
@@ -347,11 +348,11 @@ class Baron(commands.Cog):
         """Manage leaving servers."""
 
     @leave.command()
-    async def mass(self, ctx: commands.Context, guilds: commands.Greedy[commands.GuildConverter]):
+    async def mass(self, ctx: commands.Context, guilds: commands.Greedy[GuildConverter], *, reason: Optional[str] = "I have left this server at the request of my owner."):
         """Leave servers from a list of IDs."""
         if not guilds:
             raise commands.BadArgument
-        await self.leave_guilds(ctx, guilds, "I have left this server at the request of my owner.")
+        await self.leave_guilds(ctx, guilds, reason)
 
     @leave.command(name="botfarms")
     async def leave_botfarms(self, ctx: commands.Context, rate: int = 75):
