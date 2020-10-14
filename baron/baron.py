@@ -3,8 +3,8 @@ from typing import Literal, Optional
 
 import discord
 from redbot.core import commands
-from redbot.core.commands import GuildConverter
 from redbot.core.bot import Red
+from redbot.core.commands import GuildConverter
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
@@ -172,7 +172,9 @@ class Baron(commands.Cog):
         )
 
     @baron.command()
-    async def botfarms(self, ctx: commands.Context, rate: Optional[int] = 75, page_limit: Optional[int] = 500):
+    async def botfarms(
+        self, ctx: commands.Context, rate: Optional[int] = 75, page_limit: Optional[int] = 500
+    ):
         """View servers that have a bot to member ratio with the given rate."""
         if rate not in range(1, 100):
             raise commands.BadArgument
@@ -222,7 +224,11 @@ class Baron(commands.Cog):
 
     @baron.command()
     async def members(
-        self, ctx: commands.Context, members: int, less_than: Optional[bool] = True, page_limit: Optional[int] = 500
+        self,
+        ctx: commands.Context,
+        members: int,
+        less_than: Optional[bool] = True,
+        page_limit: Optional[int] = 500,
     ):
         """View servers that have a member count less than the specified number.
 
@@ -348,7 +354,13 @@ class Baron(commands.Cog):
         """Manage leaving servers."""
 
     @leave.command()
-    async def mass(self, ctx: commands.Context, guilds: commands.Greedy[GuildConverter], *, reason: Optional[str] = "I have left this server at the request of my owner."):
+    async def mass(
+        self,
+        ctx: commands.Context,
+        guilds: commands.Greedy[GuildConverter],
+        *,
+        reason: Optional[str] = "I have left this server at the request of my owner.",
+    ):
         """Leave servers from a list of IDs."""
         if not guilds:
             raise commands.BadArgument
