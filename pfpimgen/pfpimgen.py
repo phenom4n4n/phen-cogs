@@ -196,13 +196,13 @@ class PfpImgen(commands.Cog):
             await ctx.send(file=image)
 
     async def generate_image(self, ctx: commands.Context, task: functools.partial):
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                image = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return "An error occurred while generating this image. Try again later."
-            else:
-                return image
+        task = self.bot.loop.run_in_executor(None, task)
+        try:
+            image = await asyncio.wait_for(task, timeout=60)
+        except asyncio.TimeoutError:
+            return "An error occurred while generating this image. Try again later."
+        else:
+            return image
 
     async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
