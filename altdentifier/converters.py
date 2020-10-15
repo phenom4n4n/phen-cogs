@@ -1,9 +1,10 @@
 import discord
 import unidecode
-from discord.ext.commands.converter import RoleConverter, Converter
+from discord.ext.commands.converter import Converter, RoleConverter
 from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
+
 
 def is_allowed_by_role_hierarchy(
     bot,
@@ -19,6 +20,7 @@ def is_allowed_by_role_hierarchy(
             f"You are not higher than `{role}` in hierarchy.",
         )
 
+
 class LevelConverter(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> int:
         try:
@@ -31,6 +33,7 @@ class LevelConverter(Converter):
             )
         else:
             return level
+
 
 class ActionConverter(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> str:

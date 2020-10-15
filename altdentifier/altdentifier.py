@@ -5,7 +5,8 @@ import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils.chat_formatting import box, humanize_list
 
-from .converters import StrictRole, LevelConverter, ActionConverter
+from .converters import ActionConverter, LevelConverter, StrictRole
+
 
 class AltDentifier(commands.Cog):
     """
@@ -99,7 +100,9 @@ class AltDentifier(commands.Cog):
         await ctx.tick()
 
     @altset.command()
-    async def action(self, ctx, level: LevelConverter, action: typing.Union[discord.Role, str] = None):
+    async def action(
+        self, ctx, level: LevelConverter, action: typing.Union[discord.Role, str] = None
+    ):
         """Specify what actions to take when a member joins and has a certain Trust Level.
 
         Leave this empty to remove actions for the Level.
@@ -181,7 +184,9 @@ class AltDentifier(commands.Cog):
         e.set_thumbnail(url=member.avatar_url)
         return e
 
-    async def take_action(self, guild: discord.Guild, member: discord.Member, trust: int, actions: dict):
+    async def take_action(
+        self, guild: discord.Guild, member: discord.Member, trust: int, actions: dict
+    ):
         action = actions[str(trust)]
         reason = f"AltDentifier action taken for Trust Level {trust}"
         result = ""
