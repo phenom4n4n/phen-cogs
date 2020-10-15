@@ -275,7 +275,9 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command(name="in")
-    async def role_in(self, ctx: commands.Context, target_role: FuzzyRole, *, add_role: StrictRole):
+    async def role_in(
+        self, ctx: commands.Context, target_role: FuzzyRole, *, add_role: StrictRole
+    ):
         """Add a role to all members of a another role."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, add_role)
         if not allowed[0]:
