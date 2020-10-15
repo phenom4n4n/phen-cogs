@@ -5,6 +5,7 @@ import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils.chat_formatting import box, humanize_list
 
+from .converters import StrictRole, LevelConverter, ActionConverter
 
 class AltDentifier(commands.Cog):
     """
@@ -98,7 +99,7 @@ class AltDentifier(commands.Cog):
         await ctx.tick()
 
     @altset.command()
-    async def action(self, ctx, level: int, action: typing.Union[discord.Role, str] = None):
+    async def action(self, ctx, level: LevelConverter, action: typing.Union[discord.Role, str] = None):
         """Specify what actions to take when a member joins and has a certain Trust Level.
 
         Leave this empty to remove actions for the Level.
@@ -106,30 +107,23 @@ class AltDentifier(commands.Cog):
         `kick`
         `ban`
         `role` (don't say 'role' for this, pass an actual role."""
-        if not level in range(4):
-            return await ctx.send(
-                "This is not a valid Trust Level. The valid Levels are: 0, 1, 2, and 3."
-            )
         if not action:
             await self.clear_action(ctx.guild, level)
             return await ctx.send(f"Removed actions for Trust Level {level}.")
         if isinstance(action, discord.Role):
-            if action.position >= ctx.author.top_role.position:
-                await ctx.send(
-                    f"That role is higher than you in heirarchy, so you can't set it to be the role for this action."
-                )
-                return
-            elif action.position >= ctx.me.top_role.position:
-                await ctx.send(
-                    f"That role is higher than me in heirarchy, so I can't give it to members for this action."
-                )
+            try:
+                await StrictRole().convert(ctx, str(action.id))
+            except commands.BadArgument as e:
+                await ctx.send(e)
                 return
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.id
         elif isinstance(action, str) and action.lower() not in ["kick", "ban"]:
-            return await ctx.send(
-                "This is not a valid action. The valid actions are kick and ban. For roles, supply a role."
-            )
+            try:
+                await ActionConverter().convert(ctx, action)
+            except commands.BadArgument as e:
+                await ctx.send(e)
+                return
         else:
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.lower()
@@ -187,56 +181,68 @@ class AltDentifier(commands.Cog):
         e.set_thumbnail(url=member.avatar_url)
         return e
 
-    async def take_action(self, member: discord.Member, trust: int, actions: dict):
+    async def take_action(self, guild: discord.Guild, member: discord.Member, trust: int, actions: dict):
         action = actions[str(trust)]
         reason = f"AltDentifier action taken for Trust Level {trust}"
+        result = ""
         if action == "ban":
-            try:
-                await member.ban(reason=reason)
-                return f"Banned for being Trust Level {trust}."
-            except discord.errors.Forbidden:
-                await self.clear_action(member.guild, trust)
-        elif action == "kick":
-            try:
-                await member.kick(reason=reason)
-                return f"Kicked for being Trust Level {trust}."
-            except discord.errors.Forbidden:
-                await self.clear_action(member.guild, trust)
-        elif action:
-            role = member.guild.get_role(action)
-            if role:
+            if guild.me.guild_permissions.ban_members:
                 try:
-                    await member.add_roles(role, reason=reason)
-                    return f"{role.mention} given for being Trust Level {trust}."
-                except discord.errors.Forbidden:
-                    await self.clear_action(member.guild, trust)
+                    await member.ban(reason=reason)
+                    result = f"Banned for being Trust Level {trust}."
+                except discord.Forbidden as e:
+                    await self.clear_action(guild, trust)
+                    result = f"Banning failed.\n{e}"
+            else:
+                result = "Banning was skipped due to missing permissions."
+        elif action == "kick":
+            if guild.me.guild_permissions.kick_members:
+                try:
+                    await member.kick(reason=reason)
+                    result = f"Kicked for being Trust Level {trust}."
+                except discord.Forbidden as e:
+                    await self.clear_action(guild, trust)
+                    result = f"Kicking failed.\n{e}"
+            else:
+                result = "Kicking was skipped due to missing permissions."
+        elif action:
+            role = guild.get_role(action)
+            if role:
+                if guild.me.guild_permissions.manage_roles:
+                    try:
+                        await member.add_roles(role, reason=reason)
+                        result = f"{role.mention} given for being Trust Level {trust}."
+                    except discord.Forbidden as e:
+                        await self.clear_action(guild, trust)
+                        result = f"Adding role failed.\n{e}"
             else:
                 await self.clear_action(member.guild, trust)
-        else:
-            return None
+                result = "Adding the role was skipped due to missing permissions."
+        return result
 
     async def clear_action(self, guild: discord.Guild, action: int):
         async with self.config.guild(guild).actions() as a:
             a[str(action)] = None
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member):
         if member.bot:
             return
-        data = await self.config.guild(member.guild).all()
+        guild = member.guild
+        data = await self.config.guild(guild).all()
         if not data["channel"]:
             return
-        channel = member.guild.get_channel(data["channel"])
+        channel = guild.get_channel(data["channel"])
         if not channel:
-            await self.config.guild(member.guild).channel.clear()
+            await self.config.guild(guild).channel.clear()
             return
         trust = await self.alt_request(member)
         if member.id in data["whitelist"]:
             action = "This user was whitelisted so no actions were taken."
         else:
-            action = await self.take_action(member, trust[0], data["actions"])
+            action = await self.take_action(guild, member, trust[0], data["actions"])
         e = await self.gen_alt_embed(trust, member, actions=action)
         try:
             await channel.send(embed=e)
         except discord.errors.Forbidden:
-            await self.config.guild(member.guild).channel.clear()
+            await self.config.guild(guild).channel.clear()
