@@ -2,14 +2,15 @@ import re
 
 import discord
 import unidecode
-from discord.ext.commands.converter import IDConverter, _get_from_guilds
+from discord.ext.commands.converter import RoleConverter
 from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
 
+from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
-class FuzzyRole(IDConverter):
+class FuzzyRole(RoleConverter):
     """
     This will accept role ID's, mentions, and perform a fuzzy search for
     roles within the guild and return a list of role objects
@@ -21,31 +22,35 @@ class FuzzyRole(IDConverter):
     """
 
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
-        bot = ctx.bot
-        match = self._get_id_match(argument) or re.match(r"<@&([0-9]+)>$", argument)
+        try:
+            basic_role = await super().convert(ctx, argument)
+        except BadArgument:
+            pass
+        else:
+            return basic_role
         guild = ctx.guild
         result = []
-        if match is None:
-            # Not a mention
-            if guild:
-                for r in guild.roles:
-                    if argument.lower().replace(" ", "") in unidecode.unidecode(
-                        r.name.lower().replace(" ", "")
-                    ):
-                        result.append(r)
-                        continue
-        else:
-            role_id = int(match.group(1))
-            if guild:
-                result.append(guild.get_role(role_id))
-            else:
-                result.append(_get_from_guilds(bot, "get_role", role_id))
+        raw_arg = argument.lower().replace(" ", "")
+        if guild:
+            for r in guild.roles:
+                if raw_arg in unidecode.unidecode(r.name.lower().replace(" ", "")):
+                    result.append(r)
 
         if not result:
-            raise BadArgument('Role "{}" not found'.format(argument))
+            raise BadArgument('Role "{}" not found.'.format(argument))
 
         calculated_result = [
             (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result
         ]
         sorted_result = sorted(calculated_result, key=lambda r: r[1], reverse=True)
         return sorted_result[0][0]
+
+class StrictRole(FuzzyRole):
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
+        role = await super().convert(ctx, argument)
+        if role.managed:
+            raise BadArgument(f"`{role}` is an integrated role and cannot be assigned.")
+        allowed, message = is_allowed_by_role_hierarchy(ctx.bot, ctx.me, ctx.author, role)
+        if not allowed:
+            raise BadArgument(message)
+        return role
