@@ -41,14 +41,11 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_neko, ctx, avatar)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                neko = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=neko)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -69,14 +66,11 @@ class PfpImgen(commands.Cog):
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar, bonker_avatar)
             else:
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                bonk = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=bonk)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -88,14 +82,11 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_simp, ctx, avatar)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                simp = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=simp)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -107,14 +98,11 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_banner, ctx, avatar, member.color)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                banner = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=banner)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -135,14 +123,11 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                nickel = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=nickel)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -161,14 +146,11 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_stop, ctx, avatar, text)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                stop = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=stop)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -179,14 +161,11 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_horny, avatar)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                horny = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=horny)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -210,14 +189,20 @@ class PfpImgen(commands.Cog):
             if biden:
                 biden = await self.get_avatar(biden)
             task = functools.partial(self.gen_shut, ctx, trump, text, biden_avatar=biden)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
+
+    async def generate_image(self, ctx: commands.Context, task: functools.partial):
             task = self.bot.loop.run_in_executor(None, task)
             try:
-                shutup = await asyncio.wait_for(task, timeout=60)
+                image = await asyncio.wait_for(task, timeout=60)
             except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=shutup)
+                return "An error occurred while generating this image. Try again later."
+            else:
+                return image
 
     async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
@@ -327,7 +312,7 @@ class PfpImgen(commands.Cog):
         # 4th slide
         av3 = member_avatar.rotate(angle=26, resample=Image.BILINEAR, expand=True)
         av3 = av3.resize((147, 148), Image.LANCZOS)
-        im.paste(av2, (325, 233), av2)
+        im.paste(av2, (345, 233), av2)
 
         av.close()
         av2.close()
