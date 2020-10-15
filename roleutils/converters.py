@@ -1,4 +1,3 @@
-import re
 
 import discord
 import unidecode
@@ -8,6 +7,7 @@ from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
 
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
+
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
 class FuzzyRole(RoleConverter):
@@ -44,6 +44,7 @@ class FuzzyRole(RoleConverter):
         ]
         sorted_result = sorted(calculated_result, key=lambda r: r[1], reverse=True)
         return sorted_result[0][0]
+
 
 class StrictRole(FuzzyRole):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
