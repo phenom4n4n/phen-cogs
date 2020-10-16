@@ -195,7 +195,7 @@ class AltDentifier(commands.Cog):
         e = discord.Embed(
             color=discord.Color.orange(),
             title="AltDentifier Check Fail",
-            description=f"The API encountered an error. Check bacj",
+            description=f"The API encountered an error. Check back later.",
             timestamp=member.created_at,
         )
         e.set_footer(text="Account created at")
