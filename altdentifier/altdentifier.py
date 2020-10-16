@@ -8,6 +8,9 @@ from redbot.core.utils.chat_formatting import box, humanize_list
 from .converters import ActionConverter, LevelConverter, StrictRole
 
 
+class APIError(Exception):
+    pass
+
 class AltDentifier(commands.Cog):
     """
     Check new users with AltDentifier API
@@ -40,13 +43,16 @@ class AltDentifier(commands.Cog):
     @commands.command()
     async def altcheck(self, ctx, *, member: discord.Member = None):
         """Check a user on AltDentifier."""
-
         if not member:
             member = ctx.author
         if member.bot:
             return await ctx.send("Bots can't really be alts you know..")
-        trust = await self.alt_request(member)
-        e = await self.gen_alt_embed(trust, member)
+        try:
+            trust = await self.alt_request(member)
+        except APIError:
+            e = self.fail_embed(member)
+        else:
+            e = self.gen_alt_embed(trust, member)
         await ctx.send(embed=e)
 
     @checks.admin_or_permissions(manage_guild=True)
@@ -54,7 +60,6 @@ class AltDentifier(commands.Cog):
     @commands.group()
     async def altset(self, ctx):
         """AltDentifier Settings"""
-
         if not ctx.subcommand_passed:
             data = await self.config.guild(ctx.guild).all()
             description = []
@@ -154,10 +159,12 @@ class AltDentifier(commands.Cog):
         async with self.session.get(
             f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor"
         ) as response:
+            if response.status != 200:
+                raise APIError
             response = await response.json()
         return response["trustfactor"], response["formatted_trustfactor"]
 
-    async def pick_color(self, trustfactor: int):
+    def pick_color(self, trustfactor: int):
         if trustfactor == 0:
             color = discord.Color.dark_red()
         elif trustfactor == 1:
@@ -168,10 +175,10 @@ class AltDentifier(commands.Cog):
             color = discord.Color.dark_green()
         return color
 
-    async def gen_alt_embed(
+    def gen_alt_embed(
         self, trust: tuple, member: discord.Member, *, actions: typing.Optional[str] = None
     ):
-        color = await self.pick_color(trust[0])
+        color = self.pick_color(trust[0])
         e = discord.Embed(
             color=color,
             title="AltDentifier Check",
@@ -182,6 +189,17 @@ class AltDentifier(commands.Cog):
             e.add_field(name="Actions Taken", value=actions, inline=False)
         e.set_footer(text="Account created at")
         e.set_thumbnail(url=member.avatar_url)
+        return e
+
+    def fail_embed(self, member: discord.Member) -> discord.Embed:
+        e = discord.Embed(
+            color=discord.Color.orange(),
+            title="AltDentifier Check Fail",
+            description=f"The API encountered an error. Check bacj",
+            timestamp=member.created_at,
+        )
+        e.set_footer(text="Account created at")
+        e.set_thumbnail(url=member.avatar_url)                
         return e
 
     async def take_action(
@@ -241,12 +259,19 @@ class AltDentifier(commands.Cog):
         if not channel:
             await self.config.guild(guild).channel.clear()
             return
-        trust = await self.alt_request(member)
+        try:
+            trust = await self.alt_request(member)
+        except APIError:
+            e = self.fail_embed(member)
+            try:
+                await channel.send(embed=e)
+            except discord.errors.Forbidden:
+                await self.config.guild(guild).channel.clear()
         if member.id in data["whitelist"]:
             action = "This user was whitelisted so no actions were taken."
         else:
             action = await self.take_action(guild, member, trust[0], data["actions"])
-        e = await self.gen_alt_embed(trust, member, actions=action)
+        e = self.gen_alt_embed(trust, member, actions=action)
         try:
             await channel.send(embed=e)
         except discord.errors.Forbidden:
