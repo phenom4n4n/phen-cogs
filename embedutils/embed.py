@@ -44,12 +44,8 @@ class EmbedUtils(commands.Cog):
     @commands.guild_only()
     @checks.has_permissions(embed_links=True)
     @checks.bot_has_permissions(embed_links=True)
-    @commands.group()
-    async def embed(self, ctx):
-        """Manage embeds."""
-
-    @embed.command()
-    async def simple(
+    @commands.group(invoke_without_command=True)
+    async def embed(
         self,
         ctx,
         channel: typing.Optional[discord.TextChannel],
@@ -61,10 +57,8 @@ class EmbedUtils(commands.Cog):
         """Post a simple embed.
 
         Put the title in quotes if it is multiple words."""
-        if not channel:
-            channel = ctx.channel
-        if not color:
-            color = await self.bot.get_embed_color(ctx)
+        channel = channel or ctx.channel
+        color = color or await ctx.embed_color()
         e = discord.Embed(color=color, title=title, description=description)
         await channel.send(embed=e)
 
