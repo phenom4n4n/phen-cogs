@@ -19,7 +19,8 @@ class Lock(commands.Cog):
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
-        return f"{pre_processed}\nCog Version: {self.__version__}"
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
