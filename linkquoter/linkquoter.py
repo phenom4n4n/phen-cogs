@@ -4,9 +4,18 @@ import discord
 from redbot.core import Config, checks, commands
 
 r = re.compile(
-    r"https://(?:canary\.|ptb\.)?discord(?:app)?\.com/channels/\d{17,19}/\d{17,19}/\d{17,19}"
+    r"https?://(?:(ptb|canary)\.)?discord(?:app)?\.com/channels/\d{15,21}/\d{15,21}/\d{15,21}"
 )
 
+def regex_check(content: str):
+    return r.findall(content)
+
+class LinkToEmbed(commands.Converter):
+    async def convert(self, ctx: commands.Context, argument: str):
+        match = re.match(r, argument)
+        if not match:
+            raise commands.BadArgument
+        return match
 
 class LinkQuoter(commands.Cog):
     """
@@ -21,11 +30,9 @@ class LinkQuoter(commands.Cog):
             force_registration=True,
         )
 
-        default_guild = {"on": False, "webhooks": True}
+        default_guild = {"on": False, "webhooks": True, "cross-opted": False}
         self.config.register_guild(**default_guild)
 
-    async def regex_check(self, content: str):
-        return r.findall(content)
 
     async def get_messages(self, guild: discord.Guild, author: discord.Member, links: list):
         messages = []
@@ -111,13 +118,10 @@ class LinkQuoter(commands.Cog):
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
     @commands.guild_only()
     @commands.group(invoke_without_command=True, aliases=["linkmessage"])
-    async def linkquote(self, ctx, link: str):
+    async def linkquote(self, ctx, message_link: LinkToEmbed):
         """Quote a message from a link."""
         await ctx.trigger_typing()
-        links = await self.regex_check(link)
-        if not links:
-            return await ctx.send("Invalid link.")
-        messages = await self.get_messages(ctx.guild, ctx.author, links)
+        messages = await self.get_messages(ctx.guild, ctx.author, message_link)
         if not messages:
             return await ctx.send("Invalid link.")
         embeds = await self.create_embeds(messages)
@@ -184,7 +188,7 @@ class LinkQuoter(commands.Cog):
         if not await self.config.guild(message.guild).on():
             return
 
-        links = await self.regex_check(message.content)
+        links = regex_check(message.content)
         if not links:
             return
         messages = await self.get_messages(message.guild, message.author, links)
