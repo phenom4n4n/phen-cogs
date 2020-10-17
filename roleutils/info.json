@@ -9,7 +9,7 @@
         "TrustyJaid"
     ],
     "required_cogs": {},
-    "requirements": [],
+    "requirements": ["unidecode"],
     "tags": [
         "utility",
         "server",
