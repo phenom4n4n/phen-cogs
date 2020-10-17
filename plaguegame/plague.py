@@ -5,6 +5,23 @@ from redbot.core import Config, bank, checks, commands
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 
+from .converters import Human, Infectable, Curable
+
+async def is_infected(ctx):
+    userState = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameState()
+    return userState == "infected"
+
+async def is_healthy(ctx):
+    userState = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameState()
+    return userState == "healthy"
+
+async def is_doctor(ctx):
+    userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
+    return userRole == "Doctor"
+
+async def not_doctor(ctx):
+    userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
+    return userRole != "Doctor"
 
 class Plague(commands.Cog):
     """A plague game."""
@@ -24,29 +41,12 @@ class Plague(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         await self.config.user_from_id(user_id).clear()
 
-    async def is_infected(ctx):
-        userState = await ctx.cog.config.user(ctx.author).gameState()
-        return userState == "infected"
-
-    async def is_healthy(ctx):
-        userState = await ctx.cog.config.user(ctx.author).gameState()
-        return userState == "healthy"
-
-    async def is_doctor(ctx):
-        userRole = await ctx.cog.config.user(ctx.author).gameRole()
-        return userRole == "Doctor"
-
-    async def not_doctor(ctx):
-        userRole = await ctx.cog.config.user(ctx.author).gameRole()
-        return userRole != "Doctor"
-
     @commands.check(is_infected)
     @commands.cooldown(1, 60, commands.BucketType.user)
     @commands.guild_only()
     @commands.command(aliases=["cough"], cooldown_after_parsing=True)
-    async def infect(self, ctx, *, member: discord.Member):
+    async def infect(self, ctx, *, member: Infectable):
         """Infect another user. You must be infected to use this command."""
-
         result = await self.infect_user(ctx=ctx, user=member)
         await ctx.send(result)
 
@@ -54,19 +54,17 @@ class Plague(commands.Cog):
     @commands.cooldown(1, 15, commands.BucketType.user)
     @commands.guild_only()
     @commands.command(cooldown_after_parsing=True)
-    async def cure(self, ctx, *, member: discord.Member):
+    async def cure(self, ctx, *, member: Curable):
         """Cure a user. You must be a Doctor to use this command."""
-
         result = await self.cure_user(ctx=ctx, user=member)
         await ctx.send(result)
 
     @checks.bot_has_permissions(embed_links=True)
     @commands.guild_only()
-    @commands.command("plagueprofile")
-    async def plagueProfile(self, ctx, *, member: discord.Member = None):
+    @commands.command("plagueprofile", aliases=["pprofile"])
+    async def plagueProfile(self, ctx, *, member: Human = None):
         """Show's your Plague Game profile"""
-        if not member:
-            member = ctx.author
+        member = member or ctx.author
         data = await self.config.user(member).all()
         userRole = data["gameRole"]
         userState = data["gameState"]
@@ -95,7 +93,6 @@ class Plague(commands.Cog):
     @commands.command()
     async def plaguenotify(self, ctx):
         """Enable/Disable Plague Game notifications."""
-
         notifications = await self.config.user(ctx.author).notifications()
         if notifications != False:
             await self.config.user(ctx.author).notifications.set(False)
@@ -114,7 +111,6 @@ class Plague(commands.Cog):
         """Become a doctor for 5,000 currency.
 
         You must not be infected to run this command."""
-
         currency = await bank.get_currency_name(ctx.guild)
         await self.config.user(ctx.author).gameRole.set("Doctor")
         await self.notify_user(ctx=ctx, user=ctx.author, notificationType="doctor")
@@ -128,7 +124,6 @@ class Plague(commands.Cog):
     @plagueset.command()
     async def name(self, ctx, *, name: str = None):
         """Set's the plague's name. Leave blank to show the current name."""
-
         plagueName = await self.config.plagueName()
         if not name:
             message = f"The current plague's name is `{plagueName}`."
@@ -140,21 +135,18 @@ class Plague(commands.Cog):
     @plagueset.command("infect")
     async def manual_infect(self, ctx, *, user: discord.User):
         """Manually infect a user."""
-
         result = await self.infect_user(ctx=ctx, user=user)
         await ctx.send(result)
 
     @plagueset.command("cure")
     async def manual_cure(self, ctx, *, user: discord.User):
         """Manually cure a user."""
-
         result = await self.cure_user(ctx=ctx, user=user)
         await ctx.send(result)
 
     @plagueset.group(invoke_without_command=True)
     async def infected(self, ctx):
         """Sends a list of the infected users."""
-
         user_list = await self.config.all_users()
         infected_list = []
         for user, data in user_list.items():
@@ -223,7 +215,6 @@ class Plague(commands.Cog):
     @plagueset.command()
     async def healthy(self, ctx):
         """Sends a list of the healthy users."""
-
         user_list = await self.config.all_users()
         healthy_list = []
         for user, data in user_list.items():
@@ -257,7 +248,6 @@ class Plague(commands.Cog):
     @plagueset.command("doctor")
     async def set_doctor(self, ctx, user: discord.User):
         """Set a doctor."""
-
         await self.config.user(user).gameRole.set("Doctor")
         await self.config.user(user).gameState.set("healthy")
         await self.notify_user(ctx=ctx, user=user, notificationType="doctor")
@@ -266,7 +256,6 @@ class Plague(commands.Cog):
     @plagueset.command("plaguebearer")
     async def set_plaguebearer(self, ctx, user: discord.User):
         """Set a plaguebearer."""
-
         await self.config.user(user).gameRole.set("Plaguebearer")
         await self.config.user(user).gameState.set("infected")
         await self.notify_user(ctx=ctx, user=user, notificationType="plaguebearer")
@@ -275,7 +264,6 @@ class Plague(commands.Cog):
     @plagueset.command("channel")
     async def log_channel(self, ctx, channel: discord.TextChannel = None):
         """Set the log channel"""
-
         if not channel:
             channel = ctx.channel
         await self.config.logChannel.set(channel.id)
@@ -284,70 +272,45 @@ class Plague(commands.Cog):
     @plagueset.command()
     async def reset(self, ctx):
         """Reset the entire Plague Game."""
-
         await self.config.clear_all()
         await ctx.tick()
 
     @plagueset.command()
     async def reset_user(self, ctx, user: discord.User):
         """Reset a user."""
-
         await self.config.user(user).clear()
         await user.send(f"Your Plague Game data was reset by {ctx.author}.")
         await ctx.send(f"`{user}` has been reset.")
 
     async def infect_user(self, ctx, user: discord.User, auto=False):
-        if user.bot:
-            return "You can't infect bots."
-
         game_data = await self.config.all()
         plagueName = game_data["plagueName"]
-        data = await self.config.user(user).all()
-        state = data["gameState"]
-        role = data["gameRole"]
 
-        if state == "infected":
-            return f"`{user.name}` is already infected with {plagueName}."
-        elif role == "Doctor":
-            return f"You cannot infect a Doctor!"
-        else:
-            channel = game_data["logChannel"]
-            channel = ctx.bot.get_channel(channel)
-            autoInfect = f" since `{ctx.author}` didn't wear a mask" if auto else ""
+        channel = game_data["logChannel"]
+        channel = ctx.bot.get_channel(channel)
+        autoInfect = f" since `{ctx.author}` didn't wear a mask" if auto else ""
 
-            await self.config.user(user).gameState.set("infected")
-            await self.notify_user(ctx=ctx, user=user, notificationType="infect")
-            if channel:
-                await channel.send(
-                    f"💀| `{user}` on `{ctx.guild}` was just infected with {plagueName} by `{ctx.author}`{autoInfect}."
-                )
-            return f"`{user.name}` has been infected with {plagueName}{autoInfect}."
+        await self.config.user(user).gameState.set("infected")
+        await self.notify_user(ctx=ctx, user=user, notificationType="infect")
+        if channel:
+            await channel.send(
+                f"💀| `{user}` on `{ctx.guild}` was just infected with {plagueName} by `{ctx.author}`{autoInfect}."
+            )
+        return f"`{user.name}` has been infected with {plagueName}{autoInfect}."
 
     async def cure_user(self, ctx, user: discord.User):
-        if user.bot:
-            return "You can't cure bots."
+        game_data = await self.config.all()
+        plagueName = game_data["plagueName"]
+        channel = game_data["logChannel"]
+        channel = ctx.bot.get_channel(channel)
 
-        data = await self.config.user(user).all()
-        state = data["gameState"]
-        role = data["gameRole"]
-
-        if state == "healthy":
-            return f"`{user.name}` is already healthy."
-        elif role == "Plaguebearer":
-            return f"You cannot cure a Plaguebearer!"
-        else:
-            game_data = await self.config.all()
-            plagueName = game_data["plagueName"]
-            channel = game_data["logChannel"]
-            channel = ctx.bot.get_channel(channel)
-
-            await self.config.user(user).gameState.set("healthy")
-            await self.notify_user(ctx=ctx, user=user, notificationType="cure")
-            if channel:
-                await channel.send(
-                    f"✨| {user} on `{ctx.guild}` was just cured from {plagueName} by {ctx.author}."
-                )
-            return f"`{user.name}` has been cured from {plagueName}."
+        await self.config.user(user).gameState.set("healthy")
+        await self.notify_user(ctx=ctx, user=user, notificationType="cure")
+        if channel:
+            await channel.send(
+                f"✨| {user} on `{ctx.guild}` was just cured from {plagueName} by {ctx.author}."
+            )
+        return f"`{user.name}` has been cured from {plagueName}."
 
     async def notify_user(self, ctx, user: discord.User, notificationType: str):
         if not await self.config.user(user).notifications():
