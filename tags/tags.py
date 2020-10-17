@@ -218,7 +218,7 @@ class Tags(commands.Cog):
         if ctx.prefix is None:
             return
 
-        tag_command = message.content.lstrip(ctx.prefix)
+        tag_command = message.content[1:]
         tag_split = tag_command.split(" ")
         if not tag_split:
             return
