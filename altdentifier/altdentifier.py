@@ -15,6 +15,12 @@ class AltDentifier(commands.Cog):
     """
     Check new users with AltDentifier API
     """
+    __version__ = "1.0.1"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot):
         self.bot = bot
@@ -265,14 +271,15 @@ class AltDentifier(commands.Cog):
             e = self.fail_embed(member)
             try:
                 await channel.send(embed=e)
-            except discord.errors.Forbidden:
+            except discord.Forbidden:
                 await self.config.guild(guild).channel.clear()
-        if member.id in data["whitelist"]:
-            action = "This user was whitelisted so no actions were taken."
         else:
-            action = await self.take_action(guild, member, trust[0], data["actions"])
-        e = self.gen_alt_embed(trust, member, actions=action)
-        try:
-            await channel.send(embed=e)
-        except discord.errors.Forbidden:
-            await self.config.guild(guild).channel.clear()
+            if member.id in data["whitelist"]:
+                action = "This user was whitelisted so no actions were taken."
+            else:
+                action = await self.take_action(guild, member, trust[0], data["actions"])
+            e = self.gen_alt_embed(trust, member, actions=action)
+            try:
+                await channel.send(embed=e)
+            except discord.Forbidden:
+                await self.config.guild(guild).channel.clear()
