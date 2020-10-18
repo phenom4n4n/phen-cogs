@@ -1,28 +1,29 @@
 import re
+from typing import Union, Optional
 
 import discord
 import unidecode
-from discord.ext.commands.converter import IDConverter, _get_from_guilds
+from discord.ext.commands.converter import RoleConverter
 from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
 
-
-def channel_toggle(arg: str):
-    arg = arg.lower()
-    if arg not in ["true", "default", "nuetral"]:
-        raise BadArgument(
-            f"`{arg} is not a valid channel state. You use provide `true` or `default`."
-        )
-    if arg == "neutral" or arg == "default":
-        arg = None
-    elif arg == "true":
-        arg = True
-    return arg
+class ChannelToggle:
+    async def convert(self, ctx: commands.Context, arg: str) -> Union[bool, None]:
+        arg = arg.lower()
+        if arg not in ["true", "default", "nuetral"]:
+            raise BadArgument(
+                f"`{arg} is not a valid channel state. You use provide `true` or `default`."
+            )
+        if arg == "neutral" or arg == "default":
+            ret = None
+        elif arg == "true":
+            ret = True
+        return ret
 
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
-class FuzzyRole(IDConverter):
+class FuzzyRole(RoleConverter):
     """
     This will accept role ID's, mentions, and perform a fuzzy search for
     roles within the guild and return a list of role objects
@@ -34,26 +35,22 @@ class FuzzyRole(IDConverter):
     """
 
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
-        bot = ctx.bot
-        match = self._get_id_match(argument) or re.match(r"<@&([0-9]+)>$", argument)
+        try:
+            basic_role = await super().convert(ctx, argument)
+        except BadArgument:
+            pass
+        else:
+            return basic_role
         guild = ctx.guild
         result = []
-        if match is None:
-            # Not a mention
-            if guild:
-                for r in guild.roles:
-                    if argument.lower() in unidecode.unidecode(r.name.lower().replace(" ", "")):
-                        result.append(r)
-                        continue
-        else:
-            role_id = int(match.group(1))
-            if guild:
-                result.append(guild.get_role(role_id))
-            else:
-                result.append(_get_from_guilds(bot, "get_role", role_id))
+        raw_arg = argument.lower().replace(" ", "")
+        if guild:
+            for r in guild.roles:
+                if raw_arg in unidecode.unidecode(r.name.lower().replace(" ", "")):
+                    result.append(r)
 
         if not result:
-            raise BadArgument('Role "{}" not found'.format(argument))
+            raise BadArgument('Role "{}" not found.'.format(argument))
 
         calculated_result = [
             (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result

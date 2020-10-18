@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, Dict, List
 from copy import copy
 import discord
 from redbot.core import checks, commands
@@ -6,7 +6,7 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import humanize_list, inline, box
 
-from .converters import FuzzyRole, channel_toggle
+from .converters import FuzzyRole, ChannelToggle
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -216,7 +216,7 @@ class Lock(commands.Cog):
         self,
         ctx,
         channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
-        state: Optional[channel_toggle] = None,
+        state: Optional[ChannelToggle] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
         """Unlock a channel. Provide a role or member if you would like to unlock it for them.
@@ -276,7 +276,7 @@ class Lock(commands.Cog):
         self,
         ctx,
         channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
-        state: Optional[channel_toggle] = None,
+        state: Optional[ChannelToggle] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
         """Allow users to view a channel. Provide a role or member if you would like to unlock it for them.
@@ -357,7 +357,7 @@ class Lock(commands.Cog):
         self,
         ctx: commands.Context,
         channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
-        state: Optional[channel_toggle] = None,
+        state: Optional[ChannelToggle] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
         *permissions: str,
     ):
@@ -396,7 +396,7 @@ class Lock(commands.Cog):
         user_perms = ctx.channel.permissions_for(ctx.author)
         invalid_perms = []
         valid_perms = []
-        not_allowed = []
+        not_allowed: List[str] = []
         for perm in old_perms.keys():
             if perm not in base_perms.keys():
                 invalid_perms.append(f"`{perm}`")
