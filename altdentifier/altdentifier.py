@@ -15,7 +15,7 @@ class AltDentifier(commands.Cog):
     """
     Check new users with AltDentifier API
     """
-    __version__ = "1.0.1"
+    __version__ = "1.0.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -167,7 +167,10 @@ class AltDentifier(commands.Cog):
         ) as response:
             if response.status != 200:
                 raise APIError
-            response = await response.json()
+            try:
+                response = await response.json()
+            except aiohttp.client_exceptions.ContentTypeError:
+                raise APIError
         return response["trustfactor"], response["formatted_trustfactor"]
 
     def pick_color(self, trustfactor: int):
