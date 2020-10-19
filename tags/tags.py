@@ -26,7 +26,7 @@ class Tags(commands.Cog):
     """
     Create and use tags.
     """
-    __version__ = "0.1.0"
+    __version__ = "0.1.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -224,7 +224,7 @@ class Tags(commands.Cog):
         if ctx.prefix is None:
             return
 
-        tag_command = message.content[1:]
+        tag_command = message.content[len(ctx.prefix):]
         tag_split = tag_command.split(" ")
         if not tag_split:
             return
