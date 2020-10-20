@@ -9,7 +9,7 @@ from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import (humanize_list,
                                                humanize_timedelta,
                                                text_to_file)
-from redbot.core.utils.mod import get_audit_reason
+from redbot.core.utils.mod import get_audit_reason, admin_or_permissions
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole
@@ -26,22 +26,25 @@ class Roles(MixinMeta):
 
     @commands.guild_only()
     @commands.group(invoke_without_command=True)
-    async def role(self, ctx: commands.Context, member: discord.Member, *, role: StrictRole):
-        """Role management.
+    async def role(self, ctx: commands.Context):
+        """Role management."""
 
-        Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
-        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send(
-                "You cannot do that since you aren't higher than that user in hierarchy."
-            )
-            return
-        reason = get_audit_reason(ctx.author)
-        if role in member.roles:
-            await member.remove_roles(*[role], reason=reason)
-            await ctx.send(f"Removed `{role.name}` from **{member}**.")
-        else:
-            await member.add_roles(*[role], reason=reason)
-            await ctx.send(f"Added `{role.name}` to **{member}**.")
+    # async def role(self, ctx: commands.Context, member: discord.Member, *, role: StrictRole):
+    #     """Role management.
+
+    #     Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
+    #     if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
+    #         await ctx.send(
+    #             "You cannot do that since you aren't higher than that user in hierarchy."
+    #         )
+    #         return
+    #     reason = get_audit_reason(ctx.author)
+    #     if role in member.roles:
+    #         await member.remove_roles(*[role], reason=reason)
+    #         await ctx.send(f"Removed `{role.name}` from **{member}**.")
+    #     else:
+    #         await member.add_roles(*[role], reason=reason)
+    #         await ctx.send(f"Added `{role.name}` to **{member}**.")
 
     @commands.bot_has_permissions(embed_links=True)
     @role.command()
