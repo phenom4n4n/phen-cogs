@@ -9,7 +9,7 @@ from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import (humanize_list,
                                                humanize_timedelta,
                                                text_to_file)
-from redbot.core.utils.mod import get_audit_reason, admin_or_permissions
+from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole
