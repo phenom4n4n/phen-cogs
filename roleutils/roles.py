@@ -25,10 +25,12 @@ class Roles(MixinMeta):
     """
 
     @commands.guild_only()
-    @commands.group(invoke_without_command=True)
+    @commands.group()
     async def role(self, ctx: commands.Context):
         """Role management."""
 
+    # @commands.guild_only()
+    # @commands.group(invoke_without_command=True)
     # async def role(self, ctx: commands.Context, member: discord.Member, *, role: StrictRole):
     #     """Role management.
 
