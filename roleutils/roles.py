@@ -122,11 +122,6 @@ class Roles(MixinMeta):
     @role.command()
     async def add(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
         """Add a role to a member."""
-        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send(
-                "You cannot do that since you aren't higher than that user in hierarchy."
-            )
-            return
         if role in member.roles:
             await ctx.send(
                 f"**{member}** already has the role `{role}`. Maybe try removing it instead."
@@ -141,11 +136,6 @@ class Roles(MixinMeta):
     @role.command()
     async def remove(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
         """Remove a role from a member."""
-        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send(
-                "You cannot do that since you aren't higher than that user in hierarchy."
-            )
-            return
         if role not in member.roles:
             await ctx.send(
                 f"**{member}** doesn't have the role `{role}`. Maybe try adding it instead."
@@ -160,11 +150,8 @@ class Roles(MixinMeta):
     @commands.group(invoke_without_command=True)
     async def multirole(self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole):
         """Add multiple roles to a member."""
-        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send(
-                "You cannot do that since you aren't higher than that user in hierarchy."
-            )
-            return
+        if not roles:
+            raise commands.BadArgument
         not_allowed = []
         already_added = []
         to_add = []
@@ -180,7 +167,7 @@ class Roles(MixinMeta):
         msg = ""
         if to_add:
             await member.add_roles(*to_add, reason=reason)
-            msg += f"Added {humanize_roles(to_add)} to {member}."
+            msg += f"Added {humanize_roles(to_add)} to **{member}**."
         if already_added:
             msg += f"\n**{member}** already had {humanize_roles(already_added)}."
         if not_allowed:
@@ -197,11 +184,8 @@ class Roles(MixinMeta):
         self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole
     ):
         """Remove multiple roles from a member."""
-        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
-            await ctx.send(
-                "You cannot do that since you aren't higher than that user in hierarchy."
-            )
-            return
+        if not roles:
+            raise commands.BadArgument
         not_allowed = []
         not_added = []
         to_rm = []
@@ -217,7 +201,7 @@ class Roles(MixinMeta):
         msg = ""
         if to_rm:
             await member.remove_roles(*to_rm, reason=reason)
-            msg += f"Removed {humanize_roles(to_rm)} from {member}."
+            msg += f"Removed {humanize_roles(to_rm)} from **{member}**."
         if not_added:
             msg += f"\n**{member}** didn't have {humanize_roles(not_added)}."
         if not_allowed:

@@ -32,6 +32,12 @@ class RoleUtils(
     """
     Useful role commands.
     """
+    __version__ = "0.1.1"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
