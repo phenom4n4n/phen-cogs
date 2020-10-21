@@ -279,8 +279,11 @@ class Plague(commands.Cog):
     async def reset_user(self, ctx, user: discord.User):
         """Reset a user."""
         await self.config.user(user).clear()
-        await user.send(f"Your Plague Game data was reset by {ctx.author}.")
-        await ctx.send(f"`{user}` has been reset.")
+        try:
+            await user.send(f"Your Plague Game data was reset by {ctx.author}.")
+        except discord.Forbidden:
+            pass
+        await ctx.send(f"**{user}** has been reset.")
 
     async def infect_user(self, ctx, user: discord.User, auto=False):
         game_data = await self.config.all()
@@ -294,9 +297,9 @@ class Plague(commands.Cog):
         await self.notify_user(ctx=ctx, user=user, notificationType="infect")
         if channel:
             await channel.send(
-                f"💀| `{user}` on `{ctx.guild}` was just infected with {plagueName} by `{ctx.author}`{autoInfect}."
+                f"💀| **{user}** on `{ctx.guild}` was just infected with {plagueName} by **{ctx.author}**{autoInfect}."
             )
-        return f"`{user.name}` has been infected with {plagueName}{autoInfect}."
+        return f"**{user.name}** has been infected with {plagueName}{autoInfect}."
 
     async def cure_user(self, ctx, user: discord.User):
         game_data = await self.config.all()
@@ -308,9 +311,9 @@ class Plague(commands.Cog):
         await self.notify_user(ctx=ctx, user=user, notificationType="cure")
         if channel:
             await channel.send(
-                f"✨| {user} on `{ctx.guild}` was just cured from {plagueName} by {ctx.author}."
+                f"✨| **{user}** on `{ctx.guild}` was just cured from {plagueName} by **{ctx.author}**."
             )
-        return f"`{user.name}` has been cured from {plagueName}."
+        return f"**{user.name}** has been cured from {plagueName}."
 
     async def notify_user(self, ctx, user: discord.User, notificationType: str):
         if not await self.config.user(user).notifications():
@@ -337,7 +340,7 @@ class Plague(commands.Cog):
         embed.set_footer(text=f"Use `{prefixes[-1]}plaguenotify` to disable these notifications.")
         try:
             await user.send(embed=embed)
-        except discord.errors.Forbidden:
+        except discord.Forbidden:
             pass
 
     @commands.Cog.listener()
