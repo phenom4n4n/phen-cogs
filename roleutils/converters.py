@@ -1,8 +1,7 @@
 import discord
 import unidecode
-from discord.ext.commands.converter import RoleConverter
 from redbot.core import commands
-from redbot.core.commands import BadArgument
+from redbot.core.commands import BadArgument, RoleConverter, MemberConverter, Converter
 from redbot.core.utils.chat_formatting import inline
 
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
@@ -19,6 +18,9 @@ class FuzzyRole(RoleConverter):
     https://github.com/Rapptz/discord.py/blob/rewrite/discord/ext/commands/converter.py#L85
     https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/cogs/mod/mod.py#L24
     """
+    def __init__(self, response: bool = True):
+        self.response = response
+        super().__init__()
 
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
         try:
@@ -36,7 +38,10 @@ class FuzzyRole(RoleConverter):
                     result.append(r)
 
         if not result:
-            raise BadArgument('Role "{}" not found.'.format(argument))
+            if self.response:
+                raise BadArgument('Role "{}" not found.'.format(argument))
+            else:
+                raise BadArgument
 
         calculated_result = [
             (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result
@@ -46,11 +51,29 @@ class FuzzyRole(RoleConverter):
 
 
 class StrictRole(FuzzyRole):
+    def __init__(self, response: bool = True):
+        self.response = response
+        super().__init__(response)
+
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
         role = await super().convert(ctx, argument)
         if role.managed:
-            raise BadArgument(f"`{role}` is an integrated role and cannot be assigned.")
+            raise BadArgument(f"`{role}` is an integrated role and cannot be assigned." if self.response else None)
         allowed, message = is_allowed_by_role_hierarchy(ctx.bot, ctx.me, ctx.author, role)
         if not allowed:
-            raise BadArgument(message)
+            raise BadArgument(message if self.response else None)
         return role
+
+class TouchableMember(MemberConverter):
+    def __init__(self, response: bool = True):
+        self.response = response
+        super().__init__()
+
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
+        member = await super().convert(ctx, argument)
+        if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
+            raise BadArgument(
+                "You cannot do that since you aren't higher than that user in hierarchy." if self.response else None
+            )
+        else:
+            return member

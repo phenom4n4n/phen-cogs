@@ -2,22 +2,21 @@ import asyncio
 import datetime
 import logging
 from typing import Optional
-
+from copy import copy
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import (humanize_list,
                                                humanize_timedelta,
                                                text_to_file)
-from redbot.core.utils.mod import get_audit_reason
+from redbot.core.utils.mod import get_audit_reason, is_admin_or_superior, check_permissions
 
 from .abc import MixinMeta
-from .converters import FuzzyRole, StrictRole
+from .converters import FuzzyRole, StrictRole, TouchableMember
 from .utils import (humanize_roles, is_allowed_by_hierarchy,
-                    is_allowed_by_role_hierarchy)
+                    is_allowed_by_role_hierarchy, can_run_command)
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
-
 
 class Roles(MixinMeta):
     """
@@ -25,13 +24,31 @@ class Roles(MixinMeta):
     """
 
     @commands.guild_only()
-    @commands.group()
-    async def role(self, ctx: commands.Context):
-        """Role management."""
+    @commands.group(invoke_without_command=True)
+    async def role(self, ctx: commands.Context, member: TouchableMember(False), *, role: StrictRole(False)):
+        """Role management.
+
+        Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
+        if role in member.roles and await can_run_command(ctx, "role remove"):
+            com = self.bot.get_command("role remove")
+            await ctx.invoke(
+                com,
+                member=member,
+                role=role,
+            )
+        elif role not in member.roles and await can_run_command(ctx, "role add"):
+            com = self.bot.get_command("role add")
+            await ctx.invoke(
+                com,
+                member=member,
+                role=role,
+            )
+        else:
+            await ctx.send_help()
 
     # @commands.guild_only()
     # @commands.group(invoke_without_command=True)
-    # async def role(self, ctx: commands.Context, member: discord.Member, *, role: StrictRole):
+    # async def role(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
     #     """Role management.
 
     #     Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
@@ -103,7 +120,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
-    async def add(self, ctx: commands.Context, member: discord.Member, *, role: StrictRole):
+    async def add(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
         """Add a role to a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             await ctx.send(
@@ -122,7 +139,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
-    async def remove(self, ctx: commands.Context, member: discord.Member, *, role: StrictRole):
+    async def remove(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
         """Remove a role from a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             await ctx.send(
@@ -141,7 +158,7 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.group(invoke_without_command=True)
-    async def multirole(self, ctx: commands.Context, member: discord.Member, *roles: StrictRole):
+    async def multirole(self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole):
         """Add multiple roles to a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             await ctx.send(
@@ -177,7 +194,7 @@ class Roles(MixinMeta):
     @commands.bot_has_permissions(manage_roles=True)
     @multirole.command(name="remove")
     async def multirole_remove(
-        self, ctx: commands.Context, member: discord.Member, *roles: StrictRole
+        self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole
     ):
         """Remove multiple roles from a member."""
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
