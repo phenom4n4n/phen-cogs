@@ -44,7 +44,7 @@ class Plague(commands.Cog):
         await self.config.user_from_id(user_id).clear()
 
     @commands.check(is_infected)
-    @commands.cooldown(1, 60, commands.BucketType.user)
+    @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.guild_only()
     @commands.command(aliases=["cough"], cooldown_after_parsing=True)
     async def infect(self, ctx, *, member: Infectable):
