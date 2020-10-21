@@ -1,6 +1,16 @@
 import discord
 from redbot.core import commands
 from redbot.core.commands import BadArgument, Converter
+from redbot.core.utils.chat_formatting import inline
+
+def hundred_int(arg: str):
+    try:
+        ret = int(arg)
+    except ValueError:
+        raise BadArgument(f"{inline(arg)} is not an integer.")
+    if ret < 1 or ret > 100:
+        raise BadArgument(f"{inline(arg)} must be an integer between 1 and 100.")
+    return ret
 
 class Human(commands.MemberConverter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:

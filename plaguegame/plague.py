@@ -1,11 +1,13 @@
 import random
-
+import asyncio
 import discord
 from redbot.core import Config, bank, checks, commands
 from redbot.core.utils.chat_formatting import pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
+                                     start_adding_reactions)
+from redbot.core.utils.predicates import ReactionPredicate
 
-from .converters import Human, Infectable, Curable
+from .converters import Human, Infectable, Curable, hundred_int
 
 async def is_infected(ctx):
     userState = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameState()
@@ -28,8 +30,8 @@ class Plague(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=2395486659)
-        default_global = {"plagueName": "Plague", "logChannel": None}
+        self.config = Config.get_conf(self, identifier=2395486659, force_registration=True)
+        default_global = {"plagueName": "Plague", "logChannel": None, "rate": 75}
         default_user = {
             "gameRole": "User",
             "gameState": "healthy",
@@ -47,8 +49,13 @@ class Plague(commands.Cog):
     @commands.command(aliases=["cough"], cooldown_after_parsing=True)
     async def infect(self, ctx, *, member: Infectable):
         """Infect another user. You must be infected to use this command."""
-        result = await self.infect_user(ctx=ctx, user=member)
-        await ctx.send(result)
+        rate = await self.config.rate()
+        chance = random.randint(1, 100)
+        if chance <= rate:
+            result = await self.infect_user(ctx=ctx, user=member)
+            await ctx.send(result)
+        else:
+            await ctx.send(f"Luckily **{member.name}** was wearing a mask so they didn't get infected.")
 
     @commands.check(is_doctor)
     @commands.cooldown(1, 15, commands.BucketType.user)
@@ -272,8 +279,19 @@ class Plague(commands.Cog):
     @plagueset.command()
     async def reset(self, ctx):
         """Reset the entire Plague Game."""
-        await self.config.clear_all()
-        await ctx.tick()
+        msg = await ctx.send(f"Are you sure you want to reset the current Plague Game?")
+        start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
+        pred = ReactionPredicate.yes_or_no(msg, ctx.author)
+        try:
+            await self.bot.wait_for("reaction_add", check=pred, timeout=60)
+        except asyncio.TimeoutError:
+            await ctx.send("Action cancelled.")
+        else:
+            if pred.result is True:
+                await self.config.clear_all()
+                await ctx.send("All data reset.")
+            else:
+                await ctx.send("Action cancelled.")
 
     @plagueset.command()
     async def reset_user(self, ctx, user: discord.User):
@@ -284,6 +302,30 @@ class Plague(commands.Cog):
         except discord.Forbidden:
             pass
         await ctx.send(f"**{user}** has been reset.")
+
+    @plagueset.command()
+    async def rate(self, ctx: commands.Context, rate: hundred_int):
+        """Set the Plague Game infection rate."""
+        await self.config.rate.set(rate)
+        await ctx.send(f"The Plague Game rate has been set to {rate}%.")
+
+    @plagueset.command()
+    async def showsettings(self, ctx: commands.Context):
+        """View the Plague Game settings."""
+        data = await self.config.all()
+        channel = self.bot.get_channel(data["logChannel"])
+        channel = channel.mention if channel else "None"
+        description = (
+            f"Name: {data['plagueName']}\n"
+            f"Log Channel: {channel}\n"
+            f"Infection Rate: {data['rate']}%"
+        )
+        e = discord.Embed(
+            color=await ctx.embed_color(),
+            description=description,
+        )
+        e.set_author(name=f"Plague Game Settings", icon_url=self.bot.user.avatar_url)
+        await ctx.send(embed=e)
 
     async def infect_user(self, ctx, user: discord.User, auto=False):
         game_data = await self.config.all()
