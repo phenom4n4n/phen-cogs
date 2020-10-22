@@ -39,7 +39,7 @@ async def not_plaguebearer(ctx):
 class Plague(commands.Cog):
     """A plague game."""
 
-    __version__ = "1.0.1"
+    __version__ = "1.0.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -141,7 +141,20 @@ class Plague(commands.Cog):
         currency = await bank.get_currency_name(ctx.guild)
         await self.config.user(ctx.author).gameRole.set("Doctor")
         await self.notify_user(ctx=ctx, user=ctx.author, notificationType="doctor")
-        await ctx.send(f"{ctx.author} has spent 5,000 {currency} and become a Doctor.")
+        await ctx.send(f"{ctx.author} has spent 10,000 {currency} and become a Doctor.")
+
+    @commands.check(not_plaguebearer)
+    @commands.check(is_infected)
+    @bank.cost(10000)
+    @commands.command()
+    async def plaguebearer(self, ctx):
+        """Become a plaguebearer for 10,000 currency.
+
+        You must be infected to mutate into a plaguebearer."""
+        currency = await bank.get_currency_name(ctx.guild)
+        await self.config.user(ctx.author).gameRole.set("Plaguebearer")
+        await self.notify_user(ctx=ctx, user=ctx.author, notificationType="plaguebearer")
+        await ctx.send(f"{ctx.author} has spent 10,000 {currency} and become a Plaguebearer.")
 
     @commands.check(not_doctor)
     @commands.check(is_healthy)
