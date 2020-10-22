@@ -33,7 +33,7 @@ class RoleUtils(
     Useful role commands.
     """
 
-    __version__ = "0.1.1"
+    __version__ = "0.1.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
