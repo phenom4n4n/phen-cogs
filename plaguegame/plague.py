@@ -39,6 +39,13 @@ async def not_plaguebearer(ctx):
 class Plague(commands.Cog):
     """A plague game."""
 
+    __version__ = "1.0.1"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
+
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=2395486659, force_registration=True)
@@ -125,12 +132,12 @@ class Plague(commands.Cog):
 
     @commands.check(not_doctor)
     @commands.check(is_healthy)
-    @bank.cost(5000)
+    @bank.cost(10000)
     @commands.command(aliases=["plaguedoc"])
     async def plaguedoctor(self, ctx):
-        """Become a doctor for 5,000 currency.
+        """Become a doctor for 10,000 currency.
 
-        You must be healthy to run this command."""
+        You must be healthy to study at medical school."""
         currency = await bank.get_currency_name(ctx.guild)
         await self.config.user(ctx.author).gameRole.set("Doctor")
         await self.notify_user(ctx=ctx, user=ctx.author, notificationType="doctor")
@@ -145,6 +152,16 @@ class Plague(commands.Cog):
 
         Why would you willingly infect yourself?"""
         await ctx.send(await self.infect_user(ctx, ctx.author))
+
+    @commands.check(not_plaguebearer)
+    @commands.check(is_infected)
+    @bank.cost(5000)
+    @commands.command()
+    async def treatme(self, ctx):
+        """Get cured from the plague for 5,000 currency.
+        
+        This is America, so the health care is expensive."""
+        await ctx.send(await self.cure_user(ctx, ctx.author))
 
     @checks.is_owner()
     @commands.group()
