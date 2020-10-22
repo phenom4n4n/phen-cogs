@@ -19,6 +19,9 @@ from .utils import (can_run_command, humanize_roles, is_allowed_by_hierarchy,
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 
+def targeter_cog(ctx: commands.Context):
+    cog = ctx.bot.get_cog("Targeter")
+    return cog is not None and hasattr(cog, "args_to_list")
 
 class Roles(MixinMeta):
     """
@@ -289,10 +292,6 @@ class Roles(MixinMeta):
         self, ctx: commands.Context, target_role: FuzzyRole, *, add_role: StrictRole
     ):
         """Add a role to all members of a another role."""
-        allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, add_role)
-        if not allowed[0]:
-            await ctx.send(allowed[1])
-            return
         await self.super_massrole(
             ctx,
             [member for member in target_role.members],
@@ -307,15 +306,53 @@ class Roles(MixinMeta):
         self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: StrictRole
     ):
         """Remove a role all members of a another role."""
-        allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, remove_role)
-        if not allowed[0]:
-            await ctx.send(allowed[1])
-            return
         await self.super_massrole(
             ctx,
             [member for member in target_role.members],
             remove_role,
             f"No one in `{target_role}` has this role.",
+            False,
+        )
+
+    @commands.check(targeter_cog)
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @role.group()
+    async def target(self, ctx: commands.Context):
+        """
+        Modify roles using 'targeting' args.
+
+        An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
+        """
+
+    @target.command(name="add")
+    async def target_add(self, ctx: commands.Context, role: StrictRole, *, args: str):
+        """
+        Add a role to members using targeting args.
+
+        An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
+        """
+        members = await self.bot.get_cog("Targeter").args_to_list(ctx, args)
+        await self.super_massrole(
+            ctx,
+            members,
+            role,
+            f"No one was found with the given args.\nCheck out `{ctx.clean_prefix}target help` for an explanation.",
+        )
+
+    @target.command(name="remove")
+    async def target_remove(self, ctx: commands.Context, role: StrictRole, *, args: str):
+        """
+        Remove a role from members using targeting args.
+
+        An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
+        """
+        members = await self.bot.get_cog("Targeter").args_to_list(ctx, args)
+        await self.super_massrole(
+            ctx,
+            members,
+            role,
+            f"No one was found with the given args.\nCheck out `{ctx.clean_prefix}target help` for an explanation.",
             False,
         )
 
