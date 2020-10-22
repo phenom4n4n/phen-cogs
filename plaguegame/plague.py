@@ -1,5 +1,6 @@
-import random
 import asyncio
+import random
+
 import discord
 from redbot.core import Config, bank, checks, commands
 from redbot.core.utils.chat_formatting import pagify
@@ -7,23 +8,33 @@ from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
                                      start_adding_reactions)
 from redbot.core.utils.predicates import ReactionPredicate
 
-from .converters import Human, Infectable, Curable, hundred_int
+from .converters import Curable, Human, Infectable, hundred_int
+
 
 async def is_infected(ctx):
     userState = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameState()
     return userState == "infected"
 
+
 async def is_healthy(ctx):
     userState = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameState()
     return userState == "healthy"
+
 
 async def is_doctor(ctx):
     userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
     return userRole == "Doctor"
 
+
 async def not_doctor(ctx):
     userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
     return userRole != "Doctor"
+
+
+async def not_plaguebearer(ctx):
+    userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
+    return userRole != "Plaguebearer"
+
 
 class Plague(commands.Cog):
     """A plague game."""
@@ -55,7 +66,9 @@ class Plague(commands.Cog):
             result = await self.infect_user(ctx=ctx, user=member)
             await ctx.send(result)
         else:
-            await ctx.send(f"Luckily **{member.name}** was wearing a mask so they didn't get infected.")
+            await ctx.send(
+                f"Luckily **{member.name}** was wearing a mask so they didn't get infected."
+            )
 
     @commands.check(is_doctor)
     @commands.cooldown(1, 15, commands.BucketType.user)
@@ -117,11 +130,21 @@ class Plague(commands.Cog):
     async def plaguedoctor(self, ctx):
         """Become a doctor for 5,000 currency.
 
-        You must not be infected to run this command."""
+        You must be healthy to run this command."""
         currency = await bank.get_currency_name(ctx.guild)
         await self.config.user(ctx.author).gameRole.set("Doctor")
         await self.notify_user(ctx=ctx, user=ctx.author, notificationType="doctor")
         await ctx.send(f"{ctx.author} has spent 5,000 {currency} and become a Doctor.")
+
+    @commands.check(not_doctor)
+    @commands.check(is_healthy)
+    @bank.cost(5000)
+    @commands.command()
+    async def infectme(self, ctx):
+        """Get infected for 5,000 currency.
+
+        Why would you willingly infect yourself?"""
+        await ctx.send(await self.infect_user(ctx, ctx.author))
 
     @checks.is_owner()
     @commands.group()
@@ -333,7 +356,7 @@ class Plague(commands.Cog):
 
         channel = game_data["logChannel"]
         channel = ctx.bot.get_channel(channel)
-        autoInfect = f" since `{ctx.author}` didn't wear a mask" if auto else ""
+        autoInfect = f" since **{ctx.author}** didn't wear a mask" if auto else ""
 
         await self.config.user(user).gameState.set("infected")
         await self.notify_user(ctx=ctx, user=user, notificationType="infect")
