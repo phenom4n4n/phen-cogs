@@ -1,3 +1,4 @@
+from typing import List
 import discord
 import unidecode
 from redbot.core import commands
@@ -86,3 +87,10 @@ class TouchableMember(MemberConverter):
             )
         else:
             return member
+
+class TargeterArgs(Converter):
+    async def convert(self, ctx: commands.Context, argument: str) -> List[discord.Member]:
+        members = await ctx.bot.get_cog("Targeter").args_to_list(ctx, argument)
+        if not members:
+            raise BadArgument(f"No one was found with the given args.\nCheck out `{ctx.clean_prefix}target help` for an explanation.")
+        return members

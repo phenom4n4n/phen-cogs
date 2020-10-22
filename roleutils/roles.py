@@ -13,7 +13,7 @@ from redbot.core.utils.mod import (check_permissions, get_audit_reason,
                                    is_admin_or_superior)
 
 from .abc import MixinMeta
-from .converters import FuzzyRole, StrictRole, TouchableMember
+from .converters import FuzzyRole, StrictRole, TouchableMember, TargeterArgs
 from .utils import (can_run_command, humanize_roles, is_allowed_by_hierarchy,
                     is_allowed_by_role_hierarchy)
 
@@ -326,33 +326,31 @@ class Roles(MixinMeta):
         """
 
     @target.command(name="add")
-    async def target_add(self, ctx: commands.Context, role: StrictRole, *, args: str):
+    async def target_add(self, ctx: commands.Context, role: StrictRole, *, args: TargeterArgs):
         """
         Add a role to members using targeting args.
 
         An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
         """
-        members = await self.bot.get_cog("Targeter").args_to_list(ctx, args)
         await self.super_massrole(
             ctx,
-            members,
+            args,
             role,
-            f"No one was found with the given args.\nCheck out `{ctx.clean_prefix}target help` for an explanation.",
+            f"No one was found with the given args that was eligible to recieve `{role}`.",
         )
 
     @target.command(name="remove")
-    async def target_remove(self, ctx: commands.Context, role: StrictRole, *, args: str):
+    async def target_remove(self, ctx: commands.Context, role: StrictRole, *, args: TargeterArgs):
         """
         Remove a role from members using targeting args.
 
         An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
         """
-        members = await self.bot.get_cog("Targeter").args_to_list(ctx, args)
         await self.super_massrole(
             ctx,
-            members,
+            args,
             role,
-            f"No one was found with the given args.\nCheck out `{ctx.clean_prefix}target help` for an explanation.",
+            f"No one was found with the given args that was eligible have `{role}` removed from them.",
             False,
         )
 
