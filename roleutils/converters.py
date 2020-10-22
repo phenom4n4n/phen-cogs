@@ -1,7 +1,8 @@
 import discord
 import unidecode
 from redbot.core import commands
-from redbot.core.commands import BadArgument, RoleConverter, MemberConverter, Converter
+from redbot.core.commands import (BadArgument, Converter, MemberConverter,
+                                  RoleConverter)
 from redbot.core.utils.chat_formatting import inline
 
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
@@ -18,6 +19,7 @@ class FuzzyRole(RoleConverter):
     https://github.com/Rapptz/discord.py/blob/rewrite/discord/ext/commands/converter.py#L85
     https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/cogs/mod/mod.py#L24
     """
+
     def __init__(self, response: bool = True):
         self.response = response
         super().__init__()
@@ -58,11 +60,16 @@ class StrictRole(FuzzyRole):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
         role = await super().convert(ctx, argument)
         if role.managed:
-            raise BadArgument(f"`{role}` is an integrated role and cannot be assigned." if self.response else None)
+            raise BadArgument(
+                f"`{role}` is an integrated role and cannot be assigned."
+                if self.response
+                else None
+            )
         allowed, message = is_allowed_by_role_hierarchy(ctx.bot, ctx.me, ctx.author, role)
         if not allowed:
             raise BadArgument(message if self.response else None)
         return role
+
 
 class TouchableMember(MemberConverter):
     def __init__(self, response: bool = True):
@@ -73,7 +80,9 @@ class TouchableMember(MemberConverter):
         member = await super().convert(ctx, argument)
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             raise BadArgument(
-                "You cannot do that since you aren't higher than that user in hierarchy." if self.response else None
+                "You cannot do that since you aren't higher than that user in hierarchy."
+                if self.response
+                else None
             )
         else:
             return member

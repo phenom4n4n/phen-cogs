@@ -9,6 +9,7 @@ from redbot.core.utils.chat_formatting import box
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
+
 async def before_invoke_hook(ctx: commands.Context):
     if not ctx.guild:
         return
@@ -38,10 +39,12 @@ async def before_invoke_hook(ctx: commands.Context):
         )
         raise commands.CheckFailure()
 
+
 class PermissionsLocker(commands.Cog):
     """
     Force permissions for the bot.
     """
+
     __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):

@@ -1,6 +1,6 @@
 import discord
-from redbot.core.bot import Red
 from redbot.core import commands
+from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import humanize_list
 
 
@@ -25,6 +25,7 @@ def is_allowed_by_role_hierarchy(
 
 def humanize_roles(roles: list) -> str:
     return humanize_list([f"`{role.name}`" for role in roles])
+
 
 async def can_run_command(ctx: commands.Context, command: str) -> bool:
     try:

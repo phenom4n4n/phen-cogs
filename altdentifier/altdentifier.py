@@ -11,10 +11,12 @@ from .converters import ActionConverter, LevelConverter, StrictRole
 class APIError(Exception):
     pass
 
+
 class AltDentifier(commands.Cog):
     """
     Check new users with AltDentifier API
     """
+
     __version__ = "1.0.2"
 
     def format_help_for_context(self, ctx):
@@ -208,7 +210,7 @@ class AltDentifier(commands.Cog):
             timestamp=member.created_at,
         )
         e.set_footer(text="Account created at")
-        e.set_thumbnail(url=member.avatar_url)                
+        e.set_thumbnail(url=member.avatar_url)
         return e
 
     async def take_action(

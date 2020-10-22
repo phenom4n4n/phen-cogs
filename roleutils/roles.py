@@ -2,21 +2,23 @@ import asyncio
 import datetime
 import logging
 from typing import Optional
-from copy import copy
+
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import (humanize_list,
                                                humanize_timedelta,
                                                text_to_file)
-from redbot.core.utils.mod import get_audit_reason, is_admin_or_superior, check_permissions
+from redbot.core.utils.mod import (check_permissions, get_audit_reason,
+                                   is_admin_or_superior)
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole, TouchableMember
-from .utils import (humanize_roles, is_allowed_by_hierarchy,
-                    is_allowed_by_role_hierarchy, can_run_command)
+from .utils import (can_run_command, humanize_roles, is_allowed_by_hierarchy,
+                    is_allowed_by_role_hierarchy)
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
+
 
 class Roles(MixinMeta):
     """
@@ -25,7 +27,9 @@ class Roles(MixinMeta):
 
     @commands.guild_only()
     @commands.group(invoke_without_command=True)
-    async def role(self, ctx: commands.Context, member: TouchableMember(False), *, role: StrictRole(False)):
+    async def role(
+        self, ctx: commands.Context, member: TouchableMember(False), *, role: StrictRole(False)
+    ):
         """Role management.
 
         Invoking this command will add or remove the given role from the member, depending on whether they already had it."""

@@ -3,6 +3,7 @@ from redbot.core import commands
 from redbot.core.commands import BadArgument, Converter
 from redbot.core.utils.chat_formatting import inline
 
+
 def hundred_int(arg: str):
     try:
         ret = int(arg)
@@ -12,12 +13,14 @@ def hundred_int(arg: str):
         raise BadArgument(f"{inline(arg)} must be an integer between 1 and 100.")
     return ret
 
+
 class Human(commands.MemberConverter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
         member = await super().convert(ctx, argument)
         if member.bot:
             raise BadArgument("Keep bots out of this. We aren't susceptible to human diseases.")
         return member
+
 
 class Infectable(Human):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
@@ -27,10 +30,13 @@ class Infectable(Human):
         game_data = await cog.config.all()
 
         if data["gameState"] == "infected":
-            raise BadArgument(f"**{member.name}** is already infected with {game_data['plagueName']}.")
+            raise BadArgument(
+                f"**{member.name}** is already infected with {game_data['plagueName']}."
+            )
         elif data["gameRole"] == "Doctor":
             raise BadArgument(f"You cannot infect a Doctor!")
         return member
+
 
 class Curable(Human):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:

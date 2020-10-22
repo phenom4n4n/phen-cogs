@@ -1,12 +1,12 @@
-import re
-from typing import Union, Optional
+from typing import Union
 
 import discord
 import unidecode
-from discord.ext.commands.converter import RoleConverter, Converter
+from discord.ext.commands.converter import Converter, RoleConverter
 from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
+
 
 class ChannelToggle(Converter):
     async def convert(self, ctx: commands.Context, arg: str) -> Union[bool, None]:

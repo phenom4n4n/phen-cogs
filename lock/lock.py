@@ -1,12 +1,13 @@
-from typing import Literal, Optional, Union, Dict, List
 from copy import copy
+from typing import List, Literal, Optional, Union
+
 import discord
 from redbot.core import checks, commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import humanize_list, inline, box
+from redbot.core.utils.chat_formatting import box, humanize_list, inline
 
-from .converters import FuzzyRole, ChannelToggle
+from .converters import ChannelToggle, FuzzyRole
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -15,6 +16,7 @@ class Lock(commands.Cog):
     """
     Advanced channel and server locking.
     """
+
     __version__ = "1.1.1"
 
     def format_help_for_context(self, ctx):
@@ -172,7 +174,7 @@ class Lock(commands.Cog):
                 f"I failed to lock the server for {humanize_list(failed)}, probably because I was lower than the roles in heirarchy."
             )
 
-    @commands.is_owner() # unstable, incomplete
+    @commands.is_owner()  # unstable, incomplete
     @lock.command(name="perms")
     async def lock_perms(
         self,
@@ -351,7 +353,7 @@ class Lock(commands.Cog):
         if msg:
             await ctx.send("\n".join(msg))
 
-    @commands.is_owner() # unstable, incomplete
+    @commands.is_owner()  # unstable, incomplete
     @unlock.command(name="perms")
     async def unlock_perms(
         self,
@@ -390,7 +392,9 @@ class Lock(commands.Cog):
             await ctx.send(msg)
 
     @staticmethod
-    def update_overwrite(ctx: commands.Context, overwrite: discord.PermissionOverwrite, permissions: dict):
+    def update_overwrite(
+        ctx: commands.Context, overwrite: discord.PermissionOverwrite, permissions: dict
+    ):
         base_perms = dict(iter(discord.PermissionOverwrite()))
         old_perms = copy(permissions)
         user_perms = ctx.channel.permissions_for(ctx.author)
@@ -405,7 +409,9 @@ class Lock(commands.Cog):
                 valid_perms.append(f"`{perm}`")
         overwrite.update(**permissions)
         if invalid_perms:
-            invalid = f"\nThe following permissions were invalid:\n{humanize_list(invalid_perms)}\n"
+            invalid = (
+                f"\nThe following permissions were invalid:\n{humanize_list(invalid_perms)}\n"
+            )
             possible = humanize_list([f"`{perm}`" for perm in base_perms.keys()])
             invalid += f"Possible permissions are:\n{possible}"
         else:
