@@ -16,10 +16,9 @@ from redbot.core.utils.predicates import ReactionPredicate
 from TagScriptEngine import Interpreter, adapter, block
 
 from .converters import tag_name
+from .blocks.command import CommandBlock
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
-
-COM_RE = re.compile(r"{(?:c|com|command): ?([^{}]+) ?}")
 
 
 class Tags(commands.Cog):
@@ -27,7 +26,7 @@ class Tags(commands.Cog):
     Create and use tags.
     """
 
-    __version__ = "0.1.1"
+    __version__ = "0.2.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -44,6 +43,7 @@ class Tags(commands.Cog):
         default_guild = {"tags": {}}
         self.config.register_guild(**default_guild)
         blocks = [
+            CommandBlock(),
             block.MathBlock(),
             block.RandomBlock(),
             block.RangeBlock(),
@@ -190,7 +190,7 @@ class Tags(commands.Cog):
             e.add_field(name="Actions", value=output.actions)
         if output.variables:
             e.add_field(name="Variables", value=output.variables)
-        e.add_field(name="Output", value=output.body or discord.Embed.Empty, inline=False)
+        e.add_field(name="Output", value=output.body or "NO OUTPUT", inline=False)
 
         m = await ctx.send(embed=e)
 
@@ -237,23 +237,20 @@ class Tags(commands.Cog):
             await self.bot.process_commands(new_message)
 
     async def process_tag(self, ctx: commands.Context, tagscript: str, args: str) -> str:
+        tagscript = tagscript.replace("{args}", args)
         output = self.engine.process(tagscript)
-        if output.body:
-            o = output.body.replace("{args}", args)
-            commands = COM_RE.findall(o)
-            to_process = []
-            if commands:
-                o = re.sub(COM_RE, "", o)
-                for index, command in enumerate(commands):
-                    if index > 2:
-                        break
+        to_process = []
+        actions = output.actions
+        if actions:
+            if actions["commands"]:
+                for command in actions["commands"]:
                     if command.startswith("tag"):
                         await ctx.send("Looping isn't allowed.")
                         return
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
                     to_process.append(self.bot.process_commands(new))
-            if "".join(o.strip()):
-                await ctx.send(o)
-            if to_process:
-                await asyncio.gather(*to_process)
+        if output.body:
+            await ctx.send(output.body[:2000])
+        if to_process:
+            await asyncio.gather(*to_process)
