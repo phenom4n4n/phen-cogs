@@ -26,7 +26,7 @@ class Tags(commands.Cog):
     Create and use tags.
     """
 
-    __version__ = "0.2.1"
+    __version__ = "0.2.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -35,6 +35,9 @@ class Tags(commands.Cog):
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
+        cog = self.bot.get_cog("CustomCommands")
+        if cog:
+            raise RuntimeError("This cog conflicts with CustomCommands and cannot be loaded with both at the same time.")
         self.config = Config.get_conf(
             self,
             identifier=567234895692346562369,
@@ -114,7 +117,7 @@ class Tags(commands.Cog):
     @tag.command()
     async def edit(self, ctx, tag_name: tag_name, *, tagscript):
         """Edit a tag with TagScript."""
-        tag = await self.get_stored_tag(ctx, tag_name, False)
+        tag = await self.get_stored_tag(ctx, tag_name)
         if not tag:
             return
 
