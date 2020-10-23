@@ -73,7 +73,7 @@ class Tags(commands.Cog):
 
     @commands.guild_only()
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]")
-    async def tag(self, ctx, response: Optional[bool], tag_name: tag_name, *, args: str = b"{args}"):
+    async def tag(self, ctx, response: Optional[bool], tag_name: tag_name, *, args: str = "{args}"):
         """Tag management with TagScript.
 
         These commands use TagScriptEngine. [This site](https://github.com/JonSnowbd/TagScript/blob/v2/Documentation/Using%20TSE.md) has documentation on how to use TagScript blocks."""
