@@ -1,5 +1,4 @@
 import asyncio
-import re
 import time
 from copy import copy
 from typing import Literal, Optional
@@ -10,15 +9,22 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
-from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
-                                     start_adding_reactions)
+from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 from TagScriptEngine import Interpreter, adapter, block
 
-from .converters import tag_name
-from .blocks.command import CommandBlock
+from .blocks import stable_blocks
+from .converters import TagConverter, TagName
+from .objects import Tag
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
+
+
+async def delete_quietly(message: discord.Message):
+    try:
+        await message.delete()
+    except discord.HTTPException:
+        pass
 
 
 class Tags(commands.Cog):
@@ -26,7 +32,7 @@ class Tags(commands.Cog):
     Create and use tags.
     """
 
-    __version__ = "0.2.2"
+    __version__ = "1.0.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -37,7 +43,9 @@ class Tags(commands.Cog):
         self.bot = bot
         cog = self.bot.get_cog("CustomCommands")
         if cog:
-            raise RuntimeError("This cog conflicts with CustomCommands and cannot be loaded with both at the same time.")
+            raise RuntimeError(
+                "This cog conflicts with CustomCommands and cannot be loaded with both at the same time."
+            )
         self.config = Config.get_conf(
             self,
             identifier=567234895692346562369,
@@ -45,8 +53,7 @@ class Tags(commands.Cog):
         )
         default_guild = {"tags": {}}
         self.config.register_guild(**default_guild)
-        blocks = [
-            CommandBlock(),
+        blocks = stable_blocks + [
             block.MathBlock(),
             block.RandomBlock(),
             block.RangeBlock(),
@@ -76,28 +83,26 @@ class Tags(commands.Cog):
 
     @commands.guild_only()
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]")
-    async def tag(self, ctx, response: Optional[bool], tag_name: tag_name, *, args: str = "{args}"):
+    async def tag(self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""):
         """Tag management with TagScript.
 
         These commands use TagScriptEngine. [This site](https://github.com/JonSnowbd/TagScript/blob/v2/Documentation/Using%20TSE.md) has documentation on how to use TagScript blocks."""
         if response is None:
             response = True
-        tag_data = await self.get_stored_tag(ctx, tag_name, response)
-        if tag_data:
-            tag = tag_data["tag"]
-            async with self.config.guild(ctx.guild).tags() as t:
-                t[tag_name]["uses"] += 1
-            await self.process_tag(ctx, tag, args)
+        try:
+            tag = await TagConverter().convert(ctx, tag_name)
+        except commands.BadArgument as e:
+            if response:
+                await ctx.send(e)
+                return
+        async with self.config.guild(ctx.guild).tags() as t:
+            t[tag_name]["uses"] += 1
+        await self.process_tag(ctx, tag, seed_variables={"args": adapter.StringAdapter(args)})
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command()
-    async def add(self, ctx, tag_name: tag_name, *, tagscript):
+    async def add(self, ctx, tag_name: TagName, *, tagscript):
         """Add a tag with TagScript."""
-        command = self.bot.get_command(tag_name)
-        if command:
-            await ctx.send(f"`{tag_name}` is already a registered command.")
-            return
-
         tag = await self.get_stored_tag(ctx, tag_name, False)
         if tag:
             msg = await ctx.send(
@@ -114,50 +119,40 @@ class Tags(commands.Cog):
         await self.store_tag(ctx, tag_name, tagscript)
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command()
-    async def edit(self, ctx, tag_name: tag_name, *, tagscript):
+    @tag.command(aliases=["e"])
+    async def edit(self, ctx, tag: TagConverter, *, tagscript):
         """Edit a tag with TagScript."""
-        tag = await self.get_stored_tag(ctx, tag_name)
-        if not tag:
-            return
-
         async with self.config.guild(ctx.guild).tags() as t:
-            t[tag_name]["tag"] = tagscript
-        await ctx.send(f"Tag `{tag_name}` edited.")
+            t[str(tag)]["tag"] = tagscript
+        await ctx.send(f"Tag `{tag}` edited.")
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["delete"])
-    async def remove(self, ctx, tag_name: tag_name):
+    async def remove(self, ctx, tag: TagConverter):
         """Delete a tag."""
-        tag = await self.get_stored_tag(ctx, tag_name)
-        if tag:
-            async with self.config.guild(ctx.guild).tags() as e:
-                del e[tag_name]
-            await ctx.send("Tag deleted.")
+        async with self.config.guild(ctx.guild).tags() as e:
+            del e[str(tag)]
+        await ctx.send("Tag deleted.")
 
     @tag.command(name="info")
-    async def tag_info(self, ctx, name: str):
+    async def tag_info(self, ctx, tag: TagConverter):
         """Get info about an tag that is stored on this server."""
-        tag = await self.get_stored_tag(ctx, name)
-        if tag:
-            e = discord.Embed(
-                color=await ctx.embed_color(),
-                title=f"`{name}` Info",
-                description=f"Author: <@!{tag['author']}>\nUses: {tag['uses']}\nLength: {len(tag['tag'])}",
-            )
-            e.add_field(name="TagScript", value=box(tag["tag"]))
-            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-            await ctx.send(embed=e)
+        e = discord.Embed(
+            color=await ctx.embed_color(),
+            title=f"`{tag}` Info",
+            description=f"Author: {tag.author.mention if tag.author else tag.author_id}\nUses: {tag.uses}\nLength: {len(tag)}",
+        )
+        e.add_field(name="TagScript", value=box(str(tag)))
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        await ctx.send(embed=e)
 
     @tag.command(name="raw")
-    async def tag_raw(self, ctx, name: str):
+    async def tag_raw(self, ctx, tag: TagConverter):
         """Get a tag's raw content."""
-        tag = await self.get_stored_tag(ctx, name)
-        if tag:
-            await ctx.send(
-                escape_markdown(tag["tag"]),
-                allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False),
-            )
+        await ctx.send(
+            escape_markdown(tag.tagscript[:2000]),
+            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False),
+        )
 
     @tag.command(name="list")
     async def tag_list(self, ctx):
@@ -201,22 +196,29 @@ class Tags(commands.Cog):
     @tag.command()
     async def process(self, ctx: commands.Context, *, tagscript: str):
         """Process TagScript without storing."""
-        await self.process_tag(ctx, tagscript, "")
+        tag = Tag(
+            "processed_tag",
+            tagscript,
+            invoker=ctx.author,
+            author=ctx.author,
+            author_id=ctx.author.id,
+            uses=1,
+            ctx=ctx,
+        )
+        await self.process_tag(ctx, tag)
 
     async def store_tag(self, ctx: commands.Context, name: str, tagscript: str):
         async with self.config.guild(ctx.guild).tags() as t:
             t[name] = {"author": ctx.author.id, "uses": 0, "tag": tagscript}
         await ctx.send(f"Tag stored under the name `{name}`.")
 
-    async def get_stored_tag(self, ctx: commands.Context, name: tag_name, response: bool = True):
+    async def get_stored_tag(self, ctx: commands.Context, name: TagName, response: bool = True):
         tags = await self.config.guild(ctx.guild).tags()
-        try:
-            tag = tags[name]
-        except KeyError:
-            if response:
-                await ctx.send(f'Tag "{name}" not found.')
-            return
-        return tag
+        tag = tags.get(name)
+        if tag:
+            tag = Tag.from_dict(name, tag, ctx=ctx)
+            return tag
+        return None
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
@@ -239,21 +241,28 @@ class Tags(commands.Cog):
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
             await self.bot.process_commands(new_message)
 
-    async def process_tag(self, ctx: commands.Context, tagscript: str, args: str) -> str:
-        tagscript = tagscript.replace("{args}", args)
-        output = self.engine.process(tagscript)
-        to_process = []
+    async def process_tag(
+        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
+    ) -> str:
+        output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
+        to_gather = []
+        commands_to_process = []
         actions = output.actions
         if actions:
-            if actions["commands"]:
+            if actions.get("delete"):
+                if ctx.channel.permissions_for(ctx.me).manage_messages:
+                    to_gather.append(delete_quietly(ctx.message))
+            if actions.get("commands"):
                 for command in actions["commands"]:
                     if command.startswith("tag"):
                         await ctx.send("Looping isn't allowed.")
                         return
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
-                    to_process.append(self.bot.process_commands(new))
+                    commands_to_process.append(self.bot.process_commands(new))
         if output.body:
-            await ctx.send(output.body[:2000])
-        if to_process:
-            await asyncio.gather(*to_process)
+            to_gather.append(ctx.send(output.body[:2000]))
+        if to_gather:
+            await asyncio.gather(*to_gather)
+        if commands_to_process:
+            await asyncio.gather(*commands_to_process)
