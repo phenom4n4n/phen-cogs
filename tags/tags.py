@@ -33,7 +33,7 @@ class Tags(commands.Cog):
     Create and use tags.
     """
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -199,9 +199,9 @@ class Tags(commands.Cog):
         )
         e.add_field(name="Input", value=tagscript, inline=False)
         if output.actions:
-            e.add_field(name="Actions", value=output.actions)
+            e.add_field(name="Actions", value=output.actions, inline=False)
         if output.variables:
-            e.add_field(name="Variables", value=output.variables)
+            e.add_field(name="Variables", value=output.variables, inline=False)
         e.add_field(name="Output", value=output.body or "NO OUTPUT", inline=False)
 
         await ctx.send(embed=e)
