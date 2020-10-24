@@ -16,7 +16,9 @@ Welcome to the incomplete TagScript documentation. This will explain the custom 
 
     - channel
 
-    -server
+    - server
+
+    - embed
 
 **Block Syntax:**
 
@@ -161,3 +163,12 @@ member_count
 description
 ```
 
+**Embed Block**
+
+Usage: `{embed:<json>}`
+
+Payload: None
+
+Parameter: json
+
+Embed blocks will send an embed in the tag response.

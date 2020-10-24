@@ -31,6 +31,8 @@ async def delete_quietly(message: discord.Message):
 class Tags(commands.Cog):
     """
     Create and use tags.
+
+    The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
     __version__ = "1.1.0"
@@ -87,7 +89,7 @@ class Tags(commands.Cog):
     async def tag(self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""):
         """Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site](https://github.com/JonSnowbd/TagScript/blob/v2/Documentation/Using%20TSE.md) has documentation on how to use TagScript blocks."""
+        These commands use TagScriptEngine. [This site](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md) has documentation on how to use TagScript blocks."""
         if response is None:
             response = True
         try:
@@ -276,11 +278,14 @@ class Tags(commands.Cog):
         output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
         to_gather = []
         commands_to_process = []
+        content = output.body[:2000] if output.body else None
         actions = output.actions
+        embed = actions.get("embed")
+
         if actions:
             if actions.get("delete"):
                 if ctx.channel.permissions_for(ctx.me).manage_messages:
-                    to_gather.append(delete_quietly(ctx.message))
+                    await delete_quietly(ctx.message)
             if actions.get("commands"):
                 for command in actions["commands"]:
                     if command.startswith("tag"):
@@ -289,8 +294,13 @@ class Tags(commands.Cog):
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
                     commands_to_process.append(self.bot.process_commands(new))
-        if output.body:
-            to_gather.append(ctx.send(output.body[:2000]))
+
+        if content or embed:
+            try:
+                await ctx.send(content, embed=embed)
+            except discord.HTTPException:
+                return await ctx.send("I failed to send that embed. The tag has stopped processing.")
+
         if to_gather:
             await asyncio.gather(*to_gather)
         if commands_to_process:
