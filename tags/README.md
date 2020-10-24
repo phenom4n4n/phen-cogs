@@ -2,23 +2,15 @@
 
 Welcome to the incomplete TagScript documentation. This will explain the custom TagScript blocks. If a block you are looking for isn't here, then you should check if its in the base [TagScriptEngine docs](https://github.com/JonSnowbd/TagScript).
 
-**Blocks:**
-
-    - command
-    
-    - delete
-    
-    - args
-    
-    - author
-
-    - target
-
-    - channel
-
-    - server
-
-    - embed
+### Blocks:
+- command
+- delete
+- args
+- author
+- target
+- channel
+- server
+- embed
 
 **Block Syntax:**
 
@@ -78,19 +70,12 @@ By default this will return the tag invoker's full username. Certain attributes 
 
 ```
 id
-
 name
-
 nick
-
 avatar
-
 discriminator
-
 created_at
-
 joined_at
-
 mention
 ```
 
@@ -120,17 +105,11 @@ By default this will return the tag's invoke channel name. Certain attributes ca
 
 ```
 id
-
 name
-
 discriminator
-
 created_at
-
 nsfw
-
 mention
-
 topic
 ```
 
@@ -149,17 +128,11 @@ By default this will return the tag's invoke server name. Certain attributes can
 
 ```
 id
-
 name
-
 nick
-
 icon
-
 discriminator
-
 member_count
-
 description
 ```
 
