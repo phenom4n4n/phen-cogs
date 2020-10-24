@@ -138,7 +138,7 @@ description
 
 **Embed Block**
 
-Usage: `{embed:<json>}`
+Usage: `{embed(<json>)}`
 
 Payload: None
 

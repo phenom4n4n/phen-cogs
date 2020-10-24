@@ -12,19 +12,19 @@ class EmbedBlock(Block):
         return dec == "embed"
 
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
-        if "embed" in ctx.response.actions.keys() or ctx.verb.payload is None:
-            return None
+        if "embed" in ctx.response.actions.keys() or ctx.verb.parameter is None:
+            return "SHIT BROKE DUMBASS"
         try:
-            data = json.loads(ctx.verb.payload)
-        except json.decoder.JSONDecodeError:
-            return None
+            data = json.loads(ctx.verb.parameter)
+        except json.decoder.JSONDecodeError as error:
+            return str(error)
         if data.get("embed"):
             data = data["embed"]
         if data.get("timestamp"):
             data["timestamp"] = data["timestamp"].strip("Z")
         try:
             e = Embed.from_dict(data)
-        except Exception:
-            return None
+        except Exception as error:
+            return str(error)
         ctx.response.actions["embed"] = e
         return ""
