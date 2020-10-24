@@ -9,7 +9,7 @@ class MemberAdapter(Adapter):
         self.attributes = {
             "id": member.id,
             "name": member.name,
-            "nick": member.nick,
+            "nick": member.display_name,
             "avatar": member.avatar_url,
             "discriminator": member.discriminator,
             "created_at": member.created_at,
