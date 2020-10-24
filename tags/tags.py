@@ -16,6 +16,7 @@ from TagScriptEngine import Interpreter, adapter, block
 from .blocks import stable_blocks
 from .converters import TagConverter, TagName
 from .objects import Tag
+from .adapters import MemberAdapter, TextChannelAdapter, GuildAdapter
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -97,7 +98,7 @@ class Tags(commands.Cog):
                 return
         async with self.config.guild(ctx.guild).tags() as t:
             t[tag_name]["uses"] += 1
-        await self.process_tag(ctx, tag, seed_variables={"args": adapter.StringAdapter(args)})
+        await self.process_tag(ctx, tag)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command()
@@ -172,10 +173,23 @@ class Tags(commands.Cog):
     @commands.is_owner()
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["execute"])
-    async def run(self, ctx, *, tagscript):
+    async def run(self, ctx: commands.Context, *, tagscript: str):
         """Execute TagScript without storing."""
         start = time.monotonic()
-        output = self.engine.process(tagscript)
+        author = MemberAdapter(ctx.author)
+        target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
+        channel = TextChannelAdapter(ctx.channel)
+        guild = GuildAdapter(ctx.guild)
+        seed = {
+            "author": author,
+            "user": author,
+            "target": target,
+            "member": target,
+            "channel": channel,
+            "guild": guild,
+            "server": guild,
+        }
+        output = self.engine.process(tagscript, seed_variables=seed)
         end = time.monotonic()
 
         e = discord.Embed(
@@ -190,7 +204,7 @@ class Tags(commands.Cog):
             e.add_field(name="Variables", value=output.variables)
         e.add_field(name="Output", value=output.body or "NO OUTPUT", inline=False)
 
-        m = await ctx.send(embed=e)
+        await ctx.send(embed=e)
 
     @commands.is_owner()
     @tag.command()
@@ -244,6 +258,21 @@ class Tags(commands.Cog):
     async def process_tag(
         self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
     ) -> str:
+        author = MemberAdapter(ctx.author)
+        target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
+        channel = TextChannelAdapter(ctx.channel)
+        guild = GuildAdapter(ctx.guild)
+        seed = {
+            "author": author,
+            "user": author,
+            "target": target,
+            "member": target,
+            "channel": channel,
+            "guild": guild,
+            "server": guild,
+        }
+        seed_variables.update(seed)
+
         output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
         to_gather = []
         commands_to_process = []
