@@ -5,6 +5,7 @@ from TagScriptEngine.block.helpers import helper_parse_if
 from TagScriptEngine.interface import Block
 from discord import Embed
 
+
 class EmbedBlock(Block):
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()

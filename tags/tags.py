@@ -299,7 +299,9 @@ class Tags(commands.Cog):
             try:
                 await ctx.send(content, embed=embed)
             except discord.HTTPException:
-                return await ctx.send("I failed to send that embed. The tag has stopped processing.")
+                return await ctx.send(
+                    "I failed to send that embed. The tag has stopped processing."
+                )
 
         if to_gather:
             await asyncio.gather(*to_gather)
