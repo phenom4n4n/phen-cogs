@@ -1,8 +1,7 @@
 import discord
 import unidecode
 from redbot.core import commands
-from redbot.core.commands import (BadArgument, Converter, MemberConverter,
-                                  RoleConverter)
+from redbot.core.commands import BadArgument, Converter, MemberConverter, RoleConverter
 from redbot.core.utils.chat_formatting import inline
 
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy

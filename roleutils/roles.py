@@ -6,16 +6,17 @@ from typing import Optional
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import (humanize_list,
-                                               humanize_timedelta,
-                                               text_to_file)
-from redbot.core.utils.mod import (check_permissions, get_audit_reason,
-                                   is_admin_or_superior)
+from redbot.core.utils.chat_formatting import humanize_list, humanize_timedelta, text_to_file
+from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole, TouchableMember
-from .utils import (can_run_command, humanize_roles, is_allowed_by_hierarchy,
-                    is_allowed_by_role_hierarchy)
+from .utils import (
+    can_run_command,
+    humanize_roles,
+    is_allowed_by_hierarchy,
+    is_allowed_by_role_hierarchy,
+)
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 

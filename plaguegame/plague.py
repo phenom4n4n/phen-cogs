@@ -4,8 +4,7 @@ import random
 import discord
 from redbot.core import Config, bank, checks, commands
 from redbot.core.utils.chat_formatting import pagify
-from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
-                                     start_adding_reactions)
+from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
 from .converters import Curable, Human, Infectable, hundred_int
@@ -172,7 +171,7 @@ class Plague(commands.Cog):
     @commands.command()
     async def treatme(self, ctx):
         """Get cured from the plague for 5,000 currency.
-        
+
         This is America, so the health care is expensive."""
         await ctx.send(await self.cure_user(ctx, ctx.author))
 

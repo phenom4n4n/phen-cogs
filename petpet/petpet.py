@@ -96,6 +96,7 @@ class PetPet(commands.Cog):
         fp.close()
         return [_file]
 
+
 """
         files = []
         for im in images:
