@@ -13,7 +13,7 @@ class EmbedBlock(Block):
 
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if "embed" in ctx.response.actions.keys() or ctx.verb.parameter is None:
-            return "SHIT BROKE DUMBASS"
+            return None
         try:
             data = json.loads(ctx.verb.parameter)
         except json.decoder.JSONDecodeError as error:

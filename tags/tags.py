@@ -35,7 +35,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.1.0"
+    __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -100,7 +100,8 @@ class Tags(commands.Cog):
                 return
         async with self.config.guild(ctx.guild).tags() as t:
             t[tag_name]["uses"] += 1
-        await self.process_tag(ctx, tag)
+        seed = {"args": adapter.StringAdapter(args)}
+        await self.process_tag(ctx, tag, seed_variables=seed)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command()
@@ -203,7 +204,8 @@ class Tags(commands.Cog):
         if output.actions:
             e.add_field(name="Actions", value=output.actions, inline=False)
         if output.variables:
-            e.add_field(name="Variables", value=output.variables, inline=False)
+            vars = "\n".join([f"{name}: {type(obj).__name__}" for name, obj in output.variables.items()])
+            e.add_field(name="Variables", value=vars, inline=False)
         e.add_field(name="Output", value=output.body or "NO OUTPUT", inline=False)
 
         await ctx.send(embed=e)
