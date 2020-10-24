@@ -204,7 +204,9 @@ class Tags(commands.Cog):
         if output.actions:
             e.add_field(name="Actions", value=output.actions, inline=False)
         if output.variables:
-            vars = "\n".join([f"{name}: {type(obj).__name__}" for name, obj in output.variables.items()])
+            vars = "\n".join(
+                [f"{name}: {type(obj).__name__}" for name, obj in output.variables.items()]
+            )
             e.add_field(name="Variables", value=vars, inline=False)
         e.add_field(name="Output", value=output.body or "NO OUTPUT", inline=False)
 
