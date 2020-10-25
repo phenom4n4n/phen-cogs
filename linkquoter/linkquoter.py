@@ -9,13 +9,18 @@ link_regex = re.compile(
     r'https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/channels\/(?P<guild_id>[0-9]{15,21})\/(?P<channel_id>[0-9]{15,21})\/(?P<message_id>[0-9]{15,21})\/?'
 )
 
+def webhook_check(ctx: commands.Context) -> bool:
+    cog = ctx.bot.get_cog("Webhook")
+    if cog and cog.__author__ == "PhenoM4n4n":
+        return cog
+    return False
+
 class LinkToMessage(Converter):
-    async def convert(self, ctx: commands.Context, argument: str):
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
         match = re.match(link_regex, argument)
         if not match:
             raise BadArgument('Message "{}" not found.'.format(argument))
         
-        guild_id = int(match.group("guild_id"))
         channel_id = int(match.group("channel_id"))
         message_id = int(match.group("message_id"))
 
@@ -35,7 +40,7 @@ class LinkToMessage(Converter):
         else:
             return await self.validate_message(ctx, message)
 
-    async def validate_message(self, ctx: commands.Context, message: discord.Message):
+    async def validate_message(self, ctx: commands.Context, message: discord.Message) -> discord.Message:
         if not message.guild:
             raise BadArgument("I can only quote messages from servers.")
         if message.channel.nsfw and not ctx.channel.nsfw:
@@ -163,23 +168,9 @@ class LinkQuoter(commands.Cog):
         embeds = await self.create_embeds([message_link])
         if not embeds:
             return await ctx.send("Invalid link.")
-        if (await self.config.guild(ctx.guild).webhooks()) and ctx.channel.permissions_for(
-            ctx.guild.me
-        ).manage_webhooks:
-            webhooks = await ctx.channel.webhooks()
-            if webhooks:
-                await webhooks[0].send(
-                    embed=embeds[0][0],
-                    username=embeds[0][1].display_name,
-                    avatar_url=embeds[0][1].avatar_url,
-                )
-            else:
-                webhook = await ctx.channel.create_webhook(name=f"{self.bot.user} Webhook")
-                await webhook.send(
-                    embed=embeds[0][0],
-                    username=embeds[0][1].display_name,
-                    avatar_url=embeds[0][1].avatar_url,
-                )
+        cog = webhook_check
+        if (await self.config.guild(ctx.guild).webhooks()) and cog:
+            ...
         else:
             await ctx.send(embed=embeds[0][0])
 
@@ -218,6 +209,7 @@ class LinkQuoter(commands.Cog):
         else:
             await ctx.send("This server is no longer opted in to cross-server quoting.")
 
+    @commands.check(webhook_check)
     @checks.bot_has_permissions(manage_webhooks=True)
     @linkquote.command()
     async def webhook(self, ctx, true_or_false: bool = None):
