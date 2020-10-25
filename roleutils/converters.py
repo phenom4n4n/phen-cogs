@@ -1,7 +1,8 @@
+from typing import Union
 import discord
 import unidecode
 from redbot.core import commands
-from redbot.core.commands import BadArgument, Converter, MemberConverter, RoleConverter
+from redbot.core.commands import BadArgument, Converter, MemberConverter, RoleConverter, EmojiConverter
 from redbot.core.utils.chat_formatting import inline
 
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
@@ -85,3 +86,16 @@ class TouchableMember(MemberConverter):
             )
         else:
             return member
+
+class RealEmojiConverter(EmojiConverter):
+    async def convert(self, ctx: commands.Context, argument: str) -> Union[discord.Emoji, str]:
+        try:
+            emoji = await super().convert(ctx, argument)
+        except BadArgument:
+            try:
+                await ctx.message.add_reaction(argument)
+            except discord.HTTPException:
+                raise BadArgument(f'Emoji "{argument}" not found.')
+            else:
+                emoji = argument
+        return emoji
