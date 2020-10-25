@@ -22,6 +22,7 @@ class InvalidWebhook(Exception):
 
 class Webhook(commands.Cog):
     """Webhook utility commands."""
+    __author__ = "PhenoM4n4n"
 
     def __init__(self, bot):
         self.bot = bot
