@@ -6,8 +6,9 @@ from redbot.core.commands.converter import BadArgument
 from redbot.core.commands import Converter
 
 link_regex = re.compile(
-    r'https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/channels\/(?P<guild_id>[0-9]{15,21})\/(?P<channel_id>[0-9]{15,21})\/(?P<message_id>[0-9]{15,21})\/?'
+    r"https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/channels\/(?P<guild_id>[0-9]{15,21})\/(?P<channel_id>[0-9]{15,21})\/(?P<message_id>[0-9]{15,21})\/?"
 )
+
 
 def webhook_check(ctx: commands.Context) -> bool:
     cog = ctx.bot.get_cog("Webhook")
@@ -15,19 +16,20 @@ def webhook_check(ctx: commands.Context) -> bool:
         return cog
     return False
 
+
 class LinkToMessage(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
         match = re.match(link_regex, argument)
         if not match:
             raise BadArgument('Message "{}" not found.'.format(argument))
-        
+
         channel_id = int(match.group("channel_id"))
         message_id = int(match.group("message_id"))
 
         message = ctx.bot._connection._get_message(message_id)
         if message:
             return await self.validate_message(ctx, message)
-        
+
         channel = ctx.bot.get_channel(channel_id)
         if not channel:
             raise BadArgument('Channel "{}" not found.'.format(channel_id))
@@ -40,7 +42,9 @@ class LinkToMessage(Converter):
         else:
             return await self.validate_message(ctx, message)
 
-    async def validate_message(self, ctx: commands.Context, message: discord.Message) -> discord.Message:
+    async def validate_message(
+        self, ctx: commands.Context, message: discord.Message
+    ) -> discord.Message:
         if not message.guild:
             raise BadArgument("I can only quote messages from servers.")
         if message.channel.nsfw and not ctx.channel.nsfw:
@@ -52,14 +56,19 @@ class LinkToMessage(Converter):
         if message.guild.id != ctx.guild.id:
             guild_data = await cog.config.guild(message.guild).all()
             if not data["cross_server"]:
-                raise BadArgument(f"This server is not opted in to quote messages from other servers.")
+                raise BadArgument(
+                    f"This server is not opted in to quote messages from other servers."
+                )
             elif not guild_data["cross_server"]:
-                raise BadArgument(f"That server is not opted in to allow its messages to be quoted in other servers.")
+                raise BadArgument(
+                    f"That server is not opted in to allow its messages to be quoted in other servers."
+                )
 
         author_perms = message.channel.permissions_for(ctx.author)
         if not (author_perms.read_message_history or author_perms.read_messages):
             raise BadArgument(f"You don't have permission to read messages in that channel.")
         return message
+
 
 class LinkQuoter(commands.Cog):
     """
@@ -74,9 +83,13 @@ class LinkQuoter(commands.Cog):
             force_registration=True,
         )
 
-        default_guild = {"on": False, "webhooks": True, "cross_server": False, "respect_perms": False}
+        default_guild = {
+            "on": False,
+            "webhooks": True,
+            "cross_server": False,
+            "respect_perms": False,
+        }
         self.config.register_guild(**default_guild)
-
 
     async def get_messages(self, guild: discord.Guild, author: discord.Member, links: list):
         messages = []
@@ -192,7 +205,7 @@ class LinkQuoter(commands.Cog):
     async def linkquote_global(self, ctx, true_or_false: bool = None):
         """
         Toggle cross-server quoting.
-        
+
         Turning this setting on will allow this server to quote other servers, and other servers to quote this one.
         """
         target_state = (
