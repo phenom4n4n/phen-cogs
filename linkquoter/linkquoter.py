@@ -1,4 +1,5 @@
 import re
+from typing import Union
 
 import discord
 from redbot.core import Config, checks, commands
@@ -10,9 +11,13 @@ link_regex = re.compile(
 )
 
 
-def webhook_check(ctx: commands.Context) -> bool:
+def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
     cog = ctx.bot.get_cog("Webhook")
-    if cog and cog.__author__ == "PhenoM4n4n":
+    if (
+        ctx.channel.permissions_for(ctx.me).manage_webhooks
+        and cog
+        and cog.__author__ == "PhenoM4n4n"
+    ):
         return cog
     return False
 
@@ -181,9 +186,17 @@ class LinkQuoter(commands.Cog):
         embeds = await self.create_embeds([message_link])
         if not embeds:
             return await ctx.send("Invalid link.")
-        cog = webhook_check
+        cog = webhook_check(ctx)
         if (await self.config.guild(ctx.guild).webhooks()) and cog:
-            ...
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                reason=f"For the {ctx.command.qualified_name} command",
+                username=ctx.author.display_name,
+                avatar_url=ctx.author.avatar_url,
+                embed=embeds[0][0],
+            )
         else:
             await ctx.send(embed=embeds[0][0])
 
@@ -201,6 +214,7 @@ class LinkQuoter(commands.Cog):
         else:
             await ctx.send("I will no longer automatically quote links.")
 
+    @commands.admin_or_permissions(manage_guild=True)
     @linkquote.command(name="global")
     async def linkquote_global(self, ctx, true_or_false: bool = None):
         """
@@ -223,6 +237,7 @@ class LinkQuoter(commands.Cog):
             await ctx.send("This server is no longer opted in to cross-server quoting.")
 
     @commands.check(webhook_check)
+    @commands.admin_or_permissions(manage_guild=True)
     @checks.bot_has_permissions(manage_webhooks=True)
     @linkquote.command()
     async def webhook(self, ctx, true_or_false: bool = None):
@@ -248,31 +263,33 @@ class LinkQuoter(commands.Cog):
         if not await self.config.guild(message.guild).on():
             return
 
-        links = regex_check(message.content)
-        if not links:
+        ctx = commands.Context(
+            message=message,
+            author=message.author,
+            guild=message.guild,
+            channel=message.channel,
+            me=message.guild.me,
+            bot=self.bot,
+            prefix="auto_linkquote",
+            command=self.bot.get_command("linkquote"),
+        )
+        try:
+            message = await LinkToMessage().convert(ctx, message.content)
+        except BadArgument:
             return
-        messages = await self.get_messages(message.guild, message.author, links)
-        if not messages:
-            return
-        embeds = await self.create_embeds(messages)
+        embeds = await self.create_embeds([message])
         if not embeds:
             return
-        if (await self.config.guild(message.guild).webhooks()) and message.channel.permissions_for(
-            message.guild.me
-        ).manage_webhooks:
-            webhooks = await message.channel.webhooks()
-            if webhooks:
-                await webhooks[0].send(
-                    embed=embeds[0][0],
-                    username=embeds[0][1].display_name,
-                    avatar_url=embeds[0][1].avatar_url,
-                )
-            else:
-                webhook = await message.channel.create_webhook(name=f"{self.bot.user} Webhook")
-                await webhook.send(
-                    embed=embeds[0][0],
-                    username=embeds[0][1].display_name,
-                    avatar_url=embeds[0][1].avatar_url,
-                )
+        cog = webhook_check(ctx)
+        if (await self.config.guild(ctx.guild).webhooks()) and cog:
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                reason=f"For the {ctx.command.qualified_name} command",
+                username=ctx.author.display_name,
+                avatar_url=ctx.author.avatar_url,
+                embed=embeds[0][0],
+            )
         else:
-            await message.channel.send(embed=embeds[0][0])
+            await ctx.send(embed=embeds[0][0])

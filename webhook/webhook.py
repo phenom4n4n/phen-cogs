@@ -74,7 +74,7 @@ class Webhook(commands.Cog):
         """Sends a message to the channel as a webhook with your avatar and display name."""
         await delete_quietly(ctx)
         while True:
-            link = await self.get_webhook(ctx, ctx.channel)
+            link = await self.get_webhook(ctx=ctx)
             try:
                 await self.webhook_link_send(
                     link, ctx.author.display_name, ctx.author.avatar_url, content=message
@@ -91,7 +91,7 @@ class Webhook(commands.Cog):
         """Sends a message to the channel as a webhook with the specified member's avatar and display name."""
         await delete_quietly(ctx)
         while True:
-            link = await self.get_webhook(ctx, ctx.channel)
+            link = await self.get_webhook(ctx=ctx)
             try:
                 await self.webhook_link_send(
                     link, member.display_name, member.avatar_url, content=message
@@ -107,7 +107,7 @@ class Webhook(commands.Cog):
     async def loudsudo(self, ctx: commands.Context, member: discord.Member, *, message: str):
         """Sends a message to the channel as a webhook with the specified member's avatar and display name."""
         while True:
-            link = await self.get_webhook(ctx, ctx.channel)
+            link = await self.get_webhook(ctx=ctx)
             try:
                 await self.webhook_link_send(
                     link,
@@ -130,7 +130,7 @@ class Webhook(commands.Cog):
         """Sends a message to the channel as a webhook with Clyde's avatar and name."""
         await delete_quietly(ctx)
         while True:
-            link = await self.get_webhook(ctx, ctx.channel)
+            link = await self.get_webhook(ctx=ctx)
             try:
                 await self.webhook_link_send(
                     link,
@@ -318,22 +318,38 @@ class Webhook(commands.Cog):
         except (discord.InvalidArgument, discord.NotFound):
             raise InvalidWebhook("You need to provide a valid webhook link.")
 
-    async def get_webhook(self, ctx: commands.Context, channel: discord.TextChannel):
+    async def get_webhook(
+        self,
+        *,
+        channel: discord.TextChannel = None,
+        me: discord.Member = None,
+        author: discord.Member = NotImplemented,
+        reason: str = None,
+        ctx: commands.Context = None,
+    ):
+        if ctx:
+            channel = channel or ctx.channel
+            me = me or ctx.me
+            author = author or ctx.author
+            reason = reason or f"For the {ctx.command.qualified_name} command",
+
         link = self.cache.get(channel.id)
         if link:
             return link
-        if channel.permissions_for(ctx.me).manage_webhooks:
+        if channel.permissions_for(me).manage_webhooks:
             webhook_list = [
                 w for w in (await channel.webhooks()) if w.type == discord.WebhookType.incoming
             ]
             if webhook_list:
                 webhook = webhook_list[0]
             else:
-                creation_reason = f"Webhook creation requested by {ctx.author} ({ctx.author.id}) for the `{ctx.command.qualified_name}` command."
+                creation_reason = f"Webhook creation requested by {author} ({author.id})"
+                if reason:
+                    creation_reason += f" Reason: {reason}"
                 webhook = await channel.create_webhook(
-                    name=f"{ctx.me.name} Webhook",
+                    name=f"{me.name} Webhook",
                     reason=creation_reason,
-                    avatar=await ctx.me.avatar_url.read(),
+                    avatar=await me.avatar_url.read(),
                 )
             self.cache[channel.id] = webhook.url
             return webhook.url
@@ -342,3 +358,29 @@ class Webhook(commands.Cog):
                 "Missing Permissions",
                 f"I need permissions to `manage_webhooks` in #{channel.name}.",
             )
+
+    async def send_to_channel(
+        self,
+        channel: discord.TextChannel,
+        me: discord.Member,
+        author: discord.Member,
+        *,
+        reason: str = None,
+        ctx: commands.Context = None,
+        **kwargs,
+    ):
+        """Cog function that other cogs can implement using `bot.get_cog("Webhook")`
+        for ease of use when using webhooks and quicker invokes with caching."""
+        while True:
+            link = await self.get_webhook(channel=channel, me=me, author=author, reason=reason, ctx=ctx)
+            try:
+                async with aiohttp.ClientSession() as session:
+                    webhook = discord.Webhook.from_url(
+                        link, adapter=discord.AsyncWebhookAdapter(session)
+                    )
+                    await webhook.send(**kwargs)
+                    return True
+            except (discord.InvalidArgument, discord.NotFound):
+                del self.cache[channel.id]
+            else:
+                break
