@@ -4,9 +4,9 @@ import aiohttp
 import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils.chat_formatting import humanize_list, pagify
-from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
-                                     start_adding_reactions)
+from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
+
 
 async def delete_quietly(ctx: commands.Context):
     if ctx.channel.permissions_for(ctx.me).manage_messages:
@@ -60,7 +60,9 @@ class Webhook(commands.Cog):
         """Sends a message to the specified webhook using your avatar and display name."""
         await delete_quietly(ctx)
         try:
-            await self.webhook_link_send(webhook_link, ctx.author.display_name, ctx.author.avatar_url, content=message)
+            await self.webhook_link_send(
+                webhook_link, ctx.author.display_name, ctx.author.avatar_url, content=message
+            )
         except InvalidWebhook:
             await ctx.send("You need to provide a valid webhook link.")
 
@@ -301,7 +303,9 @@ class Webhook(commands.Cog):
     ):
         try:
             async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(link, adapter=discord.AsyncWebhookAdapter(session))
+                webhook = discord.Webhook.from_url(
+                    link, adapter=discord.AsyncWebhookAdapter(session)
+                )
                 await webhook.send(
                     username=username,
                     avatar_url=avatar_url,
