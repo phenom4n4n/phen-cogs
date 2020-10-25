@@ -2,33 +2,59 @@ import re
 
 import discord
 from redbot.core import Config, checks, commands
-from redbot.core.commands.converter import BadArgument, Converter
+from redbot.core.commands.converter import BadArgument
+from redbot.core.commands import Converter
 
 link_regex = re.compile(
-    r'^https?://(?:(ptb|canary)\.)?discord(?:app)?\.com/channels/'
-    r'(?:[0-9]{15,21})'
-    r'/(?P<channel_id>[0-9]{15,21})/(?P<message_id>[0-9]{15,21})/?$'
+    r'https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/channels\/(?P<guild_id>[0-9]{15,21})\/(?P<channel_id>[0-9]{15,21})\/(?P<message_id>[0-9]{15,21})\/?'
 )
 
-class LinkToEmbed(Converter):
+class LinkToMessage(Converter):
     async def convert(self, ctx: commands.Context, argument: str):
         match = re.match(link_regex, argument)
         if not match:
             raise BadArgument('Message "{}" not found.'.format(argument))
+        
+        guild_id = int(match.group("guild_id"))
+        channel_id = int(match.group("channel_id"))
         message_id = int(match.group("message_id"))
-        channel_id = match.group("channel_id")
+
         message = ctx.bot._connection._get_message(message_id)
         if message:
-            return message
-        channel = ctx.bot.get_channel(int(channel_id)) if channel_id else ctx.channel
+            return await self.validate_message(ctx, message)
+        
+        channel = ctx.bot.get_channel(channel_id)
         if not channel:
             raise BadArgument('Channel "{}" not found.'.format(channel_id))
         try:
-            return await channel.fetch_message(message_id)
+            message = await channel.fetch_message(message_id)
         except discord.NotFound:
             raise BadArgument(argument)
         except discord.Forbidden:
             raise BadArgument("Can't read messages in {}.".format(channel.mention))
+        else:
+            return await self.validate_message(ctx, message)
+
+    async def validate_message(self, ctx: commands.Context, message: discord.Message):
+        if not message.guild:
+            raise BadArgument("I can only quote messages from servers.")
+        if message.channel.nsfw and not ctx.channel.nsfw:
+            raise BadArgument("Messages from NSFW channels cannot be quoted in non-NSFW channels.")
+
+        cog = ctx.bot.get_cog("LinkQuoter")
+        data = await cog.config.guild(ctx.guild).all()
+
+        if message.guild.id != ctx.guild.id:
+            guild_data = await cog.config.guild(message.guild).all()
+            if not data["cross_server"]:
+                raise BadArgument(f"This server is not opted in to quote messages from other servers.")
+            elif not guild_data["cross_server"]:
+                raise BadArgument(f"That server is not opted in to allow its messages to be quoted in other servers.")
+
+        author_perms = message.channel.permissions_for(ctx.author)
+        if not (author_perms.read_message_history or author_perms.read_messages):
+            raise BadArgument(f"You don't have permission to read messages in that channel.")
+        return message
 
 class LinkQuoter(commands.Cog):
     """
@@ -131,13 +157,10 @@ class LinkQuoter(commands.Cog):
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
     @commands.guild_only()
     @commands.group(invoke_without_command=True, aliases=["linkmessage"])
-    async def linkquote(self, ctx, message_link: LinkToEmbed):
+    async def linkquote(self, ctx, message_link: LinkToMessage):
         """Quote a message from a link."""
         await ctx.trigger_typing()
-        messages = await self.get_messages(ctx.guild, ctx.author, message_link)
-        if not messages:
-            return await ctx.send("Invalid link.")
-        embeds = await self.create_embeds(messages)
+        embeds = await self.create_embeds([message_link])
         if not embeds:
             return await ctx.send("Invalid link.")
         if (await self.config.guild(ctx.guild).webhooks()) and ctx.channel.permissions_for(
@@ -163,7 +186,6 @@ class LinkQuoter(commands.Cog):
     @linkquote.command()
     async def auto(self, ctx, true_or_false: bool = None):
         """Toggle automatic quoting."""
-
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -175,11 +197,31 @@ class LinkQuoter(commands.Cog):
         else:
             await ctx.send("I will no longer automatically quote links.")
 
+    @linkquote.command(name="global")
+    async def linkquote_global(self, ctx, true_or_false: bool = None):
+        """
+        Toggle cross-server quoting.
+        
+        Turning this setting on will allow this server to quote other servers, and other servers to quote this one.
+        """
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).cross_server())
+        )
+        await self.config.guild(ctx.guild).cross_server.set(target_state)
+        if target_state:
+            await ctx.send(
+                "This server is now opted in to cross-server quoting. "
+                "This server can now quote other servers, and other servers can quote this one."
+            )
+        else:
+            await ctx.send("This server is no longer opted in to cross-server quoting.")
+
     @checks.bot_has_permissions(manage_webhooks=True)
     @linkquote.command()
     async def webhook(self, ctx, true_or_false: bool = None):
         """Toggle whether the bot should use webhooks to quote."""
-
         target_state = (
             true_or_false
             if true_or_false is not None
