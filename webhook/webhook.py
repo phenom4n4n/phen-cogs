@@ -331,7 +331,7 @@ class Webhook(commands.Cog):
             channel = channel or ctx.channel
             me = me or ctx.me
             author = author or ctx.author
-            reason = reason or f"For the {ctx.command.qualified_name} command",
+            reason = (reason or f"For the {ctx.command.qualified_name} command",)
 
         link = self.cache.get(channel.id)
         if link:
@@ -372,7 +372,9 @@ class Webhook(commands.Cog):
         """Cog function that other cogs can implement using `bot.get_cog("Webhook")`
         for ease of use when using webhooks and quicker invokes with caching."""
         while True:
-            link = await self.get_webhook(channel=channel, me=me, author=author, reason=reason, ctx=ctx)
+            link = await self.get_webhook(
+                channel=channel, me=me, author=author, reason=reason, ctx=ctx
+            )
             try:
                 async with aiohttp.ClientSession() as session:
                     webhook = discord.Webhook.from_url(
