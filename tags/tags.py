@@ -35,7 +35,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.2"
+    __version__ = "1.2.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -154,7 +154,7 @@ class Tags(commands.Cog):
     async def tag_raw(self, ctx, tag: TagConverter):
         """Get a tag's raw content."""
         await ctx.send(
-            escape_markdown(tag.tagscript[:2000], ignore_links=False),
+            escape_markdown(tag.tagscript[:2000]),
             allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False),
         )
 
