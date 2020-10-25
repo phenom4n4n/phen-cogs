@@ -2,20 +2,33 @@ import re
 
 import discord
 from redbot.core import Config, checks, commands
+from redbot.core.commands.converter import BadArgument, Converter
 
-r = re.compile(
-    r"https?://(?:(ptb|canary)\.)?discord(?:app)?\.com/channels/\d{15,21}/\d{15,21}/\d{15,21}"
+link_regex = re.compile(
+    r'^https?://(?:(ptb|canary)\.)?discord(?:app)?\.com/channels/'
+    r'(?:[0-9]{15,21})'
+    r'/(?P<channel_id>[0-9]{15,21})/(?P<message_id>[0-9]{15,21})/?$'
 )
 
-def regex_check(content: str):
-    return r.findall(content)
-
-class LinkToEmbed(commands.Converter):
+class LinkToEmbed(Converter):
     async def convert(self, ctx: commands.Context, argument: str):
-        match = re.match(r, argument)
+        match = re.match(link_regex, argument)
         if not match:
-            raise commands.BadArgument
-        return match
+            raise BadArgument('Message "{}" not found.'.format(argument))
+        message_id = int(match.group("message_id"))
+        channel_id = match.group("channel_id")
+        message = ctx.bot._connection._get_message(message_id)
+        if message:
+            return message
+        channel = ctx.bot.get_channel(int(channel_id)) if channel_id else ctx.channel
+        if not channel:
+            raise BadArgument('Channel "{}" not found.'.format(channel_id))
+        try:
+            return await channel.fetch_message(message_id)
+        except discord.NotFound:
+            raise BadArgument(argument)
+        except discord.Forbidden:
+            raise BadArgument("Can't read messages in {}.".format(channel.mention))
 
 class LinkQuoter(commands.Cog):
     """
@@ -30,7 +43,7 @@ class LinkQuoter(commands.Cog):
             force_registration=True,
         )
 
-        default_guild = {"on": False, "webhooks": True, "cross-opted": False}
+        default_guild = {"on": False, "webhooks": True, "cross_server": False, "respect_perms": False}
         self.config.register_guild(**default_guild)
 
 
