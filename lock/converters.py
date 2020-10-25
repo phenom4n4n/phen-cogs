@@ -7,7 +7,7 @@ from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
 
-
+#Would you please specify what this class ChannelToggle do so that it can be readable and easily understood
 class ChannelToggle(Converter):
     async def convert(self, ctx: commands.Context, arg: str) -> Union[bool, None]:
         arg = arg.lower()
