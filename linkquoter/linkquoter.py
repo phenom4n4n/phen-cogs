@@ -7,7 +7,9 @@ from redbot.core.commands.converter import BadArgument
 from redbot.core.commands import Converter
 
 link_regex = re.compile(
-    r"https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com\/channels\/(?P<guild_id>[0-9]{15,21})\/(?P<channel_id>[0-9]{15,21})\/(?P<message_id>[0-9]{15,21})\/?"
+    r"https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com"
+    r"\/channels\/(?P<guild_id>[0-9]{15,21})\/(?P<channel_id>"
+    r"[0-9]{15,21})\/(?P<message_id>[0-9]{15,21})\/?"
 )
 
 
