@@ -3,6 +3,7 @@ import time
 from copy import copy
 from typing import Literal, Optional
 
+import logging
 import discord
 from discord.utils import escape_markdown
 from redbot.core import commands
@@ -20,6 +21,7 @@ from .adapters import MemberAdapter, TextChannelAdapter, GuildAdapter
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
+log = logging.getLogger("redbot.phenom4n4n.tags")
 
 async def delete_quietly(message: discord.Message):
     try:
@@ -259,6 +261,8 @@ class Tags(commands.Cog):
         if tag:
             new_message = copy(message)
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
+            if self.bot.user.id in [741074175875088424, 462364255128256513]: # dev stuff lol
+                print(f"Processing tag for {tag_name} on {message.guild}")
             await self.bot.process_commands(new_message)
 
     async def process_tag(
