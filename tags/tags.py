@@ -23,6 +23,7 @@ RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 log = logging.getLogger("red.phenom4n4n.tags")
 
+
 async def delete_quietly(message: discord.Message):
     try:
         await message.delete()
