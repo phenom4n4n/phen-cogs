@@ -262,7 +262,7 @@ class Tags(commands.Cog):
         if tag:
             new_message = copy(message)
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
-            if self.bot.user.id in [741074175875088424, 462364255128256513]: # dev stuff lol
+            if self.bot.user.id in [741074175875088424, 462364255128256513]:  # dev stuff lol
                 log.info(f"Processing tag for {tag_name} on {message.guild}")
             await self.bot.process_commands(new_message)
 
