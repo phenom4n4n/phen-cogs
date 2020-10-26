@@ -8,13 +8,21 @@ from .abc import MixinMeta
 from .converters import FuzzyRole
 from .utils import is_allowed_by_role_hierarchy
 
-log = logging.getLogger("red.phenom4n4n.roleutils")
+log = logging.getLogger("red.phenom4n4n.roleutils.reactroles")
 
 
 class ReactRoles(MixinMeta):
     """
     Reaction Roles.
     """
+
+    def __init__(self, *_args):
+        super().__init__(*_args)
+        self.cache["reactroles"] = {"channel_cache": set(), "message_cache": set()}
+
+    async def initialize(self):
+        log.debug("ReactRole Initialize")
+        await super().initialize()
 
     @commands.is_owner()
     @commands.admin_or_permissions(manage_roles=True)
@@ -41,7 +49,7 @@ class ReactRoles(MixinMeta):
 
     # @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        if not payload.guild_id:
+        if payload.guild_id is None:
             return
         guild = self.bot.get_guild(payload.guild_id)
         if not guild.me.guild_permissions.manage_roles:

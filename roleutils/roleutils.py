@@ -8,6 +8,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 
+from .autorole import AutoRole
 from .reactroles import ReactRoles
 from .roles import Roles
 
@@ -26,6 +27,7 @@ class CompositeMetaClass(type(commands.Cog), type(ABC)):
 class RoleUtils(
     Roles,
     ReactRoles,
+    AutoRole,
     commands.Cog,
     metaclass=CompositeMetaClass,
 ):
@@ -40,15 +42,25 @@ class RoleUtils(
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
-    def __init__(self, bot: Red) -> None:
+    def __init__(self, bot: Red, *_args) -> None:
+        super().__init__(*_args)
+        self.cache = {}
         self.bot = bot
         self.config = Config.get_conf(
             self,
             identifier=326235423452394523,
             force_registration=True,
         )
-        default_guild = {"reactroles": {}}
+        default_guild = {"reactroles": {"channels": [], "enabled": False}}
         self.config.register_guild(**default_guild)
+
+        default_guildmessage = {"reactroles": {"react_to_roleid": {}}}
+        self.config.init_custom("GuildMessage", 2)
+        self.config.register_custom("GuildMessage", **default_guildmessage)
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
+
+    async def initialize(self):
+        log.debug("RoleUtils initialize")
+        await super().initialize()
