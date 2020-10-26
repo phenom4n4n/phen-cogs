@@ -77,6 +77,7 @@ discriminator
 created_at
 joined_at
 mention
+bot
 ```
 
 

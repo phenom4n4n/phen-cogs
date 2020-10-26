@@ -15,6 +15,7 @@ class MemberAdapter(Adapter):
             "created_at": member.created_at,
             "joined_at": member.joined_at,
             "mention": member.mention,
+            "bot": member.bot,
         }
 
     def get_value(self, ctx: Verb) -> str:
