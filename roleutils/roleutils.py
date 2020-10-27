@@ -43,7 +43,6 @@ class RoleUtils(
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot: Red, *_args) -> None:
-        super().__init__(*_args)
         self.cache = {}
         self.bot = bot
         self.config = Config.get_conf(
@@ -57,6 +56,7 @@ class RoleUtils(
         default_guildmessage = {"reactroles": {"react_to_roleid": {}}}
         self.config.init_custom("GuildMessage", 2)
         self.config.register_custom("GuildMessage", **default_guildmessage)
+        super().__init__(*_args)
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
