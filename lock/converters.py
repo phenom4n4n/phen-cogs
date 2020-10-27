@@ -1,7 +1,8 @@
 from typing import Union
 
 import discord
-import unidecode
+from unidecode import unidecode
+from rapidfuzz import process
 from discord.ext.commands.converter import Converter, RoleConverter
 from redbot.core import commands
 from redbot.core.commands import BadArgument
@@ -34,6 +35,10 @@ class FuzzyRole(RoleConverter):
     https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/cogs/mod/mod.py#L24
     """
 
+    def __init__(self, response: bool = True):
+        self.response = response
+        super().__init__()
+
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
         try:
             basic_role = await super().convert(ctx, argument)
@@ -43,17 +48,17 @@ class FuzzyRole(RoleConverter):
             return basic_role
         guild = ctx.guild
         result = []
-        raw_arg = argument.lower().replace(" ", "")
-        if guild:
-            for r in guild.roles:
-                if raw_arg in unidecode.unidecode(r.name.lower().replace(" ", "")):
-                    result.append(r)
+        for r in process.extract(
+            argument,
+            {r: unidecode(r.name) for r in guild.roles},
+            limit=None,
+            score_cutoff=75,
+        ):
+            result.append((r[2], r[1]))
 
         if not result:
-            raise BadArgument('Role "{}" not found.'.format(argument))
+            raise BadArgument(f'Role "{argument}" not found.' if self.response else None)
 
-        calculated_result = [
-            (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result
-        ]
-        sorted_result = sorted(calculated_result, key=lambda r: r[1], reverse=True)
+        sorted_result = sorted(result, key=lambda r: r[1], reverse=True)
+        print(sorted_result)
         return sorted_result[0][0]
