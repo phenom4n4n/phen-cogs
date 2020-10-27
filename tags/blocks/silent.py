@@ -8,7 +8,7 @@ from TagScriptEngine.interface import Block
 class SilentBlock(Block):
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
-        return any([dec == "silent", dec == "com"])
+        return any([dec == "silent", dec == "silence"])
 
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if "silent" in ctx.response.actions.keys():
