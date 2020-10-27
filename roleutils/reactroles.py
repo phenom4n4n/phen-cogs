@@ -22,7 +22,14 @@ class ReactRoles(MixinMeta):
 
     async def initialize(self):
         log.debug("ReactRole Initialize")
+        await self._update_cache()
         await super().initialize()
+
+    async def _update_cache(self):
+        all_guildmessage = await self.config.custom("GuildMessage").all()
+        self.cache["reactroles"]["message_cache"].update(
+            msg_id for guild_data in all_guildmessage.values() for msg_id in guild_data.keys()
+        )
 
     @commands.is_owner()
     @commands.admin_or_permissions(manage_roles=True)
@@ -50,6 +57,8 @@ class ReactRoles(MixinMeta):
     # @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id is None:
+            return
+        if self.cache["reactroles"].get(payload.message_id) is None:
             return
         guild = self.bot.get_guild(payload.guild_id)
         if not guild.me.guild_permissions.manage_roles:
