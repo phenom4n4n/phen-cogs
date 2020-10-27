@@ -10,7 +10,9 @@ with open(Path(__file__).parent / "info.json") as fp:
 
 
 async def setup(bot: Red) -> None:
-    bot.add_cog(PermissionsLocker(bot))
+    cog = PermissionsLocker(bot)
+    await cog.initialize()
+    bot.add_cog(cog)
     bot.before_invoke(before_invoke_hook)
 
 
