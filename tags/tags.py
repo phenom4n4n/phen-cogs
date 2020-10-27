@@ -319,4 +319,7 @@ class Tags(commands.Cog):
             if actions.get("silent"):
                 for ctx in ctxes:
                     setattr(ctx, "send", no_send)
-            await asyncio.gather(*[self.bot.invoke(ctx) for ctx in ctxes])
+            try:
+                await asyncio.gather(*[self.bot.invoke(ctx) for ctx in ctxes])
+            except Exception:
+                pass
