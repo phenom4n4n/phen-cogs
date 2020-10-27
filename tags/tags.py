@@ -24,6 +24,9 @@ RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 log = logging.getLogger("red.phenom4n4n.tags")
 
 
+async def no_send(content: str = None, **kwargs):
+    pass
+
 async def delete_quietly(message: discord.Message):
     try:
         await message.delete()
@@ -38,7 +41,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.2"
+    __version__ = "1.2.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -47,11 +50,6 @@ class Tags(commands.Cog):
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
-        cog = self.bot.get_cog("CustomCommands")
-        if cog:
-            raise RuntimeError(
-                "This cog conflicts with CustomCommands and cannot be loaded with both at the same time."
-            )
         self.config = Config.get_conf(
             self,
             identifier=567234895692346562369,
@@ -88,7 +86,7 @@ class Tags(commands.Cog):
                             del t[name]
 
     @commands.guild_only()
-    @commands.group(invoke_without_command=True, usage="<tag_name> [args]")
+    @commands.group(invoke_without_command=True, usage="<tag_name> [args]", aliases=["customcom"])
     async def tag(self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""):
         """Tag management with TagScript.
 
@@ -107,7 +105,7 @@ class Tags(commands.Cog):
         await self.process_tag(ctx, tag, seed_variables=seed)
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command()
+    @tag.command(aliases=["create", "+"])
     async def add(self, ctx, tag_name: TagName, *, tagscript):
         """Add a tag with TagScript."""
         tag = await self.get_stored_tag(ctx, tag_name, False)
@@ -134,7 +132,7 @@ class Tags(commands.Cog):
         await ctx.send(f"Tag `{tag}` edited.")
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(aliases=["delete"])
+    @tag.command(aliases=["delete", "-"])
     async def remove(self, ctx, tag: TagConverter):
         """Delete a tag."""
         async with self.config.guild(ctx.guild).tags() as e:
@@ -262,9 +260,10 @@ class Tags(commands.Cog):
         if tag:
             new_message = copy(message)
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
+            ctx = await self.bot.get_context(new_message)
             if self.bot.user.id in [741074175875088424, 634866217764651009]:  # dev stuff lol
                 log.info(f"Processing tag for {tag_name} on {message.guild}")
-            await self.bot.process_commands(new_message)
+            await self.bot.invoke(ctx)
 
     async def process_tag(
         self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
@@ -302,7 +301,7 @@ class Tags(commands.Cog):
                         return
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
-                    commands_to_process.append(self.bot.process_commands(new))
+                    commands_to_process.append(self.bot.get_context(new))
 
         if content or embed:
             try:
@@ -315,4 +314,8 @@ class Tags(commands.Cog):
         if to_gather:
             await asyncio.gather(*to_gather)
         if commands_to_process:
-            await asyncio.gather(*commands_to_process)
+            ctxes = await asyncio.gather(*commands_to_process)
+            if actions.get("silent"):
+                for ctx in ctxes:
+                    setattr(ctx, "send", no_send)
+            await asyncio.gather(*[self.bot.invoke(ctx) for ctx in ctxes])
