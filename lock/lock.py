@@ -17,7 +17,7 @@ class Lock(commands.Cog):
     Advanced channel and server locking.
     """
 
-    __version__ = "1.1.2"
+    __version__ = "1.1.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
