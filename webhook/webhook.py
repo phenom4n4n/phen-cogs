@@ -349,7 +349,9 @@ class Webhook(commands.Cog):
 
     async def edit_webhook_message(self, link: str, message_id: int, json: dict):
         async with self.session.patch(
-            f"{link}/messages/{message_id}", json=json, headers={"Content-Type": "application/json"}
+            f"{link}/messages/{message_id}",
+            json=json,
+            headers={"Content-Type": "application/json"},
         ) as response:
             response = await response.json()
             return response
