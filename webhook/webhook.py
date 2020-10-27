@@ -28,6 +28,10 @@ class Webhook(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cache = {}
+        self.session = aiohttp.ClientSession()
+
+    def cog_unload(self):
+        self.bot.loop.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, **kwargs):
         return
@@ -342,3 +346,10 @@ class Webhook(commands.Cog):
                 "Missing Permissions",
                 f"I need permissions to `manage_webhooks` in #{channel.name}.",
             )
+
+    async def edit_webhook_message(self, link: str, message_id: int, json: dict):
+        async with self.session.patch(
+            f"{link}/messages/{message_id}", json=json, headers={"Content-Type": "application/json"}
+        ) as response:
+            response = await response.json()
+            return response
