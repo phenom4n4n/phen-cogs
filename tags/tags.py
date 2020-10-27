@@ -27,6 +27,7 @@ log = logging.getLogger("red.phenom4n4n.tags")
 async def no_send(content: str = None, **kwargs):
     pass
 
+
 async def delete_quietly(message: discord.Message):
     try:
         await message.delete()
