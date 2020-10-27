@@ -52,7 +52,6 @@ class FuzzyRole(RoleConverter):
             raise BadArgument(f'Role "{argument}" not found.' if self.response else None)
 
         sorted_result = sorted(result, key=lambda r: r[1], reverse=True)
-        print(sorted_result)
         return sorted_result[0][0]
 
 
