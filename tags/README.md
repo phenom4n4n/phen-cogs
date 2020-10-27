@@ -45,18 +45,6 @@ Parameter: bool, None
 
 Delete blocks will delete the invocation message if the given parameter is true. If there is no parameter i.e. `{delete}` it will default to true.
 
-**Silent Block**
-
-Usage: `{silent([bool])`
-
-Aliases: `silent, silence`
-
-Payload: None
-
-Parameter: bool, None
-
-Silent blocks will make any invoked commands have no response if the given parameter is true. A parameter does not need to be passed, it will be silent by default if called.
-
 **Args Block**
 
 Usage: `{args([index]:[splitter])`
