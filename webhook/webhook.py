@@ -363,7 +363,6 @@ class Webhook(commands.Cog):
                 f"I need permissions to `manage_webhooks` in #{channel.name}.",
             )
 
-
     async def send_to_channel(
         self,
         channel: discord.TextChannel,
@@ -400,4 +399,3 @@ class Webhook(commands.Cog):
         ) as response:
             response = await response.json()
             return response
-
