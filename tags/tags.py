@@ -42,7 +42,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.3"
+    __version__ = "1.2.4"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -246,7 +246,7 @@ class Tags(commands.Cog):
     async def on_message_without_command(self, message: discord.Message):
         if message.author.bot or not (
             message.guild and await self.bot.message_eligible_as_command(message)
-        ):
+        ) or not isinstance(message.author, discord.Member):
             return
         ctx = await self.bot.get_context(message)
         if ctx.prefix is None:
