@@ -26,7 +26,7 @@ def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
 
 class LinkToMessage(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
-        match = re.match(link_regex, argument)
+        match = re.search(link_regex, argument)
         if not match:
             raise BadArgument('Message "{}" not found.'.format(argument))
 
