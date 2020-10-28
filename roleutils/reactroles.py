@@ -3,6 +3,7 @@ from typing import List, Union
 
 import discord
 from redbot.core import commands
+from redbot.core.commands import IDConverter
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import menu, close_menu, DEFAULT_CONTROLS
@@ -50,7 +51,7 @@ class ReactRoles(MixinMeta):
             self.cache["reactroles"]["channel_cache"].remove(message.channel.id)
 
     async def bulk_delete_set_roles(
-        self, guild: discord.Guild, message_id: int, emoji_ids: List[int]
+        self, guild: discord.Guild, message_id: IDConverter, emoji_ids: List[int]
     ):
         ...  # TODO delete rr's on guildmessage from given emoji id
 
@@ -82,16 +83,22 @@ class ReactRoles(MixinMeta):
         self._edit_cache(message)
 
     @commands.admin_or_permissions(manage_roles=True)
-    @reactrole.command(name="delete")
+    @reactrole.group(name="delete", aliases=["remove"], invoke_without_command=True)
     async def reactrole_delete(
         self,
         ctx: commands.Context,
-        message_id: Union[discord.Message, int],
-        emoji: RealEmojiConverter,
+        message_id: Union[discord.Message, IDConverter],
     ):
-        """Delete a reaction roles.
-        
-        This is sketch"""
+        """Delete an entire reaction role for a message."""
+
+    @reactrole_delete.command(name="bind")
+    async def delete_bind(
+        self,
+        ctx: commands.Context,
+        message_id: Union[discord.Message, IDConverter],
+        emoji: Union[RealEmojiConverter, IDConverter],
+    ):
+        """Delete an emoji-role bind for a reaction role."""
         message_id = message_id.id if isinstance(message_id, discord.Message) else message_id
         async with self.config.custom("GuildMessage", ctx.guild.id, message_id).reactroles() as r:
             try:
@@ -155,12 +162,6 @@ class ReactRoles(MixinMeta):
             emoji = self.bot.get_emoji(729917314769748019) or "❌"
             await menu(ctx, [e], {emoji: close_menu})
 
-    @reactrole.command(name="remove")
-    async def react_remove(self, ctx: commands.Context):
-        pass
-        # TODO: Ability to remove react roles
-        # Maybe able to specify either role or message_id, or a combination
-
     @commands.is_owner()
     @reactrole.command(hidden=True)
     async def clear(self, ctx: commands.Context):
@@ -172,7 +173,7 @@ class ReactRoles(MixinMeta):
     @commands.Cog.listener("on_raw_reaction_remove")
     async def on_raw_reaction_add_or_remove(self, payload: discord.RawReactionActionEvent):
         log.debug("Begin reaction listener")
-        if payload.guild_id is None or not payload.member:
+        if payload.guild_id is None:
             log.debug("Not functioning in a guild")
             return
 
@@ -215,6 +216,10 @@ class ReactRoles(MixinMeta):
         else:
             if role in member.roles:
                 await member.remove_roles(role, reason="Reaction role")
+
+    # TODO
+    # add raw_message_delete listener to automatically delete messages
+    # that have reaction roles assigned from config
 
     # @commands.Cog.listener()
     # async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
