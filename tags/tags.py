@@ -244,9 +244,11 @@ class Tags(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if message.author.bot or not (
-            message.guild and await self.bot.message_eligible_as_command(message)
-        ) or not isinstance(message.author, discord.Member):
+        if (
+            message.author.bot
+            or not (message.guild and await self.bot.message_eligible_as_command(message))
+            or not isinstance(message.author, discord.Member)
+        ):
             return
         ctx = await self.bot.get_context(message)
         if ctx.prefix is None:
