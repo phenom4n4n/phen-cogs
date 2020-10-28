@@ -29,11 +29,25 @@ class ReactRoles(MixinMeta):
         await super().initialize()
 
     async def _update_cache(self):
+        all_guilds = await self.config.all_guilds()
         all_guildmessage = await self.config.custom("GuildMessage").all()
         self.cache["reactroles"]["message_cache"].update(
             msg_id for guild_data in all_guildmessage.values() for msg_id in guild_data.keys()
         )
-        # TODO add channel caching here and in listeners
+        self.cache["reactroles"]["channel_cache"].update(
+            chnl_id
+            for guild_data in all_guilds.values()
+            for chnl_id in guild_data["reactroles"]["channels"]
+            if guild_data["reactroles"]["enabled"]
+        )
+
+    def _edit_cache(self, message: discord.Message, remove=False):
+        if not remove:
+            self.cache["reactroles"]["message_cache"].add(message.id)
+            self.cache["reactroles"]["channel_cache"].add(message.channel.id)
+        else:
+            self.cache["reactroles"]["message_cache"].remove(message.id)
+            self.cache["reactroles"]["channel_cache"].remove(message.channel.id)
 
     async def bulk_delete_set_roles(
         self, guild: discord.Guild, message_id: int, emoji_ids: List[int]
@@ -63,7 +77,9 @@ class ReactRoles(MixinMeta):
         if str(emoji) not in [str(emoji) for emoji in message.reactions]:
             await message.add_reaction(emoji)
         await ctx.send(f"{emoji} has been binded to {role} on {message.jump_url}")
-        await self._update_cache()
+
+        # Add this message and channel to tracked cache
+        self._edit_cache(message)
 
     @commands.admin_or_permissions(manage_roles=True)
     @reactrole.command(name="delete")
@@ -139,6 +155,12 @@ class ReactRoles(MixinMeta):
             emoji = self.bot.get_emoji(729917314769748019) or "❌"
             await menu(ctx, [e], {emoji: close_menu})
 
+    @reactrole.command(name="remove")
+    async def react_remove(self, ctx: commands.Context):
+        pass
+        # TODO: Ability to remove react roles
+        # Maybe able to specify either role or message_id, or a combination
+
     @commands.is_owner()
     @reactrole.command(hidden=True)
     async def clear(self, ctx: commands.Context):
@@ -146,52 +168,75 @@ class ReactRoles(MixinMeta):
         await self.config.custom("GuildMessage").clear()
         await ctx.tick()
 
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    @commands.Cog.listener("on_raw_reaction_add")
+    @commands.Cog.listener("on_raw_reaction_remove")
+    async def on_raw_reaction_add_or_remove(self, payload: discord.RawReactionActionEvent):
+        log.debug("Begin reaction listener")
         if payload.guild_id is None or not payload.member:
-            return
-        member = payload.member
-        if member.bot:
-            return
-        # TODO add channel caching here and in listeners
-        if str(payload.message_id) not in self.cache["reactroles"]["message_cache"]:
-            return
-        guild = self.bot.get_guild(payload.guild_id)
-        if not guild.me.guild_permissions.manage_roles:
+            log.debug("Not functioning in a guild")
             return
 
-        guildmessage = await self.config.custom("GuildMessage", guild.id, payload.message_id).all()
-        reacts = guildmessage["reactroles"]
+        # TODO add in listeners
+        if (
+            str(payload.channel_id) not in self.cache["reactroles"]["channel_cache"]
+            or str(payload.message_id) not in self.cache["reactroles"]["message_cache"]
+        ):
+            log.debug("Not cached")
+            return
+        guild = self.bot.get_guild(payload.guild_id)
+        if payload.event_type == "REACTION_ADD":
+            member = payload.member
+        else:
+            member = guild.get_member(payload.user_id)
+
+        if member is None or member.bot:
+            log.debug("Failed to get member or member is a bot")
+            return
+        if not guild.me.guild_permissions.manage_roles:
+            log.debug("No permissions to manage roles")
+            return
+
+        reacts = await self.config.custom(
+            "GuildMessage", guild.id, payload.message_id
+        ).reactroles.all()
         emoji_id = (
             str(payload.emoji) if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
         )
         role = guild.get_role(
             reacts["react_to_roleid"].get(emoji_id)
         )  # TODO make this remove the set rr if role is not found
-        if role and my_role_heirarchy(guild, role) and role not in member.roles:
-            await member.add_roles(role, reason="Reaction role")
-
-    @commands.Cog.listener()
-    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
-        if payload.guild_id is None:
-            return
-        # TODO add channel caching here and in listeners
-        if str(payload.message_id) not in self.cache["reactroles"]["message_cache"]:
-            return
-        guild = self.bot.get_guild(payload.guild_id)
-        if not guild.me.guild_permissions.manage_roles:
-            return
-        member = guild.get_member(payload.user_id)
-        if member.bot:
+        if not role or not my_role_heirarchy(guild, role):
+            log.debug("Failed to get role, or role outranks me")
             return
 
-        guildmessage = await self.config.custom("GuildMessage", guild.id, payload.message_id).all()
-        reacts = guildmessage["reactroles"]
-        emoji_id = (
-            str(payload.emoji) if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
-        )
-        role = guild.get_role(
-            reacts["react_to_roleid"].get(emoji_id)
-        )  # TODO make this remove the set rr if role is not found
-        if role and my_role_heirarchy(guild, role) and role in member.roles:
-            await member.remove_roles(role, reason="Reaction role")
+        if payload.event_type == "REACTION_ADD":
+            if role not in member.roles:
+                await member.add_roles(role, reason="Reaction role")
+        else:
+            if role in member.roles:
+                await member.remove_roles(role, reason="Reaction role")
+
+    # @commands.Cog.listener()
+    # async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+    #     if payload.guild_id is None:
+    #         return
+    #     # TODO add channel caching here and in listeners
+    #     if str(payload.message_id) not in self.cache["reactroles"]["message_cache"]:
+    #         return
+    #     guild = self.bot.get_guild(payload.guild_id)
+    #     if not guild.me.guild_permissions.manage_roles:
+    #         return
+    #     member = guild.get_member(payload.user_id)
+    #     if member.bot:
+    #         return
+    #
+    #     guildmessage = await self.config.custom("GuildMessage", guild.id, payload.message_id).all()
+    #     reacts = guildmessage["reactroles"]
+    #     emoji_id = (
+    #         str(payload.emoji) if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
+    #     )
+    #     role = guild.get_role(
+    #         reacts["react_to_roleid"].get(emoji_id)
+    #     )  # TODO make this remove the set rr if role is not found
+    #     if role and my_role_heirarchy(guild, role) and role in member.roles:
+    #         await member.remove_roles(role, reason="Reaction role")
