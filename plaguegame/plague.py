@@ -7,7 +7,7 @@ from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
-from .converters import Curable, Human, Infectable, hundred_int
+from .converters import Curable, FuzzyHuman, Infectable, hundred_int
 
 
 async def is_infected(ctx):
@@ -88,7 +88,7 @@ class Plague(commands.Cog):
     @checks.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     @commands.command("plagueprofile", aliases=["pprofile"])
-    async def plagueProfile(self, ctx, *, member: Human = None):
+    async def plagueProfile(self, ctx, *, member: FuzzyHuman = None):
         """Show's your Plague Game profile"""
         member = member or ctx.author
         data = await self.config.user(member).all()

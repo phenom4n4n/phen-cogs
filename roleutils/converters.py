@@ -79,7 +79,7 @@ class TouchableMember(MemberConverter):
         member = await super().convert(ctx, argument)
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             raise BadArgument(
-                "You cannot do that since you aren't higher than that user in hierarchy."
+                f"You cannot do that since you aren't higher than {member} in hierarchy."
                 if self.response
                 else None
             )

@@ -8,7 +8,7 @@
         "PhenoM4n4n"
     ],
     "required_cogs": {},
-    "requirements": ["Pillow"],
+    "requirements": ["Pillow", "unidecode", "rapidfuzz"],
     "tags": [
         "image"
     ],

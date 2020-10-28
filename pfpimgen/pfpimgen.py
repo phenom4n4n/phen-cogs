@@ -13,6 +13,8 @@ from redbot.core.utils.chat_formatting import pagify
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
+from .converters import FuzzyMember
+
 
 class PfpImgen(commands.Cog):
     """
@@ -33,7 +35,7 @@ class PfpImgen(commands.Cog):
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(aliases=["catgirl"], cooldown_after_parsing=True)
-    async def neko(self, ctx, *, member: discord.Member = None):
+    async def neko(self, ctx, *, member: FuzzyMember = None):
         """Make a neko avatar..."""
         if not member:
             member = ctx.author
@@ -50,7 +52,7 @@ class PfpImgen(commands.Cog):
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
-    async def bonk(self, ctx, *, member: discord.Member = None):
+    async def bonk(self, ctx, *, member: FuzzyMember = None):
         """Bonk! Go to horny jail."""
         await ctx.trigger_typing()
         bonker = False
@@ -75,7 +77,7 @@ class PfpImgen(commands.Cog):
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
-    async def simp(self, ctx, *, member: discord.Member = None):
+    async def simp(self, ctx, *, member: FuzzyMember = None):
         """You are now a simp."""
         if not member:
             member = ctx.author
@@ -91,7 +93,7 @@ class PfpImgen(commands.Cog):
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
-    async def banner(self, ctx, *, member: discord.Member = None):
+    async def banner(self, ctx, *, member: FuzzyMember = None):
         """Banner"""
         if not member:
             member = ctx.author
@@ -110,7 +112,7 @@ class PfpImgen(commands.Cog):
     async def nickel(
         self,
         ctx,
-        member: Optional[discord.Member] = None,
+        member: Optional[FuzzyMember] = None,
         *,
         text: commands.clean_content(fix_channel_mentions=True),
     ):
@@ -135,7 +137,7 @@ class PfpImgen(commands.Cog):
     async def stop(
         self,
         ctx,
-        member: Optional[discord.Member] = None,
+        member: Optional[FuzzyMember] = None,
         *,
         text: commands.clean_content(fix_channel_mentions=True),
     ):
@@ -155,7 +157,7 @@ class PfpImgen(commands.Cog):
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
-    async def horny(self, ctx, *, member: discord.Member = None):
+    async def horny(self, ctx, *, member: FuzzyMember = None):
         """Assign someone a horny license."""
         member = member or ctx.author
         async with ctx.typing():
@@ -173,7 +175,7 @@ class PfpImgen(commands.Cog):
     async def shutup(
         self,
         ctx,
-        member: Optional[discord.Member] = None,
+        member: Optional[FuzzyMember] = None,
         *,
         text: commands.clean_content(fix_channel_mentions=True),
     ):

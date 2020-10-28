@@ -18,16 +18,16 @@ async def before_invoke_hook(ctx: commands.Context):
         return
     if await ctx.bot.is_owner(ctx.author):
         return
-    data = await ctx.bot.get_cog("PermissionsLocker").config.all()
-    if guild.id in data["whitelisted"]:
+    cog = ctx.bot.get_cog("PermissionsLocker")
+    if guild.id in cog._whitelist:
         return
     author, me = ctx.author, guild.me
     assert isinstance(author, discord.Member)  # nosec
 
-    requiredPerms = discord.Permissions(data["permissions"])
+    requiredPerms = discord.Permissions(cog.perms)
     myPerms = ctx.channel.permissions_for(me)
     if not myPerms.is_superset(requiredPerms):
-        missingPerms = await ctx.bot.get_cog("PermissionsLocker").humanize_perms(
+        missingPerms = await cog.humanize_perms(
             discord.Permissions((myPerms.value ^ requiredPerms.value) & requiredPerms.value),
             True,
         )
@@ -45,7 +45,7 @@ class PermissionsLocker(commands.Cog):
     Force permissions for the bot.
     """
 
-    __version__ = "1.2.0"
+    __version__ = "1.2.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -61,9 +61,16 @@ class PermissionsLocker(commands.Cog):
         )
         default_global = {"permissions": 387136, "whitelisted": []}
         self.config.register_global(**default_global)
+        self.perms = None
+        self._whitelist = None
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
+
+    async def initialize(self):
+        data = await self.config.all()
+        setattr(self, "perms", data["permissions"])
+        setattr(self, "_whitelist", data["whitelisted"])
 
     @commands.is_owner()
     @commands.group()
@@ -96,12 +103,14 @@ class PermissionsLocker(commands.Cog):
         await ctx.send(
             f"I will now require these permissions on commands:\n{box(await self.humanize_perms(permissions, True), 'diff')}"
         )
+        self.perms = permissions
 
     @permlock.command(aliases=["wl"])
     async def whitelist(self, ctx, guild: int):
         """Whitelist a guild from permission checks."""
         async with self.config.whitelisted() as w:
             w.append(guild)
+            self._whitelist = w
         await ctx.tick()
 
     @permlock.command(aliases=["unwl"])
@@ -113,6 +122,7 @@ class PermissionsLocker(commands.Cog):
             except ValueError:
                 return await ctx.send("This is not a guild in the whitelist")
             w.pop(index)
+            self._whitelist = w
         await ctx.tick()
 
     async def humanize_perms(self, permissions: discord.Permissions, check: bool):
