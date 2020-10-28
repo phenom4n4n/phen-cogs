@@ -43,7 +43,7 @@ class BanChart(commands.Cog):
     @commands.command()
     async def banchart(self, ctx: commands.Context):
         """Display a chart of the moderators with the most bans.
-        
+
         This works best when reading bans done with [botname]."""
         await ctx.trigger_typing()
         bans = await ctx.guild.bans()
