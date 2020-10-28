@@ -31,4 +31,3 @@ class FuzzyMember(MemberConverter):
             sorted_result = sorted(result, key=lambda r: r[1], reverse=True)
             member = sorted_result[0][0]
         return member
-

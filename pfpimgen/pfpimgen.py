@@ -15,6 +15,7 @@ RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 from .converters import FuzzyMember
 
+
 class PfpImgen(commands.Cog):
     """
     Make images from avatars!

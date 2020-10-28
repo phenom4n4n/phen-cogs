@@ -15,6 +15,7 @@ def hundred_int(arg: str):
         raise BadArgument(f"{inline(arg)} must be an integer between 1 and 100.")
     return ret
 
+
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
 class FuzzyMember(MemberConverter):
     def __init__(self, response: bool = True):
@@ -41,6 +42,7 @@ class FuzzyMember(MemberConverter):
             sorted_result = sorted(result, key=lambda r: r[1], reverse=True)
             member = sorted_result[0][0]
         return member
+
 
 class FuzzyHuman(FuzzyMember):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
