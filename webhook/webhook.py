@@ -327,7 +327,7 @@ class Webhook(commands.Cog):
         *,
         channel: discord.TextChannel = None,
         me: discord.Member = None,
-        author: discord.Member = NotImplemented,
+        author: discord.Member = None,
         reason: str = None,
         ctx: commands.Context = None,
     ):
