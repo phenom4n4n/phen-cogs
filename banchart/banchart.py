@@ -2,6 +2,7 @@ from typing import Literal
 import matplotlib
 import re
 from io import BytesIO
+
 matplotlib.use("agg")
 import functools
 import asyncio
@@ -17,6 +18,7 @@ from redbot.core.config import Config
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 ID_RE = re.compile(r"\d{15,21}")
+
 
 class BanChart(commands.Cog):
     """
