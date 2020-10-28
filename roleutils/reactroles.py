@@ -35,8 +35,10 @@ class ReactRoles(MixinMeta):
         )
         # TODO add channel caching here and in listeners
 
-    async def bulk_delete_set_roles(self, guild: discord.Guild, message_id: int, emoji_ids: List[int]):
-        ... # TODO delete rr's on guildmessage from given emoji id
+    async def bulk_delete_set_roles(
+        self, guild: discord.Guild, message_id: int, emoji_ids: List[int]
+    ):
+        ...  # TODO delete rr's on guildmessage from given emoji id
 
     @commands.is_owner()
     @commands.admin_or_permissions(manage_roles=True)
