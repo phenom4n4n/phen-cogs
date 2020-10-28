@@ -151,7 +151,7 @@ class ReactRoles(MixinMeta):
     @commands.Cog.listener("on_raw_reaction_remove")
     async def on_raw_reaction_add_or_remove(self, payload: discord.RawReactionActionEvent):
         log.debug("Begin reaction listener")
-        if payload.guild_id is None or not payload.member:
+        if payload.guild_id is None:
             log.debug("Not functioning in a guild")
             return
 
