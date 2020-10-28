@@ -82,7 +82,7 @@ class ReactRoles(MixinMeta):
                         emoji = self.bot.get_emoji(emoji) or emoji
                     reactions.append(f"{emoji}: {role.mention}")
                 else:
-                    ... # TODO make this remove the set rr if role is not found
+                    ...  # TODO make this remove the set rr if role is not found
             if len(reactions) > 1:
                 react_roles.append("\n".join(reactions))
         if not react_roles:
@@ -136,7 +136,9 @@ class ReactRoles(MixinMeta):
         emoji_id = (
             str(payload.emoji) if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
         )
-        role = guild.get_role(reacts["react_to_roleid"].get(emoji_id)) # TODO make this remove the set rr if role is not found
+        role = guild.get_role(
+            reacts["react_to_roleid"].get(emoji_id)
+        )  # TODO make this remove the set rr if role is not found
         if role and my_role_heirarchy(guild, role) and role not in member.roles:
             await member.add_roles(role, reason="Reaction role")
 
@@ -158,6 +160,8 @@ class ReactRoles(MixinMeta):
         emoji_id = (
             str(payload.emoji) if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
         )
-        role = guild.get_role(reacts["react_to_roleid"].get(emoji_id)) # TODO make this remove the set rr if role is not found
+        role = guild.get_role(
+            reacts["react_to_roleid"].get(emoji_id)
+        )  # TODO make this remove the set rr if role is not found
         if role and my_role_heirarchy(guild, role) and role in member.roles:
             await member.remove_roles(role, reason="Reaction role")
