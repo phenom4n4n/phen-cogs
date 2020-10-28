@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 import discord
 from redbot.core import commands
@@ -32,6 +33,10 @@ class ReactRoles(MixinMeta):
         self.cache["reactroles"]["message_cache"].update(
             msg_id for guild_data in all_guildmessage.values() for msg_id in guild_data.keys()
         )
+        # TODO add channel caching here and in listeners
+
+    async def bulk_delete_set_roles(guild: discord.Guild, message_id: int, emoji_ids: List[int]):
+        ... # TODO delete rr's on guildmessage from given emoji id
 
     @commands.is_owner()
     @commands.admin_or_permissions(manage_roles=True)
@@ -125,6 +130,7 @@ class ReactRoles(MixinMeta):
         member = payload.member
         if member.bot:
             return
+        # TODO add channel caching here and in listeners
         if str(payload.message_id) not in self.cache["reactroles"]["message_cache"]:
             return
         guild = self.bot.get_guild(payload.guild_id)
@@ -146,6 +152,7 @@ class ReactRoles(MixinMeta):
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         if payload.guild_id is None:
             return
+        # TODO add channel caching here and in listeners
         if str(payload.message_id) not in self.cache["reactroles"]["message_cache"]:
             return
         guild = self.bot.get_guild(payload.guild_id)
