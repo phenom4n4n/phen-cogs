@@ -6,7 +6,7 @@
     "short": "Check users with AltDentifier API",
     "description": "Check users with AltDentifier API",
     "tags": [],
-    "requirements": [],
+    "requirements": ["unidecode", "rapidfuzz"],
     "hidden": false,
     "end_user_data_statement": "This cog does not store any End User Data."
 }
