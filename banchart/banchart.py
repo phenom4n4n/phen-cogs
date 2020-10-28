@@ -47,7 +47,6 @@ class BanChart(commands.Cog):
         bans = await ctx.guild.bans()
         counter = Counter()
         for entry in bans:
-            print(entry.reason)
             match = re.search(ID_RE, str(entry.reason))
             if match:
                 mod_id = int(match.group(0))
