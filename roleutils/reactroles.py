@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Union
 
 import discord
 from redbot.core import commands
@@ -41,12 +41,12 @@ class ReactRoles(MixinMeta):
         ...  # TODO delete rr's on guildmessage from given emoji id
 
     @commands.is_owner()
-    @commands.admin_or_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
     @commands.group(aliases=["rr"])
     async def reactrole(self, ctx: commands.Context):
         """Reaction Role management."""
 
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
     @reactrole.command(name="add")
     async def reactrole_add(
         self,
@@ -65,10 +65,31 @@ class ReactRoles(MixinMeta):
         await ctx.send(f"{emoji} has been binded to {role} on {message.jump_url}")
         await self._update_cache()
 
+    @commands.admin_or_permissions(manage_roles=True)
+    @reactrole.command(name="delete")
+    async def reactrole_delete(
+        self,
+        ctx: commands.Context,
+        message_id: Union[discord.Message, int],
+        emoji: RealEmojiConverter,
+    ):
+        """Delete a reaction roles.
+        
+        This is sketch"""
+        message_id = message_id.id if isinstance(message_id, discord.Message) else message_id
+        async with self.config.custom("GuildMessage", ctx.guild.id, message_id).reactroles() as r:
+            try:
+                del r["react_to_roleid"][emoji if isinstance(emoji, str) else str(emoji.id)]
+            except KeyError:
+                return await ctx.send("That wasn't a valid emoji for that message.")
+        await ctx.send(f"That emoji role bind was deleted.")
+        await self._update_cache()
+
+    @commands.admin_or_permissions(manage_roles=True)
     @reactrole.command(name="list")
     async def react_list(self, ctx: commands.Context):
         """View the reaction roles on this server."""
-        data = (await self.config.custom("GuildMessage").all())[str(ctx.guild.id)]
+        data = (await self.config.custom("GuildMessage").all()).get(str(ctx.guild.id))
         if not data:
             return await ctx.send("There are no reaction roles set up here!")
 
