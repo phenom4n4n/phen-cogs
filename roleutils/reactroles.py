@@ -47,9 +47,7 @@ class ReactRoles(MixinMeta):
         role: StrictRole,
     ):
         """Add a reaction role to a message."""
-        async with self.config.custom(
-            "GuildMessage", ctx.guild.id, message.id
-        ).reactroles() as r:
+        async with self.config.custom("GuildMessage", ctx.guild.id, message.id).reactroles() as r:
             r["react_to_roleid"][emoji if isinstance(emoji, str) else str(emoji.id)] = role.id
         if str(emoji) not in [str(emoji) for emoji in message.reactions]:
             await message.add_reaction(emoji)
@@ -81,7 +79,9 @@ class ReactRoles(MixinMeta):
 
         guildmessage = await self.config.custom("GuildMessage", guild.id, payload.message_id).all()
         reacts = guildmessage["reactroles"]
-        emoji_id = str(payload.emoji) if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
+        emoji_id = (
+            str(payload.emoji) if payload.emoji.is_unicode_emoji() else str(payload.emoji.id)
+        )
         role = guild.get_role(reacts["react_to_roleid"].get(emoji_id))
         if role and role not in payload.member.roles:
             await payload.member.add_roles(role, reason="Reaction role")
