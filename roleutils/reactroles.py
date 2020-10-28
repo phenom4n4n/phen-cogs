@@ -69,7 +69,6 @@ class ReactRoles(MixinMeta):
         for index, message_data in enumerate(data.items(), start=1):
             message_id = message_data[0]
             data = message_data[1]["reactroles"]
-            print(data)
             link = f"https://discord.com/channels/{ctx.guild.id}/{data['channel']}/{message_id}"
             reactions = [f"[Reaction Role #{index}]({link})"]
             for emoji, role in data["react_to_roleid"].items():
