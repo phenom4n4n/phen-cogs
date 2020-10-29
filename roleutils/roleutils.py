@@ -49,7 +49,7 @@ class RoleUtils(
             identifier=326235423452394523,
             force_registration=True,
         )
-        default_guild = {"reactroles": {"channels": [], "enabled": False}}
+        default_guild = {"reactroles": {"channels": [], "enabled": True}}
         self.config.register_guild(**default_guild)
 
         default_guildmessage = {"reactroles": {"react_to_roleid": {}}}

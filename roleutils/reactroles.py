@@ -36,17 +36,18 @@ class ReactRoles(MixinMeta):
         self.cache["reactroles"]["message_cache"].update(
             int(msg_id) for guild_data in all_guildmessage.values() for msg_id in guild_data.keys()
         )
+        log.debug(all_guilds)
         self.cache["reactroles"]["channel_cache"].update(
             int(chnl_id)
             for guild_data in all_guilds.values()
-            for chnl_id in guild_data["reactroles"]["channels"]
-            if guild_data["reactroles"]["enabled"]
+            for chnl_id in guild_data["reactroles"].get("channels", [])
+            if guild_data["reactroles"]["enabled"]  # Unsure if we should only cache enabled
         )
 
     def _check_payload_to_cache(self, payload):
         return (
             payload.channel_id in self.cache["reactroles"]["channel_cache"]
-            or payload.message_id in self.cache["reactroles"]["message_cache"]
+            and payload.message_id in self.cache["reactroles"]["message_cache"]
         )
 
     def _edit_cache(
@@ -87,16 +88,18 @@ class ReactRoles(MixinMeta):
         target_state = (
             true_or_false
             if true_or_false is not None
-            else not (await self.config.guild(ctx.guild).enabled())
+            else not (await self.config.guild(ctx.guild).reactroles.enabled())
         )
-        await self.config.guild(ctx.guild).enabled.set(target_state)
+        await self.config.guild(ctx.guild).reactroles.enabled.set(target_state)
         if target_state:
             await ctx.send("Reaction roles have been enabled in this server.")
-            # TODO remove channels from cache
+            await self.cache["reactroles"]["channel_cache"].update(
+                await self.config.guild(ctx.guild).reactroles.channels()
+            )
         else:
             await ctx.send("Reaction roles have been disabled in this server.")
-            await self.cache["reactroles"]["channel_cache"].update(
-                await self.config.guild(ctx.guild).channels()
+            await self.cache["reactroles"]["channel_cache"].difference_update(
+                await self.config.guild(ctx.guild).reactroles.channels()
             )
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -120,7 +123,7 @@ class ReactRoles(MixinMeta):
         await ctx.send(f"{emoji} has been binded to {role} on {message.jump_url}")
 
         # Add this message and channel to tracked cache
-        self._edit_cache(message.id, channel.id)
+        self._edit_cache(message.id, message.channel.id)
         # TODO add this channel to guild config
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -171,15 +174,24 @@ class ReactRoles(MixinMeta):
     @reactrole.command(name="list")
     async def react_list(self, ctx: commands.Context):
         """View the reaction roles on this server."""
-        data = (await self.config.custom("GuildMessage").all()).get(str(ctx.guild.id))
+        data = await self.config.custom("GuildMessage", ctx.guild.id).all()
         if not data:
             return await ctx.send("There are no reaction roles set up here!")
-
+        guild: discord.Guild = ctx.guild
         react_roles = []
-        for index, message_data in enumerate(data.items(), start=1):
-            message_id = message_data[0]
-            data = message_data[1]["reactroles"]
-            link = f"https://discord.com/channels/{ctx.guild.id}/{data['channel']}/{message_id}"
+        for index, (message_id, message_data) in enumerate(data.items(), start=1):
+            data = message_data["reactroles"]
+            channel: discord.TextChannel = guild.get_channel(data["channel"])
+            if channel is None:
+                # TODO: handle deleted channels
+                continue
+            try:
+                message: discord.Message = await channel.fetch_message(message_id)
+            except discord.NotFound:
+                # TODO: handle deleted messages
+                continue
+            link = message.jump_url
+            # link = f"https://discord.com/channels/{ctx.guild.id}/{data['channel']}/{message_id}"
             reactions = [f"[Reaction Role #{index}]({link})"]
             for emoji, role in data["react_to_roleid"].items():
                 role = ctx.guild.get_role(role)
@@ -252,6 +264,7 @@ class ReactRoles(MixinMeta):
         if not self._check_payload_to_cache(payload):
             log.debug("Not cached")
             return
+
         if await self.bot.cog_disabled_in_guild_raw(self.qualified_name, payload.guild_id):
             return
 
@@ -294,6 +307,9 @@ class ReactRoles(MixinMeta):
             return
 
         if not self._check_payload_to_cache(payload):
+            return
+
+        if await self.bot.cog_disabled_in_guild_raw(self.qualified_name, payload.guild_id):
             return
 
         # message, guild = discord.Object(payload.message_id), discord.Object(payload.guild_id)
