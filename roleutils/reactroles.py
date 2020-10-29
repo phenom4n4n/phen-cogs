@@ -43,21 +43,30 @@ class ReactRoles(MixinMeta):
             if guild_data["reactroles"]["enabled"]
         )
 
-    def _edit_cache(self, message: Union[discord.Message, discord.Object], remove=False, *, channel: discord.TextChannel = None):
+    def _edit_cache(
+        self,
+        message: Union[discord.Message, discord.Object],
+        remove=False,
+        *,
+        channel: discord.TextChannel = None,
+    ):
         if not remove:
             self.cache["reactroles"]["message_cache"].add(message.id)
             self.cache["reactroles"]["channel_cache"].add(message.channel.id)
         else:
             self.cache["reactroles"]["message_cache"].remove(message.id)
             channel = message.channel if hasattr(message, "channel") else channel
-            if channel: # for when the message/channel objects are unknown/deleted
+            if channel:  # for when the message/channel objects are unknown/deleted
                 self.cache["reactroles"]["channel_cache"].remove(channel.id)
 
     async def bulk_delete_set_roles(
-        self, guild: discord.Guild, message_id: Union[discord.Message, discord.Object], emoji_ids: List[int]
+        self,
+        guild: discord.Guild,
+        message_id: Union[discord.Message, discord.Object],
+        emoji_ids: List[int],
     ):
         ...  # TODO delete deleted roles from message id using emoji ids
-             # if there are no roles left, clear the rr altogether
+        # if there are no roles left, clear the rr altogether
 
     @commands.is_owner()
     @commands.group(aliases=["rr"])
@@ -80,7 +89,9 @@ class ReactRoles(MixinMeta):
             # TODO remove channels from cache
         else:
             await ctx.send("Reaction roles have been disabled in this server.")
-            await self.cache["reactroles"]["channel_cache"].update(await self.config.guild(ctx.guild).channels())
+            await self.cache["reactroles"]["channel_cache"].update(
+                await self.config.guild(ctx.guild).channels()
+            )
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -118,7 +129,9 @@ class ReactRoles(MixinMeta):
         if not message_data["reactroles"]["react_to_roleid"]:
             return await ctx.send("There are no reaction roles set up for that message.")
 
-        msg = await ctx.send("Are you sure you want to remove all reaction roles for that message?")
+        msg = await ctx.send(
+            "Are you sure you want to remove all reaction roles for that message?"
+        )
         start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
         pred = ReactionPredicate.yes_or_no(msg, ctx.author)
         try:
