@@ -34,13 +34,19 @@ class ReactRoles(MixinMeta):
         all_guilds = await self.config.all_guilds()
         all_guildmessage = await self.config.custom("GuildMessage").all()
         self.cache["reactroles"]["message_cache"].update(
-            msg_id for guild_data in all_guildmessage.values() for msg_id in guild_data.keys()
+            int(msg_id) for guild_data in all_guildmessage.values() for msg_id in guild_data.keys()
         )
         self.cache["reactroles"]["channel_cache"].update(
-            chnl_id
+            int(chnl_id)
             for guild_data in all_guilds.values()
             for chnl_id in guild_data["reactroles"]["channels"]
             if guild_data["reactroles"]["enabled"]
+        )
+
+    def _check_payload_to_cache(self, payload):
+        return (
+            payload.channel_id in self.cache["reactroles"]["channel_cache"]
+            or payload.message_id in self.cache["reactroles"]["message_cache"]
         )
 
     def _edit_cache(
@@ -55,7 +61,8 @@ class ReactRoles(MixinMeta):
             self.cache["reactroles"]["channel_cache"].add(message.channel.id)
         else:
             self.cache["reactroles"]["message_cache"].remove(message.id)
-            channel = message.channel if hasattr(message, "channel") else channel
+            # channel = message.channel if hasattr(message, "channel") else channel
+            channel = getattr(message, "channel", False) or channel
             if channel:  # for when the message/channel objects are unknown/deleted
                 self.cache["reactroles"]["channel_cache"].remove(channel.id)
 
@@ -243,10 +250,7 @@ class ReactRoles(MixinMeta):
             return
 
         # TODO add in listeners
-        if (
-            str(payload.channel_id) not in self.cache["reactroles"]["channel_cache"]
-            or str(payload.message_id) not in self.cache["reactroles"]["message_cache"]
-        ):
+        if not self._check_payload_to_cache(payload):
             log.debug("Not cached")
             return
         guild = self.bot.get_guild(payload.guild_id)
@@ -287,11 +291,9 @@ class ReactRoles(MixinMeta):
         if payload.guild_id is None:
             return
 
-        if (
-            str(payload.channel_id) not in self.cache["reactroles"]["channel_cache"]
-            or str(payload.message_id) not in self.cache["reactroles"]["message_cache"]
-        ):
+        if not self._check_payload_to_cache(payload):
             return
+
         message, guild = discord.Object(payload.message_id), discord.Object(payload.guild_id)
         await self.config.custom("GuildMessage", guild, message).clear()
         self._edit_cache(message, True)
