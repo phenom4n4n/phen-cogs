@@ -105,6 +105,7 @@ class RealEmojiConverter(EmojiConverter):
                 emoji = argument
         return emoji
 
+
 class ObjectConverter(IDConverter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Object:
         match = self._get_id_match(argument)
