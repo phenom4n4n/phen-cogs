@@ -1,15 +1,16 @@
 import logging
 from typing import List, Union
+import asyncio
 
 import discord
 from redbot.core import commands
-from redbot.core.commands import IDConverter
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
-from redbot.core.utils.menus import menu, close_menu, DEFAULT_CONTROLS
+from redbot.core.utils.predicates import ReactionPredicate
+from redbot.core.utils.menus import menu, close_menu, DEFAULT_CONTROLS, start_adding_reactions
 
 from .abc import MixinMeta
-from .converters import StrictRole, RealEmojiConverter
+from .converters import StrictRole, RealEmojiConverter, ObjectConverter
 from .utils import my_role_heirarchy
 
 log = logging.getLogger("red.phenom4n4n.roleutils.reactroles")
@@ -42,23 +43,44 @@ class ReactRoles(MixinMeta):
             if guild_data["reactroles"]["enabled"]
         )
 
-    def _edit_cache(self, message: discord.Message, remove=False):
+    def _edit_cache(self, message: Union[discord.Message, discord.Object], remove=False, *, channel: discord.TextChannel = None):
         if not remove:
             self.cache["reactroles"]["message_cache"].add(message.id)
             self.cache["reactroles"]["channel_cache"].add(message.channel.id)
         else:
             self.cache["reactroles"]["message_cache"].remove(message.id)
-            self.cache["reactroles"]["channel_cache"].remove(message.channel.id)
+            channel = message.channel if hasattr(message, "channel") else channel
+            if channel: # for when the message/channel objects are unknown/deleted
+                self.cache["reactroles"]["channel_cache"].remove(channel.id)
 
     async def bulk_delete_set_roles(
-        self, guild: discord.Guild, message_id: IDConverter, emoji_ids: List[int]
+        self, guild: discord.Guild, message_id: Union[discord.Message, discord.Object], emoji_ids: List[int]
     ):
-        ...  # TODO delete rr's on guildmessage from given emoji id
+        ...  # TODO delete deleted roles from message id using emoji ids
+             # if there are no roles left, clear the rr altogether
 
     @commands.is_owner()
     @commands.group(aliases=["rr"])
     async def reactrole(self, ctx: commands.Context):
         """Reaction Role management."""
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @reactrole.command()
+    async def enable(self, ctx: commands.Context, true_or_false: bool = None):
+        """Toggle reaction roles on or off."""
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).enabled())
+        )
+        await self.config.guild(ctx.guild).enabled.set(target_state)
+        if target_state:
+            await ctx.send("Reaction roles have been enabled in this server.")
+            # TODO remove channels from cache
+        else:
+            await ctx.send("Reaction roles have been disabled in this server.")
+            await self.cache["reactroles"]["channel_cache"].update(await self.config.guild(ctx.guild).channels())
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -71,6 +93,7 @@ class ReactRoles(MixinMeta):
         role: StrictRole,
     ):
         """Add a reaction role to a message."""
+        # TODO warning if this emoji is already binded
         async with self.config.custom("GuildMessage", ctx.guild.id, message.id).reactroles() as r:
             r["react_to_roleid"][emoji if isinstance(emoji, str) else str(emoji.id)] = role.id
             r["channel"] = message.channel.id
@@ -81,32 +104,49 @@ class ReactRoles(MixinMeta):
 
         # Add this message and channel to tracked cache
         self._edit_cache(message)
+        # TODO add this channel to guild config
 
     @commands.admin_or_permissions(manage_roles=True)
     @reactrole.group(name="delete", aliases=["remove"], invoke_without_command=True)
     async def reactrole_delete(
         self,
         ctx: commands.Context,
-        message_id: Union[discord.Message, IDConverter],
+        message: Union[discord.Message, ObjectConverter],
     ):
         """Delete an entire reaction role for a message."""
+        message_data = await self.config.custom("GuildMessage", ctx.guild.id, message.id).all()
+        if not message_data["reactroles"]["react_to_roleid"]:
+            return await ctx.send("There are no reaction roles set up for that message.")
+
+        msg = await ctx.send("Are you sure you want to remove all reaction roles for that message?")
+        start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
+        pred = ReactionPredicate.yes_or_no(msg, ctx.author)
+        try:
+            await self.bot.wait_for("reaction_add", check=pred, timeout=60)
+        except asyncio.TimeoutError:
+            await ctx.send("Action cancelled.")
+
+        if pred.result is True:
+            await self.config.custom("GuildMessage", ctx.guild.id, message.id).clear()
+            await ctx.send("Reaction roles cleared for that message.")
+            self._edit_cache(message, True)
+        else:
+            await ctx.send("Action cancelled.")
 
     @reactrole_delete.command(name="bind")
     async def delete_bind(
         self,
         ctx: commands.Context,
-        message_id: Union[discord.Message, IDConverter],
-        emoji: Union[RealEmojiConverter, IDConverter],
+        message: Union[discord.Message, ObjectConverter],
+        emoji: Union[RealEmojiConverter, ObjectConverter],
     ):
         """Delete an emoji-role bind for a reaction role."""
-        message_id = message_id.id if isinstance(message_id, discord.Message) else message_id
-        async with self.config.custom("GuildMessage", ctx.guild.id, message_id).reactroles() as r:
+        async with self.config.custom("GuildMessage", ctx.guild.id, message.id).reactroles() as r:
             try:
                 del r["react_to_roleid"][emoji if isinstance(emoji, str) else str(emoji.id)]
             except KeyError:
                 return await ctx.send("That wasn't a valid emoji for that message.")
         await ctx.send(f"That emoji role bind was deleted.")
-        await self._update_cache()
 
     @commands.admin_or_permissions(manage_roles=True)
     @reactrole.command(name="list")
@@ -166,8 +206,20 @@ class ReactRoles(MixinMeta):
     @reactrole.command(hidden=True)
     async def clear(self, ctx: commands.Context):
         """Clear all ReactRole data."""
-        await self.config.custom("GuildMessage").clear()
-        await ctx.tick()
+        msg = await ctx.send("Are you sure you want to clear all reaction role data?")
+        start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
+        pred = ReactionPredicate.yes_or_no(msg, ctx.author)
+        try:
+            await self.bot.wait_for("reaction_add", check=pred, timeout=60)
+        except asyncio.TimeoutError:
+            await ctx.send("Action cancelled.")
+
+        if pred.result is True:
+            await self.config.custom("GuildMessage").clear()
+            await ctx.send("Data cleared.")
+            await self._update_cache()
+        else:
+            await ctx.send("Action cancelled.")
 
     @commands.Cog.listener("on_raw_reaction_add")
     @commands.Cog.listener("on_raw_reaction_remove")
@@ -217,9 +269,24 @@ class ReactRoles(MixinMeta):
             if role in member.roles:
                 await member.remove_roles(role, reason="Reaction role")
 
-    # TODO
-    # add raw_message_delete listener to automatically delete messages
-    # that have reaction roles assigned from config
+    @commands.Cog.listener()
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+        print("hi")
+        if payload.guild_id is None:
+            return
+
+        if (
+            str(payload.channel_id) not in self.cache["reactroles"]["channel_cache"]
+            or str(payload.message_id) not in self.cache["reactroles"]["message_cache"]
+        ):
+            return
+        message, guild = discord.Object(payload.message_id), discord.Object(payload.guild_id)
+        await self.config.custom("GuildMessage", guild, message).clear()
+        self._edit_cache(message, True)
+
+    @commands.Cog.listener()
+    async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
+        ...
 
     # @commands.Cog.listener()
     # async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):

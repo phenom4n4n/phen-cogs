@@ -9,6 +9,7 @@ from redbot.core.commands import (
     MemberConverter,
     RoleConverter,
     EmojiConverter,
+    IDConverter,
 )
 from redbot.core.utils.chat_formatting import inline
 
@@ -103,3 +104,10 @@ class RealEmojiConverter(EmojiConverter):
             else:
                 emoji = argument
         return emoji
+
+class ObjectConverter(IDConverter):
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Object:
+        match = self._get_id_match(argument)
+        if not match:
+            raise BadArgument
+        return discord.Object(int(match.group(0)))
