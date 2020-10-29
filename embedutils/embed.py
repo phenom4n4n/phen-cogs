@@ -7,6 +7,7 @@ import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils import menus
 
+from .converters import StringToEmbed
 
 class EmbedUtils(commands.Cog):
     """
@@ -63,12 +64,11 @@ class EmbedUtils(commands.Cog):
         await channel.send(embed=e)
 
     @embed.command(aliases=["fromjson"])
-    async def fromdata(self, ctx, *, data):
+    async def fromdata(self, ctx, *, data: StringToEmbed):
         """Post an embed from valid JSON.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
-        await self.str_embed_converter(ctx, data)
         await ctx.tick()
 
     @embed.command(aliases=["fromjsonfile", "fromdatafile"])
@@ -85,7 +85,7 @@ class EmbedUtils(commands.Cog):
             data = content.decode("utf-8")
         except UnicodeDecodeError:
             return await ctx.send("That's not an actual embed file wyd")
-        await self.str_embed_converter(ctx, data)
+        await StringToEmbed().convert(ctx, data)
         await ctx.tick()
 
     @embed.command(name="frommsg", aliases=["frommessage"])
@@ -228,14 +228,12 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @store.command(name="fromdata", aliases=["fromjson"])
-    async def store_fromdata(self, ctx, name: str, *, data):
+    async def store_fromdata(self, ctx, name: str, *, data: StringToEmbed):
         """Store an embed from valid JSON on this server.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
-        e = await self.str_embed_converter(ctx, data)
-        if e:
-            await self.store_embed(ctx, name, e)
+        await self.store_embed(ctx, name, data)
         await ctx.tick()
 
     @store.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
@@ -335,15 +333,13 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @global_store.command(name="fromdata", aliases=["fromjson"])
-    async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data):
+    async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data: StringToEmbed):
         """Store an embed from valid JSON globally.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
         The `locked` argument specifies whether the embed should be locked to owners only."""
-        e = await self.str_embed_converter(ctx, data)
-        if e:
-            await self.global_store_embed(ctx, name, e, locked)
+        await self.global_store_embed(ctx, name, data, locked)
         await ctx.tick()
 
     @global_store.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
@@ -462,7 +458,7 @@ class EmbedUtils(commands.Cog):
             return
 
     async def str_embed_converter(self, ctx, data):
-        data = data.strip("```")
+        data = data.strip("`")
         try:
             data = json.loads(data)
         except json.decoder.JSONDecodeError as error:
