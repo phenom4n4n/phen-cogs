@@ -31,7 +31,7 @@ class ReactRoles(MixinMeta):
         await super().initialize()
 
     async def _update_cache(self):
-        all_guilds = await self.config.all_guilds()
+        all_guilds = await self.config.all_guilds()  # This won't return default values
         all_guildmessage = await self.config.custom("GuildMessage").all()
         self.cache["reactroles"]["message_cache"].update(
             int(msg_id) for guild_data in all_guildmessage.values() for msg_id in guild_data.keys()
@@ -41,7 +41,7 @@ class ReactRoles(MixinMeta):
             int(chnl_id)
             for guild_data in all_guilds.values()
             for chnl_id in guild_data["reactroles"].get("channels", [])
-            if guild_data["reactroles"]["enabled"]  # Unsure if we should only cache enabled
+            if guild_data["reactroles"].get("enabled", False)  # Unsure if we should only cache enabled
         )
 
     def _check_payload_to_cache(self, payload):
@@ -93,12 +93,12 @@ class ReactRoles(MixinMeta):
         await self.config.guild(ctx.guild).reactroles.enabled.set(target_state)
         if target_state:
             await ctx.send("Reaction roles have been enabled in this server.")
-            await self.cache["reactroles"]["channel_cache"].update(
+            self.cache["reactroles"]["channel_cache"].update(
                 await self.config.guild(ctx.guild).reactroles.channels()
             )
         else:
             await ctx.send("Reaction roles have been disabled in this server.")
-            await self.cache["reactroles"]["channel_cache"].difference_update(
+            self.cache["reactroles"]["channel_cache"].difference_update(
                 await self.config.guild(ctx.guild).reactroles.channels()
             )
 
@@ -124,7 +124,9 @@ class ReactRoles(MixinMeta):
 
         # Add this message and channel to tracked cache
         self._edit_cache(message.id, message.channel.id)
-        # TODO add this channel to guild config
+        async with self.config.guild(ctx.guild).reactroles.channels() as ch:
+            if message.channel.id not in ch:
+                ch.append(message.channel.id)
 
     @commands.admin_or_permissions(manage_roles=True)
     @reactrole.group(name="delete", aliases=["remove"], invoke_without_command=True)
