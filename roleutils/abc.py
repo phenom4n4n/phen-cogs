@@ -12,6 +12,9 @@ class MixinMeta(ABC):
 
     Strategy borrowed from redbot.cogs.mutes.abc
     """
+    config: Config
+    bot: Red
+    cache: dict
 
     def __init__(self, *_args):
         self.config: Config
