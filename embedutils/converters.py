@@ -5,6 +5,7 @@ import json
 from redbot.core.utils import menus
 import asyncio
 
+
 class StringToEmbed(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Embed:
         data = argument.strip("`")

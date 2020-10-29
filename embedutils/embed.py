@@ -9,6 +9,7 @@ from redbot.core.utils import menus
 
 from .converters import StringToEmbed
 
+
 class EmbedUtils(commands.Cog):
     """
     Create, post, and store embeds.
