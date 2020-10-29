@@ -41,7 +41,9 @@ class ReactRoles(MixinMeta):
             int(chnl_id)
             for guild_data in all_guilds.values()
             for chnl_id in guild_data["reactroles"].get("channels", [])
-            if guild_data["reactroles"].get("enabled", False)  # Unsure if we should only cache enabled
+            if guild_data["reactroles"].get(
+                "enabled", False
+            )  # Unsure if we should only cache enabled
         )
 
     def _check_payload_to_cache(self, payload):
