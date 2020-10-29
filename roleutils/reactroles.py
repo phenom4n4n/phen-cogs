@@ -271,7 +271,6 @@ class ReactRoles(MixinMeta):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
-        print("hi")
         if payload.guild_id is None:
             return
 
