@@ -51,20 +51,19 @@ class ReactRoles(MixinMeta):
 
     def _edit_cache(
         self,
-        message: Union[discord.Message, discord.Object],
+        message_id,
+        channel_id,
         remove=False,
-        *,
-        channel: discord.TextChannel = None,
     ):
         if not remove:
-            self.cache["reactroles"]["message_cache"].add(message.id)
-            self.cache["reactroles"]["channel_cache"].add(message.channel.id)
+            self.cache["reactroles"]["message_cache"].add(message_id)
+            self.cache["reactroles"]["channel_cache"].add(channel_id)
         else:
-            self.cache["reactroles"]["message_cache"].remove(message.id)
+            self.cache["reactroles"]["message_cache"].remove(message_id)
             # channel = message.channel if hasattr(message, "channel") else channel
-            channel = getattr(message, "channel", False) or channel
-            if channel:  # for when the message/channel objects are unknown/deleted
-                self.cache["reactroles"]["channel_cache"].remove(channel.id)
+            # channel = getattr(message, "channel", False) or channel
+            # if channel:  # for when the message/channel objects are unknown/deleted
+            self.cache["reactroles"]["channel_cache"].remove(channel_id)
 
     async def bulk_delete_set_roles(
         self,
@@ -78,7 +77,7 @@ class ReactRoles(MixinMeta):
     @commands.is_owner()
     @commands.group(aliases=["rr"])
     async def reactrole(self, ctx: commands.Context):
-        """Reaction Role management."""
+        """Base command for Reaction Role management."""
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -121,7 +120,7 @@ class ReactRoles(MixinMeta):
         await ctx.send(f"{emoji} has been binded to {role} on {message.jump_url}")
 
         # Add this message and channel to tracked cache
-        self._edit_cache(message)
+        self._edit_cache(message.id, channel.id)
         # TODO add this channel to guild config
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -149,7 +148,7 @@ class ReactRoles(MixinMeta):
         if pred.result is True:
             await self.config.custom("GuildMessage", ctx.guild.id, message.id).clear()
             await ctx.send("Reaction roles cleared for that message.")
-            self._edit_cache(message, True)
+            self._edit_cache(message.id, message.channel.id, True)
         else:
             await ctx.send("Action cancelled.")
 
@@ -253,6 +252,9 @@ class ReactRoles(MixinMeta):
         if not self._check_payload_to_cache(payload):
             log.debug("Not cached")
             return
+        if await self.bot.cog_disabled_in_guild_raw(self.qualified_name, payload.guild_id):
+            return
+
         guild = self.bot.get_guild(payload.guild_id)
         if payload.event_type == "REACTION_ADD":
             member = payload.member
@@ -294,9 +296,9 @@ class ReactRoles(MixinMeta):
         if not self._check_payload_to_cache(payload):
             return
 
-        message, guild = discord.Object(payload.message_id), discord.Object(payload.guild_id)
-        await self.config.custom("GuildMessage", guild, message).clear()
-        self._edit_cache(message, True)
+        # message, guild = discord.Object(payload.message_id), discord.Object(payload.guild_id)
+        await self.config.custom("GuildMessage", payload.guild_id, payload.message_id).clear()
+        self._edit_cache(payload.message_id, payload.channel_id, True)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload: discord.RawBulkMessageDeleteEvent):
