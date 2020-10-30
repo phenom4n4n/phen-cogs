@@ -38,7 +38,7 @@ class Prefix(commands.Cog):
         """Add a prefix for this server."""
 
         if not self.MENTION_RE:
-            self.MENTION_RE = re.compile(rf"<@!?{bot.user.id}>")
+            self.MENTION_RE = re.compile(rf"<@!?{self.bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix in prefixes:
             return await ctx.send("That is already a prefix.")
@@ -55,7 +55,7 @@ class Prefix(commands.Cog):
         """Remove a prefix for this server."""
 
         if not self.MENTION_RE:
-            self.MENTION_RE = re.compile(rf"<@!?{bot.user.id}>")
+            self.MENTION_RE = re.compile(rf"<@!?{self.bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix not in prefixes:
             return await ctx.send("That is not a valid prefix.")
