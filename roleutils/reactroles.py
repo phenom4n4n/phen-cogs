@@ -124,7 +124,7 @@ class ReactRoles(MixinMeta):
         role: StrictRole,
     ):
         """Bind a reaction role to an emoji on a message."""
-        rules = "NORMAL" # TODO rule arg parse converter
+        rules = "NORMAL"  # TODO rule arg parse converter
         emoji_id = self.emoji_id(emoji)
         async with self.config.custom("GuildMessage", ctx.guild.id, message.id).reactroles() as r:
             old_role = ctx.guild.get_role(r["react_to_roleid"].get(emoji_id))
