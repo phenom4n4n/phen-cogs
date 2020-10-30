@@ -38,3 +38,11 @@ async def can_run_command(ctx: commands.Context, command: str) -> bool:
     except commands.CommandError:
         result = False
     return result
+
+
+async def delete_quietly(message: discord.Message):
+    if message.channel.permissions_for(message.guild.me).manage_messages:
+        try:
+            await message.delete()
+        except discord.HTTPException:
+            pass

@@ -1,17 +1,17 @@
 import logging
-from typing import List, Union
+from typing import List, Union, Optional
 import asyncio
 
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
-from redbot.core.utils.predicates import ReactionPredicate
+from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
 from redbot.core.utils.menus import menu, close_menu, DEFAULT_CONTROLS, start_adding_reactions
 
 from .abc import MixinMeta
-from .converters import StrictRole, RealEmojiConverter, ObjectConverter
-from .utils import my_role_heirarchy
+from .converters import StrictRole, RealEmojiConverter, ObjectConverter, EmojiRole
+from .utils import my_role_heirarchy, delete_quietly
 
 log = logging.getLogger("red.phenom4n4n.roleutils.reactroles")
 
@@ -77,6 +77,13 @@ class ReactRoles(MixinMeta):
         ...  # TODO delete deleted roles from message id using emoji ids
         # if there are no roles left, clear the rr altogether
 
+    def emoji_id(self, emoji: Union[discord.Emoji, str]) -> str:
+        return emoji if isinstance(emoji, str) else str(emoji.id)
+
+    @commands.command()
+    async def test(self, ctx: commands.Context, emojirole: EmojiRole):
+        await ctx.send(emojirole)
+
     @commands.is_owner()
     @commands.group(aliases=["rr"])
     async def reactrole(self, ctx: commands.Context):
@@ -117,12 +124,75 @@ class ReactRoles(MixinMeta):
         """Add a reaction role to a message."""
         # TODO warning if this emoji is already binded
         async with self.config.custom("GuildMessage", ctx.guild.id, message.id).reactroles() as r:
-            r["react_to_roleid"][emoji if isinstance(emoji, str) else str(emoji.id)] = role.id
+            r["react_to_roleid"][self.emoji_id(emoji)] = role.id
             r["channel"] = message.channel.id
             r["rules"] = None
         if str(emoji) not in [str(emoji) for emoji in message.reactions]:
             await message.add_reaction(emoji)
         await ctx.send(f"{emoji} has been binded to {role} on {message.jump_url}")
+
+        # Add this message and channel to tracked cache
+        self._edit_cache(message.id, message.channel.id)
+        async with self.config.guild(ctx.guild).reactroles.channels() as ch:
+            if message.channel.id not in ch:
+                ch.append(message.channel.id)
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True, embed_links=True)
+    @reactrole.command(name="create")
+    async def reactrole_create(
+        self,
+        ctx: commands.Context,
+        emoji_role_groups: commands.Greedy[EmojiRole],
+        channel: Optional[discord.TextChannel] = None,
+        color: Optional[discord.Color] = None,
+        *,
+        name: str = None,
+    ):
+        """Create a reaction role.
+
+        Emoji and role groups should be seperated by a ';' and have no space."""
+        if not emoji_role_groups:
+            raise commands.BadArgument
+        channel = channel or ctx.channel
+        color = await ctx.embed_color()
+        if name is None:
+            await ctx.send("What would you like the reaction role name to be?")
+            try:
+                msg = await self.bot.wait_for(
+                    "message", check=MessagePredicate.same_context(ctx=ctx), timeout=60
+                )
+            except asyncio.TimeoutError:
+                return await ctx.send("Reaction Role creation cancelled.")
+            else:
+                await delete_quietly(msg)
+                name = msg.content
+
+        description = f"React to the following roles to receive the corresponding emoji:\n"
+        for group in emoji_role_groups:
+            description += f"{group['emoji']}: {group['role'].mention}\n"
+        e = discord.Embed(title=name[:256], color=color, description=description)
+        message = await channel.send(embed=e)
+
+        duplicates = {}
+        async with self.config.custom("GuildMessage", ctx.guild.id, message.id).reactroles() as r:
+            r["channel"] = message.channel.id
+            r["rules"] = None
+            binds = {}
+            for group in emoji_role_groups:
+                emoji_id = self.emoji_id(group["emoji"])
+                if emoji_id not in binds.keys() and group["role"].id not in binds.values():
+                    binds[emoji_id] = group["role"].id
+                    await message.add_reaction(group["emoji"])
+                else:
+                    duplicates[group["emoji"]] = group["role"]
+            r["react_to_roleid"] = binds
+        if duplicates:
+            dupes = "The following groups were duplicates and weren't added:\n"
+            for emoji, role in duplicates.items():
+                dupes += f"{emoji};{role}\n"
+            await ctx.send(dupes)
+        await ctx.tick()
 
         # Add this message and channel to tracked cache
         self._edit_cache(message.id, message.channel.id)
