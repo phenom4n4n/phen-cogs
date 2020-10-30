@@ -191,8 +191,8 @@ class ReactRoles(MixinMeta):
                 name = msg.content
 
         description = f"React to the following roles to receive the corresponding emoji:\n"
-        for group in emoji_role_groups:
-            description += f"{group['emoji']}: {group['role'].mention}\n"
+        for (emoji, role) in emoji_role_groups:
+            description += f"{emoji}: {role.mention}\n"
         e = discord.Embed(title=name[:256], color=color, description=description)
         message = await channel.send(embed=e)
 
@@ -201,13 +201,13 @@ class ReactRoles(MixinMeta):
             r["channel"] = message.channel.id
             r["rules"] = None
             binds = {}
-            for group in emoji_role_groups:
-                emoji_id = self.emoji_id(group["emoji"])
-                if emoji_id not in binds.keys() and group["role"].id not in binds.values():
-                    binds[emoji_id] = group["role"].id
-                    await message.add_reaction(group["emoji"])
+            for (emoji, role) in emoji_role_groups:
+                emoji_id = self.emoji_id(emoji)
+                if emoji_id not in binds.keys() and role.id not in binds.values():
+                    binds[emoji_id] = role.id
+                    await message.add_reaction(emoji)
                 else:
-                    duplicates[group["emoji"]] = group["role"]
+                    duplicates[emoji] = role
             r["react_to_roleid"] = binds
         if duplicates:
             dupes = "The following groups were duplicates and weren't added:\n"
