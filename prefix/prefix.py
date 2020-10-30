@@ -8,7 +8,7 @@ class Prefix(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.MENTION_RE = re.compile(rf"<@!?{bot.user.id}>")
+        self.MENTION_RE = None
 
     async def red_delete_data_for_user(self, **kwargs):
         return
@@ -37,6 +37,8 @@ class Prefix(commands.Cog):
     async def add_prefix(self, ctx, *, prefix: str):
         """Add a prefix for this server."""
 
+        if not self.MENTION_RE:
+            self.MENTION_RE = re.compile(rf"<@!?{bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix in prefixes:
             return await ctx.send("That is already a prefix.")
@@ -52,6 +54,8 @@ class Prefix(commands.Cog):
     async def remove_prefix(self, ctx, *, prefix: str):
         """Remove a prefix for this server."""
 
+        if not self.MENTION_RE:
+            self.MENTION_RE = re.compile(rf"<@!?{bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix not in prefixes:
             return await ctx.send("That is not a valid prefix.")
