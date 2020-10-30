@@ -11,7 +11,7 @@ RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 
 async def before_invoke_hook(ctx: commands.Context):
-    if not ctx.guild:
+    if not ctx.guild or isinstance(ctx.command, commands.commands._AlwaysAvailableCommand):
         return
     guild = ctx.guild
     if guild.me == guild.owner:
@@ -45,7 +45,7 @@ class PermissionsLocker(commands.Cog):
     Force permissions for the bot.
     """
 
-    __version__ = "1.2.1"
+    __version__ = "1.2.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
