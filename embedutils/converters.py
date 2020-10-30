@@ -44,3 +44,27 @@ class StringToEmbed(Converter):
             emoji = "❌"
         asyncio.create_task(menus.menu(ctx, [embed], {emoji: menus.close_menu}))
         raise CheckFailure
+
+
+class StoredEmbedConverter(Converter):
+    async def convert(self, ctx: commands.Context, name: str) -> dict:
+        cog = ctx.bot.get_cog("EmbedUtils")
+        data = await cog.config.guild(ctx.guild).embeds()
+        embed = data.get(name)
+        if embed:
+            embed.update(name=name)
+            return embed
+        else:
+            raise BadArgument(f'Embed "{name}" not found.')
+
+class GlobalStoredEmbedConverter(Converter):
+    async def convert(self, ctx: commands.Context, name: str) -> dict:
+        cog = ctx.bot.get_cog("EmbedUtils")
+        data = await cog.config.embeds()
+        embed = data.get(name)
+        can_view = await ctx.bot.is_owner(ctx.author) or not embed.get("locked")
+        if embed and can_view:
+            embed.update(name=name)
+            return embed
+        else:
+            raise BadArgument(f'Global embed "{name}" not found.')
