@@ -24,15 +24,7 @@ log = logging.getLogger("red.phenom4n4n.roleutils")
 class Roles(MixinMeta):
     """
     Useful role commands.
-
-    Includes massroling and reaction roles.
     """
-    __version__ = "1.1.0"
-
-    def format_help_for_context(self, ctx):
-        pre_processed = super().format_help_for_context(ctx)
-        n = "\n" if "\n\n" not in pre_processed else ""
-        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     async def initialize(self):
         log.debug("Roles Initialize")
