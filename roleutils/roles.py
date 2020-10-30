@@ -25,16 +25,6 @@ class Roles(MixinMeta):
     """
     Useful role commands.
     """
-<<<<<<< HEAD
-=======
-
-    __version__ = "1.1.0"
-
-    def format_help_for_context(self, ctx):
-        pre_processed = super().format_help_for_context(ctx)
-        n = "\n" if "\n\n" not in pre_processed else ""
-        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
->>>>>>> c15548f1d4756b1826e103f8f057005d85a13de5
 
     async def initialize(self):
         log.debug("Roles Initialize")
