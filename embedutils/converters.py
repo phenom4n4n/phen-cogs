@@ -57,6 +57,7 @@ class StoredEmbedConverter(Converter):
         else:
             raise BadArgument(f'Embed "{name}" not found.')
 
+
 class GlobalStoredEmbedConverter(Converter):
     async def convert(self, ctx: commands.Context, name: str) -> dict:
         cog = ctx.bot.get_cog("EmbedUtils")
