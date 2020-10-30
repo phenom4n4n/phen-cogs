@@ -423,7 +423,7 @@ class EmbedUtils(commands.Cog):
             await ctx.send(f"`{name}` is now accessible to all users.")
 
     @commands.check(webhook_check)
-    # @commands.admin_or_permissions(manage_webhooks=True)
+    @commands.admin_or_permissions(manage_webhooks=True)
     @commands.bot_has_permissions(manage_webhooks=True)
     @embed.group(invoke_without_command=True)
     async def webhook(self, ctx: commands.Context, *embeds: StoredEmbedConverter):
