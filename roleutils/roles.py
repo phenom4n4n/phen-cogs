@@ -38,7 +38,7 @@ class Roles(MixinMeta):
     async def role(
         self, ctx: commands.Context, member: TouchableMember(False), *, role: StrictRole(False)
     ):
-        """Role management.
+        """Base command for modifying roles.
 
         Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
         if role in member.roles and await can_run_command(ctx, "role remove"):
