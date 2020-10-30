@@ -26,6 +26,13 @@ class Roles(MixinMeta):
     Useful role commands.
     """
 
+    __version__ = "0.0.1"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
+
     @commands.guild_only()
     @commands.group(invoke_without_command=True)
     async def role(
@@ -310,7 +317,7 @@ class Roles(MixinMeta):
     async def role_rin(
         self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: StrictRole
     ):
-        """Remove a role all members of a another role."""
+        """Remove a role from all members of a another role."""
         allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, remove_role)
         if not allowed[0]:
             await ctx.send(allowed[1])
