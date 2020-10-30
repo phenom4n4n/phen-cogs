@@ -74,7 +74,7 @@ class Roles(MixinMeta):
     @role.command()
     async def info(self, ctx: commands.Context, *, role: FuzzyRole):
         """Get information about a role."""
-        await ctx.send(embed=self.get_info(role))
+        await ctx.send(embed=await self.get_info(role))
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
@@ -103,10 +103,9 @@ class Roles(MixinMeta):
         Color and whether it is hoisted can be specified."""
         color = color or discord.Color.default()
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
-        await ctx.send(f"**{role}** created!", embed=self.get_info(role))
+        await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
-    @staticmethod
-    def get_info(role: discord.Role) -> discord.Embed:
+    async def get_info(self, role: discord.Role) -> discord.Embed:
         description = (
             f"{role.mention}\n"
             f"Members: {len(role.members)} | Position: {role.position}\n"
@@ -115,7 +114,11 @@ class Roles(MixinMeta):
             f"Mentionable: {role.mentionable}\n"
         )
         if role.managed:
-            description += f"Managed: {role.managed}"
+            description += f"Managed: {role.managed}\n"
+        if role in await self.bot.get_mod_roles(role.guild):
+            description += f"Mod Role: True"
+        if role in await self.bot.get_admin_roles(role.guild):
+            description += f"Admin Role: True"
         e = discord.Embed(
             color=role.color, title=role.name, description=description, timestamp=role.created_at
         )
