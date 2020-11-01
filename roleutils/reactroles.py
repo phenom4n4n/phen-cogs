@@ -58,18 +58,21 @@ class ReactRoles(MixinMeta):
     def _edit_cache(
         self,
         message_id,
-        channel_id,
+        *,
+        channel_id: int = None,
         remove=False,
     ):
         if not remove:
             self.cache["reactroles"]["message_cache"].add(message_id)
-            self.cache["reactroles"]["channel_cache"].add(channel_id)
+            if channel_id:
+                self.cache["reactroles"]["channel_cache"].add(channel_id)
         else:
             self.cache["reactroles"]["message_cache"].remove(message_id)
             # channel = message.channel if hasattr(message, "channel") else channel
             # channel = getattr(message, "channel", False) or channel
             # if channel:  # for when the message/channel objects are unknown/deleted
-            self.cache["reactroles"]["channel_cache"].remove(channel_id)
+            if channel_id:
+                self.cache["reactroles"]["channel_cache"].remove(channel_id)
 
     async def bulk_delete_set_roles(
         self,
@@ -82,6 +85,13 @@ class ReactRoles(MixinMeta):
                 del r["react_to_roleid"][self.emoji_id(emoji_id)]
             if not r["react_to_roleid"]:
                 self._edit_cache(message.id, r["channel_id"], True)
+
+    async def delete_reaction_message(self, guild_id: int, message_id: int, *, channel_id: int = None):
+        await self.config.custom(
+            "GuildMessage", guild_id, message_id
+        ).clear()
+        if channel_id:
+            self._edit_cache(message_id, channel_id, True)
 
     def emoji_id(self, emoji: Union[discord.Emoji, str]) -> str:
         return emoji if isinstance(emoji, str) else str(emoji.id)
@@ -276,6 +286,7 @@ class ReactRoles(MixinMeta):
 
         guild: discord.Guild = ctx.guild
         to_delete_message_emoji_ids = {}
+        to_delete_message_ids = []
         react_roles = []
         for index, (message_id, message_data) in enumerate(data.items(), start=1):
             data = message_data["reactroles"]
@@ -289,7 +300,7 @@ class ReactRoles(MixinMeta):
                 # maybe look into dpy menus so its not fetching all the rr messages?
                 # or simply drop this since the delete listeners should handle it
             except discord.NotFound:
-                # TODO: handle deleted messages
+                to_delete_message_ids.append(message_id)
                 continue
             link = message.jump_url
             to_delete_emoji_ids = []
@@ -336,9 +347,13 @@ class ReactRoles(MixinMeta):
             e.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
             emoji = self.bot.get_emoji(729917314769748019) or "❌"
             await menu(ctx, [e], {emoji: close_menu})
+
         if to_delete_message_emoji_ids:
             for message, ids in to_delete_message_emoji_ids.items():
                 await self.bulk_delete_set_roles(ctx.guild, message, ids)
+        if to_delete_message_ids:
+            for message_id in to_delete_message_ids:
+                await self.delete_reaction_message(guild.id, message_id)
 
     @commands.is_owner()
     @reactrole.command(hidden=True)
@@ -440,10 +455,7 @@ class ReactRoles(MixinMeta):
 
         for message_id in payload.message_ids:
             if message_id in self.cache["reactroles"]["message_cache"]:
-                await self.config.custom(
-                    "GuildMessage", payload.guild_id, payload.message_id
-                ).clear()
-                self._edit_cache(message_id, payload.channel_id, True)
+                await self.delete_reaction_message(payload.guild_id, payload.message_id)
 
     # @commands.Cog.listener()
     # async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):

@@ -5,7 +5,8 @@
     "end_user_data_statement": "This cog does not persistently store any data or metadata about users.",
     "install_msg": "Thanks for installing RoleUtils! Get started with `[p]help RoleUtils`.",
     "author": [
-        "PhenoM4n4n", 
+        "PhenoM4n4n",
+        "Bobloy",
         "TrustyJaid"
     ],
     "required_cogs": {},
