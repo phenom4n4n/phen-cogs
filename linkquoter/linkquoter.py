@@ -185,7 +185,6 @@ class LinkQuoter(commands.Cog):
     @commands.group(invoke_without_command=True, aliases=["linkmessage"])
     async def linkquote(self, ctx, message_link: LinkToMessage):
         """Quote a message from a link."""
-        await ctx.trigger_typing()
         embeds = await self.create_embeds([message_link])
         if not embeds:
             return await ctx.send("Invalid link.")
