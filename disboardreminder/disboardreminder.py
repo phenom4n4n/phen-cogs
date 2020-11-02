@@ -266,14 +266,12 @@ class DisboardReminder(commands.Cog):
         """
         try:
             await self.bot.wait_until_ready()
-            guilds = []
-            for guild in await self.config.all_guilds():
-                guild = self.bot.get_guild(guild)
-                if guild:
-                    guilds.append(guild)
             coros = []
-            for guild in guilds:
-                timer = await self.config.guild(guild).nextBump()
+            for guild_id, guild_data in await self.config.all_guilds():
+                guild = self.bot.get_guild(guild_id)
+                if not guild:
+                    continue
+                timer = await guild_data["nextBump"]
                 if timer:
                     now = datetime.utcnow().timestamp()
                     remaining = timer - now
