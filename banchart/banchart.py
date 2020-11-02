@@ -36,8 +36,8 @@ class BanChart(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
-    @commands.cooldown(1, 60, commands.BucketType.guild)
-    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.cooldown(1, 300, commands.BucketType.guild)
+    @commands.max_concurrency(10, commands.BucketType.default)
     @commands.mod_or_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.command()
