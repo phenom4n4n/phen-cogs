@@ -268,11 +268,9 @@ class DisboardReminder(commands.Cog):
             await self.bot.wait_until_ready()
             coros = []
             for guild_id, guild_data in (await self.config.all_guilds()).items():
-                print(guild_id)
                 guild = self.bot.get_guild(guild_id)
                 if not guild:
                     continue
-                print(guild_data)
                 timer = guild_data["nextBump"]
                 if timer:
                     now = datetime.utcnow().timestamp()
@@ -283,7 +281,7 @@ class DisboardReminder(commands.Cog):
                         coros.append(self.bump_timer(guild, timer))
             await asyncio.gather(*coros)
         except Exception as e:
-            log.debug(f"Bump Restart Issue: {e}")
+            log.info(f"Bump Restart Issue: {e}")
 
     def cog_unload(self):
         self.__unload()
