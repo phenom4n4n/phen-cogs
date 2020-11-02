@@ -36,30 +36,36 @@ class BanChart(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
-    @commands.cooldown(1, 600, commands.BucketType.guild)
+    @commands.cooldown(1, 60, commands.BucketType.guild)
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.mod_or_permissions(ban_members=True)
-    @commands.bot_has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.command()
-    async def banchart(self, ctx: commands.Context):
+    async def banchart(self, ctx: commands.Context, limit: int = 5000):
         """Display a chart of the moderators with the most bans.
 
-        This works best when reading bans done with [botname]."""
+        This can take a while for servers with lots of bans."""
         await ctx.trigger_typing()
-        bans = await ctx.guild.bans()
+        ban_count = len(await ctx.guild.bans())
+        limit = max(100, min(10000, min(limit, ban_count)))
+        await ctx.send(f"Gathering stats for the last {limit} bans.")
+        await ctx.trigger_typing()
         counter = Counter()
-        for entry in bans:
-            match = re.search(ID_RE, str(entry.reason))
-            if match:
-                mod_id = int(match.group(0))
-                mod = self.bot.get_user(mod_id) or mod_id
-                name = str(mod)
-                if len(name) > 23:
-                    name = name[:20] + "..."
-                counter[name] += 1
+        async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.ban, limit=limit):
+            if entry.user.bot and entry.reason:
+                match = re.search(ID_RE, entry.reason)
+                if match:
+                    mod_id = int(match.group(0))
+                    user = self.bot.get_user(mod_id) or mod_id
+                else:
+                    user = entry.user
             else:
-                counter["UNKNOWN"] += 1
-        task = functools.partial(self.create_chart, counter, "Ban Moderators")
+                user = entry.user
+            name = str(user)
+            if len(name) > 23:
+                name = name[:20] + "..."
+            counter[name] += 1
+        task = functools.partial(self.create_chart, counter, f"Ban Mods for the last {limit} bans")
         task = self.bot.loop.run_in_executor(None, task)
         try:
             banchart = await asyncio.wait_for(task, timeout=60)
