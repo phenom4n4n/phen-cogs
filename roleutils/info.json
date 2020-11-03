@@ -6,7 +6,8 @@
     "install_msg": "Thanks for installing RoleUtils! Get started with `[p]help RoleUtils`.",
     "author": [
         "PhenoM4n4n", 
-        "TrustyJaid"
+        "TrustyJaid",
+        "Neuro Assassin"
     ],
     "required_cogs": {},
     "requirements": ["unidecode"],

@@ -32,10 +32,10 @@ class RoleUtils(
     """
     Useful role commands.
 
-    Includes massroling, and targeting + reaction roles sometime soon.
+    Includes massroling, role targeting, and reaction roles sometime soon.
     """
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
