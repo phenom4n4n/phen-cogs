@@ -20,9 +20,11 @@ from .utils import (
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 
+
 def targeter_cog(ctx: commands.Context):
     cog = ctx.bot.get_cog("Targeter")
     return cog is not None and hasattr(cog, "args_to_list")
+
 
 class Roles(MixinMeta):
     """
