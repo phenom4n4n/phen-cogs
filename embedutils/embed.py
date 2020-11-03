@@ -7,7 +7,12 @@ import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils import menus
 
-from .converters import StringToEmbed, StoredEmbedConverter, GlobalStoredEmbedConverter, ListStringToEmbed
+from .converters import (
+    StringToEmbed,
+    StoredEmbedConverter,
+    GlobalStoredEmbedConverter,
+    ListStringToEmbed,
+)
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:

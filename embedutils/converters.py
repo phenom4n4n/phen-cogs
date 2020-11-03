@@ -46,6 +46,7 @@ class StringToEmbed(Converter):
         asyncio.create_task(menus.menu(ctx, [embed], {emoji: menus.close_menu}))
         raise CheckFailure
 
+
 class ListStringToEmbed(StringToEmbed):
     async def convert(self, ctx: commands.Context, argument: str) -> List[discord.Embed]:
         data = argument.strip("`")
@@ -75,6 +76,7 @@ class ListStringToEmbed(StringToEmbed):
             return embeds
         else:
             raise BadArgument
+
 
 class StoredEmbedConverter(Converter):
     async def convert(self, ctx: commands.Context, name: str) -> dict:
