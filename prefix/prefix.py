@@ -1,5 +1,6 @@
 import discord
 from redbot.core import Config, checks, commands
+import re
 
 
 class Prefix(commands.Cog):
@@ -7,6 +8,7 @@ class Prefix(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.MENTION_RE = None
 
     async def red_delete_data_for_user(self, **kwargs):
         return
@@ -26,8 +28,7 @@ class Prefix(commands.Cog):
     async def set_prefix(self, ctx, *, prefix: str):
         """Set the prefix for this server."""
 
-        prefix = [prefix]
-        await ctx.bot.set_prefixes(guild=ctx.guild, prefixes=prefix)
+        await self.bot.set_prefixes(guild=ctx.guild, prefixes=[prefix])
         embed = await self.gen_prefixes(ctx)
         await ctx.send("Prefix set.", embed=embed)
 
@@ -36,9 +37,13 @@ class Prefix(commands.Cog):
     async def add_prefix(self, ctx, *, prefix: str):
         """Add a prefix for this server."""
 
+        if not self.MENTION_RE:
+            self.MENTION_RE = re.compile(rf"<@!?{self.bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix in prefixes:
             return await ctx.send("That is already a prefix.")
+        if self.bot._cli_flags.mentionable:
+            prefixes = [p for p in prefixes if not re.match(self.MENTION_RE, p)]
         prefixes.append(prefix)
         await ctx.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.gen_prefixes(ctx)
@@ -49,14 +54,18 @@ class Prefix(commands.Cog):
     async def remove_prefix(self, ctx, *, prefix: str):
         """Remove a prefix for this server."""
 
+        if not self.MENTION_RE:
+            self.MENTION_RE = re.compile(rf"<@!?{self.bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix not in prefixes:
             return await ctx.send("That is not a valid prefix.")
         if len(prefixes) == 1:
             return await ctx.send("If you removed that prefix, you would have none left.")
+        if self.bot._cli_flags.mentionable:
+            prefixes = [p for p in prefixes if not re.match(self.MENTION_RE, p)]
         index = prefixes.index(prefix)
         prefixes.pop(index)
-        await ctx.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
+        await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.gen_prefixes(ctx)
         await ctx.send("Prefix removed.", embed=embed)
 
@@ -65,14 +74,13 @@ class Prefix(commands.Cog):
     async def reset_prefixes(self, ctx):
         """Reset the prefixes for this server."""
 
-        await ctx.bot.set_prefixes(guild=ctx.guild, prefixes=[])
+        await self.bot.set_prefixes(guild=ctx.guild, prefixes=[])
         embed = await self.gen_prefixes(ctx)
         await ctx.send(f"Reset this server's prefixes.", embed=embed)
 
     async def gen_prefixes(self, ctx: commands.Context):
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
-        count = 0
         prefix_list = "\n".join([f"{index}. {prefix}" for index, prefix in enumerate(prefixes, 1)])
-        color = await self.bot.get_embed_color(ctx)
+        color = await ctx.embed_color()
         embed = discord.Embed(color=color, title="Prefixes:", description=prefix_list)
         return embed

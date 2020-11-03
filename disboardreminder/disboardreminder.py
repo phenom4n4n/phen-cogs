@@ -47,6 +47,8 @@ class DisboardReminder(commands.Cog):
         self.config.register_member(**default_member)
         self.config.register_guild(**default_guild)
 
+        self.bump_cache = {}
+
     async def red_delete_data_for_user(self, requester, user_id):
         for guild, members in await self.config.all_members():
             if user_id in members:
@@ -264,14 +266,12 @@ class DisboardReminder(commands.Cog):
         """
         try:
             await self.bot.wait_until_ready()
-            guilds = []
-            for guild in await self.config.all_guilds():
-                guild = self.bot.get_guild(guild)
-                if guild:
-                    guilds.append(guild)
             coros = []
-            for guild in guilds:
-                timer = await self.config.guild(guild).nextBump()
+            for guild_id, guild_data in (await self.config.all_guilds()).items():
+                guild = self.bot.get_guild(guild_id)
+                if not guild:
+                    continue
+                timer = guild_data["nextBump"]
                 if timer:
                     now = datetime.utcnow().timestamp()
                     remaining = timer - now
@@ -281,7 +281,7 @@ class DisboardReminder(commands.Cog):
                         coros.append(self.bump_timer(guild, timer))
             await asyncio.gather(*coros)
         except Exception as e:
-            log.debug(f"Bump Restart Issue: {e}")
+            log.info(f"Bump Restart Issue: {e}")
 
     def cog_unload(self):
         self.__unload()
@@ -321,9 +321,14 @@ class DisboardReminder(commands.Cog):
             return
         embed = message.embeds[0]
         if "Bump done" in embed.description:
-            if data["nextBump"]:
-                if not (data["nextBump"] - message.created_at.timestamp() <= 0):
+            last_bump = self.bump_cache.get(guild.id) or data["nextBump"]
+            if last_bump:
+                if not (last_bump - message.created_at.timestamp() <= 0):
                     return
+            next_bump = message.created_at.timestamp() + 7200
+            self.bump_cache[guild.id] = next_bump
+            await self.config.guild(guild).nextBump.set(next_bump)
+
             words = embed.description.split(",")
             member_mention = words[0]
             member_id = int(member_mention.lstrip("<@!").lstrip("<@").rstrip(">"))
@@ -337,14 +342,11 @@ class DisboardReminder(commands.Cog):
             except discord.errors.Forbidden:
                 pass
 
-            nextBump = message.created_at.timestamp() + 7200
-            await self.config.guild(guild).nextBump.set(nextBump)
-
             current_count = await self.config.member_from_ids(guild.id, member_id).count()
             current_count += 1
             await self.config.member_from_ids(guild.id, member_id).count.set(current_count)
 
-            await self.bump_timer(message.guild, nextBump)
+            await self.bump_timer(message.guild, next_bump)
         else:
             if (
                 message.channel.permissions_for(guild.me).manage_messages

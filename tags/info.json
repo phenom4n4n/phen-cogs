@@ -3,7 +3,7 @@
     "short": "Create and use tags.",
     "description": "Create and use tags.",
     "end_user_data_statement": "This cog stores End User Data when storing the author of a tag. If a user requests data-deletion, all their tags will be removed from the bot.",
-    "install_msg": "Thanks for installing Tags!\nGet started by reading the documentation found here.\n<https://github.com/JonSnowbd/TagScript/blob/v2/Documentation/Using%20TSE.md>",
+    "install_msg": "Thanks for installing Tags!\nGet started by reading the documentation found here.\n<https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md>\n\nThis cog has features that allow users to run commands within a tag. Having this loaded with `customcom` can result in infinite looping, so having both loaded at once is not recommended.",
     "author": [
         "PhenoM4n4n"
     ],

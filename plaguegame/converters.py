@@ -1,7 +1,9 @@
 import discord
 from redbot.core import commands
-from redbot.core.commands import BadArgument, Converter
+from redbot.core.commands import BadArgument, Converter, MemberConverter
 from redbot.core.utils.chat_formatting import inline
+from unidecode import unidecode
+from rapidfuzz import process
 
 
 def hundred_int(arg: str):
@@ -14,7 +16,35 @@ def hundred_int(arg: str):
     return ret
 
 
-class Human(commands.MemberConverter):
+# original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
+class FuzzyMember(MemberConverter):
+    def __init__(self, response: bool = True):
+        self.response = response
+        super().__init__()
+
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
+        try:
+            member = await super().convert(ctx, argument)
+        except BadArgument:
+            guild = ctx.guild
+            result = []
+            for m in process.extract(
+                argument,
+                {m: unidecode(m.name) for m in guild.members},
+                limit=None,
+                score_cutoff=75,
+            ):
+                result.append((m[2], m[1]))
+
+            if not result:
+                raise BadArgument(f'Member "{argument}" not found.' if self.response else None)
+
+            sorted_result = sorted(result, key=lambda r: r[1], reverse=True)
+            member = sorted_result[0][0]
+        return member
+
+
+class FuzzyHuman(FuzzyMember):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
         member = await super().convert(ctx, argument)
         if member.bot:
@@ -22,7 +52,7 @@ class Human(commands.MemberConverter):
         return member
 
 
-class Infectable(Human):
+class Infectable(FuzzyHuman):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
         member = await super().convert(ctx, argument)
         cog = ctx.bot.get_cog("Plague")
@@ -40,7 +70,7 @@ class Infectable(Human):
         return member
 
 
-class Curable(Human):
+class Curable(FuzzyHuman):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Member:
         member = await super().convert(ctx, argument)
         cog = ctx.bot.get_cog("Plague")

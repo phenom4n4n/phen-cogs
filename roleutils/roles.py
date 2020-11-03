@@ -6,16 +6,17 @@ from typing import Optional
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import (humanize_list,
-                                               humanize_timedelta,
-                                               text_to_file)
-from redbot.core.utils.mod import (check_permissions, get_audit_reason,
-                                   is_admin_or_superior)
+from redbot.core.utils.chat_formatting import humanize_list, humanize_timedelta, text_to_file
+from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole, TouchableMember, TargeterArgs
-from .utils import (can_run_command, humanize_roles, is_allowed_by_hierarchy,
-                    is_allowed_by_role_hierarchy)
+from .utils import (
+    can_run_command,
+    humanize_roles,
+    is_allowed_by_hierarchy,
+    is_allowed_by_role_hierarchy,
+)
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 
@@ -33,7 +34,7 @@ class Roles(MixinMeta):
     async def role(
         self, ctx: commands.Context, member: TouchableMember(False), *, role: StrictRole(False)
     ):
-        """Role management.
+        """Base command for modifying roles.
 
         Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
         if role in member.roles and await can_run_command(ctx, "role remove"):
@@ -76,7 +77,7 @@ class Roles(MixinMeta):
     @role.command()
     async def info(self, ctx: commands.Context, *, role: FuzzyRole):
         """Get information about a role."""
-        await ctx.send(embed=self.get_info(role))
+        await ctx.send(embed=await self.get_info(role))
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
@@ -105,10 +106,9 @@ class Roles(MixinMeta):
         Color and whether it is hoisted can be specified."""
         color = color or discord.Color.default()
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
-        await ctx.send(f"**{role}** created!", embed=self.get_info(role))
+        await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
-    @staticmethod
-    def get_info(role: discord.Role) -> discord.Embed:
+    async def get_info(self, role: discord.Role) -> discord.Embed:
         description = (
             f"{role.mention}\n"
             f"Members: {len(role.members)} | Position: {role.position}\n"
@@ -117,7 +117,11 @@ class Roles(MixinMeta):
             f"Mentionable: {role.mentionable}\n"
         )
         if role.managed:
-            description += f"Managed: {role.managed}"
+            description += f"Managed: {role.managed}\n"
+        if role in await self.bot.get_mod_roles(role.guild):
+            description += f"Mod Role: True"
+        if role in await self.bot.get_admin_roles(role.guild):
+            description += f"Admin Role: True"
         e = discord.Embed(
             color=role.color, title=role.name, description=description, timestamp=role.created_at
         )
@@ -305,7 +309,7 @@ class Roles(MixinMeta):
     async def role_rin(
         self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: StrictRole
     ):
-        """Remove a role all members of a another role."""
+        """Remove a role from all members of a another role."""
         await self.super_massrole(
             ctx,
             [member for member in target_role.members],

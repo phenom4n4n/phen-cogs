@@ -32,7 +32,7 @@ class RoleUtils(
     """
     Useful role commands.
     
-    Includes massroling and role targeting.
+    Includes massroling, role targeting, and reaction roles sometime soon.
     """
     __version__ = "1.1.0"
 
