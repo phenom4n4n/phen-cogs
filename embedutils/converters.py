@@ -1,3 +1,4 @@
+from typing import List
 import discord
 from redbot.core import commands
 from redbot.core.commands import Converter, BadArgument, CheckFailure
@@ -16,6 +17,8 @@ class StringToEmbed(Converter):
             return
         if data.get("embed"):
             data = data["embed"]
+        elif data.get("embeds"):
+            data = data.get("embeds")[0]
         if data.get("timestamp"):
             data["timestamp"] = data["timestamp"].strip("Z")
         try:
@@ -32,19 +35,46 @@ class StringToEmbed(Converter):
 
     async def embed_convert_error(self, ctx: commands.Context, error_type: str, error: Exception):
         embed = discord.Embed(
-            color=await ctx.bot.get_embed_color(ctx),
+            color=await ctx.embed_color(),
             title=error_type,
             description=f"```py\n{error}\n```",
         )
         embed.set_footer(
             text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example"
         )
-        emoji = ctx.bot.get_emoji(736038541364297738)
-        if not emoji:
-            emoji = "❌"
+        emoji = ctx.bot.get_emoji(736038541364297738) or "❌"
         asyncio.create_task(menus.menu(ctx, [embed], {emoji: menus.close_menu}))
         raise CheckFailure
 
+class ListStringToEmbed(StringToEmbed):
+    async def convert(self, ctx: commands.Context, argument: str) -> List[discord.Embed]:
+        data = argument.strip("`")
+        try:
+            data = json.loads(data)
+        except json.decoder.JSONDecodeError as error:
+            await self.embed_convert_error(ctx, "JSON Parse Error", error)
+            return
+        if data.get("embed"):
+            data = [data["embed"]]
+        elif data.get("embeds"):
+            data = data.get("embeds")
+        else:
+            data = [data]
+        embeds = []
+        for embed_data in data:
+            if embed_data.get("timestamp"):
+                embed_data["timestamp"] = embed_data["timestamp"].strip("Z")
+            try:
+                e = discord.Embed.from_dict(embed_data)
+            except Exception as error:
+                await self.embed_convert_error(ctx, "Embed Parse Error", error)
+                return
+            else:
+                embeds.append(e)
+        if embeds:
+            return embeds
+        else:
+            raise BadArgument
 
 class StoredEmbedConverter(Converter):
     async def convert(self, ctx: commands.Context, name: str) -> dict:

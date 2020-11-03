@@ -7,7 +7,7 @@ import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils import menus
 
-from .converters import StringToEmbed, StoredEmbedConverter, GlobalStoredEmbedConverter
+from .converters import StringToEmbed, StoredEmbedConverter, GlobalStoredEmbedConverter, ListStringToEmbed
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
@@ -26,7 +26,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -457,6 +457,51 @@ class EmbedUtils(commands.Cog):
             embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]],
         )
 
+    @webhook.command(name="fromdata", aliases=["fromjson"])
+    async def webhook_fromdata(self, ctx: commands.Context, *, embeds: ListStringToEmbed):
+        """Send embeds through webhooks.
+
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        cog = self.bot.get_cog("Webhook")
+        try:
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                ctx=ctx,
+                embeds=embeds[:10],
+            )
+        except discord.HTTPException as error:
+            await self.embed_convert_error(ctx, "Embed Send Error", error)
+
+    @webhook.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    async def webhook_fromfile(self, ctx: commands.Context):
+        """Send embeds through webhooks, using files.
+
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        if not ctx.message.attachments:
+            return await ctx.send("You need to provide a file for this..")
+        attachment = ctx.message.attachments[0]
+        content = await attachment.read()
+        try:
+            data = content.decode("utf-8")
+        except UnicodeDecodeError:
+            return await ctx.send("That's not an actual embed file wyd")
+        embeds = await ListStringToEmbed().convert(ctx, data)
+        cog = self.bot.get_cog("Webhook")
+        try:
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                ctx=ctx,
+                embeds=embeds[:10],
+            )
+        except discord.HTTPException as error:
+            await self.embed_convert_error(ctx, "Embed Send Error", error)
+
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
         async with self.config.guild(ctx.guild).embeds() as a:
@@ -532,16 +577,14 @@ class EmbedUtils(commands.Cog):
             await self.embed_convert_error(ctx, "Embed Send Error", error)
             return
 
-    async def embed_convert_error(self, ctx, errorType, error):
+    async def embed_convert_error(self, ctx: commands.Context, error_type: str, error: Exception):
         embed = discord.Embed(
-            color=await self.bot.get_embed_color(ctx),
-            title=errorType,
+            color=await ctx.embed_color(),
+            title=error_type,
             description=f"```py\n{error}\n```",
         )
         embed.set_footer(
             text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example"
         )
-        emoji = self.bot.get_emoji(736038541364297738)
-        if not emoji:
-            emoji = "❌"
+        emoji = ctx.bot.get_emoji(736038541364297738) or "❌"
         await menus.menu(ctx, [embed], {emoji: menus.close_menu})
