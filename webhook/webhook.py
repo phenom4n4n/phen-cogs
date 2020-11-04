@@ -371,6 +371,9 @@ class Webhook(commands.Cog):
         *,
         reason: str = None,
         ctx: commands.Context = None,
+        allowed_mentions: discord.AllowedMentions = discord.AllowedMentions(
+            users=False, everyone=False, roles=False
+        ),
         **kwargs,
     ):
         """Cog function that other cogs can implement using `bot.get_cog("Webhook")`
@@ -384,7 +387,7 @@ class Webhook(commands.Cog):
                     webhook = discord.Webhook.from_url(
                         link, adapter=discord.AsyncWebhookAdapter(session)
                     )
-                    await webhook.send(**kwargs)
+                    await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
                     return True
             except (discord.InvalidArgument, discord.NotFound):
                 del self.cache[channel.id]
