@@ -456,7 +456,9 @@ class Plague(commands.Cog):
             pass
 
     @commands.Cog.listener()
-    async def on_command(self, ctx):
+    async def on_command(self, ctx: commands.Context):
+        if not ctx.channel.permissions_for(ctx.me).send_messages:
+            return
         if not ctx.guild or ctx.cog == self or not ctx.message.mentions:
             return
         if await self.bot.cog_disabled_in_guild(self, ctx.guild):
