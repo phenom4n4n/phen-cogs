@@ -34,9 +34,11 @@ async def not_plaguebearer(ctx):
     userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
     return userRole != "Plaguebearer"
 
+
 async def has_role(ctx: commands.Context) -> bool:
     userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
     return userRole != "User"
+
 
 class Plague(commands.Cog):
     """A plague game."""
@@ -167,7 +169,9 @@ class Plague(commands.Cog):
         You must be infected to mutate into a plaguebearer."""
         currency = await bank.get_currency_name(ctx.guild)
         await self.config.user(ctx.author).gameRole.set("User")
-        await ctx.send(f"{ctx.author} has spent 10,000 {currency}- to resign from their current job.")
+        await ctx.send(
+            f"{ctx.author} has spent 10,000 {currency}- to resign from their current job."
+        )
 
     @commands.check(not_doctor)
     @commands.check(is_healthy)
