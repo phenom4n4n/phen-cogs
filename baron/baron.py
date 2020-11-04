@@ -1,5 +1,8 @@
 import asyncio
 from typing import Literal, Optional
+from matplotlib import pyplot as plt
+from io import BytesIO
+import functools
 
 import discord
 from redbot.core import commands
@@ -42,6 +45,44 @@ class Baron(commands.Cog):
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
+
+    @commands.is_owner()
+    @commands.command(aliases=["guildsgrowth", "guildgraph", "guildsgraph"])
+    async def guildgrowth(self, ctx: commands.Context):
+        """Show a graph of the bot's guild joins over time.
+        
+        Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2)."""
+        await ctx.trigger_typing()
+        task = functools.partial(self.create_graph)
+        task = self.bot.loop.run_in_executor(None, task)
+        try:
+            buf = await asyncio.wait_for(task, timeout=60)
+        except asyncio.TimeoutError:
+            return await ctx.send("An error occurred while generating this image. Try again later.")
+        e = discord.Embed(color=await ctx.embed_color(), title="Guilds Growth")
+        e.set_image(url="attachment://attachment.png")
+        await ctx.send(embed=e, file=discord.File(buf, "attachment.png"))
+        buf.close()
+
+    def create_graph(self):
+        plt.clf()
+        guilds = [
+            guild.me.joined_at for guild in self.bot.guilds
+        ]
+        guilds.sort(key=lambda g: g)
+        plt.grid(True)
+        fig, ax = plt.subplots()
+
+        ax.plot(guilds, tuple(range(len(guilds))), lw=2)
+
+        fig.autofmt_xdate()
+
+        plt.xlabel('Date')
+        plt.ylabel('Guilds')
+        buf = BytesIO()
+        fig.savefig(buf, format='png')
+        buf.seek(0)
+        return buf
 
     @commands.is_owner()
     @commands.group()
