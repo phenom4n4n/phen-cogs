@@ -50,7 +50,7 @@ class Baron(commands.Cog):
     @commands.command(aliases=["guildsgrowth", "guildgraph", "guildsgraph"])
     async def guildgrowth(self, ctx: commands.Context):
         """Show a graph of the bot's guild joins over time.
-        
+
         Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2)."""
         await ctx.trigger_typing()
         task = functools.partial(self.create_graph)
@@ -58,7 +58,9 @@ class Baron(commands.Cog):
         try:
             buf = await asyncio.wait_for(task, timeout=60)
         except asyncio.TimeoutError:
-            return await ctx.send("An error occurred while generating this image. Try again later.")
+            return await ctx.send(
+                "An error occurred while generating this image. Try again later."
+            )
         e = discord.Embed(color=await ctx.embed_color(), title="Guilds Growth")
         e.set_image(url="attachment://attachment.png")
         await ctx.send(embed=e, file=discord.File(buf, "attachment.png"))
@@ -66,9 +68,7 @@ class Baron(commands.Cog):
 
     def create_graph(self):
         plt.clf()
-        guilds = [
-            guild.me.joined_at for guild in self.bot.guilds
-        ]
+        guilds = [guild.me.joined_at for guild in self.bot.guilds]
         guilds.sort(key=lambda g: g)
         plt.grid(True)
         fig, ax = plt.subplots()
@@ -77,10 +77,10 @@ class Baron(commands.Cog):
 
         fig.autofmt_xdate()
 
-        plt.xlabel('Date')
-        plt.ylabel('Guilds')
+        plt.xlabel("Date")
+        plt.ylabel("Guilds")
         buf = BytesIO()
-        fig.savefig(buf, format='png')
+        fig.savefig(buf, format="png")
         buf.seek(0)
         return buf
 
