@@ -19,6 +19,11 @@ class StringToEmbed(Converter):
             data = data["embed"]
         elif data.get("embeds"):
             data = data.get("embeds")[0]
+        if not isinstance(data, dict):
+            raise BadArgument(
+                "This doesn't seem to be properly formatted embed"
+                f" JSON. Refer to the link on `{ctx.clean_prefix}help {ctx.command.qualified_name}`."
+            )
         if data.get("timestamp"):
             data["timestamp"] = data["timestamp"].strip("Z")
         try:
