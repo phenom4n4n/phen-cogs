@@ -3,11 +3,12 @@ from typing import Literal, Optional
 from matplotlib import pyplot as plt
 from io import BytesIO
 import functools
+from datetime import datetime
 
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.commands import GuildConverter
+from redbot.core.commands import GuildConverter, TimedeltaConverter
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
@@ -48,12 +49,32 @@ class Baron(commands.Cog):
 
     @commands.is_owner()
     @commands.command(aliases=["guildsgrowth", "guildgraph", "guildsgraph"])
-    async def guildgrowth(self, ctx: commands.Context):
+    async def guildgrowth(
+        self,
+        ctx: commands.Context,
+        *,
+        time: TimedeltaConverter(
+            allowed_units=["weeks", "days", "hours"], default_unit="weeks"
+        ) = None,
+    ):
         """Show a graph of the bot's guild joins over time.
 
-        Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2)."""
+        Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2).
+        Passing time in the format of weeks, days, minutes, or seco"""
         await ctx.trigger_typing()
-        task = functools.partial(self.create_graph)
+        if time:
+            date = ctx.message.created_at - time
+        else:
+            date = self.bot.user.created_at
+        guilds = [
+            guild.me.joined_at
+            for guild in self.bot.guilds
+            if guild.me.joined_at.timestamp() > date.timestamp()
+        ]
+        if len(guilds) <= 1:
+            return await ctx.send("There aren't enough server joins during that time.")
+
+        task = functools.partial(self.create_graph, guilds)
         task = self.bot.loop.run_in_executor(None, task)
         try:
             buf = await asyncio.wait_for(task, timeout=60)
@@ -66,9 +87,8 @@ class Baron(commands.Cog):
         await ctx.send(embed=e, file=discord.File(buf, "attachment.png"))
         buf.close()
 
-    def create_graph(self):
+    def create_graph(self, guilds: list):
         plt.clf()
-        guilds = [guild.me.joined_at for guild in self.bot.guilds]
         guilds.sort(key=lambda g: g)
         plt.grid(True)
         fig, ax = plt.subplots()
