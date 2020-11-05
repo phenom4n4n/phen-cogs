@@ -3,7 +3,6 @@ from typing import Literal, Optional
 from matplotlib import pyplot as plt
 from io import BytesIO
 import functools
-from datetime import datetime
 
 import discord
 from redbot.core import commands
