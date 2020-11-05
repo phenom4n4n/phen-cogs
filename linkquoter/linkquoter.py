@@ -54,14 +54,15 @@ class LinkToMessage(Converter):
     ) -> discord.Message:
         if not message.guild:
             raise BadArgument("I can only quote messages from servers.")
+        guild = message.guild
         if message.channel.nsfw and not ctx.channel.nsfw:
             raise BadArgument("Messages from NSFW channels cannot be quoted in non-NSFW channels.")
 
         cog = ctx.bot.get_cog("LinkQuoter")
         data = await cog.config.guild(ctx.guild).all()
 
-        if message.guild.id != ctx.guild.id:
-            guild_data = await cog.config.guild(message.guild).all()
+        if guild.id != ctx.guild.id:
+            guild_data = await cog.config.guild(guild).all()
             if not data["cross_server"]:
                 raise BadArgument(
                     f"This server is not opted in to quote messages from other servers."
@@ -71,9 +72,11 @@ class LinkToMessage(Converter):
                     f"That server is not opted in to allow its messages to be quoted in other servers."
                 )
 
-        author_perms = message.channel.permissions_for(ctx.author)
-        if not (author_perms.read_message_history or author_perms.read_messages):
-            raise BadArgument(f"You don't have permission to read messages in that channel.")
+        member = guild.get_member(ctx.author.id)
+        if member:
+            author_perms = message.channel.permissions_for(member)
+            if not (author_perms.read_message_history and author_perms.read_messages):
+                raise BadArgument(f"You don't have permission to read messages in that channel.")
         return message
 
 
