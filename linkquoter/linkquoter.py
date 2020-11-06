@@ -205,6 +205,7 @@ class LinkQuoter(commands.Cog):
         else:
             await ctx.send(embed=embeds[0][0])
 
+    @commands.admin_or_permissions(manage_guild=True)
     @linkquote.command()
     async def auto(self, ctx, true_or_false: bool = None):
         """Toggle automatic quoting."""
