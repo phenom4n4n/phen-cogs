@@ -1,6 +1,6 @@
 {
     "author": ["PhenoM4n4n"],
-    "install_msg": "",
+    "install_msg": "Thanks for installing Linkquoter!\nIf you'd like to enable webhook quoting, you need to first install my webhook cog (`[p]cog install phen-cogs webhook`) and load it.",
     "name": "LinkQuoter",
     "disabled": false,
     "short": "Quote Discord message links.",

@@ -7,7 +7,7 @@ from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
-from .converters import Curable, Human, Infectable, hundred_int
+from .converters import Curable, FuzzyHuman, Infectable, hundred_int
 
 
 async def is_infected(ctx):
@@ -35,10 +35,15 @@ async def not_plaguebearer(ctx):
     return userRole != "Plaguebearer"
 
 
+async def has_role(ctx: commands.Context) -> bool:
+    userRole = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameRole()
+    return userRole != "User"
+
+
 class Plague(commands.Cog):
     """A plague game."""
 
-    __version__ = "1.0.2"
+    __version__ = "1.0.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -88,7 +93,7 @@ class Plague(commands.Cog):
     @checks.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     @commands.command("plagueprofile", aliases=["pprofile"])
-    async def plagueProfile(self, ctx, *, member: Human = None):
+    async def plagueProfile(self, ctx, *, member: FuzzyHuman = None):
         """Show's your Plague Game profile"""
         member = member or ctx.author
         data = await self.config.user(member).all()
@@ -154,6 +159,19 @@ class Plague(commands.Cog):
         await self.config.user(ctx.author).gameRole.set("Plaguebearer")
         await self.notify_user(ctx=ctx, user=ctx.author, notificationType="plaguebearer")
         await ctx.send(f"{ctx.author} has spent 10,000 {currency} and become a Plaguebearer.")
+
+    @commands.check(has_role)
+    @bank.cost(10000)
+    @commands.command()
+    async def resign(self, ctx):
+        """Quit being a doctor or plaguebearer for 10,000 currency.
+
+        You must be infected to mutate into a plaguebearer."""
+        currency = await bank.get_currency_name(ctx.guild)
+        await self.config.user(ctx.author).gameRole.set("User")
+        await ctx.send(
+            f"{ctx.author} has spent 10,000 {currency}- to resign from their current job."
+        )
 
     @commands.check(not_doctor)
     @commands.check(is_healthy)
@@ -438,7 +456,9 @@ class Plague(commands.Cog):
             pass
 
     @commands.Cog.listener()
-    async def on_command(self, ctx):
+    async def on_command(self, ctx: commands.Context):
+        if not ctx.channel.permissions_for(ctx.me).send_messages:
+            return
         if not ctx.guild or ctx.cog == self or not ctx.message.mentions:
             return
         if await self.bot.cog_disabled_in_guild(self, ctx.guild):

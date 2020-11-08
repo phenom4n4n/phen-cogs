@@ -5,6 +5,7 @@ Welcome to the incomplete TagScript documentation. This will explain the custom 
 ### Blocks:
 - command
 - delete
+- silent
 - args
 - author
 - target
@@ -14,7 +15,7 @@ Welcome to the incomplete TagScript documentation. This will explain the custom 
 
 **Block Syntax:**
 
-`{block(payload):parameter}`
+`{block(parameter):payload}`
 
 `[arg]` = Optional
 
@@ -27,9 +28,9 @@ Usage: `{command: <command>}`
 
 Aliases: `c, com, command`
 
-Payload: None
+Payload: command
 
-Parameter: command
+Parameter: None
 
 The command block will run the given command as if the tag invoker had ran it. Only 3 can be used in a tag.
 
@@ -38,22 +39,21 @@ The command block will run the given command as if the tag invoker had ran it. O
 
 Usage: `{delete([bool])`
 
-Payload: bool, None
+Payload: None
 
-Parameter: None
+Parameter: bool, None
 
-Delete blocks will delete the invocation message if the given payload is true. If there is no payload i.e. `{delete}` it will default to true.
-
+Delete blocks will delete the invocation message if the given parameter is true. If there is no parameter i.e. `{delete}` it will default to true.
 
 **Args Block**
 
-Usage: `{args([index])`
+Usage: `{args([index]:[splitter])`
 
-Payload: index, None
+Payload: splitter, None
 
-Parameter: None
+Parameter: index, None
 
-An args block represents the arguments that follow a command's invocation name. If an index is provided, it will return the word at that position in the arguments list. Defaults to all arguments.
+An args block represents the arguments that follow a command's invocation name. If an index is provided, it will return the word at that position in the arguments list. If not it will return all arguments. If a splitter is provided, indexing will split using that character instead of the default " ".
 
 
 **Author Block**
@@ -62,9 +62,9 @@ Aliases: `user`
 
 Usage: `{author([attribute])`
 
-Payload: attribute, None
+Payload: None
 
-Parameter: None
+Parameter: attribute, None
 
 By default this will return the tag invoker's full username. Certain attributes can be passed to the payload to access more information about the author. These include:
 
@@ -77,6 +77,7 @@ discriminator
 created_at
 joined_at
 mention
+bot
 ```
 
 
@@ -86,9 +87,9 @@ Aliases: `member`
 
 Usage: `{target([attribute])`
 
-Payload: attribute, None
+Payload: None
 
-Parameter: None
+Parameter: attribute, None
 
 The target block has the same usage and functionaliy as the author block, but it references the first person mentioned in the invoke message, if someone was mentioned.
 
@@ -97,9 +98,9 @@ The target block has the same usage and functionaliy as the author block, but it
 
 Usage: `{channel([attribute])`
 
-Payload: attribute, None
+Payload: None
 
-Parameter: None
+Parameter: attribute, None
 
 By default this will return the tag's invoke channel name. Certain attributes can be passed to the payload to access more information about the channel. These include:
 
@@ -120,9 +121,9 @@ Aliases: `guild`
 
 Usage: `{server([attribute])`
 
-Payload: attribute, None
+Payload: None
 
-Parameter: None
+Parameter: attribute, None
 
 By default this will return the tag's invoke server name. Certain attributes can be passed to the payload to access more information about the server. These include:
 
@@ -140,8 +141,8 @@ description
 
 Usage: `{embed(<json>)}`
 
-Payload: None
+Payload: json
 
-Parameter: json
+Parameter: None
 
 Embed blocks will send an embed in the tag response.

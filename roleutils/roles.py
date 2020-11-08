@@ -10,7 +10,7 @@ from redbot.core.utils.chat_formatting import humanize_list, humanize_timedelta,
 from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
 
 from .abc import MixinMeta
-from .converters import FuzzyRole, StrictRole, TouchableMember
+from .converters import FuzzyRole, StrictRole, TouchableMember, TargeterArgs
 from .utils import (
     can_run_command,
     humanize_roles,
@@ -19,6 +19,11 @@ from .utils import (
 )
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
+
+
+def targeter_cog(ctx: commands.Context):
+    cog = ctx.bot.get_cog("Targeter")
+    return cog is not None and hasattr(cog, "args_to_list")
 
 
 class Roles(MixinMeta):
@@ -35,7 +40,7 @@ class Roles(MixinMeta):
     async def _role(
         self, ctx: commands.Context, member: TouchableMember(False), *, role: StrictRole(False)
     ):
-        """Role management.
+        """Base command for modifying roles.
 
         Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
         if role in member.roles and await can_run_command(ctx, "role remove"):
@@ -78,7 +83,7 @@ class Roles(MixinMeta):
     @_role.command()
     async def info(self, ctx: commands.Context, *, role: FuzzyRole):
         """Get information about a role."""
-        await ctx.send(embed=self.get_info(role))
+        await ctx.send(embed=await self.get_info(role))
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
@@ -107,10 +112,9 @@ class Roles(MixinMeta):
         Color and whether it is hoisted can be specified."""
         color = color or discord.Color.default()
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
-        await ctx.send(f"**{role}** created!", embed=self.get_info(role))
+        await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
-    @staticmethod
-    def get_info(role: discord.Role) -> discord.Embed:
+    async def get_info(self, role: discord.Role) -> discord.Embed:
         description = (
             f"{role.mention}\n"
             f"Members: {len(role.members)} | Position: {role.position}\n"
@@ -119,7 +123,11 @@ class Roles(MixinMeta):
             f"Mentionable: {role.mentionable}\n"
         )
         if role.managed:
-            description += f"Managed: {role.managed}"
+            description += f"Managed: {role.managed}\n"
+        if role in await self.bot.get_mod_roles(role.guild):
+            description += f"Mod Role: True"
+        if role in await self.bot.get_admin_roles(role.guild):
+            description += f"Admin Role: True"
         e = discord.Embed(
             color=role.color, title=role.name, description=description, timestamp=role.created_at
         )
@@ -294,10 +302,6 @@ class Roles(MixinMeta):
         self, ctx: commands.Context, target_role: FuzzyRole, *, add_role: StrictRole
     ):
         """Add a role to all members of a another role."""
-        allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, add_role)
-        if not allowed[0]:
-            await ctx.send(allowed[1])
-            return
         await self.super_massrole(
             ctx,
             [member for member in target_role.members],
@@ -311,16 +315,52 @@ class Roles(MixinMeta):
     async def role_rin(
         self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: StrictRole
     ):
-        """Remove a role all members of a another role."""
-        allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, remove_role)
-        if not allowed[0]:
-            await ctx.send(allowed[1])
-            return
+        """Remove a role from all members of a another role."""
         await self.super_massrole(
             ctx,
             [member for member in target_role.members],
             remove_role,
             f"No one in `{target_role}` has this role.",
+            False,
+        )
+
+    @commands.check(targeter_cog)
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @role.group()
+    async def target(self, ctx: commands.Context):
+        """
+        Modify roles using 'targeting' args.
+
+        An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
+        """
+
+    @target.command(name="add")
+    async def target_add(self, ctx: commands.Context, role: StrictRole, *, args: TargeterArgs):
+        """
+        Add a role to members using targeting args.
+
+        An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
+        """
+        await self.super_massrole(
+            ctx,
+            args,
+            role,
+            f"No one was found with the given args that was eligible to recieve `{role}`.",
+        )
+
+    @target.command(name="remove")
+    async def target_remove(self, ctx: commands.Context, role: StrictRole, *, args: TargeterArgs):
+        """
+        Remove a role from members using targeting args.
+
+        An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
+        """
+        await self.super_massrole(
+            ctx,
+            args,
+            role,
+            f"No one was found with the given args that was eligible have `{role}` removed from them.",
             False,
         )
 

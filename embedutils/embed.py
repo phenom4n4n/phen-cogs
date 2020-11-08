@@ -1,17 +1,44 @@
 import asyncio
 import io
 import json
-import typing
+from typing import Optional, Union
 
 import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils import menus
+from redbot.core.utils.chat_formatting import box, humanize_list, pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
+
+from .converters import (
+    StringToEmbed,
+    StoredEmbedConverter,
+    GlobalStoredEmbedConverter,
+    ListStringToEmbed,
+)
+
+
+def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
+    cog = ctx.bot.get_cog("Webhook")
+    if (
+        ctx.channel.permissions_for(ctx.me).manage_webhooks
+        and cog
+        and cog.__author__ == "PhenoM4n4n"
+    ):
+        return cog
+    return False
 
 
 class EmbedUtils(commands.Cog):
     """
     Create, post, and store embeds.
     """
+
+    __version__ = "1.1.1"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot):
         self.bot = bot
@@ -48,8 +75,8 @@ class EmbedUtils(commands.Cog):
     async def embed(
         self,
         ctx,
-        channel: typing.Optional[discord.TextChannel],
-        color: typing.Optional[discord.Color],
+        channel: Optional[discord.TextChannel],
+        color: Optional[discord.Color],
         title: str,
         *,
         description: str,
@@ -63,12 +90,11 @@ class EmbedUtils(commands.Cog):
         await channel.send(embed=e)
 
     @embed.command(aliases=["fromjson"])
-    async def fromdata(self, ctx, *, data):
+    async def fromdata(self, ctx, *, data: StringToEmbed):
         """Post an embed from valid JSON.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
-        await self.str_embed_converter(ctx, data)
         await ctx.tick()
 
     @embed.command(aliases=["fromjsonfile", "fromdatafile"])
@@ -85,7 +111,7 @@ class EmbedUtils(commands.Cog):
             data = content.decode("utf-8")
         except UnicodeDecodeError:
             return await ctx.send("That's not an actual embed file wyd")
-        await self.str_embed_converter(ctx, data)
+        await StringToEmbed().convert(ctx, data)
         await ctx.tick()
 
     @embed.command(name="frommsg", aliases=["frommessage"])
@@ -113,34 +139,31 @@ class EmbedUtils(commands.Cog):
         await ctx.send(file=discord.File(fp, "embed.json"))
 
     @embed.group(name="show", aliases=["view", "drop"], invoke_without_command=True)
-    async def com_drop(self, ctx, name: str):
+    async def com_drop(self, ctx, name: StoredEmbedConverter):
         """View an embed that is stored."""
-        embed = await self.get_stored_embed(ctx, name)
-        if embed:
-            await ctx.send(embed=embed[0])
-            async with self.config.guild(ctx.guild).embeds() as a:
-                a[name]["uses"] += 1
+        await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
+        async with self.config.guild(ctx.guild).embeds() as a:
+            a[name["name"]]["uses"] += 1
 
     @com_drop.command(name="global")
-    async def global_drop(self, ctx, name: str):
+    async def global_drop(self, ctx, name: GlobalStoredEmbedConverter):
         """View an embed that is stored globally."""
-        embed = await self.get_global_stored_embed(ctx, name)
-        if embed:
-            await ctx.send(embed=embed[0])
-            async with self.config.embeds() as a:
-                a[name]["uses"] += 1
+        await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
+        async with self.config.embeds() as a:
+            a[name["name"]]["uses"] += 1
 
     @embed.command(name="info")
-    async def com_info(self, ctx, name: str):
+    async def com_info(self, ctx, name: StoredEmbedConverter):
         """Get info about an embed that is stored on this server."""
-        data = await self.get_stored_embed(ctx, name)
-        if data:
-            e = discord.Embed(
-                title=f"`{name}` Info",
-                description=f"Author: <@!{data[1]}>\nUses: {data[2]}\nLength: {len(data[0])}",
-            )
-            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-            await ctx.send(embed=e)
+        e = discord.Embed(
+            title=f"`{name['name']}` Info",
+            description=(
+                f"Author: <@!{name['author']}>\nUses: {name['uses']}\n"
+                f"Length: {len(name['embed'])}"
+            ),
+        )
+        e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
+        await ctx.send(embed=e)
 
     @embed.command(aliases=["delete", "rm", "del"])
     async def remove(self, ctx, name):
@@ -192,27 +215,43 @@ class EmbedUtils(commands.Cog):
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
-    @store.command(name="list")
+    @embed.command(name="list")
     async def store_list(self, ctx):
         """View stored embeds."""
-        embeds = await self.config.guild(ctx.guild).embeds()
+        _embeds = await self.config.guild(ctx.guild).embeds()
+        if not _embeds:
+            return await ctx.send("There are no stored embeds on this server.")
         description = []
 
-        for embed in embeds:
+        for embed in _embeds:
             description.append(f"`{embed}`")
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
+        e = discord.Embed(color=color, title=f"Stored Embeds")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-        await ctx.send(embed=e)
+
+        if len(description) > 2048:
+            embeds = []
+            pages = list(pagify(description, page_length=1024))
+            for index, page in enumerate(pages, start=1):
+                embed = e.copy()
+                embed.description = page
+                embed.set_footer(text=f"{index}/{len(pages)}")
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            e.description = description
+            emoji = self.bot.get_emoji(736038541364297738) or "❌"
+            controls = {emoji: close_menu}
+            await menu(ctx, [e], controls)
 
     @store.command(name="simple")
     async def store_simple(
         self,
         ctx,
         name: str,
-        color: typing.Optional[discord.Color],
+        color: Optional[discord.Color],
         title: str,
         *,
         description: str,
@@ -228,14 +267,12 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @store.command(name="fromdata", aliases=["fromjson"])
-    async def store_fromdata(self, ctx, name: str, *, data):
+    async def store_fromdata(self, ctx, name: str, *, data: StringToEmbed):
         """Store an embed from valid JSON on this server.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
-        e = await self.str_embed_converter(ctx, data)
-        if e:
-            await self.store_embed(ctx, name, e)
+        await self.store_embed(ctx, name, data)
         await ctx.tick()
 
     @store.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
@@ -318,7 +355,7 @@ class EmbedUtils(commands.Cog):
         ctx,
         name: str,
         locked: bool,
-        color: typing.Optional[discord.Color],
+        color: Optional[discord.Color],
         title: str,
         *,
         description: str,
@@ -335,15 +372,13 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @global_store.command(name="fromdata", aliases=["fromjson"])
-    async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data):
+    async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data: StringToEmbed):
         """Store an embed from valid JSON globally.
 
         This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
         Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
         The `locked` argument specifies whether the embed should be locked to owners only."""
-        e = await self.str_embed_converter(ctx, data)
-        if e:
-            await self.global_store_embed(ctx, name, e, locked)
+        await self.global_store_embed(ctx, name, data, locked)
         await ctx.tick()
 
     @global_store.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
@@ -381,16 +416,17 @@ class EmbedUtils(commands.Cog):
         await self.global_store_embed(ctx, name, embed, locked)
 
     @global_store.command(name="info")
-    async def global_info(self, ctx, name: str):
+    async def global_info(self, ctx, name: GlobalStoredEmbedConverter):
         """Get info about an embed that is stored globally."""
-        data = await self.get_global_stored_embed(ctx, name)
-        if data:
-            e = discord.Embed(
-                title=f"`{name}` Info",
-                description=f"Author: <@!{data[1]}>\nUses: {data[2]}\nLength: {len(data[0])}\nLocked: {data[3]}",
-            )
-            e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
-            await ctx.send(embed=e)
+        e = discord.Embed(
+            title=f"`{name['name']}` Info",
+            description=(
+                f"Author: <@!{name['author']}>\nUses: {name['uses']}\n"
+                f"Length: {len(name['embed'])}\nLocked: {name['locked']}"
+            ),
+        )
+        e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
+        await ctx.send(embed=e)
 
     @global_store.command(name="lock")
     async def global_lock(self, ctx, name: str, true_or_false: bool = None):
@@ -408,6 +444,86 @@ class EmbedUtils(commands.Cog):
             await ctx.send(f"`{name}` is now locked to owners only.")
         else:
             await ctx.send(f"`{name}` is now accessible to all users.")
+
+    @commands.check(webhook_check)
+    @commands.admin_or_permissions(manage_webhooks=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
+    @embed.group(invoke_without_command=True)
+    async def webhook(self, ctx: commands.Context, *embeds: StoredEmbedConverter):
+        """Send embeds through webhooks.
+
+        Running this command with stored embed names will send up to 10 embeds through a webhook."""
+        if not embeds:
+            raise commands.BadArgument()
+        cog = self.bot.get_cog("Webhook")
+        await cog.send_to_channel(
+            ctx.channel,
+            ctx.me,
+            ctx.author,
+            ctx=ctx,
+            embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]],
+        )
+
+    @webhook.command(name="global")
+    async def webhook_global(self, ctx: commands.Context, *embeds: GlobalStoredEmbedConverter):
+        """Send global embeds through webhooks.
+
+        Running this command with global stored embed names will send up to 10 embeds through a webhook."""
+        if not embeds:
+            raise commands.BadArgument()
+        cog = self.bot.get_cog("Webhook")
+        await cog.send_to_channel(
+            ctx.channel,
+            ctx.me,
+            ctx.author,
+            ctx=ctx,
+            embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]],
+        )
+
+    @webhook.command(name="fromdata", aliases=["fromjson"])
+    async def webhook_fromdata(self, ctx: commands.Context, *, embeds: ListStringToEmbed):
+        """Send embeds through webhooks.
+
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        cog = self.bot.get_cog("Webhook")
+        try:
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                ctx=ctx,
+                embeds=embeds[:10],
+            )
+        except discord.HTTPException as error:
+            await self.embed_convert_error(ctx, "Embed Send Error", error)
+
+    @webhook.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    async def webhook_fromfile(self, ctx: commands.Context):
+        """Send embeds through webhooks, using files.
+
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        if not ctx.message.attachments:
+            return await ctx.send("You need to provide a file for this..")
+        attachment = ctx.message.attachments[0]
+        content = await attachment.read()
+        try:
+            data = content.decode("utf-8")
+        except UnicodeDecodeError:
+            return await ctx.send("That's not an actual embed file wyd")
+        embeds = await ListStringToEmbed().convert(ctx, data)
+        cog = self.bot.get_cog("Webhook")
+        try:
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                ctx=ctx,
+                embeds=embeds[:10],
+            )
+        except discord.HTTPException as error:
+            await self.embed_convert_error(ctx, "Embed Send Error", error)
 
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
@@ -462,7 +578,7 @@ class EmbedUtils(commands.Cog):
             return
 
     async def str_embed_converter(self, ctx, data):
-        data = data.strip("```")
+        data = data.strip("`")
         try:
             data = json.loads(data)
         except json.decoder.JSONDecodeError as error:
@@ -484,16 +600,14 @@ class EmbedUtils(commands.Cog):
             await self.embed_convert_error(ctx, "Embed Send Error", error)
             return
 
-    async def embed_convert_error(self, ctx, errorType, error):
+    async def embed_convert_error(self, ctx: commands.Context, error_type: str, error: Exception):
         embed = discord.Embed(
-            color=await self.bot.get_embed_color(ctx),
-            title=errorType,
+            color=await ctx.embed_color(),
+            title=error_type,
             description=f"```py\n{error}\n```",
         )
         embed.set_footer(
             text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example"
         )
-        emoji = self.bot.get_emoji(736038541364297738)
-        if not emoji:
-            emoji = "❌"
+        emoji = ctx.bot.get_emoji(736038541364297738) or "❌"
         await menus.menu(ctx, [embed], {emoji: menus.close_menu})

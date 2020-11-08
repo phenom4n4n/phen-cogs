@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 import discord
 from unidecode import unidecode
 from redbot.core import commands
@@ -84,12 +84,13 @@ class TouchableMember(MemberConverter):
         member = await super().convert(ctx, argument)
         if not await is_allowed_by_hierarchy(ctx.bot, ctx.author, member):
             raise BadArgument(
-                "You cannot do that since you aren't higher than that user in hierarchy."
+                f"You cannot do that since you aren't higher than {member} in hierarchy."
                 if self.response
                 else None
             )
         else:
             return member
+
 
 
 class RealEmojiConverter(EmojiConverter):
@@ -124,3 +125,12 @@ class ObjectConverter(IDConverter):
         if not match:
             raise BadArgument
         return discord.Object(int(match.group(0)))
+
+class TargeterArgs(Converter):
+    async def convert(self, ctx: commands.Context, argument: str) -> List[discord.Member]:
+        members = await ctx.bot.get_cog("Targeter").args_to_list(ctx, argument)
+        if not members:
+            raise BadArgument(
+                f"No one was found with the given args.\nCheck out `{ctx.clean_prefix}target help` for an explanation."
+            )
+        return members
