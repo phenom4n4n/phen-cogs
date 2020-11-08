@@ -53,7 +53,7 @@ class Baron(commands.Cog):
         ctx: commands.Context,
         *,
         time: TimedeltaConverter(
-            allowed_units=["weeks", "days", "hours"], default_unit="weeks"
+            allowed_units=["weeks", "days", "hours"], default_unit="weeks" # noqa: F821
         ) = None,
     ):
         """Show a graph of the bot's guild joins over time.
