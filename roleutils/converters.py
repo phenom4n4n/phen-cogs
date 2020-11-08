@@ -1,4 +1,4 @@
-from typing import Union, Dict
+from typing import Tuple, Union
 import discord
 from unidecode import unidecode
 from redbot.core import commands
@@ -109,13 +109,13 @@ class RealEmojiConverter(EmojiConverter):
 class EmojiRole(StrictRole, RealEmojiConverter):
     async def convert(
         self, ctx: commands.Context, argument: str
-    ) -> Dict[discord.Emoji, discord.Role]:
+    ) -> Tuple[Union[discord.Emoji, str], discord.Role]:
         split = argument.split(";")
         if len(split) < 2:
             raise BadArgument
         emoji = await RealEmojiConverter.convert(self, ctx, split[0])
         role = await StrictRole.convert(self, ctx, split[1])
-        return {"emoji": emoji, "role": role}
+        return emoji, role
 
 
 class ObjectConverter(IDConverter):
