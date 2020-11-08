@@ -42,7 +42,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.4"
+    __version__ = "1.2.5"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -164,6 +164,8 @@ class Tags(commands.Cog):
     async def tag_list(self, ctx):
         """View stored tags."""
         tags = await self.config.guild(ctx.guild).tags()
+        if not tags:
+            return await ctx.send("There are no stored tags on this server.")
         description = []
 
         for name, tag in tags.items():
@@ -171,9 +173,23 @@ class Tags(commands.Cog):
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(color=color, title=f"Stored Tags", description=description)
+        e = discord.Embed(color=color, title=f"Stored Tags")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-        await ctx.send(embed=e)
+
+        if len(description) > 2048:
+            embeds = []
+            pages = list(pagify(description, page_length=1024))
+            for index, page in enumerate(pages, start=1):
+                embed = e.copy()
+                embed.description = page
+                embed.set_footer(text=f"{index}/{len(pages)}")
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            e.description = description
+            emoji = self.bot.get_emoji(736038541364297738) or "❌"
+            controls = {emoji: close_menu}
+            await menu(ctx, [e], controls)
 
     @commands.is_owner()
     @commands.mod_or_permissions(manage_guild=True)
