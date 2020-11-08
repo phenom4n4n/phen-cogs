@@ -1,8 +1,16 @@
-from typing import List
+from typing import Tuple, Union, List
 import discord
-import unidecode
+from unidecode import unidecode
 from redbot.core import commands
-from redbot.core.commands import BadArgument, Converter, MemberConverter, RoleConverter
+from rapidfuzz import process
+from redbot.core.commands import (
+    BadArgument,
+    Converter,
+    MemberConverter,
+    RoleConverter,
+    EmojiConverter,
+    IDConverter,
+)
 from redbot.core.utils.chat_formatting import inline
 
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
@@ -33,22 +41,18 @@ class FuzzyRole(RoleConverter):
             return basic_role
         guild = ctx.guild
         result = []
-        raw_arg = argument.lower().replace(" ", "")
-        if guild:
-            for r in guild.roles:
-                if raw_arg in unidecode.unidecode(r.name.lower().replace(" ", "")):
-                    result.append(r)
+        for r in process.extract(
+            argument,
+            {r: unidecode(r.name) for r in guild.roles},
+            limit=None,
+            score_cutoff=75,
+        ):
+            result.append((r[2], r[1]))
 
         if not result:
-            if self.response:
-                raise BadArgument('Role "{}" not found.'.format(argument))
-            else:
-                raise BadArgument
+            raise BadArgument(f'Role "{argument}" not found.' if self.response else None)
 
-        calculated_result = [
-            (role, (len(argument) / len(role.name.replace(" ", ""))) * 100) for role in result
-        ]
-        sorted_result = sorted(calculated_result, key=lambda r: r[1], reverse=True)
+        sorted_result = sorted(result, key=lambda r: r[1], reverse=True)
         return sorted_result[0][0]
 
 
@@ -86,6 +90,40 @@ class TouchableMember(MemberConverter):
             )
         else:
             return member
+
+
+class RealEmojiConverter(EmojiConverter):
+    async def convert(self, ctx: commands.Context, argument: str) -> Union[discord.Emoji, str]:
+        try:
+            emoji = await super().convert(ctx, argument)
+        except BadArgument:
+            try:
+                await ctx.message.add_reaction(argument)
+            except discord.HTTPException:
+                raise BadArgument(f'Emoji "{argument}" not found.')
+            else:
+                emoji = argument
+        return emoji
+
+
+class EmojiRole(StrictRole, RealEmojiConverter):
+    async def convert(
+        self, ctx: commands.Context, argument: str
+    ) -> Tuple[Union[discord.Emoji, str], discord.Role]:
+        split = argument.split(";")
+        if len(split) < 2:
+            raise BadArgument
+        emoji = await RealEmojiConverter.convert(self, ctx, split[0])
+        role = await StrictRole.convert(self, ctx, split[1])
+        return emoji, role
+
+
+class ObjectConverter(IDConverter):
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Object:
+        match = self._get_id_match(argument)
+        if not match:
+            raise BadArgument
+        return discord.Object(int(match.group(0)))
 
 
 class TargeterArgs(Converter):
