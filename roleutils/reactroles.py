@@ -23,7 +23,7 @@ class ReactRoles(MixinMeta):
 
     def __init__(self, *_args):
         super().__init__(*_args)
-        self.method = "fetch"
+        self.method = "build"
         self.cache["reactroles"] = {"message_cache": set()}
 
     async def initialize(self):
@@ -65,13 +65,6 @@ class ReactRoles(MixinMeta):
             if not r["react_to_roleid"]:
                 # None for channel, don't assume the whole channel can stop being tracked
                 self._edit_cache(message.id, True)
-
-    async def delete_reaction_message(self, guild_id: int, message_id: int, *, channel_id: int = None):
-        await self.config.custom(
-            "GuildMessage", guild_id, message_id
-        ).clear()
-        if channel_id:
-            self._edit_cache(message_id, channel_id, True)
 
     def emoji_id(self, emoji: Union[discord.Emoji, str]) -> str:
         return emoji if isinstance(emoji, str) else str(emoji.id)
@@ -120,7 +113,7 @@ class ReactRoles(MixinMeta):
             old_role = ctx.guild.get_role(r["react_to_roleid"].get(emoji_id))
             if old_role:
                 msg = await ctx.send(
-                    f"`{role}` is already binded to {emoji} on {message.jump_url}\n"
+                    f"`{old_role}` is already binded to {emoji} on {message.jump_url}\n"
                     "Would you like to override it?"
                 )
                 start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
