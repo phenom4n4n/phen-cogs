@@ -327,7 +327,7 @@ class Roles(MixinMeta):
     @commands.check(targeter_cog)
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.group()
+    @_role.group()
     async def target(self, ctx: commands.Context):
         """
         Modify roles using 'targeting' args.
