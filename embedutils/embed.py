@@ -6,6 +6,8 @@ from typing import Optional, Union
 import discord
 from redbot.core import Config, checks, commands
 from redbot.core.utils import menus
+from redbot.core.utils.chat_formatting import box, humanize_list, pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 
 from .converters import (
     StringToEmbed,
@@ -213,20 +215,36 @@ class EmbedUtils(commands.Cog):
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
             await ctx.send(embed=e)
 
-    @store.command(name="list")
+    @embed.command(name="list")
     async def store_list(self, ctx):
         """View stored embeds."""
-        embeds = await self.config.guild(ctx.guild).embeds()
+        _embeds = await self.config.guild(ctx.guild).embeds()
+        if not _embeds:
+            return await ctx.send("There are no stored embeds on this server.")
         description = []
 
-        for embed in embeds:
+        for embed in _embeds:
             description.append(f"`{embed}`")
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
+        e = discord.Embed(color=color, title=f"Stored Embeds")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-        await ctx.send(embed=e)
+
+        if len(description) > 2048:
+            embeds = []
+            pages = list(pagify(description, page_length=1024))
+            for index, page in enumerate(pages, start=1):
+                embed = e.copy()
+                embed.description = page
+                embed.set_footer(text=f"{index}/{len(pages)}")
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            e.description = description
+            emoji = self.bot.get_emoji(736038541364297738) or "❌"
+            controls = {emoji: close_menu}
+            await menu(ctx, [e], controls)
 
     @store.command(name="simple")
     async def store_simple(
