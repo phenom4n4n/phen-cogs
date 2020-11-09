@@ -50,18 +50,6 @@ class CustomPing(commands.Cog):
         botPing = round(self.bot.latency * 1000, 2)
         e.description = e.description + f"\nDiscord WebSocket Latency: {botPing}ms"
         await asyncio.sleep(0.25)
-        try:
-            await message.edit(embed=e)
-        except discord.NotFound:
-            return
-
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        loop = asyncio.get_event_loop()
-        s = speedtest.Speedtest(secure=True)
-        await loop.run_in_executor(executor, s.get_servers)
-        await loop.run_in_executor(executor, s.get_best_server)
-        result = s.results.dict()
-        hostPing = round(result["ping"], 2)
 
         averagePing = (botPing + totalPing) / 2
         if averagePing >= 1000:
@@ -72,13 +60,30 @@ class CustomPing(commands.Cog):
             color = discord.Colour.green()
 
         e.color = color
-        e.title = "Pong!"
-        e.description = e.description + f"\nHost Latency: {hostPing}ms"
-        await asyncio.sleep(0.25)
         try:
             await message.edit(embed=e)
         except discord.NotFound:
             return
+
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        loop = asyncio.get_event_loop()
+        try:
+            s = speedtest.Speedtest(secure=True)
+            await loop.run_in_executor(executor, s.get_servers)
+            await loop.run_in_executor(executor, s.get_best_server)
+        except speedtest.ConfigRetrievalError:
+            return
+        else:
+            result = s.results.dict()
+            hostPing = round(result["ping"], 2)
+
+            e.title = "Pong!"
+            e.description = e.description + f"\nHost Latency: {hostPing}ms"
+            await asyncio.sleep(0.25)
+            try:
+                await message.edit(embed=e)
+            except discord.NotFound:
+                return
 
     @ping.command()
     async def moreinfo(self, ctx: commands.Context):
