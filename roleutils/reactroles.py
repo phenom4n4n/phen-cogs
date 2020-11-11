@@ -74,27 +74,27 @@ class ReactRoles(MixinMeta):
     async def reactrole(self, ctx: commands.Context):
         """Base command for Reaction Role management."""
 
-    @commands.admin_or_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    @reactrole.command()
-    async def enable(self, ctx: commands.Context, true_or_false: bool = None):
-        """Toggle reaction roles on or off."""
-        target_state = (
-            true_or_false
-            if true_or_false is not None
-            else not (await self.config.guild(ctx.guild).reactroles.enabled())
-        )
-        await self.config.guild(ctx.guild).reactroles.enabled.set(target_state)
-        if target_state:
-            await ctx.send("Reaction roles have been enabled in this server.")
-            self.cache["reactroles"]["message_cache"].update(
-                await self.config.custom("GuildMessage", ctx.guild.id).all().keys()
-            )
-        else:
-            await ctx.send("Reaction roles have been disabled in this server.")
-            self.cache["reactroles"]["message_cache"].difference_update(
-                await self.config.custom("GuildMessage", ctx.guild.id).all().keys()
-            )
+    # @commands.admin_or_permissions(manage_roles=True)
+    # @commands.bot_has_permissions(manage_roles=True)
+    # @reactrole.command()
+    # async def enable(self, ctx: commands.Context, true_or_false: bool = None):
+    #     """Toggle reaction roles on or off."""
+    #     target_state = (
+    #         true_or_false
+    #         if true_or_false is not None
+    #         else not (await self.config.guild(ctx.guild).reactroles.enabled())
+    #     )
+    #     await self.config.guild(ctx.guild).reactroles.enabled.set(target_state)
+    #     if target_state:
+    #         await ctx.send("Reaction roles have been enabled in this server.")
+    #         self.cache["reactroles"]["message_cache"].update(
+    #             (await self.config.custom("GuildMessage", ctx.guild.id).all()).keys()
+    #         )
+    #     else:
+    #         await ctx.send("Reaction roles have been disabled in this server.")
+    #         self.cache["reactroles"]["message_cache"].difference_update(
+    #             (await self.config.custom("GuildMessage", ctx.guild.id).all()).keys()
+    #         )
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True, add_reactions=True)
