@@ -90,6 +90,8 @@ class Roles(MixinMeta):
     @_role.command(aliases=["dump"])
     async def members(self, ctx: commands.Context, *, role: FuzzyRole):
         """Sends a list of members in a role."""
+        if not role.members:
+            return await ctx.send(f"`{role}` has no members.")
         members = "\n".join([f"{member} - {member.id}" for member in role.members])
         if len(members) > 2000:
             await ctx.send(file=text_to_file(members, f"members.txt"))
