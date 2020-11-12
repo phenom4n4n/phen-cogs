@@ -35,11 +35,11 @@ class NotQuiteNitro(commands.Cog):
         self.config.register_global(**defalt_global)
         self.allowed_mentions = discord.AllowedMentions(users=True, roles=False, everyone=False)
         self.opted_guilds = []
-        self.emojis = []
-        self.recache.start()
+        # self.emojis = []
+        # self.recache.start()
 
-    def cog_unload(self):
-        self.recache.cancel()
+    # def cog_unload(self):
+        # self.recache.cancel()
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -48,15 +48,15 @@ class NotQuiteNitro(commands.Cog):
         await self.bot.wait_until_ready()
         opted_guilds = await self.config.opted_guilds()
         self.opted_guilds = opted_guilds
-        all_guild_data = await self.config.all_guilds()
-        for guild in self.bot.guilds:
-            guild_data = all_guild_data.get(guild.id, {"opted_to_emojis": True})
-            if guild_data["opted_to_emojis"] and guild.emojis:
-                self.emojis.extend(guild.emojis)
+        # all_guild_data = await self.config.all_guilds()
+        # for guild in self.bot.guilds:
+        #     guild_data = all_guild_data.get(guild.id, {"opted_to_emojis": True})
+        #     if guild_data["opted_to_emojis"] and guild.emojis:
+        #         self.emojis.extend(guild.emojis)
 
-    @tasks.loop(seconds=60)
-    async def recache(self):
-        await self.initialize()
+    # @tasks.loop(seconds=60)
+    # async def recache(self):
+    #     await self.initialize()
 
     @commands.guild_only()
     @commands.group(invoke_without_command=True, aliases=["nqn"])
@@ -82,8 +82,8 @@ class NotQuiteNitro(commands.Cog):
         await ctx.send(msg)
         self.opted_guilds = o
 
-    @commands.admin_or_permissions(manage_guild=True)
-    @notquitenitro.command()
+    # @commands.admin_or_permissions(manage_guild=True)
+    # @notquitenitro.command()
     async def optemojis(self, ctx: commands.Context, true_or_false: bool = None):
         """
         Opt in to allow NotQuiteNitro to use this server's emojis.
@@ -115,7 +115,7 @@ class NotQuiteNitro(commands.Cog):
             emoji_name = content.group(1)
             emoji = discord.utils.get(
                 ctx.guild.emojis, name=emoji_name, available=True
-            ) or discord.utils.get(self.emojis, name=emoji_name, available=True)
+            ) or discord.utils.get(self.bot.emojis, name=emoji_name, available=True)
             if emoji:
                 return str(emoji)
             else:
@@ -141,7 +141,7 @@ class NotQuiteNitro(commands.Cog):
             emoji_name = content.group(1)
             emoji = discord.utils.get(
                 guild.emojis, name=emoji_name, available=True
-            ) or discord.utils.get(self.emojis, name=emoji_name, available=True)
+            ) or discord.utils.get(self.bot.emojis, name=emoji_name, available=True)
             if emoji:
                 return str(emoji)
             else:
