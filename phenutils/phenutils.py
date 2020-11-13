@@ -122,5 +122,10 @@ class PhenUtils(commands.Cog):
     @commands.command()
     async def hideping(self, ctx: commands.Context, member: discord.Member, *, text: str = ""):
         """Ping someone in a hidden mention."""
+        if ctx.channel.permissions_for(ctx.me).manage_messages:
+            try:
+                await ctx.message.delete()
+            except discord.HTTPException:
+                pass
         text = self.hide_text(text[:1600], member.mention)
         await ctx.send(text)
