@@ -1,4 +1,3 @@
-import asyncio
 import re
 from typing import Literal
 
@@ -39,7 +38,7 @@ class NotQuiteNitro(commands.Cog):
         # self.recache.start()
 
     # def cog_unload(self):
-        # self.recache.cancel()
+    # self.recache.cancel()
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -87,7 +86,7 @@ class NotQuiteNitro(commands.Cog):
     async def optemojis(self, ctx: commands.Context, true_or_false: bool = None):
         """
         Opt in to allow NotQuiteNitro to use this server's emojis.
-        
+
         By default this server is opted in, however if you would not like other servers with NotQuiteNitro enabled to use this server's emojis, you may opt out with this command.
         NotQuiteNitro will continue to work on this server.
         """
@@ -98,10 +97,14 @@ class NotQuiteNitro(commands.Cog):
         )
         await self.config.guild(ctx.guild).opted_to_emojis.set(target_state)
         if target_state:
-            await ctx.send("Other servers will now be able to use this server's emojis with NotQuiteNitro.")
+            await ctx.send(
+                "Other servers will now be able to use this server's emojis with NotQuiteNitro."
+            )
             await self.initialize()
         else:
-            await ctx.send("Other servers will no longer be able to use this server's emojis with NotQuiteNitro.")
+            await ctx.send(
+                "Other servers will no longer be able to use this server's emojis with NotQuiteNitro."
+            )
             await self.initialize()
 
     @commands.is_owner()
