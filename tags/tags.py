@@ -30,7 +30,7 @@ async def no_send(content: str = None, **kwargs):
 
 async def delete_quietly(message: discord.Message):
     try:
-        await message.delete()
+        asyncio.create_task(message.delete())
     except discord.HTTPException:
         pass
 
@@ -42,7 +42,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.5"
+    __version__ = "1.2.6"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -58,6 +58,7 @@ class Tags(commands.Cog):
         )
         default_guild = {"tags": {}}
         self.config.register_guild(**default_guild)
+
         blocks = stable_blocks + [
             block.MathBlock(),
             block.RandomBlock(),
@@ -75,8 +76,13 @@ class Tags(commands.Cog):
             block.SubstringBlock(),
         ]
         self.engine = Interpreter(blocks)
+        self.role_converter = commands.RoleConverter()
+        self.channel_converter = commands.TextChannelConverter()
+        self.member_converter = commands.MemberConverter()
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
+        if requester not in ("discord_deleted_user", "user"):
+            return
         guilds_data = await self.config.all_guilds()
         for guild_id, data in guilds_data.items():
             guild = self.bot.get_guild(guild_id)
@@ -103,6 +109,7 @@ class Tags(commands.Cog):
         async with self.config.guild(ctx.guild).tags() as t:
             t[tag_name]["uses"] += 1
         seed = {"args": adapter.StringAdapter(args)}
+        log.info(f"Processing tag for {tag_name} on {ctx.guild} ({ctx.guild.id})")
         await self.process_tag(ctx, tag, seed_variables=seed)
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -250,7 +257,7 @@ class Tags(commands.Cog):
             t[name] = {"author": ctx.author.id, "uses": 0, "tag": tagscript}
         await ctx.send(f"Tag stored under the name `{name}`.")
 
-    async def get_stored_tag(self, ctx: commands.Context, name: TagName, response: bool = True):
+    async def get_stored_tag(self, ctx: commands.Context, name: TagName, response: bool = True) -> Optional[Tag]:
         tags = await self.config.guild(ctx.guild).tags()
         tag = tags.get(name)
         if tag:
@@ -280,8 +287,6 @@ class Tags(commands.Cog):
             new_message = copy(message)
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
             ctx = await self.bot.get_context(new_message)
-            if self.bot.user.id in [741074175875088424, 634866217764651009]:  # dev stuff lol
-                log.info(f"Processing tag for {tag_name} on {message.guild}")
             await self.bot.invoke(ctx)
 
     async def process_tag(
