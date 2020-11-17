@@ -175,6 +175,16 @@ class LinkQuoter(commands.Cog):
                 e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})")
             if image:
                 e.set_image(url=image)
+            if ref := message.reference:
+                if not (ref_message := ref.cached_message):
+                    ref_chan = message.guild.get_channel(ref.channel_id)
+                    try:
+                        ref_message = await ref_chan.fetch_message(ref.message_id)
+                    except (discord.Forbidden, discord.NotFound):
+                        pass
+                if ref_message:
+                    jump_url = ref_message.jump_url
+                    e.add_field(name="Replying to", value=f"[{ref_message.content[:1000] if ref_message.content else 'Click to view attachments'}]({jump_url})", inline=False)
             e.add_field(
                 name="Source",
                 value=f'\n[[jump to message]]({message.jump_url} "Follow me to the original message!")',
