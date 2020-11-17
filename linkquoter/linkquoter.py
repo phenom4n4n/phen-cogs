@@ -8,8 +8,8 @@ from redbot.core.commands import Converter
 
 link_regex = re.compile(
     r"https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com"
-    r"\/channels\/(?P<guild_id>[0-9]{15,21})\/(?P<channel_id>"
-    r"[0-9]{15,21})\/(?P<message_id>[0-9]{15,21})\/?"
+    r"\/channels\/(?P<guild_id>[0-9]{15,19})\/(?P<channel_id>"
+    r"[0-9]{15,19})\/(?P<message_id>[0-9]{15,19})\/?"
 )
 
 
