@@ -153,7 +153,7 @@ class NotQuiteNitro(commands.Cog):
         if not re.search(EMOJI_RE, message.content):
             return
         newcontent = re.sub(EMOJI_RE, content_to_emoji, message.content)
-        if newcontent == message.content:
+        if newcontent == message.content or len(newcontent) > 2000: # better to just ignore emoji spammers
             return
         if my_perms.manage_messages:
             try:
