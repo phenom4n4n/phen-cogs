@@ -33,6 +33,9 @@ async def delete_quietly(message: discord.Message):
         asyncio.create_task(message.delete())
     except discord.HTTPException:
         pass
+    except discord.NotFound:
+        pass
+
 
 
 class Tags(commands.Cog):
