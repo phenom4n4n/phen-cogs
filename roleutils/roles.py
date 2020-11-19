@@ -1,5 +1,3 @@
-import asyncio
-import datetime
 import logging
 from typing import Optional
 
@@ -380,9 +378,7 @@ class Roles(MixinMeta):
             return
         verb = "add" if adding else "remove"
         word = "to" if adding else "from"
-        await ctx.send(
-            f"Beginning to {verb} `{role.name}` {word} **{len(member_list)}** members."
-        )
+        await ctx.send(f"Beginning to {verb} `{role.name}` {word} **{len(member_list)}** members.")
         async with ctx.typing():
             result = await self.massrole(member_list, [role], get_audit_reason(ctx.author), adding)
             result_text = f"{verb.title()[:5]}ed `{role.name}` {word} **{len(result['completed'])}** members."

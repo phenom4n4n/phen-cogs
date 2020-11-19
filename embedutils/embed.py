@@ -87,7 +87,9 @@ class EmbedUtils(commands.Cog):
         if channel:
             my_perms = channel.permissions_for(ctx.me)
             auth_perms = channel.permissions_for(ctx.author)
-            if not (my_perms.send_messages and my_perms.embed_links) and (auth_perms.send_messages and auth_perms.embed_links):
+            if not (my_perms.send_messages and my_perms.embed_links) and (
+                auth_perms.send_messages and auth_perms.embed_links
+            ):
                 raise commands.BadArgument
         channel = channel or ctx.channel
         color = color or await ctx.embed_color()

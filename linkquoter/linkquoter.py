@@ -184,7 +184,11 @@ class LinkQuoter(commands.Cog):
                         pass
                 if ref_message:
                     jump_url = ref_message.jump_url
-                    e.add_field(name="Replying to", value=f"[{ref_message.content[:1000] if ref_message.content else 'Click to view attachments'}]({jump_url})", inline=False)
+                    e.add_field(
+                        name="Replying to",
+                        value=f"[{ref_message.content[:1000] if ref_message.content else 'Click to view attachments'}]({jump_url})",
+                        inline=False,
+                    )
             e.add_field(
                 name="Source",
                 value=f'\n[[jump to message]]({message.jump_url} "Follow me to the original message!")',

@@ -1,7 +1,7 @@
 import asyncio
 import time
 from copy import copy
-from typing import Literal, Optional, List
+from typing import Literal, Optional
 
 import logging
 import discord
