@@ -47,7 +47,9 @@ class BanChart(commands.Cog):
         This can take a while for servers with lots of bans."""
         await ctx.trigger_typing()
         ban_count = len(await ctx.guild.bans())
-        limit = max(100, min(10000, min(limit, ban_count)))
+        if not ban_count:
+            return await ctx.send("This server has no bans.")
+        limit = min(10000, min(limit, ban_count))
         await ctx.send(f"Gathering stats for the last {limit} bans.")
         await ctx.trigger_typing()
         counter = Counter()
