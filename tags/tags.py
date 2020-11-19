@@ -1,7 +1,7 @@
 import asyncio
 import time
 from copy import copy
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 
 import logging
 import discord
@@ -30,7 +30,7 @@ async def no_send(content: str = None, **kwargs):
 
 async def delete_quietly(message: discord.Message):
     try:
-        asyncio.create_task(message.delete())
+        await message.delete()
     except discord.HTTPException:
         pass
 
@@ -42,7 +42,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.6"
+    __version__ = "1.2.7"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -307,7 +307,7 @@ class Tags(commands.Cog):
 
         output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
         to_gather = []
-        commands_to_process = []
+        command_messages = []
         content = output.body[:2000] if output.body else None
         actions = output.actions
         embed = actions.get("embed")
@@ -315,7 +315,7 @@ class Tags(commands.Cog):
         if actions:
             if actions.get("delete"):
                 if ctx.channel.permissions_for(ctx.me).manage_messages:
-                    await delete_quietly(ctx.message)
+                    to_gather.append(delete_quietly(ctx.message))
             if actions.get("commands"):
                 for command in actions["commands"]:
                     if command.startswith("tag"):
@@ -323,24 +323,21 @@ class Tags(commands.Cog):
                         return
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
-                    commands_to_process.append(self.bot.get_context(new))
+                    command_messages.append(new)
 
+        # this is going to become an asynchronous swamp
         if content or embed:
-            try:
-                await ctx.send(content, embed=embed)
-            except discord.HTTPException:
-                return await ctx.send(
-                    "I failed to send that embed. The tag has stopped processing."
-                )
+            to_gather.append(ctx.send(content, embed=embed))
+        if command_messages:
+            silent = actions.get("silent")
+            to_gather.append(asyncio.gather(*[self.process_command(message, silent) for message in command_messages]))
 
         if to_gather:
             await asyncio.gather(*to_gather)
-        if commands_to_process:
-            ctxes = await asyncio.gather(*commands_to_process)
-            if actions.get("silent"):
-                for ctx in ctxes:
-                    setattr(ctx, "send", no_send)
-            try:
-                await asyncio.gather(*[self.bot.invoke(ctx) for ctx in ctxes])
-            except Exception:
-                pass
+
+    async def process_command(self, command_message: discord.Message, silent: bool = False):
+        ctx = await self.bot.get_context(command_message) # TODO custom cls context to make silence easier?
+        if ctx.valid:
+            if silent:
+                setattr(ctx, "send", no_send)
+            await self.bot.invoke(ctx)
