@@ -178,7 +178,7 @@ class ReactRoles(MixinMeta):
                 await delete_quietly(m)
                 name = msg.content
 
-        description = f"React to the following roles to receive the corresponding emoji:\n"
+        description = f"React to the following emoji to receive the corresponding role:\n"
         for (emoji, role) in emoji_role_groups:
             description += f"{emoji}: {role.mention}\n"
         e = discord.Embed(title=name[:256], color=color, description=description)
