@@ -9,7 +9,7 @@ async def is_allowed_by_hierarchy(bot: Red, mod: discord.Member, member: discord
     return mod.top_role.position >= member.top_role.position or await bot.is_owner(mod)
 
 
-def is_allowed_by_role_hierarchy(
+async def is_allowed_by_role_hierarchy(
     bot: Red,
     bot_me: discord.Member,
     mod: discord.Member,
@@ -19,7 +19,7 @@ def is_allowed_by_role_hierarchy(
         return (False, f"I am not higher than `{role}` in hierarchy.")
     else:
         return (
-            (mod.top_role.position > role.position) or mod == mod.guild.owner,
+            (mod.top_role.position > role.position) or mod.id == mod.guild.owner.id or await bot.is_owner(mod),
             f"You are not higher than `{role}` in hierarchy.",
         )
 

@@ -173,7 +173,7 @@ class Roles(MixinMeta):
         already_added = []
         to_add = []
         for role in roles:
-            allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
+            allowed = await is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
             if not allowed[0]:
                 not_allowed.append(role)
             elif role in member.roles:
@@ -207,7 +207,7 @@ class Roles(MixinMeta):
         not_added = []
         to_rm = []
         for role in roles:
-            allowed = is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
+            allowed = await is_allowed_by_role_hierarchy(self.bot, ctx.me, ctx.author, role)
             if not allowed[0]:
                 not_allowed.append(role)
             elif role not in member.roles:
