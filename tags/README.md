@@ -3,6 +3,8 @@
 Welcome to the incomplete TagScript documentation. This will explain the custom TagScript blocks. If a block you are looking for isn't here, then you should check if its in the base [TagScriptEngine docs](https://github.com/JonSnowbd/TagScript).
 
 ### Blocks:
+- require
+- blacklist
 - command
 - delete
 - silent
@@ -21,10 +23,31 @@ Welcome to the incomplete TagScript documentation. This will explain the custom 
 
 `<arg>` = Required
 
+**Require Block**
+
+Usage: `{require(<role,channel>):[response]}`
+
+Aliases: `whitelist`
+
+Payload: role, channel
+
+Parameter: response, None
+
+This block will attempt to convert the given payload into a channel or role, using name or ID. If the user running the tag is not in the targeted channel or doesn't have the targeted role, the tag will stop processing and it will send the response if one is given. Multiple role or channel requirements can be given, and should be split by a ",".
+
+**Blacklist Block**
+
+Usage: `{blacklist(<role,channel>):[response]}`
+
+Payload: role, channel
+
+Parameter: response, None
+
+Same usage and syntax as the require block, but instead of requiring the given channel or roles, it will block using the tag with those roles.
 
 **Command Block**
 
-Usage: `{command: <command>}`
+Usage: `{command:<command>}`
 
 Aliases: `c, com, command`
 

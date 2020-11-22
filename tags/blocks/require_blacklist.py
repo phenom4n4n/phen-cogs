@@ -25,7 +25,7 @@ class RequireBlock(Block):
 class BlacklistBlock(Block):
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
-        return any([dec == "block", dec == "blacklist"])
+        return dec == "blacklist"
 
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if not ctx.verb.parameter:
