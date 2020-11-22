@@ -15,8 +15,10 @@ class RequireBlock(Block):
         actions = ctx.response.actions.get("requires")
         if actions:
             return None
-        ctx.response.actions["requires"] = ctx.verb.parameter.split(",")
-        ctx.response.actions["require_response"] = ctx.verb.payload
+        ctx.response.actions["requires"] = {
+            "items": ctx.verb.parameter.split(","),
+            "response": ctx.verb.payload,
+        }
         return ""
 
 
@@ -31,6 +33,8 @@ class BlacklistBlock(Block):
         actions = ctx.response.actions.get("blacklist")
         if actions:
             return None
-        ctx.response.actions["blacklist"] = ctx.verb.parameter.split(",")
-        ctx.response.actions["blacklist_response"] = ctx.verb.payload
+        ctx.response.actions["blacklist"] = {
+            "items": ctx.verb.parameter.split(","),
+            "response": ctx.verb.payload,
+        }
         return ""

@@ -1,7 +1,7 @@
 import asyncio
 import time
 from copy import copy
-from typing import Literal, Optional
+from typing import Literal, Optional, Tuple
 
 import logging
 import discord
@@ -42,7 +42,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.7"
+    __version__ = "1.2.8"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -257,7 +257,9 @@ class Tags(commands.Cog):
             t[name] = {"author": ctx.author.id, "uses": 0, "tag": tagscript}
         await ctx.send(f"Tag stored under the name `{name}`.")
 
-    async def get_stored_tag(self, ctx: commands.Context, name: TagName, response: bool = True) -> Optional[Tag]:
+    async def get_stored_tag(
+        self, ctx: commands.Context, name: TagName, response: bool = True
+    ) -> Optional[Tag]:
         tags = await self.config.guild(ctx.guild).tags()
         tag = tags.get(name)
         if tag:
@@ -313,6 +315,14 @@ class Tags(commands.Cog):
         embed = actions.get("embed")
 
         if actions:
+            if actions.get("requires") or actions.get("blacklist"):
+                check, response = await self.validate_checks(ctx, actions)
+                if not check:
+                    if response:
+                        await ctx.send(response[:2000])
+                    else:
+                        await start_adding_reactions(ctx.message, ["❌"])
+                    return
             if actions.get("delete"):
                 if ctx.channel.permissions_for(ctx.me).manage_messages:
                     to_gather.append(delete_quietly(ctx.message))
@@ -330,14 +340,50 @@ class Tags(commands.Cog):
             to_gather.append(ctx.send(content, embed=embed))
         if command_messages:
             silent = actions.get("silent")
-            to_gather.append(asyncio.gather(*[self.process_command(message, silent) for message in command_messages]))
+            to_gather.append(
+                asyncio.gather(
+                    *[self.process_command(message, silent) for message in command_messages]
+                )
+            )
 
         if to_gather:
             await asyncio.gather(*to_gather)
 
     async def process_command(self, command_message: discord.Message, silent: bool = False):
-        ctx = await self.bot.get_context(command_message) # TODO custom cls context to make silence easier?
+        ctx = await self.bot.get_context(
+            command_message
+        )  # TODO custom cls context to make silence easier?
         if ctx.valid:
             if silent:
                 setattr(ctx, "send", no_send)
             await self.bot.invoke(ctx)
+
+    async def validate_checks(self, ctx: commands.Context, actions: dict) -> Tuple[bool, str]:
+        role_ids = [r.id for r in ctx.author.roles]
+        channel_id = ctx.channel.id
+        if requires := actions.get("requires"):
+            for argument in requires["items"]:
+                role_or_channel = await self.role_or_channel_convert(ctx, argument)
+                if role_or_channel:
+                    if isinstance(role_or_channel, discord.Role):
+                        if role_or_channel.id not in role_ids:
+                            return False, requires["response"]
+                    else:
+                        if role_or_channel.id != channel_id:
+                            return False, requires["response"]
+        if blacklist := actions.get("blacklist"):
+            for argument in blacklist["items"]:
+                role_or_channel = await self.role_or_channel_convert(ctx, argument)
+                if role_or_channel:
+                    if isinstance(role_or_channel, discord.Role):
+                        if role_or_channel.id in role_ids:
+                            return False, blacklist["response"]
+                    else:
+                        if role_or_channel.id == channel_id:
+                            return False, blacklist["response"]
+        return True, ""
+
+    async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
+        objects = await asyncio.gather(self.role_converter.convert(ctx, argument), self.channel_converter.convert(ctx, argument), return_exceptions=True)
+        objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
+        return objects[0] if objects else None
