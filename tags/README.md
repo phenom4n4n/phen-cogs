@@ -1,8 +1,8 @@
-# Tags [WIP]
+# **Tag Documentation**
 
 Welcome to the incomplete TagScript documentation. This will explain the custom TagScript blocks. If a block you are looking for isn't here, then you should check if its in the base [TagScriptEngine docs](https://github.com/JonSnowbd/TagScript).
 
-### Blocks:
+### **Blocks:**
 - require
 - blacklist
 - command

@@ -2,6 +2,7 @@ import asyncio
 import time
 from copy import copy
 from typing import Literal, Optional, Tuple
+from pathlib import Path
 
 import logging
 import discord
@@ -42,7 +43,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.8"
+    __version__ = "1.2.9"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -256,6 +257,22 @@ class Tags(commands.Cog):
         async with self.config.guild(ctx.guild).tags() as t:
             t[name] = {"author": ctx.author.id, "uses": 0, "tag": tagscript}
         await ctx.send(f"Tag stored under the name `{name}`.")
+
+    # thanks trusty, https://github.com/TrustyJAID/Trusty-cogs/blob/master/retrigger/retrigger.py#L1065
+    @tag.command()
+    async def explain(self, ctx: commands.Context):
+        """View Tag block documentation."""
+        with open(Path(__file__).parent / "README.md", "r", encoding="utf8") as infile:
+            data = infile.read()
+        pages = list(pagify(data, ["\n\n\n", "\n\n"], page_length=500, priority=True))
+        embeds = []
+        e = discord.Embed(title="Tags", color=await ctx.embed_color())
+        for index, page in enumerate(pages, start=1):
+            embed = e.copy()
+            embed.description = page
+            embed.set_footer(text=f"{index}/{len(pages)}")
+            embeds.append(embed)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     async def get_stored_tag(
         self, ctx: commands.Context, name: TagName, response: bool = True
