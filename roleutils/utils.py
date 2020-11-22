@@ -15,7 +15,7 @@ async def is_allowed_by_role_hierarchy(
     mod: discord.Member,
     role: discord.Role,
 ) -> Tuple[bool, str]:
-    if role.position >= bot_me.top_role.position:
+    if role.position >= bot_me.top_role.position and not bot_me.id == mod.guild.owner.id:
         return (False, f"I am not higher than `{role}` in hierarchy.")
     else:
         return (
