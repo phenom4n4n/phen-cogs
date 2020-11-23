@@ -14,6 +14,7 @@ Welcome to the incomplete TagScript documentation. This will explain the custom 
 - channel
 - server
 - embed
+- react
 
 **Block Syntax:**
 
@@ -164,8 +165,18 @@ description
 
 Usage: `{embed(<json>)}`
 
-Payload: json
+Payload: None
 
-Parameter: None
+Parameter: json
 
 Embed blocks will send an embed in the tag response.
+
+**React Block**
+
+Usage: `{react(<emoji,emoji>)}`
+
+Payload: None
+
+Parameter: emoji
+
+The react block will react with up to 5 emoji to the tag invocation message. The given emoji can be custom or unicode emoji. Emoji can be split with ",".

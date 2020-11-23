@@ -43,7 +43,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.9"
+    __version__ = "1.2.10"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -80,6 +80,7 @@ class Tags(commands.Cog):
         self.role_converter = commands.RoleConverter()
         self.channel_converter = commands.TextChannelConverter()
         self.member_converter = commands.MemberConverter()
+        self.emoji_converter = commands.EmojiConverter()
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         if requester not in ("discord_deleted_user", "user"):
@@ -338,11 +339,13 @@ class Tags(commands.Cog):
                     if response:
                         await ctx.send(response[:2000])
                     else:
-                        await start_adding_reactions(ctx.message, ["❌"])
+                        start_adding_reactions(ctx.message, ["❌"])
                     return
-            if actions.get("delete"):
+            if delete := actions.get("delete"):
                 if ctx.channel.permissions_for(ctx.me).manage_messages:
                     to_gather.append(delete_quietly(ctx.message))
+            if not delete and actions.get("react"):
+                to_gather.append(self.do_reactions(ctx, actions))
             if actions.get("commands"):
                 for command in actions["commands"]:
                     if command.startswith("tag"):
@@ -404,3 +407,15 @@ class Tags(commands.Cog):
         objects = await asyncio.gather(self.role_converter.convert(ctx, argument), self.channel_converter.convert(ctx, argument), return_exceptions=True)
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
+
+    async def do_reactions(self, ctx: commands.Context, actions: dict):
+        if react := actions.get("react"):
+            for arg in react:
+                try:
+                    arg = await self.emoji_converter.convert(ctx, arg)
+                except commands.BadArgument:
+                    pass
+                try:
+                    await ctx.message.add_reaction(arg)
+                except discord.HTTPException:
+                    pass
