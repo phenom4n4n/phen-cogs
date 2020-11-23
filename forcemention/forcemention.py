@@ -18,7 +18,7 @@ class ForceMention(commands.Cog):
         return
 
     @checks.bot_has_permissions(manage_roles=True)
-    @checks.admin_or_permissions(manage_roles=True)
+    @checks.admin_or_permissions(mention_everyone=True)
     @commands.command(name="forcemention")
     async def cmd_forcemention(
         self, ctx: commands.Context, role: discord.Role, *, message: str = None
