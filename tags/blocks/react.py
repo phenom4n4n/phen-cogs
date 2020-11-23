@@ -12,7 +12,7 @@ class ReactBlock(Block):
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if not ctx.verb.parameter:
             return None
-        ctx.response.actions["react"] = [arg.strip() for arg ctx.verb.parameter.split(",")[:5]]
+        ctx.response.actions["react"] = [arg.strip() for arg in ctx.verb.parameter.split(",")[:5]]
         return ""
 
 class ReactUBlock(Block):
@@ -23,5 +23,5 @@ class ReactUBlock(Block):
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if not ctx.verb.parameter:
             return None
-        ctx.response.actions["reactu"] = [arg.strip() for arg ctx.verb.parameter.split(",")[:5]]
+        ctx.response.actions["reactu"] = [arg.strip() for arg in ctx.verb.parameter.split(",")[:5]]
         return ""
