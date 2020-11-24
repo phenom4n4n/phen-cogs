@@ -69,7 +69,7 @@ class EmbedUtils(commands.Cog):
                         del e[name]
 
     @commands.guild_only()
-    @checks.has_permissions(embed_links=True)
+    @checks.mod_or_permissions(embed_links=True)
     @checks.bot_has_permissions(embed_links=True)
     @commands.group(invoke_without_command=True)
     async def embed(
