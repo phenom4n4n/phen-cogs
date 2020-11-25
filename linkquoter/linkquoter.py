@@ -1,5 +1,6 @@
 import re
 from typing import Union
+import asyncio
 
 import discord
 from redbot.core import Config, checks, commands
@@ -100,6 +101,18 @@ class LinkQuoter(commands.Cog):
             "respect_perms": False,
         }
         self.config.register_guild(**default_guild)
+
+        self.enabled_guilds = []
+        self.task = asyncio.create_task(self.initialize())
+
+    def cog_unload(self):
+        if self.task:
+            self.task.cancel()
+
+    async def initialize(self):
+        for guild_id, guild_data in (await self.config.all_guilds()).items():
+            if guild_data["on"]:
+                self.enabled_guilds.append(guild_id)
 
     async def get_messages(self, guild: discord.Guild, author: discord.Member, links: list):
         messages = []
@@ -232,8 +245,12 @@ class LinkQuoter(commands.Cog):
         await self.config.guild(ctx.guild).on.set(target_state)
         if target_state:
             await ctx.send("I will now automatically quote links.")
+            if ctx.guild.id not in self.enabled_guilds:
+                self.enabled_guilds.append(ctx.guild.id)
         else:
             await ctx.send("I will no longer automatically quote links.")
+            if ctx.guild.id in self.enabled_guilds:
+                self.enabled_guilds.pop(self.enabled_guilds.index(ctx.guild.id))
 
     @commands.admin_or_permissions(manage_guild=True)
     @linkquote.command(name="global")
@@ -276,19 +293,22 @@ class LinkQuoter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if message.author.bot or not (
+        if message.author.bot:
+            return
+        if not (
             message.guild and await self.bot.message_eligible_as_command(message)
         ):
             return
-
-        if not await self.config.guild(message.guild).on():
+        guild: discord.Guild = message.guild
+        if guild.id not in self.enabled_guilds or "no quote" in message.content.lower():
             return
+        channel: discord.TextChannel = message.channel
 
         ctx = commands.Context(
             message=message,
             author=message.author,
-            guild=message.guild,
-            channel=message.channel,
+            guild=guild,
+            channel=channel,
             me=message.guild.me,
             bot=self.bot,
             prefix="auto_linkquote",
