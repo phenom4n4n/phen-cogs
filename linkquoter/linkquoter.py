@@ -293,7 +293,7 @@ class LinkQuoter(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if message.author.bot:
+        if message.author.bot or isinstance(message.author, discord.User):
             return
         if not (
             message.guild and await self.bot.message_eligible_as_command(message)
