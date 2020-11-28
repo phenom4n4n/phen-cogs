@@ -372,6 +372,8 @@ class Roles(MixinMeta):
         fail_message: str = "Everyone in the server has this role.",
         adding: bool = True,
     ):
+        if ctx.guild.chunked is False and self.bot.intents.members:
+            await ctx.guild.chunk()
         member_list = self.get_member_list(members, role, adding)
         if not member_list:
             await ctx.send(fail_message)

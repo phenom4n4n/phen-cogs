@@ -573,6 +573,10 @@ class Baron(commands.Cog):
         elif guild.id in data["blacklist"]:
             await guild.leave()
             await self.baron_log("bl_leave", guild=guild)
+
+        if guild.chunked is False and self.bot.intents.members:
+            await guild.chunk()
+
         if data["limit"] and len(self.bot.guilds) > data["limit"]:
             await self.notify_guild(
                 guild,
