@@ -231,6 +231,14 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @_role.command()
+    async def color(self, ctx: commands.Context, role: StrictRole, color: discord.Color):
+        """Chage a role's color."""
+        await role.edit(color=color)
+        await ctx.send(f"**{role}** color changed to **{color}**.", embed=await self.get_info(role))
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @_role.command()
     async def all(self, ctx: commands.Context, *, role: StrictRole):
         """Add a role to all members of the server."""
         await self.super_massrole(ctx, ctx.guild.members, role)
