@@ -69,7 +69,7 @@ class ReactRoles(MixinMeta):
     def emoji_id(self, emoji: Union[discord.Emoji, str]) -> str:
         return emoji if isinstance(emoji, str) else str(emoji.id)
 
-    @commands.is_owner()
+    @commands.admin_or_permissions(manage_roles=True)
     @commands.group(aliases=["rr"])
     async def reactrole(self, ctx: commands.Context):
         """Base command for Reaction Role management."""
@@ -96,7 +96,6 @@ class ReactRoles(MixinMeta):
     #             (await self.config.custom("GuildMessage", ctx.guild.id).all()).keys()
     #         )
 
-    @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_guild_permissions(manage_roles=True, add_reactions=True)
     @reactrole.command(name="bind")
     async def reactrole_add(
@@ -140,7 +139,6 @@ class ReactRoles(MixinMeta):
             if message.channel.id not in ch:
                 ch.append(message.channel.id)
 
-    @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True, embed_links=True)
     @reactrole.command(name="create")
     async def reactrole_create(
@@ -210,7 +208,6 @@ class ReactRoles(MixinMeta):
             if message.channel.id not in ch:
                 ch.append(message.channel.id)
 
-    @commands.admin_or_permissions(manage_roles=True)
     @reactrole.group(name="delete", aliases=["remove"], invoke_without_command=True)
     async def reactrole_delete(
         self,
@@ -254,7 +251,6 @@ class ReactRoles(MixinMeta):
                 return await ctx.send("That wasn't a valid emoji for that message.")
         await ctx.send(f"That emoji role bind was deleted.")
 
-    @commands.admin_or_permissions(manage_roles=True)
     @reactrole.command(name="list")
     async def react_list(self, ctx: commands.Context):
         """View the reaction roles on this server."""
