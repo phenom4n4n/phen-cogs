@@ -77,7 +77,15 @@ class Webhook(commands.Cog):
     async def say(self, ctx: commands.Context, *, message: str):
         """Sends a message to the channel as a webhook with your avatar and display name."""
         await delete_quietly(ctx)
-        await self.send_to_channel(ctx.channel, ctx.me, ctx.author, ctx=ctx, content=message)
+        await self.send_to_channel(
+            ctx.channel,
+            ctx.me,
+            ctx.author,
+            ctx=ctx,
+            content=message,
+            avatar_url=ctx.author.avatar_url,
+            username=ctx.author.display_name,
+        )
 
     @checks.admin_or_permissions(manage_webhooks=True)
     @checks.bot_has_permissions(manage_webhooks=True)
@@ -108,9 +116,7 @@ class Webhook(commands.Cog):
             content=message,
             avatar_url=member.avatar_url,
             username=member.display_name,
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False, roles=False, users=True
-            ),
+            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True),
         )
 
     @checks.admin_or_permissions(manage_webhooks=True, manage_guild=True)
@@ -127,9 +133,7 @@ class Webhook(commands.Cog):
             content=message,
             avatar_url="https://discordapp.com/assets/f78426a064bc9dd24847519259bc42af.png",
             username="C​I​​​​​​y​d​e",
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False, roles=False, users=True
-            ),
+            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True),
         )
 
     @commands.max_concurrency(1, commands.BucketType.guild)
@@ -323,9 +327,7 @@ class Webhook(commands.Cog):
             return webhook
         if channel.permissions_for(me).manage_webhooks:
             chan_hooks = await channel.webhooks()
-            webhook_list = [
-                w for w in chan_hooks if w.type == discord.WebhookType.incoming
-            ]
+            webhook_list = [w for w in chan_hooks if w.type == discord.WebhookType.incoming]
             if webhook_list:
                 webhook = webhook_list[0]
             else:
