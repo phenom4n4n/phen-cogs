@@ -404,7 +404,11 @@ class Tags(commands.Cog):
         return True, ""
 
     async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
-        objects = await asyncio.gather(self.role_converter.convert(ctx, argument), self.channel_converter.convert(ctx, argument), return_exceptions=True)
+        objects = await asyncio.gather(
+            self.role_converter.convert(ctx, argument),
+            self.channel_converter.convert(ctx, argument),
+            return_exceptions=True,
+        )
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
 

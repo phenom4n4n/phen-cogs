@@ -234,7 +234,9 @@ class Roles(MixinMeta):
     async def color(self, ctx: commands.Context, role: StrictRole, color: discord.Color):
         """Chage a role's color."""
         await role.edit(color=color)
-        await ctx.send(f"**{role}** color changed to **{color}**.", embed=await self.get_info(role))
+        await ctx.send(
+            f"**{role}** color changed to **{color}**.", embed=await self.get_info(role)
+        )
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
