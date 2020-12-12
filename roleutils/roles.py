@@ -102,7 +102,7 @@ class Roles(MixinMeta):
     async def create(
         self,
         ctx: commands.Context,
-        color: Optional[discord.Color] = None,
+        color: Optional[discord.Color] = discord.Color.default(),
         hoist: Optional[bool] = False,
         *,
         name: str = None,
@@ -110,7 +110,6 @@ class Roles(MixinMeta):
         """Creates a role.
 
         Color and whether it is hoisted can be specified."""
-        color = color or discord.Color.default()
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
         await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
@@ -232,7 +231,7 @@ class Roles(MixinMeta):
     @commands.bot_has_permissions(manage_roles=True)
     @_role.command()
     async def color(self, ctx: commands.Context, role: StrictRole, color: discord.Color):
-        """Chage a role's color."""
+        """Change a role's color."""
         await role.edit(color=color)
         await ctx.send(
             f"**{role}** color changed to **{color}**.", embed=await self.get_info(role)

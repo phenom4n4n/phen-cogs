@@ -322,8 +322,9 @@ class Webhook(commands.Cog):
         if webhook := self.cache.get(channel.id):
             return webhook
         if channel.permissions_for(me).manage_webhooks:
+            chan_hooks = await channel.webhooks()
             webhook_list = [
-                w for w in (await channel.webhooks()) if w.type == discord.WebhookType.incoming
+                w for w in chan_hooks if w.type == discord.WebhookType.incoming
             ]
             if webhook_list:
                 webhook = webhook_list[0]
@@ -331,6 +332,8 @@ class Webhook(commands.Cog):
                 creation_reason = f"Webhook creation requested by {author} ({author.id})"
                 if reason:
                     creation_reason += f" Reason: {reason}"
+                if len(chan_hooks) == 10:
+                    await chan_hooks[-1].delete()
                 webhook = await channel.create_webhook(
                     name=f"{me.name} Webhook",
                     reason=creation_reason,
