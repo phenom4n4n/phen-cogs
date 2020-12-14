@@ -30,7 +30,7 @@ class FuzzyMember(MemberConverter):
             result = []
             for m in process.extract(
                 argument,
-                {m: unidecode(m.name) for m in guild.members},
+                {m: unidecode(m.display_name) for m in guild.members},
                 limit=None,
                 score_cutoff=75,
             ):
