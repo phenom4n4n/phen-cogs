@@ -465,11 +465,11 @@ class Baron(commands.Cog):
             try:
                 guild_data = data[str(guild.id)]
             except KeyError:
-                guilds.append((guild, 0))
+                guilds.append(guild)
             else:
                 total_commands = sum(guild_data.values())
                 if total_commands < commands:
-                    guilds.append((guild, total_commands))
+                    guilds.append(guild)
         if not guilds:
             await ctx.send(f"There are no servers with a command usage count less than {commands}.")
         await self.leave_guilds(
