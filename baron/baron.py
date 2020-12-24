@@ -360,9 +360,7 @@ class Baron(commands.Cog):
             except KeyError:
                 guilds.append((guild, 0))
             else:
-                total_commands = 0
-                for value in guild_data.values():
-                    total_commands += value
+                total_commands = sum(guild_data.values())
                 if total_commands < commands:
                     guilds.append((guild, total_commands))
         guilds.sort(key=lambda x: x[1], reverse=highest_first)
@@ -453,6 +451,31 @@ class Baron(commands.Cog):
             ctx,
             guilds,
             f"I have automatically left this server since it has less than {members} members.",
+        )
+
+    @commands.check(comstats_cog)
+    @leave.command(name="commands")
+    async def leave_commands(self, ctx: commands.Context, commands: int):
+        """Leave all servers that have used less commands than the given number."""
+        cog = self.bot.get_cog("CommandStats")
+        data = await cog.config.guilddata()
+        guilds = []
+
+        for guild in self.bot.guilds:
+            try:
+                guild_data = data[str(guild.id)]
+            except KeyError:
+                guilds.append((guild, 0))
+            else:
+                total_commands = sum(guild_data.values())
+                if total_commands < commands:
+                    guilds.append((guild, total_commands))
+        if not guilds:
+            await ctx.send(f"There are no servers with a command usage count less than {commands}.")
+        await self.leave_guilds(
+            ctx,
+            guilds,
+            f"I have automatically left this server since it has used less than {commands} commands.",
         )
 
     async def leave_guilds(self, ctx: commands.Context, guilds: list, message: str):
