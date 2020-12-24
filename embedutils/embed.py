@@ -14,6 +14,7 @@ from .converters import (
     StoredEmbedConverter,
     GlobalStoredEmbedConverter,
     ListStringToEmbed,
+    MyMessageConverter,
 )
 
 
@@ -202,6 +203,67 @@ class EmbedUtils(commands.Cog):
             await ctx.tick()
         except asyncio.TimeoutError:
             await ctx.send("Ok, not removing this data..")
+
+    @commands.mod_or_permissions(manage_messages=True)
+    @embed.group(name="edit", invoke_without_command=True)
+    async def embed_edit(
+        self,
+        ctx: commands.Context,
+        message: MyMessageConverter,
+        color: Optional[discord.Color],
+        title: str,
+        *,
+        description: str,
+    ):
+        """
+        Edit a message sent by me's embeds.
+        """
+        color = color or await ctx.embed_color()
+        e = discord.Embed(color=color, title=title, description=description)
+        await message.edit(embed=e)
+        await ctx.tick()
+
+    @embed_edit.command(name="fromdata", aliases=["fromjson"])
+    async def embed_edit_fromdata(
+        self, ctx: commands.Context, message: MyMessageConverter, *, data: StringToEmbed
+    ):
+        """Edit a message's embed using valid JSON.
+
+        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        await message.edit(embed=data)
+        await ctx.tick()
+
+    @embed_edit.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    async def embed_edit_fromfile(self, ctx: commands.Context):
+        """Edit a message's embed using a valid JSON file.
+
+        This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
+        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        if not ctx.message.attachments:
+            return await ctx.send("You need to provide a file for this..")
+        attachment = ctx.message.attachments[0]
+        content = await attachment.read()
+        try:
+            data = content.decode("utf-8")
+        except UnicodeDecodeError:
+            return await ctx.send("That's not an actual embed file wyd")
+        e = await StringToEmbed().convert(ctx, data)
+        await message.edit(embed=data)
+        await ctx.tick()
+
+    @embed_edit.command(name="frommsg", aliases=["frommessage"])
+    async def embed_edit_frommsg(
+        self, ctx: commands.Context, message: MyMessageConverter, index: int = 0
+    ):
+        """Edit a message's embed using another message's embed.
+
+        If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
+        embed = await self.frommsg(ctx, message, index)
+        if not embed:
+            return
+        await message.edit(embed=embed)
+        await ctx.tick()
 
     @checks.mod_or_permissions(manage_guild=True)
     @embed.group()

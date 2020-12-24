@@ -1,7 +1,7 @@
 from typing import List
 import discord
 from redbot.core import commands
-from redbot.core.commands import Converter, BadArgument, CheckFailure
+from redbot.core.commands import Converter, BadArgument, CheckFailure, MessageConverter
 import json
 from redbot.core.utils import menus
 import asyncio
@@ -106,3 +106,15 @@ class GlobalStoredEmbedConverter(Converter):
             return embed
         else:
             raise BadArgument(f'Global embed "{name}" not found.')
+
+
+class MyMessageConverter(MessageConverter):
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
+        message = await super().convert(ctx, argument)
+        if message.author.id != ctx.me.id:
+            raise BadArgument(f"That is not a message sent by me.")
+        elif not message.channel.permissions_for(ctx.me).send_messages:
+            raise BadArgument(
+                f"I do not have permissions to send/edit messages in {message.channel.mention}."
+            )
+        return message
