@@ -148,7 +148,7 @@ class LinkQuoter(commands.Cog):
                 continue
         return messages
 
-    async def create_embeds(self, messages: list):
+    async def create_embeds(self, messages: list, *, guild: discord.Guild = None):
         embeds = []
         for message in messages:
             image = False
@@ -168,7 +168,7 @@ class LinkQuoter(commands.Cog):
                 if str(embed.type) == "image" or str(embed.type) == "article":
                     image = embed.url
             elif not message.content and not message.embeds and not message.attachments:
-                return
+                continue
             if not e:
                 content = message.content
                 e = discord.Embed(
@@ -181,6 +181,13 @@ class LinkQuoter(commands.Cog):
                     icon_url=message.author.avatar_url,
                     url=message.jump_url,
                 )
+                e.set_footer(text=f"#{message.channel.name}")
+            if guild and message.guild.id != guild.id:
+                e.set_footer(
+                    icon_url=message.guild.icon_url,
+                    text=f"#{message.channel.name} | {message.guild}",
+                )
+            else:
                 e.set_footer(text=f"#{message.channel.name}")
             if message.attachments:
                 att = message.attachments[0]
@@ -216,7 +223,7 @@ class LinkQuoter(commands.Cog):
     @commands.group(invoke_without_command=True, aliases=["linkmessage"])
     async def linkquote(self, ctx, message_link: LinkToMessage):
         """Quote a message from a link."""
-        embeds = await self.create_embeds([message_link])
+        embeds = await self.create_embeds([message_link], guild=ctx.guild)
         if not embeds:
             return await ctx.send("Invalid link.")
         cog = webhook_check(ctx)
@@ -316,7 +323,7 @@ class LinkQuoter(commands.Cog):
             message = await LinkToMessage().convert(ctx, message.content)
         except BadArgument:
             return
-        embeds = await self.create_embeds([message])
+        embeds = await self.create_embeds([message], guild=guild)
         if not embeds:
             return
         cog = webhook_check(ctx)

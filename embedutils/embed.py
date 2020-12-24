@@ -85,14 +85,13 @@ class EmbedUtils(commands.Cog):
         """Post a simple embed.
 
         Put the title in quotes if it is multiple words."""
-        if channel:
-            my_perms = channel.permissions_for(ctx.me)
-            auth_perms = channel.permissions_for(ctx.author)
-            if not (my_perms.send_messages and my_perms.embed_links) and (
-                auth_perms.send_messages and auth_perms.embed_links
-            ):
-                raise commands.BadArgument
         channel = channel or ctx.channel
+        my_perms = channel.permissions_for(ctx.me)
+        auth_perms = channel.permissions_for(ctx.author)
+        if not ((my_perms.send_messages and my_perms.embed_links) and (
+            auth_perms.send_messages and auth_perms.embed_links
+        )):
+            raise commands.BadArgument
         color = color or await ctx.embed_color()
         e = discord.Embed(color=color, title=title, description=description)
         await channel.send(embed=e)
