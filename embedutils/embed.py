@@ -34,7 +34,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.1.1"
+    __version__ = "1.1.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -88,9 +88,10 @@ class EmbedUtils(commands.Cog):
         channel = channel or ctx.channel
         my_perms = channel.permissions_for(ctx.me)
         auth_perms = channel.permissions_for(ctx.author)
-        if not ((my_perms.send_messages and my_perms.embed_links) and (
-            auth_perms.send_messages and auth_perms.embed_links
-        )):
+        if not (
+            (my_perms.send_messages and my_perms.embed_links)
+            and (auth_perms.send_messages and auth_perms.embed_links)
+        ):
             raise commands.BadArgument
         color = color or await ctx.embed_color()
         e = discord.Embed(color=color, title=title, description=description)
