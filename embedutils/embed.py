@@ -235,7 +235,7 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_edit.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
-    async def embed_edit_fromfile(self, ctx: commands.Context):
+    async def embed_edit_fromfile(self, ctx: commands.Context, message: MyMessageConverter):
         """Edit a message's embed using a valid JSON file.
 
         This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
