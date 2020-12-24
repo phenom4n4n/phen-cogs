@@ -295,9 +295,7 @@ class LinkQuoter(commands.Cog):
     async def on_message_without_command(self, message: discord.Message):
         if message.author.bot or isinstance(message.author, discord.User):
             return
-        if not (
-            message.guild and await self.bot.message_eligible_as_command(message)
-        ):
+        if not (message.guild and await self.bot.message_eligible_as_command(message)):
             return
         guild: discord.Guild = message.guild
         if guild.id not in self.enabled_guilds or "no quote" in message.content.lower():

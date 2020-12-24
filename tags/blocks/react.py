@@ -15,6 +15,7 @@ class ReactBlock(Block):
         ctx.response.actions["react"] = [arg.strip() for arg in ctx.verb.parameter.split(",")[:5]]
         return ""
 
+
 class ReactUBlock(Block):
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
