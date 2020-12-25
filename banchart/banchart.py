@@ -51,30 +51,30 @@ class BanChart(commands.Cog):
             return await ctx.send("This server has no bans.")
         limit = min(10000, min(limit, ban_count))
         await ctx.send(f"Gathering stats for the last {limit} bans.")
-        await ctx.trigger_typing()
-        counter = Counter()
-        async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.ban, limit=limit):
-            if entry.user.bot and entry.reason:
-                match = re.search(ID_RE, entry.reason)
-                if match:
-                    mod_id = int(match.group(0))
-                    user = self.bot.get_user(mod_id) or mod_id
+        async with ctx.typing():
+            counter = Counter()
+            async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.ban, limit=limit):
+                if entry.user.bot and entry.reason:
+                    match = re.search(ID_RE, entry.reason)
+                    if match:
+                        mod_id = int(match.group(0))
+                        user = self.bot.get_user(mod_id) or mod_id
+                    else:
+                        user = entry.user
                 else:
                     user = entry.user
-            else:
-                user = entry.user
-            name = str(user)
-            if len(name) > 23:
-                name = name[:20] + "..."
-            counter[name] += 1
-        task = functools.partial(self.create_chart, counter, f"Ban Mods for the last {limit} bans")
-        task = self.bot.loop.run_in_executor(None, task)
-        try:
-            banchart = await asyncio.wait_for(task, timeout=60)
-        except asyncio.TimeoutError:
-            return await ctx.send(
-                "An error occurred while generating this image. Try again later."
-            )
+                name = str(user)
+                if len(name) > 23:
+                    name = name[:20] + "..."
+                counter[name] += 1
+            task = functools.partial(self.create_chart, counter, f"Ban Mods for the last {limit} bans")
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                banchart = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
         await ctx.send(file=discord.File(banchart, "banchart.png"))
 
     # original from https://github.com/aikaterna/aikaterna-cogs/
