@@ -14,6 +14,10 @@ class EmbedBlock(Block):
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if "embed" in ctx.response.actions.keys() or ctx.verb.parameter is None:
             return None
+        if not ctx.verb.parameter.startswith("{"):
+            ctx.verb.parameter = "{" + ctx.verb.parameter
+        if not ctx.verb.parameter.endswith("}"):
+            ctx.verb.parameter = ctx.verb.parameter + "}"
         try:
             data = json.loads(ctx.verb.parameter)
         except json.decoder.JSONDecodeError as error:

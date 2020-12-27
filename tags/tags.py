@@ -19,19 +19,23 @@ from .blocks import stable_blocks
 from .converters import TagConverter, TagName
 from .objects import Tag
 from .adapters import MemberAdapter, TextChannelAdapter, GuildAdapter
+from .ctx import SilentContext
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 log = logging.getLogger("red.phenom4n4n.tags")
 
 
-async def no_send(content: str = None, **kwargs):
-    pass
-
-
 async def delete_quietly(message: discord.Message):
     try:
         await message.delete()
+    except discord.HTTPException:
+        pass
+
+
+async def send_quietly(channel: discord.TextChannel, content: str = None, **kwargs):
+    try:
+        await channel.send(content, **kwargs)
     except discord.HTTPException:
         pass
 
@@ -43,7 +47,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.10"
+    __version__ = "1.2.11"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -82,6 +86,13 @@ class Tags(commands.Cog):
         self.member_converter = commands.MemberConverter()
         self.emoji_converter = commands.EmojiConverter()
 
+        self.tag_cache = {}
+        self.task = asyncio.create_task(self.cache_tags())
+
+    def cog_unload(self):
+        if self.task:
+            self.task.cancel()
+
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         if requester not in ("discord_deleted_user", "user"):
             return
@@ -93,6 +104,11 @@ class Tags(commands.Cog):
                     if str(user_id) in str(tag["author"]):
                         async with self.config.guild(guild).tags() as t:
                             del t[name]
+
+    async def cache_tags(self):
+        guilds_data = await self.config.all_guilds()
+        for guild_id, data in guilds_data.items():
+            self.tag_cache[guild_id] = list(data.get("tags", {}).keys())
 
     @commands.guild_only()
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]", aliases=["customcom"])
@@ -132,6 +148,7 @@ class Tags(commands.Cog):
                 return
 
         await self.store_tag(ctx, tag_name, tagscript)
+        await self.cache_tags()
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["e"])
@@ -148,6 +165,7 @@ class Tags(commands.Cog):
         async with self.config.guild(ctx.guild).tags() as e:
             del e[str(tag)]
         await ctx.send("Tag deleted.")
+        await self.cache_tags()
 
     @tag.command(name="info")
     async def tag_info(self, ctx, tag: TagConverter):
@@ -253,6 +271,7 @@ class Tags(commands.Cog):
             ctx=ctx,
         )
         await self.process_tag(ctx, tag)
+        await ctx.tick()
 
     async def store_tag(self, ctx: commands.Context, name: str, tagscript: str):
         async with self.config.guild(ctx.guild).tags() as t:
@@ -287,9 +306,15 @@ class Tags(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if message.author.bot or not isinstance(message.author, discord.Member):
+        if (
+            message.author.bot
+            or not isinstance(message.author, discord.Member)
+            or not message.guild
+        ):
             return
-        if not (message.guild and await self.bot.message_eligible_as_command(message)):
+        if message.guild.id not in self.tag_cache.keys():
+            return
+        if not await self.bot.message_eligible_as_command(message):
             return
         ctx = await self.bot.get_context(message)
         if ctx.prefix is None:
@@ -300,8 +325,7 @@ class Tags(commands.Cog):
         if not tag_split:
             return
         tag_name = tag_split[0]
-        tag = await self.get_stored_tag(ctx, tag_name, False)
-        if tag:
+        if tag_name in self.tag_cache.get(message.guild.id, []):
             new_message = copy(message)
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
             ctx = await self.bot.get_context(new_message)
@@ -314,6 +338,7 @@ class Tags(commands.Cog):
         target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
         channel = TextChannelAdapter(ctx.channel)
         guild = GuildAdapter(ctx.guild)
+        destination = ctx.channel
         seed = {
             "author": author,
             "user": author,
@@ -354,10 +379,21 @@ class Tags(commands.Cog):
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
                     command_messages.append(new)
+            if target := actions.get("target"):
+                if target == "dm":
+                    destination = await ctx.author.create_dm()
+                else:
+                    try:
+                        chan = await self.channel_converter.convert(ctx, target)
+                    except commands.BadArgument:
+                        pass
+                    else:
+                        if chan.permissions_for(ctx.me).send_messages:
+                            destination = chan
 
         # this is going to become an asynchronous swamp
         if content or embed:
-            to_gather.append(ctx.send(content, embed=embed))
+            to_gather.append(send_quietly(destination, content, embed=embed))
         if command_messages:
             silent = actions.get("silent")
             to_gather.append(
@@ -371,11 +407,9 @@ class Tags(commands.Cog):
 
     async def process_command(self, command_message: discord.Message, silent: bool = False):
         ctx = await self.bot.get_context(
-            command_message
-        )  # TODO custom cls context to make silence easier?
+            command_message, cls=SilentContext if silent else commands.Context
+        )
         if ctx.valid:
-            if silent:
-                setattr(ctx, "send", no_send)
             await self.bot.invoke(ctx)
 
     async def validate_checks(self, ctx: commands.Context, actions: dict) -> Tuple[bool, str]:

@@ -5,6 +5,7 @@ Welcome to the incomplete TagScript documentation. This will explain the custom 
 ### **Blocks:**
 - require
 - blacklist
+- redirect
 - command
 - delete
 - silent
@@ -30,21 +31,31 @@ Usage: `{require(<role,channel>):[response]}`
 
 Aliases: `whitelist`
 
-Payload: role, channel
+Payload: response, None
 
-Parameter: response, None
+Parameter: role, channel
 
-This block will attempt to convert the given payload into a channel or role, using name or ID. If the user running the tag is not in the targeted channel or doesn't have the targeted role, the tag will stop processing and it will send the response if one is given. Multiple role or channel requirements can be given, and should be split by a ",".
+This block will attempt to convert the given parameter into a channel or role, using name or ID. If the user running the tag is not in the targeted channel or doesn't have the targeted role, the tag will stop processing and it will send the response if one is given. Multiple role or channel requirements can be given, and should be split by a ",".
 
 **Blacklist Block**
 
 Usage: `{blacklist(<role,channel>):[response]}`
 
-Payload: role, channel
+Payload: response, None
 
-Parameter: response, None
+Parameter: role, channel
 
-Same usage and syntax as the require block, but instead of requiring the given channel or roles, it will block using the tag with those roles.
+Same usage and syntax as the require block, but instead of requiring the given channel or roles, it will block using the tag with those roles or in those channels.
+
+**Redirect Block**
+
+Usage: `{redirect(<"dm"|channel>)}`
+
+Payload: None
+
+Parameter: "dm", channel
+
+Redirects the to either the given channel, or DMs the author if "dm" is passed as the parameter.
 
 **Command Block**
 

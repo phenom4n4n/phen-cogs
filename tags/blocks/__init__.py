@@ -4,6 +4,7 @@ from .embed import EmbedBlock
 from .silent import SilentBlock
 from .require_blacklist import RequireBlock, BlacklistBlock
 from .react import ReactBlock
+from .redirect import RedirectBlock
 
 stable_blocks = [
     CommandBlock(),
@@ -13,4 +14,5 @@ stable_blocks = [
     RequireBlock(),
     BlacklistBlock(),
     ReactBlock(),
+    RedirectBlock(),
 ]
