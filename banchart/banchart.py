@@ -53,7 +53,9 @@ class BanChart(commands.Cog):
         await ctx.send(f"Gathering stats for the last {limit} bans.")
         async with ctx.typing():
             counter = Counter()
-            async for entry in ctx.guild.audit_logs(action=discord.AuditLogAction.ban, limit=limit):
+            async for entry in ctx.guild.audit_logs(
+                action=discord.AuditLogAction.ban, limit=limit
+            ):
                 if entry.user.bot and entry.reason:
                     match = re.search(ID_RE, entry.reason)
                     if match:
@@ -67,7 +69,9 @@ class BanChart(commands.Cog):
                 if len(name) > 23:
                     name = name[:20] + "..."
                 counter[name] += 1
-            task = functools.partial(self.create_chart, counter, f"Ban Mods for the last {limit} bans")
+            task = functools.partial(
+                self.create_chart, counter, f"Ban Mods for the last {limit} bans"
+            )
             task = self.bot.loop.run_in_executor(None, task)
             try:
                 banchart = await asyncio.wait_for(task, timeout=60)

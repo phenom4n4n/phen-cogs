@@ -1,4 +1,3 @@
-import asyncio
 from typing import Literal
 
 import akinator
@@ -10,6 +9,7 @@ from redbot.core.config import Config
 from redbot.vendored.discord.ext import menus
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
+
 
 class AkiMenu(menus.Menu):
     def __init__(self, game: Akinator, color: discord.Color):
@@ -158,7 +158,7 @@ class Aki(commands.Cog):
     async def aki(self, ctx: commands.Context):
         """
         Start a game of Akinator!
-        
+
         Controls:
         > ✅ : yes
         > ❎ : no
@@ -174,6 +174,8 @@ class Aki(commands.Cog):
         try:
             await aki.start_game()
         except Exception:
-            return await ctx.send("I encountered an error while connecting to the Akinator servers.")
+            return await ctx.send(
+                "I encountered an error while connecting to the Akinator servers."
+            )
         menu = AkiMenu(aki, await ctx.embed_color())
         await menu.start(ctx)

@@ -471,7 +471,9 @@ class Baron(commands.Cog):
                 if total_commands < commands:
                     guilds.append(guild)
         if not guilds:
-            await ctx.send(f"There are no servers with a command usage count less than {commands}.")
+            await ctx.send(
+                f"There are no servers with a command usage count less than {commands}."
+            )
         await self.leave_guilds(
             ctx,
             guilds,
