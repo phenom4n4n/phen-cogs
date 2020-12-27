@@ -190,4 +190,14 @@ Payload: None
 
 Parameter: emoji
 
-The react block will react with up to 5 emoji to the tag invocation message. The given emoji can be custom or unicode emoji. Emoji can be split with ",".
+The react block will react with up to 5 emoji to the tag response message. The given emoji can be custom or unicode emoji. Emojis can be split with ",".
+
+**Reactu Block**
+
+Usage: `{reactu(<emoji,emoji>)}`
+
+Payload: None
+
+Parameter: emoji
+
+The react block will react with up to 5 emoji to the tag invocation message. The given emoji can be custom or unicode emoji. Emojis can be split with ",".

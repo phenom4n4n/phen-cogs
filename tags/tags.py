@@ -35,7 +35,7 @@ async def delete_quietly(message: discord.Message):
 
 async def send_quietly(channel: discord.TextChannel, content: str = None, **kwargs):
     try:
-        await channel.send(content, **kwargs)
+        return await channel.send(content, **kwargs)
     except discord.HTTPException:
         pass
 
@@ -47,7 +47,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
     """
 
-    __version__ = "1.2.12"
+    __version__ = "1.2.13"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -375,8 +375,8 @@ class Tags(commands.Cog):
             if delete := actions.get("delete"):
                 if ctx.channel.permissions_for(ctx.me).manage_messages:
                     to_gather.append(delete_quietly(ctx.message))
-            if not delete and actions.get("react"):
-                to_gather.append(self.do_reactions(ctx, actions))
+            if not delete and (reactu := actions.get("reactu")):
+                to_gather.append(self.do_reactu(ctx, reactu))
             if actions.get("commands"):
                 for command in actions["commands"]:
                     if command.startswith("tag"):
@@ -398,10 +398,13 @@ class Tags(commands.Cog):
                             destination = chan
 
         # this is going to become an asynchronous swamp
+        msg = None
         if content or embed:
-            to_gather.append(send_quietly(destination, content, embed=embed))
+            msg = await send_quietly(destination, content, embed=embed)
+            if msg and (react := actions.get("react")):
+                to_gather.append(self.do_reactions(ctx, react, msg))
         if command_messages:
-            silent = actions.get("silent")
+            silent = actions.get("silent", False)
             to_gather.append(
                 asyncio.gather(
                     *[self.process_command(message, silent) for message in command_messages]
@@ -413,7 +416,7 @@ class Tags(commands.Cog):
 
     async def process_command(self, command_message: discord.Message, silent: bool = False):
         ctx = await self.bot.get_context(
-            command_message, cls=SilentContext if silent else commands.Context
+            command_message, cls=SilentContext if silent is True else commands.Context
         )
         if ctx.valid:
             await self.bot.invoke(ctx)
@@ -452,14 +455,27 @@ class Tags(commands.Cog):
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
 
-    async def do_reactions(self, ctx: commands.Context, actions: dict):
-        if react := actions.get("react"):
-            for arg in react:
+    async def do_reactu(self, ctx: commands.Context, reactu: list):
+        if reactu:
+            for arg in reactu:
                 try:
                     arg = await self.emoji_converter.convert(ctx, arg)
                 except commands.BadArgument:
                     pass
                 try:
                     await ctx.message.add_reaction(arg)
+                except discord.HTTPException:
+                    pass
+
+    async def do_reactions(self, ctx: commands.Context, react: list, msg: discord.Message):
+        if msg and react:
+            for arg in react:
+                print(arg)
+                try:
+                    arg = await self.emoji_converter.convert(ctx, arg)
+                except commands.BadArgument:
+                    pass
+                try:
+                    await msg.add_reaction(arg)
                 except discord.HTTPException:
                     pass

@@ -3,7 +3,7 @@ from .delete import DeleteBlock
 from .embed import EmbedBlock
 from .silent import SilentBlock
 from .require_blacklist import RequireBlock, BlacklistBlock
-from .react import ReactBlock
+from .react import ReactBlock, ReactUBlock
 from .redirect import RedirectBlock
 
 stable_blocks = [
@@ -15,4 +15,5 @@ stable_blocks = [
     BlacklistBlock(),
     ReactBlock(),
     RedirectBlock(),
+    ReactUBlock(),
 ]
