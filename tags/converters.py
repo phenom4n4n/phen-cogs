@@ -16,7 +16,7 @@ class TagName(Converter):
 class TagConverter(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
         cog = ctx.bot.get_cog("Tags")
-        tags = await cog.config.guild(ctx.guild).tags()
+        tags = cog.guild_data_cache.get(ctx.guild.id, {"tags": {}})["tags"]
         tag = tags.get(argument)
         if tag:
             tag = Tag.from_dict(argument, tag, ctx=ctx)

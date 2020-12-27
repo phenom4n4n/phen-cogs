@@ -87,6 +87,7 @@ class Tags(commands.Cog):
         self.emoji_converter = commands.EmojiConverter()
 
         self.tag_cache = {}
+        self.guild_data_cache = {}
         self.task = asyncio.create_task(self.cache_tags())
 
     def cog_unload(self):
@@ -107,6 +108,7 @@ class Tags(commands.Cog):
 
     async def cache_tags(self):
         guilds_data = await self.config.all_guilds()
+        self.guild_data_cache = guilds_data
         for guild_id, data in guilds_data.items():
             self.tag_cache[guild_id] = list(data.get("tags", {}).keys())
 
@@ -119,16 +121,16 @@ class Tags(commands.Cog):
         if response is None:
             response = True
         try:
-            tag = await TagConverter().convert(ctx, tag_name)
+            _tag = await TagConverter().convert(ctx, tag_name)
         except commands.BadArgument as e:
             if response:
                 await ctx.send(e)
-                return
+            return
         async with self.config.guild(ctx.guild).tags() as t:
             t[tag_name]["uses"] += 1
         seed = {"args": adapter.StringAdapter(args)}
         log.info(f"Processing tag for {tag_name} on {ctx.guild} ({ctx.guild.id})")
-        await self.process_tag(ctx, tag, seed_variables=seed)
+        await self.process_tag(ctx, _tag, seed_variables=seed)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["create", "+"])
@@ -286,7 +288,11 @@ class Tags(commands.Cog):
             data = infile.read()
         pages = list(pagify(data, ["\n\n\n", "\n\n"], page_length=500, priority=True))
         embeds = []
-        e = discord.Embed(title="Tags", color=await ctx.embed_color())
+        e = discord.Embed(
+            title="Tags",
+            color=await ctx.embed_color(),
+            url="https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md",
+        )
         for index, page in enumerate(pages, start=1):
             embed = e.copy()
             embed.description = page
