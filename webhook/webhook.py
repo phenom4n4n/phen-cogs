@@ -142,10 +142,10 @@ class Webhook(commands.Cog):
     @webhook.command()
     async def clear(self, ctx):
         """Delete all webhooks in the server."""
-        # webhooks = await ctx.guild.webhooks()
-        # if not webhooks:
-        #    await ctx.send("There are no webhooks in this server.")
-        #    return
+        webhooks = await ctx.guild.webhooks()
+        if not webhooks:
+            await ctx.send("There are no webhooks in this server.")
+            return
 
         msg = await ctx.send(
             "This will delete all webhooks in the server. Are you sure you want to do this?"
@@ -159,28 +159,20 @@ class Webhook(commands.Cog):
             return
 
         if pred.result is True:
-            # for webhook in webhooks:
-            #    await ctx.send(webhook)
-            #    await webhook.delete(reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})")
-            #    await asyncio.sleep(1)
-            msg = await ctx.send("Deleting..")
+            msg = await ctx.send("Deleting webhooks..")
             count = 0
             async with ctx.typing():
-                for channel in ctx.guild.channels:
-                    if isinstance(channel, discord.TextChannel):
-                        if channel.webhooks:
-                            for webhook in await channel.webhooks():
-                                try:
-                                    await webhook.delete(
-                                        reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})"
-                                    )
-                                    count += 1
-                                except:
-                                    pass
+                for webhook in webhooks:
+                    try:
+                        await webhook.delete(reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})")
+                    except discord.HTTPException:
+                        pass
+                    else:
+                        count += 1
             try:
                 await msg.edit(content=f"{count} webhooks deleted.")
-            except:
-                pass
+            except discord.NotFound:
+                await ctx.send(f"{count} webhooks deleted.")
         else:
             await ctx.send("Action cancelled.")
 
@@ -200,7 +192,8 @@ class Webhook(commands.Cog):
                 for member in role.members:
                     if member not in members:
                         members.append(member)
-                        strings.append(f"{member.mention} - {member}")
+                        string = f"[{member.mention} - {member}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')" if member.bot else f"{member.mention} - {member}"
+                        strings.append(string)
         if not members:
             await ctx.send("No one here has `manage_webhook` permissions other than the owner.")
         embeds = []
@@ -232,9 +225,7 @@ class Webhook(commands.Cog):
                     value=humanize_list([role.mention for role in roles]),
                     inline=False,
                 )
-            emoji = self.bot.get_emoji(736038541364297738)
-            if not emoji:
-                emoji = "❌"
+            emoji = self.bot.get_emoji(736038541364297738) or "❌"
             await menu(ctx, [embed], {emoji: close_menu})
 
     @commands.max_concurrency(1, commands.BucketType.channel)
