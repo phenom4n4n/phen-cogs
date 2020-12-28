@@ -134,7 +134,7 @@ class PfpImgen(commands.Cog):
     @checks.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command()
-    async def stop(
+    async def stoptalking(
         self,
         ctx,
         member: Optional[FuzzyMember] = None,
