@@ -13,6 +13,12 @@ link_regex = re.compile(
     r"[0-9]{15,19})\/(?P<message_id>[0-9]{15,19})\/?"
 )
 
+async def delete_quietly(ctx: commands.Context):
+    if ctx.channel.permissions_for(ctx.me).manage_messages:
+        try:
+            await ctx.message.delete()
+        except discord.HTTPException:
+            pass
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
     cog = ctx.bot.get_cog("Webhook")
@@ -99,6 +105,7 @@ class LinkQuoter(commands.Cog):
             "webhooks": True,
             "cross_server": False,
             "respect_perms": False,
+            "delete": False,
         }
         self.config.register_guild(**default_guild)
 
@@ -260,6 +267,21 @@ class LinkQuoter(commands.Cog):
                 self.enabled_guilds.pop(self.enabled_guilds.index(ctx.guild.id))
 
     @commands.admin_or_permissions(manage_guild=True)
+    @linkquote.command()
+    async def delete(self, ctx, true_or_false: bool = None):
+        """Toggle deleting of messages for automatic quoting."""
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).delete())
+        )
+        await self.config.guild(ctx.guild).delete.set(target_state)
+        if target_state:
+            await ctx.send("I will now delete messages when automatically quoting.")
+        else:
+            await ctx.send("I will no longer delete messages when automatically quoting.")
+
+    @commands.admin_or_permissions(manage_guild=True)
     @linkquote.command(name="global")
     async def linkquote_global(self, ctx, true_or_false: bool = None):
         """
@@ -327,15 +349,22 @@ class LinkQuoter(commands.Cog):
         if not embeds:
             return
         cog = webhook_check(ctx)
-        if (await self.config.guild(ctx.guild).webhooks()) and cog:
-            await cog.send_to_channel(
-                ctx.channel,
-                ctx.me,
-                ctx.author,
-                reason=f"For the {ctx.command.qualified_name} command",
-                username=ctx.author.display_name,
-                avatar_url=ctx.author.avatar_url,
-                embed=embeds[0][0],
+        data = await self.config.guild(ctx.guild).all()
+        tasks = []
+        if cog and data["webhooks"]:
+            tasks.append(
+                cog.send_to_channel(
+                    ctx.channel,
+                    ctx.me,
+                    ctx.author,
+                    reason=f"For the {ctx.command.qualified_name} command",
+                    username=ctx.author.display_name,
+                    avatar_url=ctx.author.avatar_url,
+                    embed=embeds[0][0],
+                )
             )
         else:
-            await ctx.send(embed=embeds[0][0])
+            tasks.append(ctx.send(embed=embeds[0][0]))
+        if data["delete"]:
+            tasks.append(delete_quietly(ctx))
+        await asyncio.gather(*tasks)
