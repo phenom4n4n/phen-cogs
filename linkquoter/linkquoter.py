@@ -320,6 +320,21 @@ class LinkQuoter(commands.Cog):
         else:
             await ctx.send("I will no longer use webhooks to quote.")
 
+    @commands.admin_or_permissions(manage_guild=True)
+    @linkquote.command()
+    async def showsettings(self, ctx: commands.Context):
+        """View LinkQuoter settings."""
+        data = await self.config.guild(ctx.guild).all()
+        description = [
+            f"**Automatic Quoting:** {data['on']}",
+            f"**Cross-Server:** {data['cross_server']}",
+            f"**Delete Messages:** {data['delete']}",
+            f"**Use Webhooks:** {data['webhooks']}",
+        ]
+        e = discord.Embed(color=await ctx.embed_color(), description="\n".join(description))
+        e.set_author(name=f"{ctx.guild} LinkQuoter Settings", icon_url=ctx.guild.icon_url)
+        await ctx.send(embed=e)
+
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
         if message.author.bot or isinstance(message.author, discord.User):
