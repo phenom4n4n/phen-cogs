@@ -79,7 +79,8 @@ class AkiMenu(menus.Menu):
             title=f"Question #{self.num}",
             description=self.aki.question,
         )
-        e.set_footer(text=f"{round(self.aki.progression, 2)}%")
+        if self.aki.progression > 0:
+            e.set_footer(text=f"{round(self.aki.progression, 2)}% guessed")
         return e
 
     async def win(self):
