@@ -219,39 +219,42 @@ class AltDentifier(commands.Cog):
         action = actions[str(trust)]
         reason = f"AltDentifier action taken for Trust Level {trust}"
         result = ""
-        if action == "ban":
-            if guild.me.guild_permissions.ban_members:
-                try:
-                    await member.ban(reason=reason)
-                    result = f"Banned for being Trust Level {trust}."
-                except discord.Forbidden as e:
-                    await self.clear_action(guild, trust)
-                    result = f"Banning failed.\n{e}"
-            else:
-                result = "Banning was skipped due to missing permissions."
-        elif action == "kick":
-            if guild.me.guild_permissions.kick_members:
-                try:
-                    await member.kick(reason=reason)
-                    result = f"Kicked for being Trust Level {trust}."
-                except discord.Forbidden as e:
-                    await self.clear_action(guild, trust)
-                    result = f"Kicking failed.\n{e}"
-            else:
-                result = "Kicking was skipped due to missing permissions."
-        elif action:
-            role = guild.get_role(action)
-            if role:
-                if guild.me.guild_permissions.manage_roles:
+        try:
+            if action == "ban":
+                if guild.me.guild_permissions.ban_members:
                     try:
-                        await member.add_roles(role, reason=reason)
-                        result = f"{role.mention} given for being Trust Level {trust}."
+                        await member.ban(reason=reason)
+                        result = f"Banned for being Trust Level {trust}."
                     except discord.Forbidden as e:
                         await self.clear_action(guild, trust)
-                        result = f"Adding role failed.\n{e}"
-            else:
-                await self.clear_action(member.guild, trust)
-                result = "Adding the role was skipped due to missing permissions."
+                        result = f"Banning failed.\n{e}"
+                else:
+                    result = "Banning was skipped due to missing permissions."
+            elif action == "kick":
+                if guild.me.guild_permissions.kick_members:
+                    try:
+                        await member.kick(reason=reason)
+                        result = f"Kicked for being Trust Level {trust}."
+                    except discord.Forbidden as e:
+                        await self.clear_action(guild, trust)
+                        result = f"Kicking failed.\n{e}"
+                else:
+                    result = "Kicking was skipped due to missing permissions."
+            elif action:
+                role = guild.get_role(action)
+                if role:
+                    if guild.me.guild_permissions.manage_roles:
+                        try:
+                            await member.add_roles(role, reason=reason)
+                            result = f"{role.mention} given for being Trust Level {trust}."
+                        except discord.Forbidden as e:
+                            await self.clear_action(guild, trust)
+                            result = f"Adding role failed.\n{e}"
+                else:
+                    await self.clear_action(member.guild, trust)
+                    result = "Adding the role was skipped due to missing permissions."
+        except discord.NotFound as e:
+            result = f"The member left before an action could be taken."
         return result
 
     async def clear_action(self, guild: discord.Guild, action: int):
