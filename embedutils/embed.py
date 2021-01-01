@@ -34,7 +34,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.1.2"
+    __version__ = "1.1.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -254,15 +254,15 @@ class EmbedUtils(commands.Cog):
 
     @embed_edit.command(name="frommsg", aliases=["frommessage"])
     async def embed_edit_frommsg(
-        self, ctx: commands.Context, message: MyMessageConverter, index: int = 0
+        self, ctx: commands.Context, source: discord.Message, target: MyMessageConverter, index: int = 0
     ):
         """Edit a message's embed using another message's embed.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
-        embed = await self.frommsg(ctx, message, index)
+        embed = await self.frommsg(ctx, source, index)
         if not embed:
             return
-        await message.edit(embed=embed)
+        await target.edit(embed=embed)
         await ctx.tick()
 
     @checks.mod_or_permissions(manage_guild=True)
