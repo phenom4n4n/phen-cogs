@@ -2,10 +2,11 @@ from copy import copy
 from typing import List, Literal, Optional, Union
 
 import discord
-from redbot.core import checks, commands
+from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, inline
+from redbot.core.utils.mod import get_audit_reason
 
 from .converters import ChannelToggle, FuzzyRole
 
@@ -17,7 +18,7 @@ class Lock(commands.Cog):
     Advanced channel and server locking.
     """
 
-    __version__ = "1.1.2"
+    __version__ = "1.1.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -35,8 +36,8 @@ class Lock(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
-    @checks.bot_has_permissions(manage_roles=True)
-    @checks.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.admin_or_permissions(manage_roles=True)
     @commands.group(invoke_without_command=True)
     async def lock(
         self,
@@ -57,6 +58,7 @@ class Lock(commands.Cog):
         succeeded = []
         cancelled = []
         failed = []
+        reason = get_audit_reason(ctx.author)
 
         if isinstance(channel, discord.TextChannel):
             for role in roles_or_members:
@@ -70,7 +72,7 @@ class Lock(commands.Cog):
                 else:
                     current_perms.update(send_messages=False)
                     try:
-                        await channel.set_permissions(role, overwrite=current_perms)
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
                         succeeded.append(inline(role.name))
                     except:
                         failed.append(inline(role.name))
@@ -82,7 +84,7 @@ class Lock(commands.Cog):
                 else:
                     current_perms.update(connect=False)
                     try:
-                        await channel.set_permissions(role, overwrite=current_perms)
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
                         succeeded.append(inline(role.name))
                     except:
                         failed.append(inline(role.name))
@@ -97,8 +99,8 @@ class Lock(commands.Cog):
         if msg:
             await ctx.send(msg)
 
-    @checks.bot_has_permissions(manage_roles=True)
-    @checks.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.admin_or_permissions(manage_roles=True)
     @commands.command()
     async def viewlock(
         self,
@@ -119,6 +121,7 @@ class Lock(commands.Cog):
         succeeded = []
         cancelled = []
         failed = []
+        reason = get_audit_reason(ctx.author)
 
         for role in roles_or_members:
             current_perms = channel.overwrites_for(role)
@@ -127,7 +130,7 @@ class Lock(commands.Cog):
             else:
                 current_perms.update(read_messages=False)
                 try:
-                    await channel.set_permissions(role, overwrite=current_perms)
+                    await channel.set_permissions(role, overwrite=current_perms, reason=reason)
                     succeeded.append(inline(role.name))
                 except:
                     failed.append(inline(role.name))
@@ -211,8 +214,8 @@ class Lock(commands.Cog):
         if msg:
             await ctx.send(msg)
 
-    @checks.bot_has_permissions(manage_roles=True)
-    @checks.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.admin_or_permissions(manage_roles=True)
     @commands.group(invoke_without_command=True)
     async def unlock(
         self,
@@ -235,6 +238,7 @@ class Lock(commands.Cog):
         succeeded = []
         cancelled = []
         failed = []
+        reason = get_audit_reason(ctx.author)
 
         if isinstance(channel, discord.TextChannel):
             for role in roles_or_members:
@@ -244,7 +248,7 @@ class Lock(commands.Cog):
                 else:
                     current_perms.update(send_messages=state)
                     try:
-                        await channel.set_permissions(role, overwrite=current_perms)
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
                         succeeded.append(inline(role.name))
                     except:
                         failed.append(inline(role.name))
@@ -256,7 +260,7 @@ class Lock(commands.Cog):
                 else:
                     current_perms.update(connect=state)
                     try:
-                        await channel.set_permissions(role, overwrite=current_perms)
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
                         succeeded.append(inline(role.name))
                     except:
                         failed.append(inline(role.name))
@@ -271,8 +275,8 @@ class Lock(commands.Cog):
         if msg:
             await ctx.send(msg)
 
-    @checks.bot_has_permissions(manage_roles=True)
-    @checks.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.admin_or_permissions(manage_roles=True)
     @commands.group(invoke_without_command=True)
     async def unviewlock(
         self,
@@ -295,6 +299,7 @@ class Lock(commands.Cog):
         succeeded = []
         cancelled = []
         failed = []
+        reason = get_audit_reason(ctx.author)
 
         for role in roles_or_members:
             current_perms = channel.overwrites_for(role)
@@ -303,7 +308,7 @@ class Lock(commands.Cog):
             else:
                 current_perms.update(read_messages=state)
                 try:
-                    await channel.set_permissions(role, overwrite=current_perms)
+                    await channel.set_permissions(role, overwrite=current_perms, reason=reason)
                     succeeded.append(inline(role.name))
                 except:
                     failed.append(inline(role.name))
