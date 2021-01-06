@@ -15,6 +15,10 @@ async def delete_quietly(ctx: commands.Context):
         except discord.HTTPException:
             pass
 
+class FakeResponse:
+    def __init__(self):
+        self.status = 403
+        self.reason = "Forbidden"
 
 class InvalidWebhook(Exception):
     pass
@@ -316,29 +320,28 @@ class Webhook(commands.Cog):
 
         if webhook := self.cache.get(channel.id):
             return webhook
-        if channel.permissions_for(me).manage_webhooks:
-            chan_hooks = await channel.webhooks()
-            webhook_list = [w for w in chan_hooks if w.type == discord.WebhookType.incoming]
-            if webhook_list:
-                webhook = webhook_list[0]
-            else:
-                creation_reason = f"Webhook creation requested by {author} ({author.id})"
-                if reason:
-                    creation_reason += f" Reason: {reason}"
-                if len(chan_hooks) == 10:
-                    await chan_hooks[-1].delete()
-                webhook = await channel.create_webhook(
-                    name=f"{me.name} Webhook",
-                    reason=creation_reason,
-                    avatar=await me.avatar_url.read(),
-                )
-            self.cache[channel.id] = webhook
-            return webhook
-        else:
+        if me and not channel.permissions_for(me).manage_webhooks:
             raise discord.Forbidden(
-                "Missing Permissions",
+                FakeResponse(),
                 f"I need permissions to `manage_webhooks` in #{channel.name}.",
             )
+        chan_hooks = await channel.webhooks()
+        webhook_list = [w for w in chan_hooks if w.type == discord.WebhookType.incoming]
+        if webhook_list:
+            webhook = webhook_list[0]
+        else:
+            creation_reason = f"Webhook creation requested by {author} ({author.id})"
+            if reason:
+                creation_reason += f" Reason: {reason}"
+            if len(chan_hooks) == 10:
+                await chan_hooks[-1].delete()
+            webhook = await channel.create_webhook(
+                name=f"{me.name} Webhook",
+                reason=creation_reason,
+                avatar=await me.avatar_url.read(),
+            )
+        self.cache[channel.id] = webhook
+        return webhook
 
     async def send_to_channel(
         self,
