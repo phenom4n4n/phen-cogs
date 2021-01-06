@@ -159,6 +159,7 @@ class Tags(commands.Cog):
         async with self.config.guild(ctx.guild).tags() as t:
             t[str(tag)]["tag"] = tagscript
         await ctx.send(f"Tag `{tag}` edited.")
+        await self.cache_tags()
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["delete", "-"])
