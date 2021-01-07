@@ -1,5 +1,5 @@
 <h1 align="center">
-  <a href="https://github.com/phenom4n4n/phen-cogs"><img src="https://i.imgur.com/wPQwqYi.png" alt="Phen-Cogs"></a>
+  <a href="https://github.com/phenom4n4n/phen-cogs"><img src="https://i.imgur.com/dIOX12K.png" alt="Phen-Cogs"></a>
 </h1>
 
 <p align="center">
@@ -24,7 +24,9 @@
 # Cogs
 | Cog | Description |
 | --- | --- |
+| Aki | Play the famous [akinator game](https://en.akinator.com/) in Discord. |
 | AltDentifier | Uses the AltDentifier API to check user's trust levels and take actions on users that join the server. |
+| BanChart | Display a chart of the moderators with the most bans. |
 | Baron | Manage guild joins and leaves with a variety of auto leave options, and guild blacklisting. |
 | CustomPing | Just a ping command with bot, host and websocket latency. |
 | DisboardReminder | Reminds servers to run `!d bump` every 2 hours after the last bump. |
@@ -41,6 +43,7 @@
 | RoleUtils | Role management commands. |
 | SimpleCalculator | Math calculator that uses [TagScriptEngine](https://github.com/JonSnowbd/TagScript). Random and range blocks are supported, queries will automatically be wrapped into a math block for you. |
 | Tags | An alternative to core CustomCom with [TagScriptEngine](https://github.com/JonSnowbd/TagScript) blocks. |
+| Webhook | Send messages through webhooks. |
 
 # Contact
 If you have a feature request or have found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).
