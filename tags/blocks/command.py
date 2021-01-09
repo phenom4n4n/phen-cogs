@@ -5,6 +5,18 @@ from TagScriptEngine.interface import Block
 
 
 class CommandBlock(Block):
+    """
+    Run a command as if the tag invoker had ran it. Only 3 command blocks can be used in a tag.
+
+    Usage: ``{command:<command>}``
+
+    Aliases: ``c, com, command``
+
+    Payload: command
+
+    Parameter: None
+    """
+
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return any([dec == "c", dec == "com", dec == "command"])

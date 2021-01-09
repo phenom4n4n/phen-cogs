@@ -15,10 +15,12 @@ async def delete_quietly(ctx: commands.Context):
         except discord.HTTPException:
             pass
 
+
 class FakeResponse:
     def __init__(self):
         self.status = 403
         self.reason = "Forbidden"
+
 
 class InvalidWebhook(Exception):
     pass
@@ -168,7 +170,9 @@ class Webhook(commands.Cog):
             async with ctx.typing():
                 for webhook in webhooks:
                     try:
-                        await webhook.delete(reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})")
+                        await webhook.delete(
+                            reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})"
+                        )
                     except discord.HTTPException:
                         pass
                     else:
@@ -196,7 +200,11 @@ class Webhook(commands.Cog):
                 for member in role.members:
                     if member not in members:
                         members.append(member)
-                        string = f"[{member.mention} - {member}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')" if member.bot else f"{member.mention} - {member}"
+                        string = (
+                            f"[{member.mention} - {member}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')"
+                            if member.bot
+                            else f"{member.mention} - {member}"
+                        )
                         strings.append(string)
         if not members:
             await ctx.send("No one here has `manage_webhook` permissions other than the owner.")

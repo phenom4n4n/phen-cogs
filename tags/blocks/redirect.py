@@ -5,6 +5,16 @@ from TagScriptEngine.interface import Block
 
 
 class RedirectBlock(Block):
+    """
+    Redirects the tag response to either the given channel, or DMs the author if "dm" is passed as the parameter.
+
+    Usage: ``{redirect(<"dm"|channel>)}``
+
+    Payload: None
+
+    Parameter: "dm", channel
+    """
+
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec == "redirect"

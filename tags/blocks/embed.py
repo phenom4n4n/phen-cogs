@@ -7,6 +7,20 @@ from discord import Embed
 
 
 class EmbedBlock(Block):
+    """
+    An embed block will send an embed in the tag response using properly formatted json.
+
+    Usage: ``{embed(<json>)}``
+
+    Payload: None
+
+    Parameter: json
+
+    Example::
+
+        {embed({"title":"Hello!", "description":"This is a test embed."})}
+    """
+
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec == "embed"

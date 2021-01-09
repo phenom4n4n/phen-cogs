@@ -13,12 +13,14 @@ link_regex = re.compile(
     r"[0-9]{15,19})\/(?P<message_id>[0-9]{15,19})\/?"
 )
 
+
 async def delete_quietly(ctx: commands.Context):
     if ctx.channel.permissions_for(ctx.me).manage_messages:
         try:
             await ctx.message.delete()
         except discord.HTTPException:
             pass
+
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
     cog = ctx.bot.get_cog("Webhook")
