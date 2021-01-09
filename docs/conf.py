@@ -1,7 +1,6 @@
 import sphinx_rtd_theme
 import os
 import sys
-from TagScriptEngine import block
 
 sys.path.insert(0, os.path.abspath(".."))
 

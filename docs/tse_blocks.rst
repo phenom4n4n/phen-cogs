@@ -5,7 +5,7 @@
 TagScriptEngine Blocks
 ======================
 
-Read the official `Link TagScriptEngine documentation <https://github.com/JonSnowbd/TagScript/tree/v2/Documentation>`_ for docs on these blocks, I will add documentation for these later.
+Read the official `TagScriptEngine documentation <https://github.com/JonSnowbd/TagScript/tree/v2/Documentation>`_ for docs on these blocks, I will add documentation for these later.
 
 .. automodule:: TagScriptEngine.block
     :members: RandomBlock
