@@ -17,3 +17,4 @@ stable_blocks = [
     RedirectBlock(),
     ReactUBlock(),
 ]
+__all__ = ("CommandBlock", "DeleteBlock", "EmbedBlock", "SilentBlock", "RequireBlock", "BlacklistBlock", "ReactBlock", "RedirectBlock", "ReactUBlock")

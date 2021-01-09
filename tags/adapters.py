@@ -4,6 +4,30 @@ from discord import Member, TextChannel, Guild
 
 
 class MemberAdapter(Adapter):
+    """
+    Aliases: `user`
+
+    Usage: `{author([attribute])`
+
+    Payload: None
+
+    Parameter: attribute, None
+
+    By default this will return the tag invoker's full username. Certain attributes can be passed to the payload to access more information about the author. These include:
+
+    ```
+    id
+    name
+    nick
+    avatar
+    discriminator
+    created_at
+    joined_at
+    mention
+    bot
+    ```
+    """
+
     def __init__(self, member: Member):
         self.member = member
         self.attributes = {
@@ -29,6 +53,26 @@ class MemberAdapter(Adapter):
 
 
 class TextChannelAdapter(Adapter):
+    """
+    Usage: `{channel([attribute])`
+
+    Payload: None
+
+    Parameter: attribute, None
+
+    By default this will return the tag's invoke channel name. Certain attributes can be passed to the payload to access more information about the channel. These include:
+
+    ```
+    id
+    name
+    discriminator
+    created_at
+    nsfw
+    mention
+    topic
+    ```
+    """
+
     def __init__(self, channel: TextChannel):
         self.channel = channel
         self.attributes = {
@@ -51,6 +95,28 @@ class TextChannelAdapter(Adapter):
 
 
 class GuildAdapter(Adapter):
+    """
+    Aliases: `guild`
+
+    Usage: `{server([attribute])`
+
+    Payload: None
+
+    Parameter: attribute, None
+
+    By default this will return the tag's invoke server name. Certain attributes can be passed to the payload to access more information about the server. These include:
+
+    ```
+    id
+    name
+    nick
+    icon
+    discriminator
+    member_count
+    description
+    ```
+    """
+
     def __init__(self, guild: Guild):
         self.guild = guild
         self.attributes = {
