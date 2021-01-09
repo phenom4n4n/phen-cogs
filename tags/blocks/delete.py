@@ -15,7 +15,7 @@ class DeleteBlock(Block):
 
     Parameter: bool, None
     """
-    
+
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec == "delete"
