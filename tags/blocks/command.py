@@ -16,7 +16,7 @@ class CommandBlock(Block):
 
     Parameter: None
     """
-    
+
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return any([dec == "c", dec == "com", dec == "command"])

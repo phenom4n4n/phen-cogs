@@ -138,7 +138,7 @@ class CustomPing(commands.Cog):
             latency = round(shard.latency * 1000, 2)
             latencies.append(latency)
             description.append(f"#{shard_id}: {latency}ms")
-        average_ping = sum(latencies)/len(latencies)
+        average_ping = sum(latencies) / len(latencies)
         if average_ping >= 1000:
             color = discord.Colour.red()
         elif average_ping >= 200:
@@ -148,6 +148,7 @@ class CustomPing(commands.Cog):
         e = discord.Embed(color=color, title="Shard Pings", description="\n".join(description))
         e.set_footer(text=f"Average: {average_ping}ms")
         await ctx.send(embed=e)
+
 
 def setup(bot):
     ping = CustomPing(bot)

@@ -14,7 +14,7 @@ class RedirectBlock(Block):
 
     Parameter: "dm", channel
     """
-    
+
     def will_accept(self, ctx: Interpreter.Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec == "redirect"

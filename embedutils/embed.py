@@ -254,7 +254,11 @@ class EmbedUtils(commands.Cog):
 
     @embed_edit.command(name="frommsg", aliases=["frommessage"])
     async def embed_edit_frommsg(
-        self, ctx: commands.Context, source: discord.Message, target: MyMessageConverter, index: int = 0
+        self,
+        ctx: commands.Context,
+        source: discord.Message,
+        target: MyMessageConverter,
+        index: int = 0,
     ):
         """Edit a message's embed using another message's embed.
 
