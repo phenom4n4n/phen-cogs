@@ -15,6 +15,9 @@
   <a href="https://github.com/ambv/black">
     <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code Style: Black">
   </a>
+  <a href='https://phen-cogs.readthedocs.io/en/latest/?badge=latest'>
+      <img src='https://readthedocs.org/projects/phen-cogs/badge/?version=latest' alt='Documentation Status' />
+  </a>
 </p>
 <h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
 
