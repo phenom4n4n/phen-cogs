@@ -19,6 +19,8 @@ RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 def comstats_cog(ctx: commands.Context):
     return ctx.bot.get_cog("CommandStats") is not None
 
+def disabled_or_data(data):
+    return data if data else "Disabled"
 
 class Baron(commands.Cog):
     """
@@ -109,16 +111,19 @@ class Baron(commands.Cog):
         """Baron's watchtower."""
         if not ctx.subcommand_passed:
             data = await self.config.all()
-            description = (
-                f"Server Limit: {data['limit'] if data['limit'] else 'Disabled'}\n"
-                f"Minimum Members: {data['min_members'] if data['min_members'] else 'Disabled'}\n"
-                f"Bot Farm: {data['bot_ratio'] if data['bot_ratio'] else 'Disabled'}\n"
-                f"Log Channel: <#{data['log_channel']}>"
-            )
+            log_chan = data["log_channel"]
+            if log_chan := self.bot.get_channel(data["log_channel"]):
+                log_chan = log_chan.mention
+            description = [
+                f"Log Channel: {log_chan}",
+                f"Server Limit: {disabled_or_data(data['limit'])}",
+                f"Minimum Members: {disabled_or_data(data['min_members'])}",
+                f"Bot Farm: {disabled_or_data(data['bot_ratio'])}",
+            ]
             e = discord.Embed(
                 color=await ctx.embed_color(),
                 title="Baron Settings",
-                description=description,
+                description="\n".join(description),
             )
             await ctx.send(embed=e)
 
@@ -246,11 +251,11 @@ class Baron(commands.Cog):
         bot_farms = await self.get_bot_farms(rate)
         for guild in bot_farms[0]:
             bots = len([x for x in guild.members if x.bot])
-            percent = bots / len(guild.members)
-            percent = bots / len(guild.members)
+            percent = bots / guild.member_count
+            percent = bots / guild.member_count
             msg += f"{guild.name} - ({guild.id})\n"
             msg += f"Bots: **{percent * 100}%**\n"
-            msg += f"Members: **{len(guild.members)}**\n"
+            msg += f"Members: **{guild.member_count}**\n"
             if guild.id in data["whitelist"]:
                 msg += f"[Whitelisted](https://www.youtube.com/watch?v=oHg5SJYRHA0)\n"
             msg += "\n"
@@ -293,19 +298,19 @@ class Baron(commands.Cog):
 
         Pass False at the end if you would like to view servers that are greater than the specified number."""
         if less_than:
-            guilds = [guild for guild in self.bot.guilds if len(guild.members) < members]
+            guilds = [guild for guild in self.bot.guilds if guild.member_count < members]
         else:
-            guilds = [guild for guild in self.bot.guilds if len(guild.members) > members]
+            guilds = [guild for guild in self.bot.guilds if guild.member_count > members]
         data = await self.config.all()
         msg = ""
 
         for guild in guilds:
             bots = len([x for x in guild.members if x.bot])
-            percent = bots / len(guild.members)
-            percent = bots / len(guild.members)
+            percent = bots / guild.member_count
+            percent = bots / guild.member_count
             msg += f"{guild.name} - ({guild.id})\n"
             msg += f"Bots: **{percent * 100}%**\n"
-            msg += f"Members: **{len(guild.members)}**\n"
+            msg += f"Members: **{guild.member_count}**\n"
             if guild.id in data["whitelist"]:
                 msg += f"[Whitelisted](https://www.youtube.com/watch?v=oHg5SJYRHA0)\n"
             msg += "\n"
@@ -370,12 +375,12 @@ class Baron(commands.Cog):
 
         for guild, usage in guilds:
             bots = len([x for x in guild.members if x.bot])
-            percent = bots / len(guild.members)
-            percent = bots / len(guild.members)
+            percent = bots / guild.member_count
+            percent = bots / guild.member_count
             msg += f"{guild.name} - ({guild.id})\n"
             msg += f"Commands Used: **{usage}**\n"
             msg += f"Bots: **{percent * 100}%**\n"
-            msg += f"Members: **{len(guild.members)}**\n"
+            msg += f"Members: **{guild.member_count}**\n"
             if guild.id in data["whitelist"]:
                 msg += f"[Whitelisted](https://www.youtube.com/watch?v=oHg5SJYRHA0)\n"
             msg += "\n"
@@ -444,7 +449,7 @@ class Baron(commands.Cog):
     @leave.command(name="members")
     async def leave_members(self, ctx: commands.Context, members: int):
         """Leave all servers that have less members than the given number."""
-        guilds = [guild for guild in self.bot.guilds if len(guild.members) < members]
+        guilds = [guild for guild in self.bot.guilds if guild.member_count < members]
         if not guilds:
             await ctx.send(f"There are no servers with a member count less than {members}.")
         await self.leave_guilds(
@@ -517,7 +522,7 @@ class Baron(commands.Cog):
         ok_guilds = 0
         for guild in self.bot.guilds:
             bots = len([x for x in guild.members if x.bot])
-            percent = bots / len(guild.members)
+            percent = bots / guild.member_count
             if percent >= rate:
                 bot_farms.append(guild)
             else:
@@ -554,7 +559,7 @@ class Baron(commands.Cog):
         elif log_type == "min_member_leave":
             e = discord.Embed(
                 title="Minimum Member Leave",
-                description=f"I left {guild.name} since it has less than {data['min_members']} members. ({len(guild.members)})",
+                description=f"I left {guild.name} since it has less than {data['min_members']} members. ({guild.member_count})",
             )
             e.set_author(name=guild.name, icon_url=guild.icon_url)
             await channel.send(embed=e)
@@ -592,15 +597,14 @@ class Baron(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
+        if guild.chunked is False and self.bot.intents.members:
+            await guild.chunk()
         data = await self.config.all()
         if guild.id in data["whitelist"]:
             return
         elif guild.id in data["blacklist"]:
             await guild.leave()
             await self.baron_log("bl_leave", guild=guild)
-
-        if guild.chunked is False and self.bot.intents.members:
-            await guild.chunk()
 
         if data["limit"] and len(self.bot.guilds) > data["limit"]:
             await self.notify_guild(
@@ -609,7 +613,7 @@ class Baron(commands.Cog):
             )
             await guild.leave()
             await self.baron_log("limit_leave", guild=guild)
-        elif data["min_members"] and len(guild.members) < data["min_members"]:
+        elif data["min_members"] and guild.member_count < data["min_members"]:
             await self.notify_guild(
                 guild,
                 f"I have automatically left this server since it has less than {data['min_members']} members.",
@@ -617,7 +621,7 @@ class Baron(commands.Cog):
             await guild.leave()
             await self.baron_log("min_member_leave", guild=guild)
         elif data["bot_ratio"] and (
-            len([x for x in guild.members if x.bot]) / len(guild.members)
+            len([x for x in guild.members if x.bot]) / guild.member_count
         ) > (data["bot_ratio"] / 100):
             await self.notify_guild(
                 guild,
