@@ -14,11 +14,3 @@ Welcome to Phen-Cogs's documentation!
    tse_blocks
    discord_objects
    parsing_blocks
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
