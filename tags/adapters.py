@@ -5,27 +5,38 @@ from discord import Member, TextChannel, Guild
 
 class MemberAdapter(Adapter):
     """
-    Aliases: `user`
+    The ``{author}`` block with no parameters returns the tag invoker's full username 
+    and discriminator, but passing the attributes listed below to the block payload 
+    will return that attribute instead.
 
-    Usage: `{author([attribute])`
+    **Aliases:** ``user``
 
-    Payload: None
+    **Usage:** ``{author([attribute])``
 
-    Parameter: attribute, None
+    **Payload:** None
 
-    By default this will return the tag invoker's full username. Certain attributes can be passed to the payload to access more information about the author. These include:
+    **Parameter:** attribute, None
+    
+    **Attributes:**
 
-    ```
     id
+        The author's Discord ID.
     name
+        The author's username.
     nick
+        The author's nickname, if they have one, else their username.
     avatar
+        A link to the author's avatar, which can be used in embeds.
     discriminator
+        The author's discriminator.
     created_at
+        The author's account creation date.
     joined_at
+        The date the author joined the server.
     mention
+        A formatted text that pings the author.
     bot
-    ```
+        Whether or not the author is a bot.
     """
 
     def __init__(self, member: Member):
@@ -54,23 +65,30 @@ class MemberAdapter(Adapter):
 
 class TextChannelAdapter(Adapter):
     """
-    Usage: `{channel([attribute])`
+    The ``{channel}`` block with no parameters returns the channel's full name 
+    but passing the attributes listed below to the block payload 
+    will return that attribute instead.
 
-    Payload: None
+    **Usage:** ``{channel([attribute])``
 
-    Parameter: attribute, None
+    **Payload:** None
 
-    By default this will return the tag's invoke channel name. Certain attributes can be passed to the payload to access more information about the channel. These include:
+    **Parameter:** attribute, None
 
-    ```
+    **Attributes:**
+
     id
+        The channel's ID.
     name
-    discriminator
+        The channel's name.
     created_at
+        The channel's creation date.
     nsfw
+        Whether the channel is nsfw.
     mention
+        A formatted text that pings the channel.
     topic
-    ```
+        The channel's topic.
     """
 
     def __init__(self, channel: TextChannel):
@@ -96,25 +114,32 @@ class TextChannelAdapter(Adapter):
 
 class GuildAdapter(Adapter):
     """
-    Aliases: `guild`
+    The ``{author}`` block with no parameters returns the server's name  
+    but passing the attributes listed below to the block payload 
+    will return that attribute instead.
 
-    Usage: `{server([attribute])`
+    **Aliases:** ``guild``
 
-    Payload: None
+    **Usage:** ``{server([attribute])``
 
-    Parameter: attribute, None
+    **Payload:** None
 
-    By default this will return the tag's invoke server name. Certain attributes can be passed to the payload to access more information about the server. These include:
+    **Parameter:** attribute, None
 
-    ```
+    **Attributes:**
+
     id
+        The server's ID.
     name
-    nick
+        The server's name.
     icon
-    discriminator
+        A link to the server's icon, which can be used in embeds.
+    created_at
+        The server's creation date.
     member_count
+        The server's member count.
     description
-    ```
+        The server's description if one is set, or "No description".
     """
 
     def __init__(self, guild: Guild):
