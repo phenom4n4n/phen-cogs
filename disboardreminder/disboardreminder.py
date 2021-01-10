@@ -25,6 +25,12 @@ class DisboardReminder(commands.Cog):
     """
     Set a reminder to bump on Disboard.
     """
+    __version__ = "1.1.0"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot: Red):
         self.bot = bot
@@ -48,11 +54,39 @@ class DisboardReminder(commands.Cog):
         self.config.register_guild(**default_guild)
 
         self.bump_cache = {}
+        self.channel_cache = {}
+        self.load_check = asyncio.create_task(self.bump_worker())
+        self.tasks = []
+
+    def cog_unload(self):
+        if self.load_check:
+            self.load_check.cancel()
+        if self.tasks:
+            for task in self.tasks:
+                task.cancel()
 
     async def red_delete_data_for_user(self, requester, user_id):
         for guild, members in await self.config.all_members():
             if user_id in members:
                 await self.config.member_from_ids(guild, user_id).clear()
+
+    async def bump_worker(self):
+        """Builds channel cache and restarts timers."""
+        await self.bot.wait_until_ready()
+        for guild_id, guild_data in (await self.config.all_guilds()).items():
+            if guild_data["channel"]:
+                self.channel_cache[guild_id] = guild_data["channel"]
+            guild = self.bot.get_guild(guild_id)
+            if not guild:
+                continue
+            timer = guild_data["nextBump"]
+            if timer:
+                now = datetime.utcnow().timestamp()
+                remaining = timer - now
+                if remaining <= 0:
+                    self.tasks.append(asyncio.create_task(self.bump_message(guild)))
+                else:
+                    self.tasks.append(asyncio.create_task(self.bump_timer(guild, timer)))
 
     @checks.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
@@ -162,21 +196,22 @@ class DisboardReminder(commands.Cog):
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
-    @bumpreminder.command()
-    async def top(self, ctx, amount: int = 10):
+    @commands.guild_only()
+    @commands.group(aliases=["bumplb", "bprmtop", "bprmlb"], invoke_without_command=True)
+    async def bumpleaderboard(self, ctx, amount: int = 10):
         """View the top Bumpers in the server."""
         if amount < 1:
             raise commands.BadArgument
 
         members_data = await self.config.all_members(ctx.guild)
         members_list = [(member, data["count"]) for member, data in members_data.items()]
-        ordered_list = sorted(members_list[:(amount)], key=lambda m: m[1], reverse=True)
+        ordered_list = sorted(members_list, key=lambda m: m[1], reverse=True)[:(amount)]
 
         mapped_strings = []
         for index, member in enumerate(ordered_list, start=1):
             mapped_strings.append(f"{index}. <@{member[0]}>: {member[1]}")
         if not mapped_strings:
-            await ctx.send("There are no tracked members in this server.")
+            await ctx.send("There are no tracked bumpers in this server.")
             return
 
         color = await ctx.embed_color()
@@ -199,7 +234,7 @@ class DisboardReminder(commands.Cog):
 
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.cooldown(1, 15, commands.BucketType.guild)
-    @bumpreminder.command()
+    @bumpleaderboard.command()
     async def chart(self, ctx: commands.Context):
         """View the top bumpers in a chart."""
         async with ctx.typing():
@@ -238,80 +273,62 @@ class DisboardReminder(commands.Cog):
     async def bump_message(self, guild: discord.Guild):
         data = await self.config.guild(guild).all()
         channel = guild.get_channel(data["channel"])
+        allowed_mentions = discord.AllowedMentions(roles=True)
         if not channel or not channel.permissions_for(guild.me).send_messages:
             await self.config.guild(guild).channel.clear()
         elif data["role"]:
             role = guild.get_role(data["role"])
             if role:
                 message = f"{role.mention}: {data['message']}"
-                await self.bot.get_cog("ForceMention").forcemention(channel, role, message)
+                cog = self.bot.get_cog("ForceMention")
+                if cog:
+                    await cog.forcemention(channel, role, message)
+                else:
+                    await channel.send(message, allowed_mentions=allowed_mentions)
             else:
                 await self.config.guild(guild).role.clear()
         elif channel:
             message = data["message"]
-            mentionPerms = discord.AllowedMentions(roles=True)
             try:
-                await channel.send(message, allowed_mentions=mentionPerms)
+                await channel.send(message, allowed_mentions=allowed_mentions)
             except discord.errors.Forbidden:
                 await self.config.guild(guild).channel.clear()
         else:
             await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
 
-    async def bump_worker(self):
-        """Restarts bump timers
-        This worker will attempt to restart bump timers incase of a cog reload or
-        if the bot has been restart or shutdown. The task is only created when the cog
-        is loaded, and is destroyed when it has finished.
-        """
-        try:
-            await self.bot.wait_until_ready()
-            coros = []
-            for guild_id, guild_data in (await self.config.all_guilds()).items():
-                guild = self.bot.get_guild(guild_id)
-                if not guild:
-                    continue
-                timer = guild_data["nextBump"]
-                if timer:
-                    now = datetime.utcnow().timestamp()
-                    remaining = timer - now
-                    if remaining <= 0:
-                        await self.bump_message(guild)
-                    else:
-                        coros.append(self.bump_timer(guild, timer))
-            await asyncio.gather(*coros)
-        except Exception as e:
-            log.info(f"Bump Restart Issue: {e}")
-
-    def cog_unload(self):
-        self.__unload()
-
-    def __unload(self):
-        self.load_check.cancel()
-
     @commands.Cog.listener("on_message_without_command")
     async def disboard_remind(self, message: discord.Message):
         if not message.guild:
             return
 
-        guild = message.guild
+        author: discord.Member = message.author
+        channel: discord.TextChannel = message.channel
+        guild: discord.Guild = message.guild
+        me: discord.Member = guild.me
+
+        bump_chan_id = self.channel_cache.get(guild.id)
+        if not bump_chan_id:
+            return
+        bump_channel = guild.get_channel(bump_chan_id)
+        if not bump_channel:
+            return
+
         data = await self.config.guild(guild).all()
 
         if not data["channel"]:
             return
-        bumpChannel = message.guild.get_channel(data["channel"])
-        if not bumpChannel:
-            return
         clean = data["clean"]
+        my_perms = channel.permissions_for(me)
 
         if (
             clean
-            and message.author != message.guild.me
-            and message.author.id != 302050872383242240
-            and message.channel == bumpChannel
+            and author != message.guild.me
+            and author.id != 302050872383242240
+            and channel == bump_channel
         ):
-            if message.channel.permissions_for(guild.me).manage_messages:
-                await asyncio.sleep(5)
+            if my_perms.send_messages:
+                await asyncio.sleep(2)
                 try:
                     await message.delete()
                 except (discord.errors.Forbidden, discord.errors.NotFound):
@@ -331,10 +348,10 @@ class DisboardReminder(commands.Cog):
 
             words = embed.description.split(",")
             member_mention = words[0]
-            member_id = int(member_mention.lstrip("<@!").lstrip("<@").rstrip(">"))
+            member_id = int(member_mention.strip("<@!").rstrip(">"))
             tymessage = data["tyMessage"]
             try:
-                await bumpChannel.send(
+                await bump_channel.send(
                     tymessage.replace("{member}", member_mention)
                     .replace("{guild}", guild.name)
                     .replace("{guild.id}", str(guild.id))
@@ -349,11 +366,11 @@ class DisboardReminder(commands.Cog):
             await self.bump_timer(message.guild, next_bump)
         else:
             if (
-                message.channel.permissions_for(guild.me).manage_messages
+                my_perms.send_messages
                 and clean
-                and message.channel == bumpChannel
+                and channel == bump_channel
             ):
-                await asyncio.sleep(5)
+                await asyncio.sleep(2)
                 try:
                     await message.delete()
                 except (discord.errors.Forbidden, discord.errors.NotFound):
