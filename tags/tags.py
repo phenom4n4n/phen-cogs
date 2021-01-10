@@ -44,7 +44,7 @@ class Tags(commands.Cog):
     """
     Create and use tags.
 
-    The TagScript documentation can be found [here](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md).
+    The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
     __version__ = "1.2.13"
@@ -117,7 +117,7 @@ class Tags(commands.Cog):
     async def tag(self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""):
         """Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site](https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md) has documentation on how to use TagScript blocks."""
+        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks."""
         if response is None:
             response = True
         try:
@@ -280,26 +280,6 @@ class Tags(commands.Cog):
         async with self.config.guild(ctx.guild).tags() as t:
             t[name] = {"author": ctx.author.id, "uses": 0, "tag": tagscript}
         await ctx.send(f"Tag stored under the name `{name}`.")
-
-    # thanks trusty, https://github.com/TrustyJAID/Trusty-cogs/blob/master/retrigger/retrigger.py#L1065
-    @tag.command()
-    async def explain(self, ctx: commands.Context):
-        """View Tag block documentation."""
-        with open(Path(__file__).parent / "README.md", "r", encoding="utf8") as infile:
-            data = infile.read()
-        pages = list(pagify(data, ["\n\n\n", "\n\n"], page_length=500, priority=True))
-        embeds = []
-        e = discord.Embed(
-            title="Tags",
-            color=await ctx.embed_color(),
-            url="https://github.com/phenom4n4n/phen-cogs/blob/master/tags/README.md",
-        )
-        for index, page in enumerate(pages, start=1):
-            embed = e.copy()
-            embed.description = page
-            embed.set_footer(text=f"{index}/{len(pages)}")
-            embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     async def get_stored_tag(
         self, ctx: commands.Context, name: TagName, response: bool = True
