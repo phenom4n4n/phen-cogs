@@ -34,7 +34,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.1.3"
+    __version__ = "1.1.4"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -249,7 +249,7 @@ class EmbedUtils(commands.Cog):
         except UnicodeDecodeError:
             return await ctx.send("That's not an actual embed file wyd")
         e = await StringToEmbed().convert(ctx, data)
-        await message.edit(embed=data)
+        await message.edit(embed=e)
         await ctx.tick()
 
     @embed_edit.command(name="frommsg", aliases=["frommessage"])
@@ -362,7 +362,7 @@ class EmbedUtils(commands.Cog):
             data = content.decode("utf-8")
         except UnicodeDecodeError:
             return await ctx.send("That's not an actual embed file wyd")
-        e = await self.str_embed_converter(ctx, data)
+        e = await StringToEmbed().convert(ctx, data)
         if e:
             await self.store_embed(ctx, name, e)
         await ctx.tick()
@@ -469,7 +469,7 @@ class EmbedUtils(commands.Cog):
             data = content.decode("utf-8")
         except UnicodeDecodeError:
             return await ctx.send("That's not an actual embed file wyd")
-        e = await self.str_embed_converter(ctx, data)
+        e = await StringToEmbed().convert(ctx, data)
         if e:
             await self.global_store_embed(ctx, name, e, locked)
         await ctx.tick()
