@@ -5,8 +5,8 @@ from discord import Member, TextChannel, Guild
 
 class MemberAdapter(Adapter):
     """
-    The ``{author}`` block with no parameters returns the tag invoker's full username 
-    and discriminator, but passing the attributes listed below to the block payload 
+    The ``{author}`` block with no parameters returns the tag invoker's full username
+    and discriminator, but passing the attributes listed below to the block payload
     will return that attribute instead.
 
     **Aliases:** ``user``
@@ -16,7 +16,7 @@ class MemberAdapter(Adapter):
     **Payload:** None
 
     **Parameter:** attribute, None
-    
+
     **Attributes:**
 
     id
@@ -65,8 +65,8 @@ class MemberAdapter(Adapter):
 
 class TextChannelAdapter(Adapter):
     """
-    The ``{channel}`` block with no parameters returns the channel's full name 
-    but passing the attributes listed below to the block payload 
+    The ``{channel}`` block with no parameters returns the channel's full name
+    but passing the attributes listed below to the block payload
     will return that attribute instead.
 
     **Usage:** ``{channel([attribute])``
@@ -114,8 +114,8 @@ class TextChannelAdapter(Adapter):
 
 class GuildAdapter(Adapter):
     """
-    The ``{author}`` block with no parameters returns the server's name  
-    but passing the attributes listed below to the block payload 
+    The ``{author}`` block with no parameters returns the server's name
+    but passing the attributes listed below to the block payload
     will return that attribute instead.
 
     **Aliases:** ``guild``

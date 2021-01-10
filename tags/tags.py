@@ -2,7 +2,6 @@ import asyncio
 import time
 from copy import copy
 from typing import Literal, Optional, Tuple
-from pathlib import Path
 
 import logging
 import discord
@@ -33,9 +32,9 @@ async def delete_quietly(message: discord.Message):
         pass
 
 
-async def send_quietly(channel: discord.TextChannel, content: str = None, **kwargs):
+async def send_quietly(destination: discord.abc.Messageable, content: str = None, **kwargs):
     try:
-        return await channel.send(content, **kwargs)
+        return await destination.send(content, **kwargs)
     except discord.HTTPException:
         pass
 
@@ -47,7 +46,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.2.13"
+    __version__ = "1.3.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -325,7 +324,6 @@ class Tags(commands.Cog):
         target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
         channel = TextChannelAdapter(ctx.channel)
         guild = GuildAdapter(ctx.guild)
-        destination = ctx.channel
         seed = {
             "author": author,
             "user": author,
@@ -343,6 +341,8 @@ class Tags(commands.Cog):
         content = output.body[:2000] if output.body else None
         actions = output.actions
         embed = actions.get("embed")
+        destination = ctx.channel
+        replying = False
 
         if actions:
             if actions.get("requires") or actions.get("blacklist"):
@@ -369,6 +369,8 @@ class Tags(commands.Cog):
             if target := actions.get("target"):
                 if target == "dm":
                     destination = await ctx.author.create_dm()
+                elif target == "reply":
+                    replying = True
                 else:
                     try:
                         chan = await self.channel_converter.convert(ctx, target)
@@ -381,7 +383,7 @@ class Tags(commands.Cog):
         # this is going to become an asynchronous swamp
         msg = None
         if content or embed:
-            msg = await send_quietly(destination, content, embed=embed)
+            msg = await self.send_tag_response(ctx, destination, replying, content, embed=embed)
             if msg and (react := actions.get("react")):
                 to_gather.append(self.do_reactions(ctx, react, msg))
         if command_messages:
@@ -394,6 +396,22 @@ class Tags(commands.Cog):
 
         if to_gather:
             await asyncio.gather(*to_gather)
+
+    async def send_tag_response(
+        self,
+        ctx: commands.Context,
+        destination: discord.abc.Messageable,
+        replying: bool,
+        content: str = None,
+        **kwargs,
+    ) -> Optional[discord.Message]:
+        if replying:
+            try:
+                return await ctx.reply(content, **kwargs)
+            except discord.HTTPException:
+                return await send_quietly(destination, content, **kwargs)
+        else:
+            return await send_quietly(destination, content, **kwargs)
 
     async def process_command(self, command_message: discord.Message, silent: bool = False):
         ctx = await self.bot.get_context(

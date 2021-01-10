@@ -19,8 +19,10 @@ RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 def comstats_cog(ctx: commands.Context):
     return ctx.bot.get_cog("CommandStats") is not None
 
+
 def disabled_or_data(data):
     return data if data else "Disabled"
+
 
 class Baron(commands.Cog):
     """
