@@ -5,7 +5,15 @@
 Discord Blocks
 ===============
 
+------------
+Author Block
+------------
+
 .. autoclass:: tags.adapters.MemberAdapter
+
+------------
+Target Block
+------------
 
 .. class:: target
 
@@ -13,6 +21,14 @@ Discord Blocks
 
     **Aliases:** ``{member}``
 
+-------------
+Channel Block
+-------------
+
 .. autoclass:: tags.adapters.TextChannelAdapter
+
+------------
+Server Block
+------------
 
 .. autoclass:: tags.adapters.GuildAdapter

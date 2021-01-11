@@ -43,7 +43,6 @@ These are:
 *   ``target`` | ``member``
 *   ``channel``
 *   ``guild`` | ``server``
-*   ``guild`` | ``server``
 
 You can see attributes available using these blocks in :doc:`discord_objects`.
 
