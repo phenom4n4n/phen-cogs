@@ -34,7 +34,6 @@ class DisboardReminder(commands.Cog):
 
     def __init__(self, bot: Red):
         self.bot = bot
-        self.load_check = self.bot.loop.create_task(self.bump_worker())
         self.config = Config.get_conf(
             self, identifier=9765573181940385953309, force_registration=True
         )
@@ -177,18 +176,32 @@ class DisboardReminder(commands.Cog):
     async def settings(self, ctx):
         """Show your Bump Reminder settings."""
         data = await self.config.guild(ctx.guild).all()
+        guild = ctx.guild
+
+        if channel := guild.get_channel(data["channel"]):
+            channel = channel.mention
+        else:
+            channel = "None"
+        if pingrole := guild.get_role(data["role"]):
+            pingrole = pingrole.mention
+        else:
+            pingrole = "None"
+        description = [
+            f"**Channel:** {channel}",
+            f"**Ping Role:** {pingrole}",
+            f"**Clean Mode:** {data['clean']}",
+        ]
+        description = "\n".join(description)
 
         e = discord.Embed(
-            color=await self.bot.get_embed_color(ctx), title="Bump Reminder Settings"
+            color=await self.bot.get_embed_color(ctx),
+            title="Bump Reminder Settings",
+            description=description,
         )
         for key, value in data.items():
             if isinstance(value, str):
-                inline = False
-                value = f"```{value}```"
-            else:
-                inline = True
-                value = f"`{value}`"
-            e.add_field(name=key, value=value, inline=inline)
+                value = f"```{discord.utils.escape_markdown(value)}```"
+                e.add_field(name=key, value=value, inline=False)
         if data["nextBump"]:
             timestamp = datetime.fromtimestamp(data["nextBump"])
             e.timestamp = timestamp
