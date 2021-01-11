@@ -52,11 +52,11 @@ class BlacklistBlock(Block):
     it will send the response if one is given. Multiple role or channel 
     requirements can be given, and should be split by a ",".
 
-    Usage: ``{blacklist(<role,channel>):[response]}``
+    **Usage:** ``{blacklist(<role,channel>):[response]}``
 
-    Payload: response, None
+    **Payload:** response, None
 
-    Parameter: role, channel
+    **Parameter:** role, channel
 
     **Usage:** ::
 
