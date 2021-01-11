@@ -4,8 +4,7 @@ import asyncio
 
 import discord
 from redbot.core import Config, checks, commands
-from redbot.core.commands.converter import BadArgument
-from redbot.core.commands import Converter
+from redbot.core.commands import Converter, BadArgument, MessageNotFound, ChannelNotFound
 
 link_regex = re.compile(
     r"https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com"
@@ -37,7 +36,7 @@ class LinkToMessage(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
         match = re.search(link_regex, argument)
         if not match:
-            raise BadArgument('Message "{}" not found.'.format(argument))
+            raise MessageNotFound(argument)
 
         channel_id = int(match.group("channel_id"))
         message_id = int(match.group("message_id"))
@@ -47,14 +46,21 @@ class LinkToMessage(Converter):
             return await self.validate_message(ctx, message)
 
         channel = ctx.bot.get_channel(channel_id)
-        if not channel:
-            raise BadArgument('Channel "{}" not found.'.format(channel_id))
+        if not channel or not channel.guild:
+            raise ChannelNotFound(channel_id)
+
+        my_perms = channel.permissions_for(channel.guild.me)
+        if not my_perms.read_messages:
+            raise BadArgument(f"Can't read messages in {channel.mention}.")
+        elif not my_perms.read_message_history:
+            raise BadArgument(f"Can't read message history in {channel.mention}.")
+
         try:
             message = await channel.fetch_message(message_id)
         except discord.NotFound:
-            raise BadArgument(argument)
+            raise MessageNotFound(argument)
         except discord.Forbidden:
-            raise BadArgument("Can't read messages in {}.".format(channel.mention))
+            raise BadArgument(f"Can't read messages in {channel.mention}.")
         else:
             return await self.validate_message(ctx, message)
 
@@ -93,6 +99,13 @@ class LinkQuoter(commands.Cog):
     """
     Quote Discord message links.
     """
+
+    __version__ = "1.0.1"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot):
         self.bot = bot
@@ -229,7 +242,7 @@ class LinkQuoter(commands.Cog):
 
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
     @commands.guild_only()
-    @commands.group(invoke_without_command=True, aliases=["linkmessage"])
+    @commands.command(aliases=["linkmessage"])
     async def linkquote(self, ctx, message_link: LinkToMessage):
         """Quote a message from a link."""
         embeds = await self.create_embeds([message_link], guild=ctx.guild)
@@ -250,9 +263,22 @@ class LinkQuoter(commands.Cog):
             await ctx.send(embed=embeds[0][0])
 
     @commands.admin_or_permissions(manage_guild=True)
-    @linkquote.command()
-    async def auto(self, ctx, true_or_false: bool = None):
-        """Toggle automatic quoting."""
+    @commands.guild_only()
+    @commands.group()
+    async def linkquoteset(self, ctx: commands.Context):
+        """Manage LinkQuoter settings."""
+
+    @linkquoteset.command(name="auto")
+    async def linkquoteset_auto(self, ctx, true_or_false: bool = None):
+        """
+        Toggle automatic link-quoting.
+        
+        Enabling this will make [botname] attempt to quote any message link that is sent in this server.
+        [botname] will ignore any message that has "no quote" in it.
+        If the user doesn't have permission to view the channel that they link, it will not quote.
+        
+        To enable quoting from other servers, run `[p]linkquoteset global`.
+        """
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -268,10 +294,13 @@ class LinkQuoter(commands.Cog):
             if ctx.guild.id in self.enabled_guilds:
                 self.enabled_guilds.pop(self.enabled_guilds.index(ctx.guild.id))
 
-    @commands.admin_or_permissions(manage_guild=True)
-    @linkquote.command()
-    async def delete(self, ctx, true_or_false: bool = None):
-        """Toggle deleting of messages for automatic quoting."""
+    @linkquoteset.command(name="delete")
+    async def linkquoteset_delete(self, ctx, true_or_false: bool = None):
+        """
+        Toggle deleting of messages for automatic quoting.
+        
+        If automatic quoting is enabled, then [botname] will also delete messages that contain links in them.
+        """
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -283,9 +312,8 @@ class LinkQuoter(commands.Cog):
         else:
             await ctx.send("I will no longer delete messages when automatically quoting.")
 
-    @commands.admin_or_permissions(manage_guild=True)
-    @linkquote.command(name="global")
-    async def linkquote_global(self, ctx, true_or_false: bool = None):
+    @linkquoteset.command(name="global")
+    async def linkquoteset_global(self, ctx, true_or_false: bool = None):
         """
         Toggle cross-server quoting.
 
@@ -306,11 +334,14 @@ class LinkQuoter(commands.Cog):
             await ctx.send("This server is no longer opted in to cross-server quoting.")
 
     @commands.check(webhook_check)
-    @commands.admin_or_permissions(manage_guild=True)
     @checks.bot_has_permissions(manage_webhooks=True)
-    @linkquote.command()
-    async def webhook(self, ctx, true_or_false: bool = None):
-        """Toggle whether the bot should use webhooks to quote."""
+    @linkquoteset.command(name="webhook")
+    async def linkquoteset_webhook(self, ctx, true_or_false: bool = None):
+        """
+        Toggle whether [botname] should use webhooks to quote.
+        
+        [botname] must have Manage Webhook permissions to use webhooks when quoting.
+        """
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -322,9 +353,8 @@ class LinkQuoter(commands.Cog):
         else:
             await ctx.send("I will no longer use webhooks to quote.")
 
-    @commands.admin_or_permissions(manage_guild=True)
-    @linkquote.command()
-    async def showsettings(self, ctx: commands.Context):
+    @linkquoteset.command(name="settings")
+    async def linkquoteset_settings(self, ctx: commands.Context):
         """View LinkQuoter settings."""
         data = await self.config.guild(ctx.guild).all()
         description = [
@@ -341,10 +371,15 @@ class LinkQuoter(commands.Cog):
     async def on_message_without_command(self, message: discord.Message):
         if message.author.bot or isinstance(message.author, discord.User):
             return
-        if not (message.guild and await self.bot.message_eligible_as_command(message)):
+        if not message.guild:
             return
         guild: discord.Guild = message.guild
-        if guild.id not in self.enabled_guilds or "no quote" in message.content.lower():
+        if guild.id not in self.enabled_guilds:
+            return
+        if not await self.bot.message_eligible_as_command(message):
+            return
+        guild: discord.Guild = message.guild
+        if "no quote" in message.content.lower():
             return
         channel: discord.TextChannel = message.channel
 
