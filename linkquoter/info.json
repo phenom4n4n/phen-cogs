@@ -8,5 +8,6 @@
     "tags": [],
     "requirements": [],
     "hidden": false,
-    "end_user_data_statement": "This cog does not store any End User Data."
+    "end_user_data_statement": "This cog does not store any End User Data.",
+    "min_bot_version": "3.4.0"
 }
