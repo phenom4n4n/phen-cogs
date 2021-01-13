@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from redbot.core.bot import Red
+from redbot.core.errors import CogLoadError
 
 from .tags import Tags
 
@@ -12,7 +13,7 @@ with open(Path(__file__).parent / "info.json") as fp:
 def setup(bot: Red) -> None:
     cog = bot.get_cog("CustomCommands")
     if cog:
-        raise RuntimeError(
+        raise CogLoadError(
             "This cog conflicts with CustomCommands and cannot be loaded with both at the same time."
         )
     bot.add_cog(Tags(bot))
