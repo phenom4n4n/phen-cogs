@@ -7,7 +7,16 @@ TagScriptEngine Blocks
 
 Read the official `TagScriptEngine documentation <https://github.com/JonSnowbd/TagScript/tree/v2/Documentation>`_ for docs on these blocks, I will add documentation for these later.
 
-.. automodule:: TagScriptEngine.block
-    :members: RandomBlock, IfBlock
-    :ignore-module-all:
-    :undoc-members:
+.. _IfBlock:
+
+--------
+If Block
+--------
+
+.. autoclass:: TagScriptEngine.block.IfBlock
+
+------------
+Random Block
+------------
+
+.. autoclass:: TagScriptEngine.block.RandomBlock

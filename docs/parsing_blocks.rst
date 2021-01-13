@@ -50,6 +50,8 @@ ReactU Block
 Utility Blocks
 --------------
 
+.. _CommandBlock:
+
 ^^^^^^^^^^^^^^
 Command Block
 ^^^^^^^^^^^^^^
