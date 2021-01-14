@@ -5,7 +5,7 @@ from copy import copy
 
 import discord
 from discord.utils import sleep_until
-from redbot.core import checks, commands
+from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands.converter import TimedeltaConverter
 from redbot.core.config import Config
@@ -29,7 +29,7 @@ class PhenUtils(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command()
     async def do(self, ctx, times: int, sequential: typing.Optional[bool] = True, *, command):
         """Repeats a command a specified number of times."""
@@ -45,7 +45,7 @@ class PhenUtils(commands.Cog):
                 todo.append(self.bot.process_commands(new_message))
             await asyncio.gather(*todo)
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command()
     async def execute(self, ctx, sequential: typing.Optional[bool] = False, *, commands):
         """Execute multiple commands at once. Split them using |."""
@@ -63,7 +63,7 @@ class PhenUtils(commands.Cog):
                 todo.append(self.bot.process_commands(new_message))
             await asyncio.gather(*todo)
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command()
     async def bypass(self, ctx, *, command):
         """Bypass a command's checks and cooldowns."""
@@ -76,7 +76,7 @@ class PhenUtils(commands.Cog):
         except Exception as e:
             await ctx.send(embed=discord.Embed(title="Oops!", description=f"```\n{e}\n```"))
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command()
     async def timing(self, ctx: commands.Context, *, command_string: str):
         """
@@ -104,7 +104,7 @@ class PhenUtils(commands.Cog):
             f"Command `{alt_ctx.command.qualified_name}` finished in {end - start:.3f}s."
         )
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command(aliases=["taskcmd"])
     async def schedulecmd(self, ctx, time: TimedeltaConverter, *, command):
         """Schedule a command to be done later."""
@@ -113,3 +113,18 @@ class PhenUtils(commands.Cog):
         new_message.content = ctx.prefix + command.strip()
         await sleep_until(end)
         await self.bot.process_commands(new_message)
+
+    @commands.is_owner()
+    @commands.command()
+    async def reinvoke(self, ctx: commands.Context, message: discord.Message = None):
+        """
+        Reinvoke a command message.
+
+        You may reply to a message to reinvoke it or pass a message ID/link.
+        """
+        if not message:
+            if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
+                message = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(ref.message_id)
+            else:
+                raise commands.BadArgument
+        await self.bot.process_commands(message)
