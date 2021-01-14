@@ -243,8 +243,13 @@ class LinkQuoter(commands.Cog):
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
     @commands.guild_only()
     @commands.command(aliases=["linkmessage"])
-    async def linkquote(self, ctx, message_link: LinkToMessage):
+    async def linkquote(self, ctx, message_link: LinkToMessage = None):
         """Quote a message from a link."""
+        if not message_link:
+            if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
+                message_link = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(ref.message_id)
+            else:
+                raise commands.BadArgument
         embeds = await self.create_embeds([message_link], guild=ctx.guild)
         if not embeds:
             return await ctx.send("Invalid link.")
