@@ -1,27 +1,37 @@
 import discord
-from redbot.core import commands
-from TagScriptEngine import Interpreter, adapter, block
+from typing import Optional
+from redbot.core import commands, Config
+from redbot.core.bot import Red
+from TagScriptEngine import Interpreter
 
 
 class Tag(object):
     def __init__(
         self,
+        cog: commands.Cog,
+        guild: discord.Guild,
         name: str,
         tagscript: str,
         *,
-        invoker: discord.Member = None,
-        author: discord.Member = None,
+        author: discord.User = None,
         author_id: int = None,
-        uses: int = 0,
-        ctx: commands.Context = None
+        uses: int = 1,
+        real: bool = True,
     ):
-        self.name = name
-        self.tagscript = tagscript
-        self.invoker = invoker
-        self.author = author
-        self.author_id = author_id
-        self.uses = uses
-        self.ctx = ctx
+        self.cog = cog
+        self.config: Config = cog.config
+        self.bot: Red = cog.bot
+        self.guild: Optional[
+            discord.Guild
+        ] = guild  # guild may not be present when using `tag process`
+        self.name: str = name
+        self.tagscript: str = tagscript
+
+        self.author: discord.User = author
+        self.author_id: int = author.id if author else author_id
+        self.uses: int = uses
+
+        self._real_tag: bool = real
 
     def __str__(self) -> str:
         return self.name
@@ -30,20 +40,35 @@ class Tag(object):
         return len(self.tagscript)
 
     def run(self, interpreter: Interpreter, **kwargs) -> Interpreter.Response:
+        self.uses += 1
         return interpreter.process(self.tagscript, **kwargs)
 
+    async def update_config(self):
+        if self._real_tag and self.guild:
+            async with self.config.guild(self.guild).tags() as t:
+                t[self.name].update(uses=self.uses, tag=self.tagscript)
+
     @classmethod
-    def from_dict(cls, name: str, data: dict, *, ctx: commands.Context):
+    def from_dict(cls, cog: commands.Cog, guild: discord.Guild, name: str, data: dict):
         self = cls.__new__(cls)
-        self.name = name
+        self.cog = cog
+        self.config: Config = cog.config
+        self.bot: Red = cog.bot
+        self.guild: discord.Guild = guild
+        self.name: str = name
+
         self.tagscript = data["tag"]
-        self.uses = data.get("uses")
-        self.invoker = data.get("invoker")
-        self.author_id = data.get("author_id", data.get("author"))
-        if ctx:
-            self.ctx = ctx
-            self.author = ctx.guild.get_member(data.get("author"))
-        else:
-            self.ctx = None
-            self.author = None
+        self.author_id = author_id = data.get("author_id", data.get("author"))
+        self.author = guild.get_member(author_id) if isinstance(guild, discord.Guild) else None
+        self.uses = data.get("uses", 1)
+        self._real_tag: bool = True
+
         return self
+
+    def to_dict(self):
+        return {
+            "author_id": self.author_id,
+            "uses": self.uses,
+            "tag": self.tagscript,
+            "author": self.author_id,
+        }

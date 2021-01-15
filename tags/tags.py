@@ -13,6 +13,7 @@ from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 from TagScriptEngine import Interpreter, adapter, block
+from collections import defaultdict
 
 from .blocks import stable_blocks
 from .converters import TagConverter, TagName
@@ -46,7 +47,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.3.0"
+    __version__ = "1.4.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -75,7 +76,7 @@ class Tags(commands.Cog):
             block.StopBlock(),
             block.AssignmentBlock(),
             block.FiftyFiftyBlock(),
-            block.ShortCutRedirectBlock("message"),
+            block.ShortCutRedirectBlock("args"),
             block.LooseVariableGetterBlock(),
             block.SubstringBlock(),
         ]
@@ -85,8 +86,7 @@ class Tags(commands.Cog):
         self.member_converter = commands.MemberConverter()
         self.emoji_converter = commands.EmojiConverter()
 
-        self.tag_cache = {}
-        self.guild_data_cache = {}
+        self.guild_tag_cache = defaultdict(dict)
         self.task = asyncio.create_task(self.cache_tags())
 
     def cog_unload(self):
@@ -106,10 +106,18 @@ class Tags(commands.Cog):
                             del t[name]
 
     async def cache_tags(self):
+        await self.bot.wait_until_ready()
         guilds_data = await self.config.all_guilds()
-        self.guild_data_cache = guilds_data
         for guild_id, data in guilds_data.items():
-            self.tag_cache[guild_id] = list(data.get("tags", {}).keys())
+            tags = data.get("tags", {})
+            guild = self.bot.get_guild(guild_id) or discord.Object(guild_id)
+            for tag_name, tag_data in tags.items():
+                tag_object = Tag.from_dict(self, guild, tag_name, tag_data)
+                self.guild_tag_cache[guild_id][tag_name] = tag_object
+        log.debug("tag cache built")
+
+    def get_tag(self, guild: discord.Guild, tag_name: str):
+        return self.guild_tag_cache[guild.id].get(tag_name)
 
     @commands.guild_only()
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]", aliases=["customcom"])
@@ -125,100 +133,108 @@ class Tags(commands.Cog):
             if response:
                 await ctx.send(e)
             return
-        async with self.config.guild(ctx.guild).tags() as t:
-            t[tag_name]["uses"] += 1
         seed = {"args": adapter.StringAdapter(args)}
         log.info(f"Processing tag for {tag_name} on {ctx.guild} ({ctx.guild.id})")
         await self.process_tag(ctx, _tag, seed_variables=seed)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["create", "+"])
-    async def add(self, ctx, tag_name: TagName, *, tagscript):
+    async def add(self, ctx: commands.Context, tag_name: TagName, *, tagscript: str):
         """Add a tag with TagScript."""
-        tag = await self.get_stored_tag(ctx, tag_name, False)
+        tag = self.get_tag(ctx.guild, tag_name)
         if tag:
             msg = await ctx.send(
                 f"`{tag_name}` is already registered tag. Would you like to overwrite it?"
             )
             start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
             pred = ReactionPredicate.yes_or_no(msg, ctx.author)
-            await ctx.bot.wait_for("reaction_add", check=pred)
+            try:
+                await ctx.bot.wait_for("reaction_add", check=pred, timeout=30)
+            except asyncio.TimeoutError:
+                return await ctx.send("Tag edit cancelled.")
 
             if pred.result is False:
-                await ctx.send("Action cancelled.")
-                return
+                return await ctx.send("Tag edit cancelled.")
+            tag.tagscript = tagscript
+            await tag.update_config()
+            await ctx.send(f"Tag `{tag}` edited.")
+            return
 
-        await self.store_tag(ctx, tag_name, tagscript)
-        await self.cache_tags()
+        tag = Tag(self, ctx.guild, tag_name, tagscript, author=ctx.author)
+        self.guild_tag_cache[ctx.guild.id][tag_name] = tag
+        async with self.config.guild(ctx.guild).tags() as t:
+            t[tag_name] = tag.to_dict()
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["e"])
-    async def edit(self, ctx, tag: TagConverter, *, tagscript):
+    async def edit(self, ctx: commands.Context, tag: TagConverter, *, tagscript):
         """Edit a tag with TagScript."""
-        async with self.config.guild(ctx.guild).tags() as t:
-            t[str(tag)]["tag"] = tagscript
+        tag.tagscript = tagscript
+        await tag.update_config()
         await ctx.send(f"Tag `{tag}` edited.")
-        await self.cache_tags()
+        # await self.cache_tags()
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["delete", "-"])
-    async def remove(self, ctx, tag: TagConverter):
+    async def remove(self, ctx: commands.Context, tag: TagConverter):
         """Delete a tag."""
         async with self.config.guild(ctx.guild).tags() as e:
             del e[str(tag)]
+        del self.guild_tag_cache[ctx.guild.id][str(tag)]
         await ctx.send("Tag deleted.")
-        await self.cache_tags()
+        # await self.cache_tags()
 
     @tag.command(name="info")
-    async def tag_info(self, ctx, tag: TagConverter):
+    async def tag_info(self, ctx: commands.Context, tag: TagConverter):
         """Get info about an tag that is stored on this server."""
+        desc = [
+            f"Author: {tag.author.mention if tag.author else tag.author_id}",
+            f"Uses: {tag.uses}",
+            f"Length: {len(tag)}",
+        ]
         e = discord.Embed(
             color=await ctx.embed_color(),
-            title=f"`{tag}` Info",
-            description=f"Author: {tag.author.mention if tag.author else tag.author_id}\nUses: {tag.uses}\nLength: {len(tag)}",
+            title=f"Tag `{tag}` Info",
+            description="\n".join(desc),
         )
-        e.add_field(name="TagScript", value=box(str(tag)))
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
     @tag.command(name="raw")
-    async def tag_raw(self, ctx, tag: TagConverter):
+    async def tag_raw(self, ctx: commands.Context, tag: TagConverter):
         """Get a tag's raw content."""
         await ctx.send(
             escape_markdown(tag.tagscript[:2000]),
-            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=False),
+            allowed_mentions=discord.AllowedMentions.none(),
         )
 
     @tag.command(name="list")
-    async def tag_list(self, ctx):
+    async def tag_list(self, ctx: commands.Context):
         """View stored tags."""
-        tags = await self.config.guild(ctx.guild).tags()
+        tags = self.guild_tag_cache[ctx.guild.id]
         if not tags:
             return await ctx.send("There are no stored tags on this server.")
         description = []
 
         for name, tag in tags.items():
-            description.append(f"`{name}` - Created by <@!{tag['author']}>")
+            tagscript = tag.tagscript
+            if len(tagscript) > 23:
+                tagscript = tagscript[:20] + "..."
+            tagscript = tagscript.replace("\n", " ")
+            description.append(f"`{name}` - {escape_markdown(tagscript)}")
         description = "\n".join(description)
 
-        color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(color=color, title=f"Stored Tags")
+        e = discord.Embed(color=await ctx.embed_color(), title=f"Stored Tags")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
 
-        if len(description) > 2048:
-            embeds = []
-            pages = list(pagify(description, page_length=1024))
-            for index, page in enumerate(pages, start=1):
-                embed = e.copy()
-                embed.description = page
-                embed.set_footer(text=f"{index}/{len(pages)}")
-                embeds.append(embed)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            e.description = description
-            emoji = self.bot.get_emoji(736038541364297738) or "❌"
-            controls = {emoji: close_menu}
-            await menu(ctx, [e], controls)
+        embeds = []
+        pages = list(pagify(description))
+        for index, page in enumerate(pages, 1):
+            embed = e.copy()
+            embed.description = page
+            embed.set_footer(text=f"{index}/{len(pages)}")
+            embeds.append(embed)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.is_owner()
     @commands.mod_or_permissions(manage_guild=True)
@@ -264,31 +280,15 @@ class Tags(commands.Cog):
     async def process(self, ctx: commands.Context, *, tagscript: str):
         """Process TagScript without storing."""
         tag = Tag(
+            self,
+            ctx.guild,
             "processed_tag",
             tagscript,
-            invoker=ctx.author,
             author=ctx.author,
-            author_id=ctx.author.id,
-            uses=1,
-            ctx=ctx,
+            real=False,
         )
         await self.process_tag(ctx, tag)
         await ctx.tick()
-
-    async def store_tag(self, ctx: commands.Context, name: str, tagscript: str):
-        async with self.config.guild(ctx.guild).tags() as t:
-            t[name] = {"author": ctx.author.id, "uses": 0, "tag": tagscript}
-        await ctx.send(f"Tag stored under the name `{name}`.")
-
-    async def get_stored_tag(
-        self, ctx: commands.Context, name: TagName, response: bool = True
-    ) -> Optional[Tag]:
-        tags = await self.config.guild(ctx.guild).tags()
-        tag = tags.get(name)
-        if tag:
-            tag = Tag.from_dict(name, tag, ctx=ctx)
-            return tag
-        return None
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
@@ -298,7 +298,7 @@ class Tags(commands.Cog):
             or not message.guild
         ):
             return
-        if message.guild.id not in self.tag_cache.keys():
+        if not self.guild_tag_cache[message.guild.id]:
             return
         if not await self.bot.message_eligible_as_command(message):
             return
@@ -307,11 +307,8 @@ class Tags(commands.Cog):
             return
 
         tag_command = message.content[len(ctx.prefix) :]
-        tag_split = tag_command.split(" ")
-        if not tag_split:
-            return
-        tag_name = tag_split[0]
-        if tag_name in self.tag_cache.get(message.guild.id, []):
+        tag_split = tag_command.split(" ", 1)
+        if self.get_tag(message.guild, tag_split[0]):
             new_message = copy(message)
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
             ctx = await self.bot.get_context(new_message)
@@ -324,6 +321,7 @@ class Tags(commands.Cog):
         target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
         channel = TextChannelAdapter(ctx.channel)
         guild = GuildAdapter(ctx.guild)
+        uses = adapter.IntAdapter(tag.uses)
         seed = {
             "author": author,
             "user": author,
@@ -332,10 +330,12 @@ class Tags(commands.Cog):
             "channel": channel,
             "guild": guild,
             "server": guild,
+            "uses": uses,
         }
         seed_variables.update(seed)
 
         output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
+        await tag.update_config()
         to_gather = []
         command_messages = []
         content = output.body[:2000] if output.body else None

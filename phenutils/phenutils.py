@@ -124,7 +124,9 @@ class PhenUtils(commands.Cog):
         """
         if not message:
             if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
-                message = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(ref.message_id)
+                message = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(
+                    ref.message_id
+                )
             else:
                 raise commands.BadArgument
         await self.bot.process_commands(message)

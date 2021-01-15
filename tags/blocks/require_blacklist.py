@@ -6,10 +6,10 @@ from TagScriptEngine.interface import Block
 
 class RequireBlock(Block):
     """
-    The require block will attempt to convert the given parameter into a channel 
-    or role, using name or ID. If the user running the tag is not in the targeted 
-    channel or doesn't have the targeted role, the tag will stop processing and 
-    it will send the response if one is given. Multiple role or channel 
+    The require block will attempt to convert the given parameter into a channel
+    or role, using name or ID. If the user running the tag is not in the targeted
+    channel or doesn't have the targeted role, the tag will stop processing and
+    it will send the response if one is given. Multiple role or channel
     requirements can be given, and should be split by a ",".
 
     **Usage:** ``{require(<role,channel>):[response]}``
@@ -46,10 +46,10 @@ class RequireBlock(Block):
 
 class BlacklistBlock(Block):
     """
-    The blacklist block will attempt to convert the given parameter into a channel 
-    or role, using name or ID. If the user running the tag is in the targeted 
-    channel or has the targeted role, the tag will stop processing and 
-    it will send the response if one is given. Multiple role or channel 
+    The blacklist block will attempt to convert the given parameter into a channel
+    or role, using name or ID. If the user running the tag is in the targeted
+    channel or has the targeted role, the tag will stop processing and
+    it will send the response if one is given. Multiple role or channel
     requirements can be given, and should be split by a ",".
 
     **Usage:** ``{blacklist(<role,channel>):[response]}``
