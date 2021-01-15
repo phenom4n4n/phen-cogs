@@ -26,7 +26,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -101,20 +101,22 @@ class DisboardReminder(commands.Cog):
         """Set the channel to send bump reminders to.
 
         This also works as a toggle, so if no channel is provided, it will disable reminders for this server."""
-
-        if not channel:
+        if not channel and self.channel_cache.get(ctx.guild.id):
             await self.config.guild(ctx.guild).channel.clear()
             await ctx.send("Disabled bump reminders in this server.")
-        else:
+        elif channel:
             try:
                 await channel.send(
                     "Set this channel as the reminder channel for bumps. "
                     "I will not send my first reminder until a successful bump is registered."
                 )
-                await self.config.guild(ctx.guild).channel.set(channel.id)
             except discord.errors.Forbidden:
                 await ctx.send("I do not have permission to talk in that channel.")
-        await ctx.tick()
+            else:
+                await self.config.guild(ctx.guild).channel.set(channel.id)
+                self.channel_cache[ctx.guild.id] = channel.id
+        else:
+            raise commands.BadArgument
 
     @checks.has_permissions(mention_everyone=True)
     @bumpreminder.command()
