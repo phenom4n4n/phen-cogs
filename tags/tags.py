@@ -18,7 +18,7 @@ from collections import defaultdict
 from .blocks import stable_blocks
 from .converters import TagConverter, TagName
 from .objects import Tag
-from .adapters import MemberAdapter, TextChannelAdapter, GuildAdapter, IntegerAdapter
+from .adapters import MemberAdapter, TextChannelAdapter, GuildAdapter
 from .ctx import SilentContext
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
@@ -321,7 +321,7 @@ class Tags(commands.Cog):
         target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
         channel = TextChannelAdapter(ctx.channel)
         guild = GuildAdapter(ctx.guild)
-        uses = IntegerAdapter(tag.uses)
+        uses = adapter.IntAdapter(tag.uses)
         seed = {
             "author": author,
             "user": author,

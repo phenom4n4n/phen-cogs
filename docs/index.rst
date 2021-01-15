@@ -36,5 +36,5 @@ Welcome to Phen-Cogs's documentation!
 
    blocks
    tse_blocks
-   discord_objects
+   default_variables
    parsing_blocks

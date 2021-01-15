@@ -44,7 +44,7 @@ These are:
 *   ``channel``
 *   ``guild`` | ``server``
 
-You can see attributes available using these blocks in :doc:`discord_objects`.
+You can see attributes available using these blocks in :doc:`default_variables`.
 
 Below is an example tag that returns info related to the tag author. ::
 

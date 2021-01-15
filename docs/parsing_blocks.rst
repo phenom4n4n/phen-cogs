@@ -52,14 +52,14 @@ Utility Blocks
 
 .. _CommandBlock:
 
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 Command Block
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 .. autoclass:: tags.blocks.CommandBlock
 
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 Delete Block
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 .. autoclass:: tags.blocks.DeleteBlock

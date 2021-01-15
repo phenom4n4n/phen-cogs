@@ -15,7 +15,7 @@ class Tag(object):
         *,
         author: discord.User = None,
         author_id: int = None,
-        uses: int = 0,
+        uses: int = 1,
         real: bool = True,
     ):
         self.cog = cog
@@ -60,7 +60,7 @@ class Tag(object):
         self.tagscript = data["tag"]
         self.author_id = author_id = data.get("author_id", data.get("author"))
         self.author = guild.get_member(author_id) if isinstance(guild, discord.Guild) else None
-        self.uses = data.get("uses", 0)
+        self.uses = data.get("uses", 1)
         self._real_tag: bool = True
 
         return self
