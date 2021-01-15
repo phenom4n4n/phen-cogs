@@ -1,5 +1,5 @@
 import re
-from typing import Union
+from typing import Union, Optional, List, Tuple
 import asyncio
 
 import discord
@@ -170,74 +170,93 @@ class LinkQuoter(commands.Cog):
                 continue
         return messages
 
-    async def create_embeds(self, messages: list, *, guild: discord.Guild = None):
-        embeds = []
-        for message in messages:
-            image = False
-            e = False
-            if message.embeds:
-                embed = message.embeds[0]
-                if str(embed.type) == "rich":
-                    embed.color = message.author.color
+    async def message_to_embed(
+        self,
+        message: discord.Message,
+        *,
+        invoke_guild: discord.Guild = None,
+        author_field: bool = True,
+        footer_field: bool = True,
+    ) -> Optional[discord.Embed]:
+        image = None
+        e: discord.Embed = None
+        if message.embeds:
+            embed = message.embeds[0]
+            if str(embed.type) == "rich":
+                if footer_field:
                     embed.timestamp = message.created_at
-                    embed.set_author(
-                        name=f"{message.author} said..",
-                        icon_url=message.author.avatar_url,
-                        url=message.jump_url,
-                    )
-                    embed.set_footer(text=f"#{message.channel.name}")
-                    e = embed
-                if str(embed.type) == "image" or str(embed.type) == "article":
-                    image = embed.url
-            elif not message.content and not message.embeds and not message.attachments:
-                continue
-            if not e:
-                content = message.content
-                e = discord.Embed(
-                    color=message.author.color,
-                    description=content,
-                    timestamp=message.created_at,
-                )
-                e.set_author(
-                    name=f"{message.author} said..",
-                    icon_url=message.author.avatar_url,
-                    url=message.jump_url,
-                )
-                e.set_footer(text=f"#{message.channel.name}")
-            if guild and message.guild.id != guild.id:
+                e = embed
+            if str(embed.type) in ("image", "article"):
+                image = embed.url
+
+        if not e:
+            content = message.content
+            e = discord.Embed(
+                color=message.author.color,
+                description=content,
+                timestamp=message.created_at,
+            )
+        
+        if author_field:
+            e.set_author(
+                name=f"{message.author} said..",
+                icon_url=message.author.avatar_url,
+                url=message.jump_url,
+            )
+
+        if footer_field:
+            if invoke_guild and message.guild != invoke_guild:
                 e.set_footer(
                     icon_url=message.guild.icon_url,
                     text=f"#{message.channel.name} | {message.guild}",
                 )
             else:
                 e.set_footer(text=f"#{message.channel.name}")
-            if message.attachments:
-                att = message.attachments[0]
-                image = att.proxy_url
-                e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})")
-            if image:
-                e.set_image(url=image)
-            if ref := message.reference:
-                if not (ref_message := ref.cached_message):
-                    ref_chan = message.guild.get_channel(ref.channel_id)
-                    if ref_chan:
-                        try:
-                            ref_message = await ref_chan.fetch_message(ref.message_id)
-                        except (discord.Forbidden, discord.NotFound):
-                            pass
-                        else:
-                            jump_url = ref_message.jump_url
-                            e.add_field(
-                                name="Replying to",
-                                value=f"[{ref_message.content[:1000] if ref_message.content else 'Click to view attachments'}]({jump_url})",
-                                inline=False,
-                            )
-            e.add_field(
-                name="Source",
-                value=f'\n[[jump to message]]({message.jump_url} "Follow me to the original message!")',
-                inline=False,
-            )
-            embeds.append((e, message.author))
+
+        if image:
+            e.set_image(url=image)
+
+        if message.attachments:
+            att = message.attachments[0]
+            image = att.proxy_url
+            e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})")
+
+        if ref := message.reference:
+            ref_message = ref.cached_message or (ref.resolved if ref.resolved and isinstance(ref.resolved, discord.Message) else None)
+            if not ref_message:
+                ref_chan = message.guild.get_channel(ref.channel_id)
+                if ref_chan:
+                    try:
+                        ref_message = await ref_chan.fetch_message(ref.message_id)
+                    except (discord.Forbidden, discord.NotFound):
+                        pass
+            if ref_message:
+                jump_url = ref_message.jump_url
+                e.add_field(
+                    name="Replying to",
+                    value=f"[{ref_message.content[:1000] if ref_message.content else 'Click to view attachments'}]({jump_url})",
+                    inline=False,
+                )
+
+        e.add_field(
+            name="Source",
+            value=f'\n[[jump to message]]({message.jump_url} "Follow me to the original message!")',
+            inline=False,
+        )
+        return e
+
+    async def create_embeds(self, 
+        messages: list, 
+        *, 
+        invoke_guild: discord.Guild = None,
+        author_field: bool = True,
+        footer_field: bool = True,
+    ) -> List[Tuple[discord.Embed, discord.Member]]:
+        embeds = []
+        for message in messages:
+            embed = await self.message_to_embed(message, invoke_guild=invoke_guild, author_field=author_field, footer_field=footer_field)
+            if embed:
+                embeds.append((embed, message.author))
         return embeds
 
     @commands.cooldown(3, 15, type=commands.BucketType.channel)
@@ -252,11 +271,9 @@ class LinkQuoter(commands.Cog):
                 ).fetch_message(ref.message_id)
             else:
                 raise commands.BadArgument
-        embeds = await self.create_embeds([message_link], guild=ctx.guild)
-        if not embeds:
-            return await ctx.send("Invalid link.")
         cog = webhook_check(ctx)
         if (await self.config.guild(ctx.guild).webhooks()) and cog:
+            embed = await self.message_to_embed(message_link, invoke_guild=ctx.guild, author_field=False)
             await cog.send_to_channel(
                 ctx.channel,
                 ctx.me,
@@ -264,10 +281,11 @@ class LinkQuoter(commands.Cog):
                 reason=f"For the {ctx.command.qualified_name} command",
                 username=ctx.author.display_name,
                 avatar_url=ctx.author.avatar_url,
-                embed=embeds[0][0],
+                embed=embed,
             )
         else:
-            await ctx.send(embed=embeds[0][0])
+            embed = await self.message_to_embed(message_link, invoke_guild=ctx.guild)
+            await ctx.send(embed=embed)
 
     @commands.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
@@ -404,13 +422,11 @@ class LinkQuoter(commands.Cog):
             message = await LinkToMessage().convert(ctx, message.content)
         except BadArgument:
             return
-        embeds = await self.create_embeds([message], guild=guild)
-        if not embeds:
-            return
         cog = webhook_check(ctx)
         data = await self.config.guild(ctx.guild).all()
         tasks = []
         if cog and data["webhooks"]:
+            embed = await self.message_to_embed(message, invoke_guild=ctx.guild, author_field=False)
             tasks.append(
                 cog.send_to_channel(
                     ctx.channel,
@@ -419,11 +435,12 @@ class LinkQuoter(commands.Cog):
                     reason=f"For the {ctx.command.qualified_name} command",
                     username=ctx.author.display_name,
                     avatar_url=ctx.author.avatar_url,
-                    embed=embeds[0][0],
+                    embed=embed,
                 )
             )
         else:
-            tasks.append(ctx.send(embed=embeds[0][0]))
+            embed = await self.message_to_embed(message, invoke_guild=ctx.guild)
+            tasks.append(ctx.send(embed=embed))
         if data["delete"]:
             tasks.append(delete_quietly(ctx))
         await asyncio.gather(*tasks)
