@@ -16,10 +16,8 @@ class TagName(Converter):
 class TagConverter(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
         cog = ctx.bot.get_cog("Tags")
-        tags = cog.guild_data_cache.get(ctx.guild.id, {"tags": {}})["tags"]
-        tag = tags.get(argument)
+        tag = cog.get_tag(ctx.guild, argument)
         if tag:
-            tag = Tag.from_dict(argument, tag, ctx=ctx)
             return tag
         else:
             raise BadArgument(f'Tag "{escape_mentions(argument)}" not found.')

@@ -161,3 +161,10 @@ class GuildAdapter(Adapter):
             return str(param)
         else:
             return None
+
+class IntegerAdapter(Adapter):
+    def __init__(self, number: int):
+        self.number = number
+
+    def get_value(self, ctx: Verb) -> str:
+        return str(self.number)
