@@ -162,6 +162,7 @@ class GuildAdapter(Adapter):
         else:
             return None
 
+
 class IntegerAdapter(Adapter):
     def __init__(self, number: int):
         self.number = number

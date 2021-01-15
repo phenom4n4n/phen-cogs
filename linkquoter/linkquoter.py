@@ -247,7 +247,9 @@ class LinkQuoter(commands.Cog):
         """Quote a message from a link."""
         if not message_link:
             if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
-                message_link = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(ref.message_id)
+                message_link = ref.resolved or await ctx.bot.get_channel(
+                    ref.channel_id
+                ).fetch_message(ref.message_id)
             else:
                 raise commands.BadArgument
         embeds = await self.create_embeds([message_link], guild=ctx.guild)
@@ -277,11 +279,11 @@ class LinkQuoter(commands.Cog):
     async def linkquoteset_auto(self, ctx, true_or_false: bool = None):
         """
         Toggle automatic link-quoting.
-        
+
         Enabling this will make [botname] attempt to quote any message link that is sent in this server.
         [botname] will ignore any message that has "no quote" in it.
         If the user doesn't have permission to view the channel that they link, it will not quote.
-        
+
         To enable quoting from other servers, run `[p]linkquoteset global`.
         """
         target_state = (
@@ -303,7 +305,7 @@ class LinkQuoter(commands.Cog):
     async def linkquoteset_delete(self, ctx, true_or_false: bool = None):
         """
         Toggle deleting of messages for automatic quoting.
-        
+
         If automatic quoting is enabled, then [botname] will also delete messages that contain links in them.
         """
         target_state = (
@@ -344,7 +346,7 @@ class LinkQuoter(commands.Cog):
     async def linkquoteset_webhook(self, ctx, true_or_false: bool = None):
         """
         Toggle whether [botname] should use webhooks to quote.
-        
+
         [botname] must have Manage Webhook permissions to use webhooks when quoting.
         """
         target_state = (

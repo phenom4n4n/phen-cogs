@@ -25,6 +25,7 @@ class DisboardReminder(commands.Cog):
     """
     Set a reminder to bump on Disboard.
     """
+
     __version__ = "1.1.0"
 
     def format_help_for_context(self, ctx):
@@ -378,11 +379,7 @@ class DisboardReminder(commands.Cog):
 
             await self.bump_timer(message.guild, next_bump)
         else:
-            if (
-                my_perms.send_messages
-                and clean
-                and channel == bump_channel
-            ):
+            if my_perms.send_messages and clean and channel == bump_channel:
                 await asyncio.sleep(2)
                 try:
                     await message.delete()

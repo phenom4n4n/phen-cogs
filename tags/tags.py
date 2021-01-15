@@ -190,7 +190,7 @@ class Tags(commands.Cog):
         desc = [
             f"Author: {tag.author.mention if tag.author else tag.author_id}",
             f"Uses: {tag.uses}",
-            f"Length: {len(tag)}"
+            f"Length: {len(tag)}",
         ]
         e = discord.Embed(
             color=await ctx.embed_color(),
@@ -220,7 +220,7 @@ class Tags(commands.Cog):
             tagscript = tag.tagscript
             if len(tagscript) > 23:
                 tagscript = tagscript[:20] + "..."
-            tagscript = tagscript.replace('\n', ' ')
+            tagscript = tagscript.replace("\n", " ")
             description.append(f"`{name}` - {escape_markdown(tagscript)}")
         description = "\n".join(description)
 

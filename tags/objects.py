@@ -21,7 +21,9 @@ class Tag(object):
         self.cog = cog
         self.config: Config = cog.config
         self.bot: Red = cog.bot
-        self.guild: Optional[discord.Guild] = guild # guild may not be present when using `tag process`
+        self.guild: Optional[
+            discord.Guild
+        ] = guild  # guild may not be present when using `tag process`
         self.name: str = name
         self.tagscript: str = tagscript
 
@@ -64,4 +66,9 @@ class Tag(object):
         return self
 
     def to_dict(self):
-        return {"author_id": self.author_id, "uses": self.uses, "tag": self.tagscript, "author": self.author_id}
+        return {
+            "author_id": self.author_id,
+            "uses": self.uses,
+            "tag": self.tagscript,
+            "author": self.author_id,
+        }
