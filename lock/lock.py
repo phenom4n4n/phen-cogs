@@ -156,7 +156,7 @@ class Lock(commands.Cog):
 
         for role in roles:
             current_perms = role.permissions
-            if ctx.guild.me.top_role.position <= role.position:
+            if ctx.guild.me.top_role <= role:
                 failed.append(inline(role.name))
             elif current_perms.send_messages == False:
                 cancelled.append(inline(role.name))
@@ -334,7 +334,7 @@ class Lock(commands.Cog):
 
         for role in roles:
             current_perms = role.permissions
-            if ctx.guild.me.top_role.position <= role.position:
+            if ctx.guild.me.top_role <= role:
                 failed.append(inline(role.name))
             elif current_perms.send_messages == True:
                 cancelled.append(inline(role.name))

@@ -13,11 +13,11 @@ def is_allowed_by_role_hierarchy(
     mod: discord.Member,
     role: discord.Role,
 ):
-    if role.position >= bot_me.top_role.position:
+    if role >= bot_me.top_role:
         return (False, f"I am not higher than `{role}` in hierarchy.")
     else:
         return (
-            (mod.top_role.position > role.position) or mod == mod.guild.owner,
+            (mod.top_role > role) or mod == mod.guild.owner,
             f"You are not higher than `{role}` in hierarchy.",
         )
 

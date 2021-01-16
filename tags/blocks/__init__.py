@@ -16,8 +16,8 @@ stable_blocks = [
     ReactBlock(),
     RedirectBlock(),
     ReactUBlock(),
-    OverrideBlock(),
 ]
+
 __all__ = (
     "CommandBlock",
     "DeleteBlock",
@@ -28,4 +28,5 @@ __all__ = (
     "ReactBlock",
     "RedirectBlock",
     "ReactUBlock",
+    "OverrideBlock",
 )
