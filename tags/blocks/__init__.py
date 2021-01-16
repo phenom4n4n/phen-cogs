@@ -1,4 +1,4 @@
-from .command import CommandBlock
+from .command import CommandBlock, OverrideBlock
 from .delete import DeleteBlock
 from .embed import EmbedBlock
 from .silent import SilentBlock
@@ -16,6 +16,7 @@ stable_blocks = [
     ReactBlock(),
     RedirectBlock(),
     ReactUBlock(),
+    OverrideBlock(),
 ]
 __all__ = (
     "CommandBlock",

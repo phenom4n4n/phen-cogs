@@ -3,7 +3,7 @@ from redbot.core import commands
 from redbot.core.commands import BadArgument, Converter
 
 from .objects import Tag
-
+from .errors import MissingTagPermissions
 
 class TagName(Converter):
     async def convert(self, ctx: commands.Converter, argument: str) -> str:
@@ -21,3 +21,13 @@ class TagConverter(Converter):
             return tag
         else:
             raise BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
+
+
+class TagScriptConverter(Converter):
+    async def convert(self, ctx: commands.Context, argument: str) -> str:
+        cog = ctx.bot.get_cog("Tags")
+        try:
+            await cog.validate_tagscript(ctx, argument)
+        except MissingTagPermissions as e:
+            raise BadArgument(str(e))
+        return argument

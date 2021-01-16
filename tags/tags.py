@@ -1,12 +1,13 @@
 import asyncio
 import time
-from copy import copy
+from copy import copy, deepcopy
 from typing import Literal, Optional, Tuple
 
 import logging
 import discord
 from discord.utils import escape_markdown
 from redbot.core import commands
+from redbot.core.commands import Requires, PrivilegeLevel
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
@@ -16,10 +17,11 @@ from TagScriptEngine import Interpreter, adapter, block
 from collections import defaultdict
 
 from .blocks import stable_blocks
-from .converters import TagConverter, TagName
+from .converters import TagConverter, TagName, TagScriptConverter
 from .objects import Tag
 from .adapters import MemberAdapter, TextChannelAdapter, GuildAdapter
 from .ctx import SilentContext
+from .errors import MissingTagPermissions
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -49,7 +51,7 @@ class Tags(commands.Cog):
 
     __version__ = "1.4.1"
 
-    def format_help_for_context(self, ctx):
+    def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
@@ -139,7 +141,7 @@ class Tags(commands.Cog):
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["create", "+"])
-    async def add(self, ctx: commands.Context, tag_name: TagName, *, tagscript: str):
+    async def add(self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter):
         """Add a tag with TagScript."""
         tag = self.get_tag(ctx.guild, tag_name)
         if tag:
@@ -168,7 +170,7 @@ class Tags(commands.Cog):
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["e"])
-    async def edit(self, ctx: commands.Context, tag: TagConverter, *, tagscript):
+    async def edit(self, ctx: commands.Context, tag: TagConverter, *, tagscript: TagScriptConverter):
         """Edit a tag with TagScript."""
         tag.tagscript = tagscript
         await tag.update_config()
@@ -315,6 +317,15 @@ class Tags(commands.Cog):
             ctx = await self.bot.get_context(new_message)
             await self.bot.invoke(ctx)
 
+    async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
+        output = self.engine.process(tagscript)
+        is_owner = await self.bot.is_owner(ctx.author)
+        if output.actions.get("overrides"):
+            if not is_owner:
+            # if not is_owner and not ctx.channel.permissions_for(ctx.author).manage_guild:
+                raise MissingTagPermissions("You must have **Manage Server** permissions to use the `override` block.")
+        return True
+
     async def process_tag(
         self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
     ) -> str:
@@ -389,9 +400,10 @@ class Tags(commands.Cog):
                 to_gather.append(self.do_reactions(ctx, react, msg))
         if command_messages:
             silent = actions.get("silent", False)
+            overrides = actions.get("overrides") if await self.bot.is_owner(ctx.author) else None
             to_gather.append(
                 asyncio.gather(
-                    *[self.process_command(message, silent) for message in command_messages]
+                    *[self.process_command(message, silent, overrides) for message in command_messages]
                 )
             )
 
@@ -414,11 +426,24 @@ class Tags(commands.Cog):
         else:
             return await send_quietly(destination, content, **kwargs)
 
-    async def process_command(self, command_message: discord.Message, silent: bool = False):
+    async def process_command(self, command_message: discord.Message, silent: bool, overrides: dict):
         ctx = await self.bot.get_context(
             command_message, cls=SilentContext if silent is True else commands.Context
         )
         if ctx.valid:
+            if overrides:
+                command = copy(ctx.command)
+                requires: Requires = command.requires
+                priv_level = requires.privilege_level
+                if priv_level not in (PrivilegeLevel.NONE, PrivilegeLevel.BOT_OWNER, PrivilegeLevel.GUILD_OWNER):
+                    if overrides["admin"] and priv_level is PrivilegeLevel.ADMIN:
+                        command.requires.privilege_level = PrivilegeLevel.NONE
+                    elif overrides["mod"] and priv_level is PrivilegeLevel.MOD:
+                        command.requires.privilege_level = PrivilegeLevel.NONE
+                if overrides["permissions"] and requires.user_perms.value:
+                    command.requires.user_perms = discord.Permissions.none()
+                ctx.command = command
+                print(command.requires)
             await self.bot.invoke(ctx)
 
     async def validate_checks(self, ctx: commands.Context, actions: dict) -> Tuple[bool, str]:
@@ -470,7 +495,6 @@ class Tags(commands.Cog):
     async def do_reactions(self, ctx: commands.Context, react: list, msg: discord.Message):
         if msg and react:
             for arg in react:
-                print(arg)
                 try:
                     arg = await self.emoji_converter.convert(ctx, arg)
                 except commands.BadArgument:

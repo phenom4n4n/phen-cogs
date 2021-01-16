@@ -74,3 +74,9 @@ Command Block
 ^^^^^^^^^^^^^
 
 .. autoclass:: tags.blocks.CommandBlock
+
+^^^^^^^^^^^^^^
+Override Block
+^^^^^^^^^^^^^^
+
+.. autoclass:: tags.blocks.OverrideBlock
