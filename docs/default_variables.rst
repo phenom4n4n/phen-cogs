@@ -11,6 +11,8 @@ The following blocks will be present and accessable as defaults when running any
 Meta Variables
 --------------
 
+Meta variables reference meta attributes about the tag invocation.
+
 .. _ArgsBlock:
 
 ^^^^^^^^^^
@@ -66,6 +68,8 @@ Uses Block
 ------------------------
 Discord Object Variables
 ------------------------
+
+These blocks reference Discord objects from the tag invocation context.
 
 .. _AuthorBlock:
 

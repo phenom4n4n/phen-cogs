@@ -38,3 +38,10 @@ Welcome to Phen-Cogs's documentation!
    tse_blocks
    default_variables
    parsing_blocks
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`

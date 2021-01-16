@@ -47,7 +47,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.4.0"
+    __version__ = "1.4.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -164,6 +164,7 @@ class Tags(commands.Cog):
         self.guild_tag_cache[ctx.guild.id][tag_name] = tag
         async with self.config.guild(ctx.guild).tags() as t:
             t[tag_name] = tag.to_dict()
+        await ctx.send(f"Tag `{tag}` added.")
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["e"])
