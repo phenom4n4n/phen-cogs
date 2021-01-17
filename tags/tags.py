@@ -121,6 +121,17 @@ class Tags(commands.Cog):
     def get_tag(self, guild: discord.Guild, tag_name: str):
         return self.guild_tag_cache[guild.id].get(tag_name)
 
+    async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
+        output = self.engine.process(tagscript)
+        is_owner = await self.bot.is_owner(ctx.author)
+        if is_owner:
+            return True
+        if output.actions.get("overrides"):
+            # if not ctx.channel.permissions_for(ctx.author).manage_guild and not is_owner:
+            if not is_owner and not ctx.channel.permissions_for(ctx.author).manage_guild:
+                raise MissingTagPermissions("You must have **Manage Server** permissions to use the `override` block.")
+        return True
+
     @commands.guild_only()
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]", aliases=["customcom"])
     async def tag(self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""):
@@ -318,15 +329,6 @@ class Tags(commands.Cog):
             new_message.content = f"{ctx.prefix}tag False {tag_command}"
             ctx = await self.bot.get_context(new_message)
             await self.bot.invoke(ctx)
-
-    async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
-        output = self.engine.process(tagscript)
-        is_owner = await self.bot.is_owner(ctx.author)
-        if output.actions.get("overrides"):
-            # if not ctx.channel.permissions_for(ctx.author).manage_guild and not is_owner:
-            if not is_owner and not ctx.channel.permissions_for(ctx.author).manage_guild:
-                raise MissingTagPermissions("You must have **Manage Server** permissions to use the `override` block.")
-        return True
 
     async def process_tag(
         self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
