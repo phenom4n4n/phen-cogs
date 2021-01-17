@@ -49,7 +49,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.4.1"
+    __version__ = "1.4.2"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -321,8 +321,8 @@ class Tags(commands.Cog):
         output = self.engine.process(tagscript)
         is_owner = await self.bot.is_owner(ctx.author)
         if output.actions.get("overrides"):
-            if not is_owner:
-            # if not is_owner and not ctx.channel.permissions_for(ctx.author).manage_guild:
+            # if not ctx.channel.permissions_for(ctx.author).manage_guild and not is_owner:
+            if not is_owner and not ctx.channel.permissions_for(ctx.author).manage_guild:
                 raise MissingTagPermissions("You must have **Manage Server** permissions to use the `override` block.")
         return True
 
@@ -400,7 +400,7 @@ class Tags(commands.Cog):
                 to_gather.append(self.do_reactions(ctx, react, msg))
         if command_messages:
             silent = actions.get("silent", False)
-            overrides = actions.get("overrides") if await self.bot.is_owner(ctx.author) else None
+            overrides = actions.get("overrides")
             to_gather.append(
                 asyncio.gather(
                     *[self.process_command(message, silent, overrides) for message in command_messages]
@@ -433,17 +433,18 @@ class Tags(commands.Cog):
         if ctx.valid:
             if overrides:
                 command = copy(ctx.command)
-                requires: Requires = command.requires
+                # command = commands.Command()
+                requires: Requires = copy(command.requires)
                 priv_level = requires.privilege_level
                 if priv_level not in (PrivilegeLevel.NONE, PrivilegeLevel.BOT_OWNER, PrivilegeLevel.GUILD_OWNER):
                     if overrides["admin"] and priv_level is PrivilegeLevel.ADMIN:
-                        command.requires.privilege_level = PrivilegeLevel.NONE
+                        requires.privilege_level = PrivilegeLevel.NONE
                     elif overrides["mod"] and priv_level is PrivilegeLevel.MOD:
-                        command.requires.privilege_level = PrivilegeLevel.NONE
+                        requires.privilege_level = PrivilegeLevel.NONE
                 if overrides["permissions"] and requires.user_perms.value:
-                    command.requires.user_perms = discord.Permissions.none()
+                    requires.user_perms = discord.Permissions.none()
+                command.requires = requires
                 ctx.command = command
-                print(command.requires)
             await self.bot.invoke(ctx)
 
     async def validate_checks(self, ctx: commands.Context, actions: dict) -> Tuple[bool, str]:

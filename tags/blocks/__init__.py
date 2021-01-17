@@ -16,6 +16,7 @@ stable_blocks = [
     ReactBlock(),
     RedirectBlock(),
     ReactUBlock(),
+    OverrideBlock(),
 ]
 
 __all__ = (
