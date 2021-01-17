@@ -100,7 +100,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.0.1"
+    __version__ = "1.0.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -135,6 +135,10 @@ class LinkQuoter(commands.Cog):
         for guild_id, guild_data in (await self.config.all_guilds()).items():
             if guild_data["on"]:
                 self.enabled_guilds.append(guild_id)
+
+    @staticmethod
+    def get_name(user: Union[discord.Member, discord.User]) -> str:
+        return user.display_name if hasattr(user, "display_name") else user.name
 
     async def get_messages(self, guild: discord.Guild, author: discord.Member, links: list):
         messages = []
@@ -279,7 +283,7 @@ class LinkQuoter(commands.Cog):
                 ctx.me,
                 ctx.author,
                 reason=f"For the {ctx.command.qualified_name} command",
-                username=ctx.author.display_name,
+                username=self.get_name(message_link.author),
                 avatar_url=ctx.author.avatar_url,
                 embed=embed,
             )
@@ -419,27 +423,27 @@ class LinkQuoter(commands.Cog):
             command=self.bot.get_command("linkquote"),
         )
         try:
-            message = await LinkToMessage().convert(ctx, message.content)
+            quoted_message = await LinkToMessage().convert(ctx, message.content)
         except BadArgument:
             return
         cog = webhook_check(ctx)
         data = await self.config.guild(ctx.guild).all()
         tasks = []
         if cog and data["webhooks"]:
-            embed = await self.message_to_embed(message, invoke_guild=ctx.guild, author_field=False)
+            embed = await self.message_to_embed(quoted_message, invoke_guild=ctx.guild, author_field=False)
             tasks.append(
                 cog.send_to_channel(
                     ctx.channel,
                     ctx.me,
                     ctx.author,
                     reason=f"For the {ctx.command.qualified_name} command",
-                    username=ctx.author.display_name,
+                    username=self.get_name(quoted_message.author),
                     avatar_url=ctx.author.avatar_url,
                     embed=embed,
                 )
             )
         else:
-            embed = await self.message_to_embed(message, invoke_guild=ctx.guild)
+            embed = await self.message_to_embed(quoted_message, invoke_guild=ctx.guild)
             tasks.append(ctx.send(embed=embed))
         if data["delete"]:
             tasks.append(delete_quietly(ctx))
