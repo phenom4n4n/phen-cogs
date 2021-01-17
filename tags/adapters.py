@@ -9,7 +9,7 @@ class AttributeAdapter(Adapter):
         self.attributes = {
             "id": self.object.id,
             "created_at": self.object.created_at,
-            "timestamp": self.object.created_at.timestamp(),
+            "timestamp": int(self.object.created_at.timestamp()),
             "name": self.object.name,
         }
         self.update_attributes()
