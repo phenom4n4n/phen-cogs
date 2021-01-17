@@ -49,7 +49,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.4.2"
+    __version__ = "1.4.3"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -124,9 +124,11 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @commands.group(invoke_without_command=True, usage="<tag_name> [args]", aliases=["customcom"])
     async def tag(self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""):
-        """Tag management with TagScript.
+        """
+        Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks."""
+        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks.
+        """
         if response is None:
             response = True
         try:
@@ -333,7 +335,6 @@ class Tags(commands.Cog):
         target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
         channel = TextChannelAdapter(ctx.channel)
         guild = GuildAdapter(ctx.guild)
-        uses = adapter.IntAdapter(tag.uses)
         seed = {
             "author": author,
             "user": author,
@@ -342,7 +343,6 @@ class Tags(commands.Cog):
             "channel": channel,
             "guild": guild,
             "server": guild,
-            "uses": uses,
         }
         seed_variables.update(seed)
 

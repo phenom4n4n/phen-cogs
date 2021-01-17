@@ -3,7 +3,31 @@ from TagScriptEngine.interface import Adapter
 from discord import Member, TextChannel, Guild
 
 
-class MemberAdapter(Adapter):
+class AttributeAdapter(Adapter):
+    def __init__(self, base):
+        self.object = base
+        self.attributes = {
+            "id": self.object.id,
+            "created_at": self.object.created_at,
+            "timestamp": self.object.created_at.timestamp(),
+            "name": self.object.name,
+        }
+        self.update_attributes()
+
+    def update_attributes(self):
+        additional_attributes = {}
+        self.attributes.update(additional_attributes)
+
+    def get_value(self, ctx: Verb) -> str:
+        if ctx.parameter == None:
+            return str(self.object)
+        param = self.attributes.get(ctx.parameter)
+        if param is not None:
+            return str(param)
+        else:
+            return None
+
+class MemberAdapter(AttributeAdapter):
     """
     The ``{author}`` block with no parameters returns the tag invoker's full username
     and discriminator, but passing the attributes listed below to the block payload
@@ -31,6 +55,8 @@ class MemberAdapter(Adapter):
         The author's discriminator.
     created_at
         The author's account creation date.
+    timestamp
+        The author's account creation date as a UTC timestamp.
     joined_at
         The date the author joined the server.
     mention
@@ -39,31 +65,19 @@ class MemberAdapter(Adapter):
         Whether or not the author is a bot.
     """
 
-    def __init__(self, member: Member):
-        self.member = member
-        self.attributes = {
-            "id": member.id,
-            "name": member.name,
-            "nick": member.display_name,
-            "avatar": member.avatar_url,
-            "discriminator": member.discriminator,
-            "created_at": member.created_at,
-            "joined_at": member.joined_at,
-            "mention": member.mention,
-            "bot": member.bot,
+    def update_attributes(self):
+        additional_attributes = {
+            "nick": self.object.display_name,
+            "avatar": self.object.avatar_url,
+            "discriminator": self.object.discriminator,
+            "joined_at": self.object.joined_at,
+            "mention": self.object.mention,
+            "bot": self.object.bot,
         }
-
-    def get_value(self, ctx: Verb) -> str:
-        if ctx.parameter == None:
-            return str(self.member)
-        param = self.attributes.get(ctx.parameter, None)
-        if param is not None:
-            return str(param)
-        else:
-            return None
+        self.attributes.update(additional_attributes)
 
 
-class TextChannelAdapter(Adapter):
+class TextChannelAdapter(AttributeAdapter):
     """
     The ``{channel}`` block with no parameters returns the channel's full name
     but passing the attributes listed below to the block payload
@@ -83,6 +97,8 @@ class TextChannelAdapter(Adapter):
         The channel's name.
     created_at
         The channel's creation date.
+    timestamp
+        The channel's creation date as a UTC timestamp.
     nsfw
         Whether the channel is nsfw.
     mention
@@ -91,30 +107,17 @@ class TextChannelAdapter(Adapter):
         The channel's topic.
     """
 
-    def __init__(self, channel: TextChannel):
-        self.channel = channel
-        self.attributes = {
-            "id": channel.id,
-            "name": str(channel),
-            "created_at": channel.created_at,
-            "nsfw": channel.nsfw,
-            "mention": channel.mention,
-            "topic": channel.topic or None,
+    def update_attributes(self):
+        additional_attributes = {
+            "nsfw": self.object.nsfw,
+            "mention": self.object.mention,
+            "topic": self.object.topic or None,
         }
+        self.attributes.update(additional_attributes)
 
-    def get_value(self, ctx: Verb) -> str:
-        if ctx.parameter == None:
-            return str(self.channel)
-        param = self.attributes.get(ctx.parameter, None)
-        if param is not None:
-            return str(param)
-        else:
-            return None
-
-
-class GuildAdapter(Adapter):
+class GuildAdapter(AttributeAdapter):
     """
-    The ``{author}`` block with no parameters returns the server's name
+    The ``{server}`` block with no parameters returns the server's name
     but passing the attributes listed below to the block payload
     will return that attribute instead.
 
@@ -136,28 +139,18 @@ class GuildAdapter(Adapter):
         A link to the server's icon, which can be used in embeds.
     created_at
         The server's creation date.
+    timestamp
+        The server's creation date as a UTC timestamp.
     member_count
         The server's member count.
     description
         The server's description if one is set, or "No description".
     """
 
-    def __init__(self, guild: Guild):
-        self.guild = guild
-        self.attributes = {
-            "id": guild.id,
-            "name": str(guild),
-            "icon": guild.icon_url,
-            "created_at": guild.created_at,
-            "member_count": guild._member_count,
-            "description": guild.description or "No description.",
+    def update_attributes(self):
+        additional_attributes = {
+            "icon": self.object.icon_url,
+            "member_count": self.object.member_count,
+            "description": self.object.description or "No description.",
         }
-
-    def get_value(self, ctx: Verb) -> str:
-        if ctx.parameter == None:
-            return str(self.guild)
-        param = self.attributes.get(ctx.parameter, None)
-        if param is not None:
-            return str(param)
-        else:
-            return None
+        self.attributes.update(additional_attributes)

@@ -2,7 +2,7 @@ import discord
 from typing import Optional
 from redbot.core import commands, Config
 from redbot.core.bot import Red
-from TagScriptEngine import Interpreter
+from TagScriptEngine import Interpreter, adapter
 
 
 class Tag(object):
@@ -15,7 +15,7 @@ class Tag(object):
         *,
         author: discord.User = None,
         author_id: int = None,
-        uses: int = 1,
+        uses: int = 0,
         real: bool = True,
     ):
         self.cog = cog
@@ -39,9 +39,10 @@ class Tag(object):
     def __len__(self) -> int:
         return len(self.tagscript)
 
-    def run(self, interpreter: Interpreter, **kwargs) -> Interpreter.Response:
+    def run(self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs) -> Interpreter.Response:
         self.uses += 1
-        return interpreter.process(self.tagscript, **kwargs)
+        seed_variables.update(uses=adapter.IntAdapter(self.uses))
+        return interpreter.process(self.tagscript, seed_variables, **kwargs)
 
     async def update_config(self):
         if self._real_tag and self.guild:
@@ -60,7 +61,7 @@ class Tag(object):
         self.tagscript = data["tag"]
         self.author_id = author_id = data.get("author_id", data.get("author"))
         self.author = guild.get_member(author_id) if isinstance(guild, discord.Guild) else None
-        self.uses = data.get("uses", 1)
+        self.uses = data.get("uses", 0)
         self._real_tag: bool = True
 
         return self
