@@ -100,7 +100,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.0.2"
+    __version__ = "1.0.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -284,7 +284,7 @@ class LinkQuoter(commands.Cog):
                 ctx.author,
                 reason=f"For the {ctx.command.qualified_name} command",
                 username=self.get_name(message_link.author),
-                avatar_url=ctx.author.avatar_url,
+                avatar_url=message_link.author.avatar_url,
                 embed=embed,
             )
         else:
@@ -438,7 +438,7 @@ class LinkQuoter(commands.Cog):
                     ctx.author,
                     reason=f"For the {ctx.command.qualified_name} command",
                     username=self.get_name(quoted_message.author),
-                    avatar_url=ctx.author.avatar_url,
+                    avatar_url=quoted_message.author.avatar_url,
                     embed=embed,
                 )
             )
