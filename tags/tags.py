@@ -443,7 +443,7 @@ class Tags(commands.Cog):
                         requires.privilege_level = PrivilegeLevel.NONE
                     elif overrides["mod"] and priv_level is PrivilegeLevel.MOD:
                         requires.privilege_level = PrivilegeLevel.NONE
-                if overrides["permissions"] and requires.user_perms.value:
+                if overrides["permissions"] and requires.user_perms:
                     requires.user_perms = discord.Permissions.none()
                 command.requires = requires
                 ctx.command = command
