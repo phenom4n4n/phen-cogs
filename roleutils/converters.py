@@ -57,13 +57,14 @@ class FuzzyRole(RoleConverter):
 
 
 class StrictRole(FuzzyRole):
-    def __init__(self, response: bool = True):
+    def __init__(self, response: bool = True, *, check_integrated: bool = True):
         self.response = response
+        self.check_integrated = check_integrated
         super().__init__(response)
 
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
         role = await super().convert(ctx, argument)
-        if role.managed:
+        if self.check_integrated and role.managed:
             raise BadArgument(
                 f"`{role}` is an integrated role and cannot be assigned."
                 if self.response
