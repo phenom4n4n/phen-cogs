@@ -45,8 +45,6 @@ class CommandBlock(Block):
 
 class OverrideBlock(Block):
     """
-    .. warning:: This block is incomplete and cannot be used yet.
-
     Override a command's permission requirements. This can override 
     mod, admin, or general user permission requirements when running commands 
     with the :ref:`CommandBlock`. Passing no parameter will default to overriding 

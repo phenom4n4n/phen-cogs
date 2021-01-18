@@ -126,10 +126,14 @@ class Tags(commands.Cog):
         is_owner = await self.bot.is_owner(ctx.author)
         if is_owner:
             return True
+        author_perms = ctx.channel.permissions_for(ctx.author)
         if output.actions.get("overrides"):
-            # if not ctx.channel.permissions_for(ctx.author).manage_guild and not is_owner:
-            if not is_owner and not ctx.channel.permissions_for(ctx.author).manage_guild:
+            if not author_perms.manage_guild:
                 raise MissingTagPermissions("You must have **Manage Server** permissions to use the `override` block.")
+        if output.actions.get("allowed_mentions"):
+            # if not author_perms.mention_everyone:
+            if not is_owner:
+                raise MissingTagPermissions("You must have **Mention Everyone** permissions to use the `allowedmentions` block.")
         return True
 
     @commands.guild_only()
