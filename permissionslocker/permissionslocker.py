@@ -21,8 +21,7 @@ async def before_invoke_hook(ctx: commands.Context):
     cog = ctx.bot.get_cog("PermissionsLocker")
     if guild.id in cog._whitelist:
         return
-    author, me = ctx.author, guild.me
-    assert isinstance(author, discord.Member)  # nosec
+    me = guild.me
 
     requiredPerms = discord.Permissions(cog.perms)
     myPerms = ctx.channel.permissions_for(me)
@@ -45,7 +44,7 @@ class PermissionsLocker(commands.Cog):
     Force permissions for the bot.
     """
 
-    __version__ = "1.2.2"
+    __version__ = "1.2.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -69,31 +68,13 @@ class PermissionsLocker(commands.Cog):
 
     async def initialize(self):
         data = await self.config.all()
-        setattr(self, "perms", data["permissions"])
-        setattr(self, "_whitelist", data["whitelisted"])
+        self.perms = data["permissions"]
+        self._whitelist = data["whitelisted"]
 
     @commands.is_owner()
     @commands.group()
     async def permlock(self, ctx):
         """Permissions locker group command."""
-        if not ctx.subcommand_passed:
-            data = await self.config.all()
-            e = discord.Embed(color=await ctx.embed_color(), title="PermissionsLocker")
-            e.add_field(
-                name="Required Permissions",
-                value=str(data["permissions"])
-                + box(
-                    await self.humanize_perms(discord.Permissions(data["permissions"]), True),
-                    "diff",
-                ),
-                inline=False,
-            )
-            if data["whitelisted"]:
-                whitelisted = []
-                for item in data["whitelisted"]:
-                    whitelisted.append(str(item))
-                e.add_field(name="Whitelisted", value=", ".join(whitelisted), inline=False)
-            await ctx.send(embed=e)
 
     @permlock.command()
     async def perms(self, ctx, permissions: int):
@@ -125,8 +106,30 @@ class PermissionsLocker(commands.Cog):
             self._whitelist = w
         await ctx.tick()
 
+    @commands.bot_has_permissions(embed_links=True)
+    @permlock.command()
+    async def settings(self, ctx: commands.Context):
+        """View PermissionsLocker settings."""
+        data = await self.config.all()
+        e = discord.Embed(color=await ctx.embed_color(), title="PermissionsLocker")
+        e.add_field(
+            name="Required Permissions",
+            value=str(data["permissions"])
+            + box(
+                await self.humanize_perms(discord.Permissions(data["permissions"]), True),
+                "diff",
+            ),
+            inline=False,
+        )
+        if data["whitelisted"]:
+            whitelisted = []
+            for item in data["whitelisted"]:
+                whitelisted.append(str(item))
+            e.add_field(name="Whitelisted", value=", ".join(whitelisted), inline=False)
+        await ctx.send(embed=e)
+
     async def humanize_perms(self, permissions: discord.Permissions, check: bool):
-        perms = dict(iter(permissions))
+        perms = dict(permissions)
         perms_list = []
         for key, value in perms.items():
             if value == check:
