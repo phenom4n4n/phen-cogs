@@ -155,7 +155,11 @@ class Tags(commands.Cog):
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["create", "+"])
     async def add(self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter):
-        """Add a tag with TagScript."""
+        """
+        Add a tag with TagScript.
+        
+        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
+        """
         tag = self.get_tag(ctx.guild, tag_name)
         if tag:
             msg = await ctx.send(
