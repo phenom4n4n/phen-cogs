@@ -29,7 +29,7 @@ class Baron(commands.Cog):
     """
     Tools for managing guild joins and leaves.
     """
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -353,7 +353,7 @@ class Baron(commands.Cog):
         def insert_function(guild: discord.Guild):
             return f"Commands Used: **{guild_command_usage.get(guild.id, 0)}**"
 
-        await self.view_guilds(ctx, guilds, f"Command Usage ({commands})", page_length, insert_function=insert_function)
+        await self.view_guilds(ctx, [g for g, c in guilds], f"Command Usage ({commands})", page_length, insert_function=insert_function)
 
     @baron.group(name="leave")
     async def baron_leave(self, ctx: commands.Context):
