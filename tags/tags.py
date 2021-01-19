@@ -1,6 +1,6 @@
 import asyncio
 import time
-from copy import copy, deepcopy
+from copy import copy
 from typing import Literal, Optional, Tuple
 
 import logging
@@ -129,11 +129,15 @@ class Tags(commands.Cog):
         author_perms = ctx.channel.permissions_for(ctx.author)
         if output.actions.get("overrides"):
             if not author_perms.manage_guild:
-                raise MissingTagPermissions("You must have **Manage Server** permissions to use the `override` block.")
+                raise MissingTagPermissions(
+                    "You must have **Manage Server** permissions to use the `override` block."
+                )
         if output.actions.get("allowed_mentions"):
             # if not author_perms.mention_everyone:
             if not is_owner:
-                raise MissingTagPermissions("You must have **Mention Everyone** permissions to use the `allowedmentions` block.")
+                raise MissingTagPermissions(
+                    "You must have **Mention Everyone** permissions to use the `allowedmentions` block."
+                )
         return True
 
     @commands.guild_only()
@@ -158,10 +162,12 @@ class Tags(commands.Cog):
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["create", "+"])
-    async def add(self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter):
+    async def add(
+        self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter
+    ):
         """
         Add a tag with TagScript.
-        
+
         [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
         """
         tag = self.get_tag(ctx.guild, tag_name)
@@ -191,7 +197,9 @@ class Tags(commands.Cog):
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["e"])
-    async def edit(self, ctx: commands.Context, tag: TagConverter, *, tagscript: TagScriptConverter):
+    async def edit(
+        self, ctx: commands.Context, tag: TagConverter, *, tagscript: TagScriptConverter
+    ):
         """Edit a tag with TagScript."""
         tag.tagscript = tagscript
         await tag.update_config()
@@ -413,7 +421,10 @@ class Tags(commands.Cog):
             overrides = actions.get("overrides")
             to_gather.append(
                 asyncio.gather(
-                    *[self.process_command(message, silent, overrides) for message in command_messages]
+                    *[
+                        self.process_command(message, silent, overrides)
+                        for message in command_messages
+                    ]
                 )
             )
 
@@ -436,7 +447,9 @@ class Tags(commands.Cog):
         else:
             return await send_quietly(destination, content, **kwargs)
 
-    async def process_command(self, command_message: discord.Message, silent: bool, overrides: dict):
+    async def process_command(
+        self, command_message: discord.Message, silent: bool, overrides: dict
+    ):
         ctx = await self.bot.get_context(
             command_message, cls=SilentContext if silent is True else commands.Context
         )
@@ -446,7 +459,11 @@ class Tags(commands.Cog):
                 # command = commands.Command()
                 requires: Requires = copy(command.requires)
                 priv_level = requires.privilege_level
-                if priv_level not in (PrivilegeLevel.NONE, PrivilegeLevel.BOT_OWNER, PrivilegeLevel.GUILD_OWNER):
+                if priv_level not in (
+                    PrivilegeLevel.NONE,
+                    PrivilegeLevel.BOT_OWNER,
+                    PrivilegeLevel.GUILD_OWNER,
+                ):
                     if overrides["admin"] and priv_level is PrivilegeLevel.ADMIN:
                         requires.privilege_level = PrivilegeLevel.NONE
                     elif overrides["mod"] and priv_level is PrivilegeLevel.MOD:

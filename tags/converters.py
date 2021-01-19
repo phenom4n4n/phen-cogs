@@ -5,6 +5,7 @@ from redbot.core.commands import BadArgument, Converter
 from .objects import Tag
 from .errors import MissingTagPermissions
 
+
 class TagName(Converter):
     async def convert(self, ctx: commands.Converter, argument: str) -> str:
         command = ctx.bot.get_command(argument)

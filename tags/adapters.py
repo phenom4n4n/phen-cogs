@@ -27,6 +27,7 @@ class AttributeAdapter(Adapter):
         else:
             return None
 
+
 class MemberAdapter(AttributeAdapter):
     """
     The ``{author}`` block with no parameters returns the tag invoker's full username
@@ -114,6 +115,7 @@ class TextChannelAdapter(AttributeAdapter):
             "topic": self.object.topic or None,
         }
         self.attributes.update(additional_attributes)
+
 
 class GuildAdapter(AttributeAdapter):
     """

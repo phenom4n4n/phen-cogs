@@ -39,7 +39,9 @@ class Tag(object):
     def __len__(self) -> int:
         return len(self.tagscript)
 
-    def run(self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs) -> Interpreter.Response:
+    def run(
+        self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs
+    ) -> Interpreter.Response:
         self.uses += 1
         seed_variables.update(uses=adapter.IntAdapter(self.uses))
         return interpreter.process(self.tagscript, seed_variables, **kwargs)

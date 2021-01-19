@@ -200,7 +200,7 @@ class LinkQuoter(commands.Cog):
                 description=content,
                 timestamp=message.created_at,
             )
-        
+
         if author_field:
             e.set_author(
                 name=f"{message.author} said..",
@@ -226,7 +226,11 @@ class LinkQuoter(commands.Cog):
             e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})")
 
         if ref := message.reference:
-            ref_message = ref.cached_message or (ref.resolved if ref.resolved and isinstance(ref.resolved, discord.Message) else None)
+            ref_message = ref.cached_message or (
+                ref.resolved
+                if ref.resolved and isinstance(ref.resolved, discord.Message)
+                else None
+            )
             if not ref_message:
                 ref_chan = message.guild.get_channel(ref.channel_id)
                 if ref_chan:
@@ -249,16 +253,22 @@ class LinkQuoter(commands.Cog):
         )
         return e
 
-    async def create_embeds(self, 
-        messages: list, 
-        *, 
+    async def create_embeds(
+        self,
+        messages: list,
+        *,
         invoke_guild: discord.Guild = None,
         author_field: bool = True,
         footer_field: bool = True,
     ) -> List[Tuple[discord.Embed, discord.Member]]:
         embeds = []
         for message in messages:
-            embed = await self.message_to_embed(message, invoke_guild=invoke_guild, author_field=author_field, footer_field=footer_field)
+            embed = await self.message_to_embed(
+                message,
+                invoke_guild=invoke_guild,
+                author_field=author_field,
+                footer_field=footer_field,
+            )
             if embed:
                 embeds.append((embed, message.author))
         return embeds
@@ -277,7 +287,9 @@ class LinkQuoter(commands.Cog):
                 raise commands.BadArgument
         cog = webhook_check(ctx)
         if (await self.config.guild(ctx.guild).webhooks()) and cog:
-            embed = await self.message_to_embed(message_link, invoke_guild=ctx.guild, author_field=False)
+            embed = await self.message_to_embed(
+                message_link, invoke_guild=ctx.guild, author_field=False
+            )
             await cog.send_to_channel(
                 ctx.channel,
                 ctx.me,
@@ -430,7 +442,9 @@ class LinkQuoter(commands.Cog):
         data = await self.config.guild(ctx.guild).all()
         tasks = []
         if cog and data["webhooks"]:
-            embed = await self.message_to_embed(quoted_message, invoke_guild=ctx.guild, author_field=False)
+            embed = await self.message_to_embed(
+                quoted_message, invoke_guild=ctx.guild, author_field=False
+            )
             tasks.append(
                 cog.send_to_channel(
                     ctx.channel,

@@ -230,7 +230,9 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @_role.command()
-    async def color(self, ctx: commands.Context, role: StrictRole(check_integrated=False), color: discord.Color):
+    async def color(
+        self, ctx: commands.Context, role: StrictRole(check_integrated=False), color: discord.Color
+    ):
         """Change a role's color."""
         await role.edit(color=color)
         await ctx.send(

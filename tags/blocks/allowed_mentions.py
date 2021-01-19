@@ -17,4 +17,7 @@ class AllowedMentionsBlock(Block):
         if not (param := ctx.verb.parameter):
             return None
         param = param.strip().lower()
-        allowed_mentions = ctx.response.actions.get("allowed_mentions", AllowedMentions(everyone=False, users=True, roles=False, replied_user=True))
+        allowed_mentions = ctx.response.actions.get(
+            "allowed_mentions",
+            AllowedMentions(everyone=False, users=True, roles=False, replied_user=True),
+        )

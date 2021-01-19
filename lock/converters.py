@@ -22,11 +22,14 @@ class ChannelToggle(Converter):
             ret = True
         return ret
 
+
 class LockableChannel(TextChannelConverter):
     async def convert(self, ctx: commands.Context, arg: str) -> Optional[discord.TextChannel]:
         channel = await super().convert(ctx, arg)
         if not ctx.channel.permissions_for(ctx.me).manage_roles:
-            raise BadArgument(f"I do not have permission to edit permissions in {channel.mention}.")
+            raise BadArgument(
+                f"I do not have permission to edit permissions in {channel.mention}."
+            )
         return channel
 
 

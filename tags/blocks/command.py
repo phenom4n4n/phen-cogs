@@ -6,7 +6,7 @@ from TagScriptEngine.interface import Block
 
 class CommandBlock(Block):
     """
-    Run a command as if the tag invoker had ran it. Only 3 command 
+    Run a command as if the tag invoker had ran it. Only 3 command
     blocks can be used in a tag.
 
     **Usage:** ``{command:<command>}``
@@ -43,14 +43,15 @@ class CommandBlock(Block):
             ctx.response.actions["commands"].append(ctx.verb.payload)
         return ""
 
+
 class OverrideBlock(Block):
     """
-    Override a command's permission requirements. This can override 
-    mod, admin, or general user permission requirements when running commands 
-    with the :ref:`CommandBlock`. Passing no parameter will default to overriding 
+    Override a command's permission requirements. This can override
+    mod, admin, or general user permission requirements when running commands
+    with the :ref:`CommandBlock`. Passing no parameter will default to overriding
     all permissions.
 
-    In order to add a tag with the override block, the tag author must have ``Manage 
+    In order to add a tag with the override block, the tag author must have ``Manage
     Server`` permissions.
 
     This will not override bot owner commands or command checks.
@@ -87,7 +88,9 @@ class OverrideBlock(Block):
         param = param.strip().lower()
         if param not in ("admin", "mod", "permissions"):
             return None
-        overrides = ctx.response.actions.get("overrides", {"admin": False, "mod": False, "permissions": False})
+        overrides = ctx.response.actions.get(
+            "overrides", {"admin": False, "mod": False, "permissions": False}
+        )
         overrides[param] = True
         ctx.response.actions["overrides"] = overrides
         return ""
