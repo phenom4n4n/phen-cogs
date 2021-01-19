@@ -602,7 +602,7 @@ class Baron(commands.Cog):
         if (
             guild.chunked is False
             and self.bot.intents.members
-            and not self.bot.shards[shard_meta].is_ws_ratelimited()
+            and self.bot.shards[shard_meta].is_ws_ratelimited() is False
             ): # adds coverage for the case where bot is already pulling chunk 
             await guild.chunk()
         if data["min_members"] and guild.member_count < data["min_members"]:
