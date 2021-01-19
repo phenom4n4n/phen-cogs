@@ -1,15 +1,16 @@
 import asyncio
-from typing import Literal, Optional
+from typing import Literal, Optional, List
 from matplotlib import pyplot as plt
 from io import BytesIO
 import functools
+import time
 
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands import GuildConverter, TimedeltaConverter
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import box, humanize_list, pagify
+from redbot.core.utils.chat_formatting import box, humanize_list, pagify, humanize_timedelta
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
@@ -28,6 +29,12 @@ class Baron(commands.Cog):
     """
     Tools for managing guild joins and leaves.
     """
+    __version__ = "1.0.0"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -60,10 +67,11 @@ class Baron(commands.Cog):
             allowed_units=["weeks", "days", "hours"], default_unit="weeks"  # noqa: F821
         ) = None,
     ):
-        """Show a graph of the bot's guild joins over time.
+        """
+        Show a graph of the bot's guild joins over time.
 
         Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2).
-        Passing time in the format of weeks, days, minutes, or seco"""
+        """
         await ctx.trigger_typing()
         if time:
             date = ctx.message.created_at - time
@@ -111,23 +119,26 @@ class Baron(commands.Cog):
     @commands.group()
     async def baron(self, ctx: commands.Context):
         """Baron's watchtower."""
-        if not ctx.subcommand_passed:
-            data = await self.config.all()
-            log_chan = data["log_channel"]
-            if log_chan := self.bot.get_channel(data["log_channel"]):
-                log_chan = log_chan.mention
-            description = [
-                f"Log Channel: {log_chan}",
-                f"Server Limit: {disabled_or_data(data['limit'])}",
-                f"Minimum Members: {disabled_or_data(data['min_members'])}",
-                f"Bot Farm: {disabled_or_data(data['bot_ratio'])}",
-            ]
-            e = discord.Embed(
-                color=await ctx.embed_color(),
-                title="Baron Settings",
-                description="\n".join(description),
-            )
-            await ctx.send(embed=e)
+
+    @baron.command()
+    async def settings(self, ctx: commands.Context):
+        """View Baron settings."""
+        data = await self.config.all()
+        log_chan = data["log_channel"]
+        if log_chan := self.bot.get_channel(data["log_channel"]):
+            log_chan = log_chan.mention
+        description = [
+            f"Log Channel: {log_chan}",
+            f"Server Limit: {disabled_or_data(data['limit'])}",
+            f"Minimum Members: {disabled_or_data(data['min_members'])}",
+            f"Bot Farm: {disabled_or_data(data['bot_ratio'])}",
+        ]
+        e = discord.Embed(
+            color=await ctx.embed_color(),
+            title="Baron Settings",
+            description="\n".join(description),
+        )
+        await ctx.send(embed=e)
 
     @baron.command()
     async def limit(self, ctx: commands.Context, limit: int = 0):
@@ -237,113 +248,82 @@ class Baron(commands.Cog):
             else "The bot ratio has been removed."
         )
 
-    @baron.command()
-    async def botfarms(
-        self, ctx: commands.Context, rate: Optional[int] = 75, page_limit: Optional[int] = 500
+    async def view_guilds(
+        self,
+        ctx: commands.Context,
+        guilds: List[discord.Guild],
+        title: str,
+        page_length: int = 500,
+        *,
+        command_count: Optional[int] = None,
+        color: discord.Color = discord.Color.red(),
+        footer: str = None,
+        insert_function = None
     ):
-        """View servers that have a bot to member ratio with the given rate."""
-        if rate not in range(1, 100):
-            raise commands.BadArgument
-        if page_limit > 2000 or page_limit <= 0:
-            raise commands.BadArgument
-        rate = rate / 100
-        msg = ""
+        page_length = max(100, min(2000, page_length))
         data = await self.config.all()
+        whitelist = data["whitelist"]
 
-        bot_farms = await self.get_bot_farms(rate)
-        for guild in bot_farms[0]:
+        desc = []
+        for guild in guilds:
             bots = len([x for x in guild.members if x.bot])
             percent = bots / guild.member_count
-            percent = bots / guild.member_count
-            msg += f"{guild.name} - ({guild.id})\n"
-            msg += f"Bots: **{percent * 100}%**\n"
-            msg += f"Members: **{guild.member_count}**\n"
-            if guild.id in data["whitelist"]:
-                msg += f"[Whitelisted](https://www.youtube.com/watch?v=oHg5SJYRHA0)\n"
-            msg += "\n"
-        if msg:
-            color = discord.Color.red()
-        else:
-            msg = f"There are no servers with a bot ratio higher or equal than {rate * 100}%."
-            color = discord.Color.green()
-        if len(msg) > page_limit:
-            embeds = []
-            pages = list([page for page in pagify(msg, ["\n\n"], page_length=page_limit)])
-            for index, page in enumerate(pages, 1):
-                e = discord.Embed(
-                    color=color,
-                    title="Bot Farms Check",
-                    description=page,
-                )
-                e.set_footer(text=f"OK guilds: {bot_farms[1]} | {index}/{len(pages)}")
-                embeds.append(e)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            e = discord.Embed(
-                color=color,
-                title="Bot Farms Check",
-                description=msg,
-            )
-            e.set_footer(text=f"OK guilds: {bot_farms[1]}")
-            emoji = self.bot.get_emoji(736038541364297738) or "🚫"
-            await menu(ctx, [e], {emoji: close_menu})
+            guild_desc = [
+                f"{guild.name} - ({guild.id})",
+                f"Members: **{guild.member_count}**",
+                f"Bots: **{percent * 100}%**",
+            ]
+            if insert_function:
+                guild_desc.append(str(insert_function(guild)))
+            if guild.id in whitelist:
+                guild_desc.append("[Whitelisted](https://www.youtube.com/watch?v=oHg5SJYRHA0)")
+            desc.append("\n".join(guild_desc))
 
-    @baron.command()
-    async def members(
+        pages = list(pagify("\n\n".join(desc), ["\n\n"], page_length=page_length))
+        embeds = []
+        base_embed = discord.Embed(color=color, title=title)
+        for index, page in enumerate(pages, 1):
+            e = base_embed.copy()
+            e.description = page
+            footer_text = f"{index}/{len(pages)}"
+            if footer:
+                footer_text += f" | {footer}"
+            e.set_footer(text=footer_text)
+            embeds.append(e)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+
+    @baron.group(name="view")
+    async def baron_view(self, ctx: commands.Context):
+        """View servers with specific details."""
+
+    @baron_view.command(name="botfarms")
+    async def baron_view_botfarms(
+        self, ctx: commands.Context, rate: Optional[int] = 75, page_length: Optional[int] = 500
+    ):
+        """View servers that have a bot to member ratio with the given rate."""
+        bot_farms, ok_guilds = await self.get_bot_farms(rate / 100)
+        if not bot_farms:
+            return await ctx.send(f"There are no servers with a bot ratio higher or equal than {rate}%.")
+        await self.view_guilds(ctx, bot_farms, f"Bot Farms ({rate}%)", page_length, footer=f"OK guilds: {ok_guilds}")
+
+    @baron_view.command(name="members")
+    async def baron_view_members(
         self,
         ctx: commands.Context,
         members: int,
         less_than: Optional[bool] = True,
-        page_limit: Optional[int] = 500,
+        page_length: Optional[int] = 500,
     ):
         """View servers that have a member count less than the specified number.
 
-        Pass False at the end if you would like to view servers that are greater than the specified number."""
+        Pass `False` at the end if you would like to view servers that are greater than the specified number."""
         if less_than:
             guilds = [guild for guild in self.bot.guilds if guild.member_count < members]
         else:
             guilds = [guild for guild in self.bot.guilds if guild.member_count > members]
-        data = await self.config.all()
-        msg = ""
-
-        for guild in guilds:
-            bots = len([x for x in guild.members if x.bot])
-            percent = bots / guild.member_count
-            percent = bots / guild.member_count
-            msg += f"{guild.name} - ({guild.id})\n"
-            msg += f"Bots: **{percent * 100}%**\n"
-            msg += f"Members: **{guild.member_count}**\n"
-            if guild.id in data["whitelist"]:
-                msg += f"[Whitelisted](https://www.youtube.com/watch?v=oHg5SJYRHA0)\n"
-            msg += "\n"
-        if msg:
-            color = discord.Color.red()
-        else:
-            msg = (
-                f"There are no servers with a member count {'less' if less_than else 'greater'} than "
-                f"{members}."
-            )
-            color = discord.Color.green()
-        if len(msg) > page_limit:
-            embeds = []
-            pages = list([page for page in pagify(msg, ["\n\n"], page_length=page_limit)])
-            for index, page in enumerate(pages, 1):
-                e = discord.Embed(
-                    color=color,
-                    title="Server Members Check",
-                    description=page,
-                )
-                e.set_footer(text=f"{index}/{len(pages)}")
-                embeds.append(e)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            e = discord.Embed(
-                color=color,
-                title="Server Members Check",
-                description=msg,
-            )
-            emoji = self.bot.get_emoji(736038541364297738) or "🚫"
-            await menu(ctx, [e], {emoji: close_menu})
+        if not guilds:
+            return await ctx.send(f"There are no servers with a member count {'less' if less_than else 'greater'} than {members}.")
+        await self.view_guilds(ctx, guilds, f"Server Members ({members})", page_length)
 
     @commands.check(comstats_cog)
     @baron.command(name="commands")
@@ -352,73 +332,35 @@ class Baron(commands.Cog):
         ctx: commands.Context,
         commands: int,
         highest_first: Optional[bool] = False,
-        page_limit: Optional[int] = 500,
+        page_length: Optional[int] = 500,
     ):
         """View servers that have command usage less than the specified number.
 
-        Pass True at the end if you would like to view servers in order of most commands used."""
+        Pass `True` at the end if you would like to view servers in order of most commands used."""
         cog = self.bot.get_cog("CommandStats")
         data = await cog.config.guilddata()
         guilds = []
+        guild_command_usage = {}
 
         for guild in self.bot.guilds:
-            try:
-                guild_data = data[str(guild.id)]
-            except KeyError:
-                guilds.append((guild, 0))
-            else:
-                total_commands = sum(guild_data.values())
-                if total_commands < commands:
-                    guilds.append((guild, total_commands))
+            guild_data = data.get(str(guild.id), {})
+            total_commands = sum(guild_data.values())
+            if total_commands < commands:
+                guilds.append((guild, total_commands))
+                guild_command_usage[guild.id] = total_commands
         guilds.sort(key=lambda x: x[1], reverse=highest_first)
 
-        data = await self.config.all()
-        msg = ""
+        def insert_function(guild: discord.Guild):
+            return f"Commands Used: **{guild_command_usage.get(guild.id, 0)}**"
 
-        for guild, usage in guilds:
-            bots = len([x for x in guild.members if x.bot])
-            percent = bots / guild.member_count
-            percent = bots / guild.member_count
-            msg += f"{guild.name} - ({guild.id})\n"
-            msg += f"Commands Used: **{usage}**\n"
-            msg += f"Bots: **{percent * 100}%**\n"
-            msg += f"Members: **{guild.member_count}**\n"
-            if guild.id in data["whitelist"]:
-                msg += f"[Whitelisted](https://www.youtube.com/watch?v=oHg5SJYRHA0)\n"
-            msg += "\n"
-        if msg:
-            color = discord.Color.red()
-        else:
-            msg = f"There are no servers with command usage less than {commands}."
-            color = discord.Color.green()
+        await self.view_guilds(ctx, guilds, f"Command Usage ({commands})", page_length, insert_function=insert_function)
 
-        if len(msg) > page_limit:
-            embeds = []
-            pages = list([page for page in pagify(msg, ["\n\n"], page_length=page_limit)])
-            for index, page in enumerate(pages, 1):
-                e = discord.Embed(
-                    color=color,
-                    title="Command Usage Check",
-                    description=page,
-                )
-                e.set_footer(text=f"{index}/{len(pages)}")
-                embeds.append(e)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            e = discord.Embed(
-                color=color,
-                title="Command Usage Check",
-                description=msg,
-            )
-            emoji = self.bot.get_emoji(736038541364297738) or "🚫"
-            await menu(ctx, [e], {emoji: close_menu})
-
-    @baron.group()
-    async def leave(self, ctx: commands.Context):
+    @baron.group(name="leave")
+    async def baron_leave(self, ctx: commands.Context):
         """Manage leaving servers."""
 
-    @leave.command()
-    async def mass(
+    @baron_leave.command()
+    async def baron_leave_mass(
         self,
         ctx: commands.Context,
         guilds: commands.Greedy[GuildConverter],
@@ -430,16 +372,15 @@ class Baron(commands.Cog):
             raise commands.BadArgument
         await self.leave_guilds(ctx, guilds, reason)
 
-    @leave.command(name="botfarms")
-    async def leave_botfarms(self, ctx: commands.Context, rate: int = 75):
+    @baron_leave.command(name="botfarms")
+    async def baron_leave_botfarms(self, ctx: commands.Context, rate: int = 75):
         """Leave servers with the given bot to member ratio."""
         if rate not in range(1, 100):
             raise commands.BadArgument
-        rate = rate / 100
-        guilds = (await self.get_bot_farms(rate))[0]
+        guilds = (await self.get_bot_farms(rate / 100))[0]
         if not guilds[0]:
             await ctx.send(
-                f"There are no servers with a bot ratio higher or equal than {rate * 100}%."
+                f"There are no servers with a bot ratio higher or equal than {rate}%."
             )
             return
         await self.leave_guilds(
@@ -448,8 +389,8 @@ class Baron(commands.Cog):
             f"I have automatically left this server since it has a high bot to member ratio.",
         )
 
-    @leave.command(name="members")
-    async def leave_members(self, ctx: commands.Context, members: int):
+    @baron_leave.command(name="members")
+    async def baron_leave_members(self, ctx: commands.Context, members: int):
         """Leave all servers that have less members than the given number."""
         guilds = [guild for guild in self.bot.guilds if guild.member_count < members]
         if not guilds:
@@ -460,9 +401,18 @@ class Baron(commands.Cog):
             f"I have automatically left this server since it has less than {members} members.",
         )
 
+    @baron_leave.command(name="blacklisted")
+    async def baron_leave_blacklisted(self, ctx: commands.Context):
+        """Leave all servers that are blacklisted (in case of downtime)."""
+        blacklist = await self.config.blacklist()
+        guilds = [g for g in self.bot.guilds if g.id in blacklist]
+        if not guilds:
+            return await ctx.send(f"I'm not in any blacklisted servers.")
+        await self.leave_guilds(ctx, guilds, None, notify_guilds=False)
+
     @commands.check(comstats_cog)
-    @leave.command(name="commands")
-    async def leave_commands(self, ctx: commands.Context, commands: int):
+    @baron_leave.command(name="commands")
+    async def baron_leave_commands(self, ctx: commands.Context, commands: int):
         """Leave all servers that have used less commands than the given number."""
         cog = self.bot.get_cog("CommandStats")
         data = await cog.config.guilddata()
@@ -487,7 +437,37 @@ class Baron(commands.Cog):
             f"I have automatically left this server since it has used less than {commands} commands.",
         )
 
-    async def leave_guilds(self, ctx: commands.Context, guilds: list, message: str):
+    @baron.command(name="chunk")
+    async def baron_chunk(self, ctx: commands.Context):
+        """
+        Chunk unchunked servers.
+
+        Credits to KableKompany
+        """
+        unchunked = [g for g in self.bot.guilds if not g.chunked]
+        if not unchunked:
+            return await ctx.send("All servers are chunked.")
+        await self.chunk(ctx, unchunked)
+
+    async def chunk(self, ctx: commands.Context, guilds: List[discord.Guild]):
+        message = await ctx.send(f"Attempting to chunk {len(guilds):,} servers...")
+        start = time.perf_counter()
+        editing = True
+        for index, g in enumerate(guilds, start=1):
+            await g.chunk(cache=True)
+            if editing and index % 50 == 0 or index == len(guilds):
+                try:
+                    await message.edit(content=f"{index}/{len(guilds)} servers chunked")
+                except discord.HTTPException:
+                    editing = False
+
+        end = time.perf_counter()
+        seconds = end - start
+        await ctx.send(
+            f"{ctx.author.mention}, cached {len(guilds):,} servers. Finished in **{humanize_timedelta(seconds=seconds)}**."
+        )
+
+    async def leave_guilds(self, ctx: commands.Context, guilds: list, message: str, *, notify_guilds: bool = True):
         data = await self.config.all()
         unwl_guilds = [guild for guild in guilds if guild.id not in data["whitelist"]]
         if not unwl_guilds:
@@ -495,11 +475,11 @@ class Baron(commands.Cog):
             return
         name_ids = "\n".join([f"{guild.name} - ({guild.id})" for guild in unwl_guilds][:5])
         guild_preview = name_ids + (
-            f"\nand {len(unwl_guilds) - 5} other guilds.." if len(unwl_guilds) > 5 else ""
+            f"\nand {len(unwl_guilds) - 5} other servers.." if len(unwl_guilds) > 5 else ""
         )
 
         msg = await ctx.send(
-            f"Are you sure you want me to leave the following {len(unwl_guilds)} guilds?\n"
+            f"Are you sure you want me to leave the following {len(unwl_guilds)} servers?\n"
             + box(guild_preview, "py")
         )
         start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
@@ -512,7 +492,8 @@ class Baron(commands.Cog):
         if pred.result is True:
             async with ctx.typing():
                 for guild in unwl_guilds:
-                    await self.notify_guild(guild, message)
+                    if notify_guilds:
+                        await self.notify_guild(guild, message)
                     await guild.leave()
                 await self.baron_log("mass_leave", guilds=unwl_guilds, author=ctx.author)
             await ctx.send(f"Done. I left {len(unwl_guilds)} servers.")
@@ -599,8 +580,6 @@ class Baron(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
-        if guild.chunked is False and self.bot.intents.members:
-            await guild.chunk()
         data = await self.config.all()
         if guild.id in data["whitelist"]:
             return
@@ -615,7 +594,10 @@ class Baron(commands.Cog):
             )
             await guild.leave()
             await self.baron_log("limit_leave", guild=guild)
-        elif data["min_members"] and guild.member_count < data["min_members"]:
+            return
+        if guild.chunked is False and self.bot.intents.members:
+            await guild.chunk()
+        if data["min_members"] and guild.member_count < data["min_members"]:
             await self.notify_guild(
                 guild,
                 f"I have automatically left this server since it has less than {data['min_members']} members.",

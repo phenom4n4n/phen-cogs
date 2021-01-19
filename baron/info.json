@@ -6,7 +6,8 @@
     "install_msg": "Thanks for installing Baron!",
     "author": [
         "PhenoM4n4n",
-        "DragDev Studios"
+        "DragDev Studios",
+        "KableKompany"
     ],
     "required_cogs": {},
     "requirements": ["matplotlib"],
