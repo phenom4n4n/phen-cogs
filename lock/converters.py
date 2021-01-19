@@ -1,9 +1,9 @@
-from typing import Union
+from typing import Union, Optional
 
 import discord
 from unidecode import unidecode
 from rapidfuzz import process
-from discord.ext.commands.converter import Converter, RoleConverter
+from discord.ext.commands.converter import Converter, RoleConverter, TextChannelConverter
 from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
@@ -21,6 +21,13 @@ class ChannelToggle(Converter):
         elif arg == "true":
             ret = True
         return ret
+
+class LockableChannel(TextChannelConverter):
+    async def convert(self, ctx: commands.Context, arg: str) -> Optional[discord.TextChannel]:
+        channel = await super().convert(ctx, arg)
+        if not ctx.channel.permissions_for(ctx.me).manage_roles:
+            raise BadArgument(f"I do not have permission to edit permissions in {channel.mention}.")
+        return channel
 
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19

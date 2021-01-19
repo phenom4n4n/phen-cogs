@@ -101,7 +101,7 @@ class RealEmojiConverter(EmojiConverter):
             try:
                 await ctx.message.add_reaction(argument)
             except discord.HTTPException:
-                raise BadArgument(f'Emoji "{argument}" not found.')
+                raise commands.EmojiNotFound(argument)
             else:
                 emoji = argument
         return emoji

@@ -8,7 +8,7 @@ from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, inline
 from redbot.core.utils.mod import get_audit_reason
 
-from .converters import ChannelToggle, FuzzyRole
+from .converters import ChannelToggle, FuzzyRole, LockableChannel
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -42,7 +42,7 @@ class Lock(commands.Cog):
     async def lock(
         self,
         ctx: commands.Context,
-        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
         """Lock a channel. Provide a role or member if you would like to lock it for them.
@@ -105,7 +105,7 @@ class Lock(commands.Cog):
     async def viewlock(
         self,
         ctx: commands.Context,
-        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
         """Prevent users from viewing a channel. Provide a role or member if you would like to lock it for them.
@@ -182,7 +182,7 @@ class Lock(commands.Cog):
     async def lock_perms(
         self,
         ctx: commands.Context,
-        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
         *permissions: str,
     ):
@@ -220,7 +220,7 @@ class Lock(commands.Cog):
     async def unlock(
         self,
         ctx,
-        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         state: Optional[ChannelToggle] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
@@ -281,7 +281,7 @@ class Lock(commands.Cog):
     async def unviewlock(
         self,
         ctx,
-        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         state: Optional[ChannelToggle] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
@@ -363,7 +363,7 @@ class Lock(commands.Cog):
     async def unlock_perms(
         self,
         ctx: commands.Context,
-        channel: Optional[Union[discord.TextChannel, discord.VoiceChannel]] = None,
+        channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         state: Optional[ChannelToggle] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
         *permissions: str,
