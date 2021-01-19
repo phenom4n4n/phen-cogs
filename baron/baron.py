@@ -326,8 +326,8 @@ class Baron(commands.Cog):
         await self.view_guilds(ctx, guilds, f"Server Members ({members})", page_length)
 
     @commands.check(comstats_cog)
-    @baron.command(name="commands")
-    async def view_commands(
+    @baron_view.command(name="commands")
+    async def baron_view_commands(
         self,
         ctx: commands.Context,
         commands: int,
