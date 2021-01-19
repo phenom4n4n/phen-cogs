@@ -29,7 +29,7 @@ class Baron(commands.Cog):
     """
     Tools for managing guild joins and leaves.
     """
-    __version__ = "1.0.1"
+    __version__ = "1.0.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -349,6 +349,8 @@ class Baron(commands.Cog):
                 guilds.append((guild, total_commands))
                 guild_command_usage[guild.id] = total_commands
         guilds.sort(key=lambda x: x[1], reverse=highest_first)
+        if not guilds:
+            return await ctx.send(f"There are no servers that have used less than {commands} commands.")
 
         def insert_function(guild: discord.Guild):
             return f"Commands Used: **{guild_command_usage.get(guild.id, 0)}**"
@@ -359,7 +361,7 @@ class Baron(commands.Cog):
     async def baron_leave(self, ctx: commands.Context):
         """Manage leaving servers."""
 
-    @baron_leave.command()
+    @baron_leave.command(name="mass")
     async def baron_leave_mass(
         self,
         ctx: commands.Context,
@@ -487,7 +489,7 @@ class Baron(commands.Cog):
         try:
             await self.bot.wait_for("reaction_add", check=pred, timeout=60)
         except asyncio.TimeoutError:
-            await ctx.send("Action cancelled.")
+            return await ctx.send("Action cancelled.")
 
         if pred.result is True:
             async with ctx.typing():
