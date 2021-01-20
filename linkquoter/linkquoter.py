@@ -217,13 +217,13 @@ class LinkQuoter(commands.Cog):
             else:
                 e.set_footer(text=f"#{message.channel.name}")
 
-        if image:
-            e.set_image(url=image)
-
         if message.attachments:
             att = message.attachments[0]
             image = att.proxy_url
             e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})")
+
+        if image:
+            e.set_image(url=image)
 
         if ref := message.reference:
             ref_message = ref.cached_message or (
