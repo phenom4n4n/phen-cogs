@@ -597,7 +597,13 @@ class Baron(commands.Cog):
             await guild.leave()
             await self.baron_log("limit_leave", guild=guild)
             return
-        if guild.chunked is False and self.bot.intents.members:
+        
+        shard_meta = guild.shard_id
+        if (
+            guild.chunked is False
+            and self.bot.intents.members
+            and self.bot.shards[shard_meta].is_ws_ratelimited() is False
+            ): # adds coverage for the case where bot is already pulling chunk 
             await guild.chunk()
         if data["min_members"] and guild.member_count < data["min_members"]:
             await self.notify_guild(
