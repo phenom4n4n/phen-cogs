@@ -33,14 +33,15 @@ class CommandBlock(Block):
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if not ctx.verb.payload:
             return None
+        command = ctx.verb.payload.strip()
         actions = ctx.response.actions.get("commands")
         if actions:
             if len(actions) >= 3:
                 return f"`COMMAND LIMIT REACHED (3)`"
-            ctx.response.actions["commands"].append(ctx.verb.payload)
+            ctx.response.actions["commands"].append(command)
         else:
             ctx.response.actions["commands"] = []
-            ctx.response.actions["commands"].append(ctx.verb.payload)
+            ctx.response.actions["commands"].append(command)
         return ""
 
 
