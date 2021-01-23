@@ -145,14 +145,28 @@ class GuildAdapter(AttributeAdapter):
         The server's creation date as a UTC timestamp.
     member_count
         The server's member count.
+    bots
+        The number of bots in the server.
+    humans
+        The number of humans in the server.
     description
         The server's description if one is set, or "No description".
     """
 
     def update_attributes(self):
+        guild = self.object
+        bots = 0
+        humans = 0
+        for m in guild.members:
+            if m.bot:
+                bots += 1
+            else:
+                humans += 1
         additional_attributes = {
-            "icon": self.object.icon_url,
-            "member_count": self.object.member_count,
-            "description": self.object.description or "No description.",
+            "icon": guild.icon_url,
+            "member_count": guild.member_count,
+            "bots": bots,
+            "humans": humans,
+            "description": guild.description or "No description.",
         }
         self.attributes.update(additional_attributes)
