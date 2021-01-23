@@ -49,7 +49,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.4.5"
+    __version__ = "1.4.6"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -377,9 +377,10 @@ class Tags(commands.Cog):
         if actions:
             if actions.get("requires") or actions.get("blacklist"):
                 check, response = await self.validate_checks(ctx, actions)
-                if not check:
-                    if response:
-                        await ctx.send(response[:2000])
+                if check is False:
+                    if response is not None:
+                        if response:
+                            await ctx.send(response[:2000])
                     else:
                         start_adding_reactions(ctx.message, ["❌"])
                     return
