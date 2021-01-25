@@ -49,7 +49,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.4.7"
+    __version__ = "1.4.8"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -456,8 +456,9 @@ class Tags(commands.Cog):
         )
         if ctx.valid:
             if overrides:
-                command = copy(ctx.command)
+                # command = copy(ctx.command)
                 # command = commands.Command()
+                command: ctx.command = ctx.command.copy()
                 requires: Requires = copy(command.requires)
                 priv_level = requires.privilege_level
                 if priv_level not in (
