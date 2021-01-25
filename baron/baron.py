@@ -375,7 +375,13 @@ class Baron(commands.Cog):
         guilds = [g for g in self.bot.guilds if not g.chunked]
         if not guilds:
             return await ctx.send(f"There are no unchunked servers.")
-        await self.view_guilds(ctx, guilds, "Unchunked Servers", page_length)
+
+        def insert_function(guild: discord.Guild):
+            members = len(guild.members)
+            percent = members/guild.member_count
+            return f"Members Cached: **{humanize_number(members)} ({round(percent, 2)})%**"
+
+        await self.view_guilds(ctx, guilds, "Unchunked Servers", page_length, insert_function=insert_function)
 
     @baron.group(name="leave")
     async def baron_leave(self, ctx: commands.Context):
