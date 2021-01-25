@@ -10,7 +10,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands import GuildConverter, TimedeltaConverter
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import box, humanize_list, pagify, humanize_timedelta
+from redbot.core.utils.chat_formatting import box, humanize_list, pagify, humanize_timedelta, humanize_number
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
@@ -29,7 +29,7 @@ class Baron(commands.Cog):
     """
     Tools for managing guild joins and leaves.
     """
-    __version__ = "1.0.2"
+    __version__ = "1.1.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -224,9 +224,11 @@ class Baron(commands.Cog):
 
     @baron.command()
     async def minmembers(self, ctx: commands.Context, limit: Optional[int] = 0):
-        """Set the minimum number of members a server should have for the bot to stay in it.
+        """
+        Set the minimum number of members a server should have for the bot to stay in it.
 
-        Pass 0 to disable."""
+        Pass 0 to disable.
+        """
         await self.config.min_members.set(limit)
         await ctx.send(
             f"The minimum member limit has been set to {limit}."
@@ -236,9 +238,11 @@ class Baron(commands.Cog):
 
     @baron.command()
     async def botratio(self, ctx: commands.Context, ratio: Optional[int] = 0):
-        """Set the bot ratio for servers for the bot to leave.
+        """
+        Set the bot ratio for servers for the bot to leave.
 
-        Pass 0 to disable."""
+        Pass 0 to disable.
+        """
         if ratio not in range(0, 100):
             raise commands.BadArgument
         await self.config.bot_ratio.set(ratio)
@@ -270,8 +274,8 @@ class Baron(commands.Cog):
             percent = bots / guild.member_count
             guild_desc = [
                 f"{guild.name} - ({guild.id})",
-                f"Members: **{guild.member_count}**",
-                f"Bots: **{percent * 100}%**",
+                f"Members: **{humanize_number(guild.member_count)}**",
+                f"Bots: **{round(percent * 100, 2)}%**",
             ]
             if insert_function:
                 guild_desc.append(str(insert_function(guild)))
@@ -314,9 +318,11 @@ class Baron(commands.Cog):
         less_than: Optional[bool] = True,
         page_length: Optional[int] = 500,
     ):
-        """View servers that have a member count less than the specified number.
+        """
+        View servers that have a member count less than the specified number.
 
-        Pass `False` at the end if you would like to view servers that are greater than the specified number."""
+        Pass `False` at the end if you would like to view servers that are greater than the specified number.
+        """
         if less_than:
             guilds = [guild for guild in self.bot.guilds if guild.member_count < members]
         else:
@@ -334,9 +340,11 @@ class Baron(commands.Cog):
         highest_first: Optional[bool] = False,
         page_length: Optional[int] = 500,
     ):
-        """View servers that have command usage less than the specified number.
+        """
+        View servers that have command usage less than the specified number.
 
-        Pass `True` at the end if you would like to view servers in order of most commands used."""
+        Pass `True` at the end if you would like to view servers in order of most commands used.
+        """
         cog = self.bot.get_cog("CommandStats")
         data = await cog.config.guilddata()
         guilds = []
@@ -356,6 +364,18 @@ class Baron(commands.Cog):
             return f"Commands Used: **{guild_command_usage.get(guild.id, 0)}**"
 
         await self.view_guilds(ctx, [g for g, c in guilds], f"Command Usage ({commands})", page_length, insert_function=insert_function)
+
+    @baron_view.command(name="unchunked")
+    async def baron_view_unchunked(
+        self,
+        ctx: commands.Context,
+        page_length: Optional[int] = 500,
+    ):
+        """View unchunked servers."""
+        guilds = [g for g in self.bot.guilds if not g.chunked]
+        if not guilds:
+            return await ctx.send(f"There are no unchunked servers.")
+        await self.view_guilds(ctx, guilds, "Unchunked Servers", page_length)
 
     @baron.group(name="leave")
     async def baron_leave(self, ctx: commands.Context):
