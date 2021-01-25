@@ -29,7 +29,7 @@ class Baron(commands.Cog):
     """
     Tools for managing guild joins and leaves.
     """
-    __version__ = "1.1.1"
+    __version__ = "1.1.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -379,7 +379,7 @@ class Baron(commands.Cog):
         def insert_function(guild: discord.Guild):
             members = len(guild.members)
             percent = members/guild.member_count
-            return f"Members Cached: **{humanize_number(members)} ({round(percent, 2)})%**"
+            return f"Members Cached: **{humanize_number(members)} ({round(percent * 100, 2)})%**"
 
         await self.view_guilds(ctx, guilds, "Unchunked Servers", page_length, insert_function=insert_function)
 
