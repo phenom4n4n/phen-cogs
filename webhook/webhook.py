@@ -164,25 +164,24 @@ class Webhook(commands.Cog):
             await ctx.send("Action Cancelled.")
             return
 
-        if pred.result is True:
-            msg = await ctx.send("Deleting webhooks..")
-            count = 0
-            async with ctx.typing():
-                for webhook in webhooks:
-                    try:
-                        await webhook.delete(
-                            reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})"
-                        )
-                    except discord.HTTPException:
-                        pass
-                    else:
-                        count += 1
-            try:
-                await msg.edit(content=f"{count} webhooks deleted.")
-            except discord.NotFound:
-                await ctx.send(f"{count} webhooks deleted.")
-        else:
-            await ctx.send("Action cancelled.")
+        if pred.result is False:
+            return await ctx.send("Action Cancelled.")
+        msg = await ctx.send("Deleting webhooks..")
+        count = 0
+        async with ctx.typing():
+            for webhook in webhooks:
+                try:
+                    await webhook.delete(
+                        reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})"
+                    )
+                except discord.InvalidArgument:
+                    pass
+                else:
+                    count += 1
+        try:
+            await msg.edit(content=f"{count} webhooks deleted.")
+        except discord.NotFound:
+            await ctx.send(f"{count} webhooks deleted.")
 
     @checks.mod_or_permissions(ban_members=True)
     @webhook.command()
