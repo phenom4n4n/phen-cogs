@@ -13,6 +13,7 @@ from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
+from redbot.cogs.alias.alias import Alias
 from TagScriptEngine import Interpreter, adapter, block
 from collections import defaultdict
 
@@ -49,7 +50,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.4.9"
+    __version__ = "2.0.0"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -64,7 +65,9 @@ class Tags(commands.Cog):
             force_registration=True,
         )
         default_guild = {"tags": {}}
+        default_global = {"tags": {}}
         self.config.register_guild(**default_guild)
+        self.config.register_global(**default_global)
 
         blocks = stable_blocks + [
             block.MathBlock(),
@@ -89,6 +92,7 @@ class Tags(commands.Cog):
         self.emoji_converter = commands.EmojiConverter()
 
         self.guild_tag_cache = defaultdict(dict)
+        self.global_tag_cache = {}
         self.task = asyncio.create_task(self.cache_tags())
 
     def cog_unload(self):
@@ -118,8 +122,15 @@ class Tags(commands.Cog):
                 self.guild_tag_cache[guild_id][tag_name] = tag_object
         log.debug("tag cache built")
 
-    def get_tag(self, guild: discord.Guild, tag_name: str):
-        return self.guild_tag_cache[guild.id].get(tag_name)
+    def get_tag(
+        self, guild: Optional[discord.Guild], tag_name: str, *, check_global: bool = True
+    ) -> Optional[Tag]:
+        tag = None
+        if guild is not None:
+            tag = self.guild_tag_cache[guild.id].get(tag_name)
+        if tag is None and check_global is True:
+            tag = self.global_tag_cache.get(tag_name)
+        return tag
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
         output = self.engine.process(tagscript)
@@ -140,25 +151,33 @@ class Tags(commands.Cog):
                 )
         return True
 
+    @commands.command(usage="<tag_name> [args]")
+    async def invoketag(
+        self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""
+    ):
+        """
+        Manually invoke a tag with it's name and arguments.
+
+        Restricting this command with permissions in servers will restrict all members from invoking tags.
+        """
+        response = response or True
+        try:
+            _tag = await TagConverter(check_global=True).convert(ctx, tag_name)
+        except commands.BadArgument as e:
+            if response is True:
+                await ctx.send(e)
+        else:
+            seed = {"args": adapter.StringAdapter(args)}
+            await self.process_tag(ctx, _tag, seed_variables=seed)
+
     @commands.guild_only()
-    @commands.group(invoke_without_command=True, usage="<tag_name> [args]", aliases=["customcom"])
-    async def tag(self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""):
+    @commands.group(aliases=["customcom"])
+    async def tag(self, ctx: commands.Context):
         """
         Tag management with TagScript.
 
         These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks.
         """
-        if response is None:
-            response = True
-        try:
-            _tag = await TagConverter().convert(ctx, tag_name)
-        except commands.BadArgument as e:
-            if response:
-                await ctx.send(e)
-            return
-        seed = {"args": adapter.StringAdapter(args)}
-        log.info(f"Processing tag for {tag_name} on {ctx.guild} ({ctx.guild.id})")
-        await self.process_tag(ctx, _tag, seed_variables=seed)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["create", "+"])
@@ -324,27 +343,31 @@ class Tags(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
-        if (
-            message.author.bot
-            or not isinstance(message.author, discord.Member)
-            or not message.guild
-        ):
+        if message.author.bot or not isinstance(message.author, discord.Member):
             return
-        if not self.guild_tag_cache[message.guild.id]:
-            return
-        if not await self.bot.message_eligible_as_command(message):
-            return
-        ctx = await self.bot.get_context(message)
-        if ctx.prefix is None:
-            return
+        if message.guild:
+            if not await self.bot.message_eligible_as_command(message):
+                return
+        else:
+            if not (await self.bot.allowed_by_whitelist_blacklist(message.author)):
+                return
+        await self.handle_message(message)
 
-        tag_command = message.content[len(ctx.prefix) :]
+    async def handle_message(self, message: discord.Message):
+        try:
+            prefix = await Alias.get_prefix(self, message)
+        except ValueError:
+            return
+        tag_command = message.content[len(prefix) :]
         tag_split = tag_command.split(" ", 1)
-        if self.get_tag(message.guild, tag_split[0]):
-            new_message = copy(message)
-            new_message.content = f"{ctx.prefix}tag False {tag_command}"
-            ctx = await self.bot.get_context(new_message)
-            await self.bot.invoke(ctx)
+        if self.get_tag(message.guild, tag_split[0], check_global=True):
+            await self.invoke_tag_message(message, prefix, tag_command)
+
+    async def invoke_tag_message(self, message: discord.Message, prefix: str, tag_command: str):
+        new_message = copy(message)
+        new_message.content = f"{prefix}invoketag False {tag_command}"
+        ctx = await self.bot.get_context(new_message)
+        await self.bot.invoke(ctx)
 
     async def process_tag(
         self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
@@ -391,8 +414,8 @@ class Tags(commands.Cog):
                 to_gather.append(self.do_reactu(ctx, reactu))
             if actions.get("commands"):
                 for command in actions["commands"]:
-                    if command.startswith("tag"):
-                        await ctx.send("Looping isn't allowed.")
+                    if command.startswith("tag") or command == "invoketag":
+                        await ctx.send("Tag looping isn't allowed.")
                         return
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
