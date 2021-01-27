@@ -10,7 +10,13 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.commands import GuildConverter, TimedeltaConverter
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import box, humanize_list, pagify, humanize_timedelta, humanize_number
+from redbot.core.utils.chat_formatting import (
+    box,
+    humanize_list,
+    pagify,
+    humanize_timedelta,
+    humanize_number,
+)
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
@@ -29,6 +35,7 @@ class Baron(commands.Cog):
     """
     Tools for managing guild joins and leaves.
     """
+
     __version__ = "1.1.2"
 
     def format_help_for_context(self, ctx):
@@ -262,7 +269,7 @@ class Baron(commands.Cog):
         command_count: Optional[int] = None,
         color: discord.Color = discord.Color.red(),
         footer: str = None,
-        insert_function = None
+        insert_function=None,
     ):
         page_length = max(100, min(2000, page_length))
         data = await self.config.all()
@@ -307,8 +314,12 @@ class Baron(commands.Cog):
         """View servers that have a bot to member ratio with the given rate."""
         bot_farms, ok_guilds = await self.get_bot_farms(rate / 100)
         if not bot_farms:
-            return await ctx.send(f"There are no servers with a bot ratio higher or equal than {rate}%.")
-        await self.view_guilds(ctx, bot_farms, f"Bot Farms ({rate}%)", page_length, footer=f"OK guilds: {ok_guilds}")
+            return await ctx.send(
+                f"There are no servers with a bot ratio higher or equal than {rate}%."
+            )
+        await self.view_guilds(
+            ctx, bot_farms, f"Bot Farms ({rate}%)", page_length, footer=f"OK guilds: {ok_guilds}"
+        )
 
     @baron_view.command(name="members")
     async def baron_view_members(
@@ -328,7 +339,9 @@ class Baron(commands.Cog):
         else:
             guilds = [guild for guild in self.bot.guilds if guild.member_count > members]
         if not guilds:
-            return await ctx.send(f"There are no servers with a member count {'less' if less_than else 'greater'} than {members}.")
+            return await ctx.send(
+                f"There are no servers with a member count {'less' if less_than else 'greater'} than {members}."
+            )
         await self.view_guilds(ctx, guilds, f"Server Members ({members})", page_length)
 
     @commands.check(comstats_cog)
@@ -358,12 +371,20 @@ class Baron(commands.Cog):
                 guild_command_usage[guild.id] = total_commands
         guilds.sort(key=lambda x: x[1], reverse=highest_first)
         if not guilds:
-            return await ctx.send(f"There are no servers that have used less than {commands} commands.")
+            return await ctx.send(
+                f"There are no servers that have used less than {commands} commands."
+            )
 
         def insert_function(guild: discord.Guild):
             return f"Commands Used: **{guild_command_usage.get(guild.id, 0)}**"
 
-        await self.view_guilds(ctx, [g for g, c in guilds], f"Command Usage ({commands})", page_length, insert_function=insert_function)
+        await self.view_guilds(
+            ctx,
+            [g for g, c in guilds],
+            f"Command Usage ({commands})",
+            page_length,
+            insert_function=insert_function,
+        )
 
     @baron_view.command(name="unchunked")
     async def baron_view_unchunked(
@@ -378,10 +399,12 @@ class Baron(commands.Cog):
 
         def insert_function(guild: discord.Guild):
             members = len(guild.members)
-            percent = members/guild.member_count
+            percent = members / guild.member_count
             return f"Members Cached: **{humanize_number(members)} ({round(percent * 100, 2)})%**"
 
-        await self.view_guilds(ctx, guilds, "Unchunked Servers", page_length, insert_function=insert_function)
+        await self.view_guilds(
+            ctx, guilds, "Unchunked Servers", page_length, insert_function=insert_function
+        )
 
     @baron.group(name="leave")
     async def baron_leave(self, ctx: commands.Context):
@@ -407,9 +430,7 @@ class Baron(commands.Cog):
             raise commands.BadArgument
         guilds = (await self.get_bot_farms(rate / 100))[0]
         if not guilds[0]:
-            await ctx.send(
-                f"There are no servers with a bot ratio higher or equal than {rate}%."
-            )
+            await ctx.send(f"There are no servers with a bot ratio higher or equal than {rate}%.")
             return
         await self.leave_guilds(
             ctx,
@@ -495,7 +516,9 @@ class Baron(commands.Cog):
             f"{ctx.author.mention}, cached {len(guilds):,} servers. Finished in **{humanize_timedelta(seconds=seconds)}**."
         )
 
-    async def leave_guilds(self, ctx: commands.Context, guilds: list, message: str, *, notify_guilds: bool = True):
+    async def leave_guilds(
+        self, ctx: commands.Context, guilds: list, message: str, *, notify_guilds: bool = True
+    ):
         data = await self.config.all()
         unwl_guilds = [guild for guild in guilds if guild.id not in data["whitelist"]]
         if not unwl_guilds:
@@ -623,13 +646,13 @@ class Baron(commands.Cog):
             await guild.leave()
             await self.baron_log("limit_leave", guild=guild)
             return
-        
+
         shard_meta = guild.shard_id
         if (
             guild.chunked is False
             and self.bot.intents.members
             and self.bot.shards[shard_meta].is_ws_ratelimited() is False
-            ): # adds coverage for the case where bot is already pulling chunk 
+        ):  # adds coverage for the case where bot is already pulling chunk
             await guild.chunk()
         if data["min_members"] and guild.member_count < data["min_members"]:
             await self.notify_guild(
