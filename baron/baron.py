@@ -561,7 +561,7 @@ class Baron(commands.Cog):
         guilds: list = None,
         author: discord.User = None,
     ):
-        data = await self.settings_cache
+        data = self.settings_cache
         if not (data["log_channel"] and data["log_guild"]):
             return
         log_guild = self.bot.get_guild(data["log_guild"])
