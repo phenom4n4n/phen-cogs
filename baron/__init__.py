@@ -10,4 +10,6 @@ with open(Path(__file__).parent / "info.json") as fp:
 
 
 async def setup(bot: Red) -> None:
-    bot.add_cog(Baron(bot))
+    cog = Baron(bot)
+    bot.add_cog(cog)
+    await cog.build_cache()

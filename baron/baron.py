@@ -29,12 +29,22 @@ class Baron(commands.Cog):
     """
     Tools for managing guild joins and leaves.
     """
-    __version__ = "1.1.2"
+    __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
+
+    default_global = {
+        "limit": 0,
+        "log_channel": None,
+        "log_guild": None,
+        "min_members": 0,
+        "bot_ratio": 0,
+        "whitelist": [],
+        "blacklist": [],
+    }
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -43,19 +53,14 @@ class Baron(commands.Cog):
             identifier=325236743863625234572,
             force_registration=True,
         )
-        default_global = {
-            "limit": 0,
-            "log_channel": None,
-            "log_guild": None,
-            "min_members": 0,
-            "bot_ratio": 0,
-            "whitelist": [],
-            "blacklist": [],
-        }
-        self.config.register_global(**default_global)
+        self.settings_cache = {}
+        self.config.register_global(**self.default_global)
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
+
+    async def build_cache(self):
+        self.settings_cache = await self.config.all()
 
     @commands.is_owner()
     @commands.command(aliases=["guildsgrowth", "guildgraph", "guildsgraph"])
@@ -151,6 +156,7 @@ class Baron(commands.Cog):
             if limit
             else "The server limit has been disabled."
         )
+        await self.build_cache()
 
     @baron.command()
     async def channel(self, ctx: commands.Context, channel: discord.TextChannel = None):
@@ -163,6 +169,7 @@ class Baron(commands.Cog):
             await self.config.log_channel.clear()
             await self.config.log_guild.clear()
             await ctx.send("Baron's log channel has been removed.")
+        await self.build_cache()
 
     @baron.command(aliases=["wl"])
     async def whitelist(self, ctx: commands.Context, guild_id: int = None):
@@ -181,6 +188,7 @@ class Baron(commands.Cog):
             async with self.config.whitelist() as w:
                 w.append(guild_id)
             await ctx.tick()
+        await self.build_cache()
 
     @baron.command(aliases=["unwl"])
     async def unwhitelist(self, ctx: commands.Context, guild_id: int):
@@ -192,6 +200,7 @@ class Baron(commands.Cog):
             index = w.index(guild_id)
             w.pop(index)
         await ctx.tick()
+        await self.build_cache()
 
     @baron.command(aliases=["bl"])
     async def blacklist(self, ctx: commands.Context, guild_id: int = None):
@@ -210,6 +219,7 @@ class Baron(commands.Cog):
             async with self.config.blacklist() as b:
                 b.append(guild_id)
             await ctx.tick()
+        await self.build_cache()
 
     @baron.command(aliases=["unbl"])
     async def unblacklist(self, ctx: commands.Context, guild_id: int):
@@ -221,6 +231,7 @@ class Baron(commands.Cog):
             index = b.index(guild_id)
             b.pop(index)
         await ctx.tick()
+        await self.build_cache()
 
     @baron.command()
     async def minmembers(self, ctx: commands.Context, limit: Optional[int] = 0):
@@ -235,6 +246,7 @@ class Baron(commands.Cog):
             if limit
             else "The minimum member limit has been disabled."
         )
+        await self.build_cache()
 
     @baron.command()
     async def botratio(self, ctx: commands.Context, ratio: Optional[int] = 0):
@@ -251,6 +263,7 @@ class Baron(commands.Cog):
             if ratio
             else "The bot ratio has been removed."
         )
+        await self.build_cache()
 
     async def view_guilds(
         self,
@@ -548,7 +561,7 @@ class Baron(commands.Cog):
         guilds: list = None,
         author: discord.User = None,
     ):
-        data = await self.config.all()
+        data = await self.settings_cache
         if not (data["log_channel"] and data["log_guild"]):
             return
         log_guild = self.bot.get_guild(data["log_guild"])
@@ -608,7 +621,7 @@ class Baron(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild):
-        data = await self.config.all()
+        data = self.settings_cache
         if guild.id in data["whitelist"]:
             return
         elif guild.id in data["blacklist"]:
