@@ -3,10 +3,11 @@ from TagScriptEngine.interface import Adapter
 from discord import Member, TextChannel, Guild
 from inspect import ismethod
 
+
 class SafeObjectAdapater(Adapter):
     def __init__(self, base):
         self.object = base
-    
+
     def get_value(self, ctx: Verb) -> str:
         if ctx.parameter == None:
             return str(self.object)
@@ -20,6 +21,7 @@ class SafeObjectAdapater(Adapter):
         if isinstance(attribute, float):
             attribute = int(attribute)
         return str(attribute)
+
 
 class AttributeAdapter(Adapter):
     def __init__(self, base):
