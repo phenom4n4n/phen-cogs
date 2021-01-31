@@ -295,7 +295,9 @@ class AltDentifier(commands.Cog):
             if member.id in data.get("whitelist", []):
                 action = "This user was whitelisted so no actions were taken."
             else:
-                action = await self.take_action(guild, member, trust[0], data.get("actions", self.default_guild["actions"]))
+                action = await self.take_action(
+                    guild, member, trust[0], data.get("actions", self.default_guild["actions"])
+                )
             e = self.gen_alt_embed(trust, member, actions=action)
             try:
                 await channel.send(embed=e)
