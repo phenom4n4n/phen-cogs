@@ -99,7 +99,7 @@ class StrictRole(FuzzyRole):
                 if self.response
                 else None
             )
-        allowed, message = await is_allowed_by_role_hierarchy(ctx.bot, ctx.me, ctx.author, role)
+        allowed, message = is_allowed_by_role_hierarchy(ctx.bot, ctx.me, ctx.author, role)
         if not allowed:
             raise BadArgument(message if self.response else None)
         return role
