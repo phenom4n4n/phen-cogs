@@ -124,7 +124,7 @@ class AltDentifier(commands.Cog):
 
     @altset.command()
     async def action(
-        self, ctx, level: LevelConverter, action: typing.Union[StrictRole, str] = None
+        self, ctx, level: LevelConverter, action: typing.Union[discord.Role, str] = None
     ):
         """Specify what actions to take when a member joins and has a certain Trust Level.
 
@@ -137,6 +137,11 @@ class AltDentifier(commands.Cog):
             await self.clear_action(ctx.guild, level)
             return await ctx.send(f"Removed actions for Trust Level {level}.")
         if isinstance(action, discord.Role):
+            try:
+                await StrictRole().convert(ctx, str(action.id))
+            except commands.BadArgument as e:
+                await ctx.send(e)
+                return
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.id
         elif isinstance(action, str) and action.lower() not in ["kick", "ban"]:
