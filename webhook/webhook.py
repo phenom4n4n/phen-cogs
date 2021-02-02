@@ -302,6 +302,7 @@ class Webhook(commands.Cog):
         if not webhook:
             raise commands.BadArgument
         await webhook.edit_message(message.id, content=content)
+        await delete_quietly(ctx)
 
     async def webhook_link_send(
         self,
