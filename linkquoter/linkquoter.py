@@ -220,7 +220,12 @@ class LinkQuoter(commands.Cog):
         if message.attachments:
             att = message.attachments[0]
             image = att.proxy_url
-            e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})")
+            e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})", inline=False)
+
+        if not image and (stickers := getattr(message, "stickers")):
+            for sticker in stickers:
+                if (image := str(sticker.image_url)):
+                    e.add_field(name="Stickers", value=f"[{sticker.name}]({image})", inline=False)
 
         if image:
             e.set_image(url=image)
