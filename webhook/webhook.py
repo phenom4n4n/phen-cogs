@@ -8,14 +8,6 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_ad
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 
-async def delete_quietly(ctx: commands.Context):
-    if ctx.channel.permissions_for(ctx.me).manage_messages:
-        try:
-            await ctx.message.delete()
-        except discord.HTTPException:
-            pass
-
-
 class FakeResponse:
     def __init__(self):
         self.status = 403
@@ -41,6 +33,14 @@ class Webhook(commands.Cog):
 
     async def red_delete_data_for_user(self, **kwargs):
         return
+
+    @staticmethod
+    async def delete_quietly(ctx: commands.Context):
+        if ctx.channel.permissions_for(ctx.me).manage_messages:
+            try:
+                await ctx.message.delete()
+            except discord.HTTPException:
+                pass
 
     @commands.guild_only()
     @commands.group()
@@ -70,7 +70,7 @@ class Webhook(commands.Cog):
     @webhook.command()
     async def send(self, ctx: commands.Context, webhook_link: str, *, message: str):
         """Sends a message to the specified webhook using your avatar and display name."""
-        await delete_quietly(ctx)
+        await self.delete_quietly(ctx)
         try:
             await self.webhook_link_send(
                 webhook_link, ctx.author.display_name, ctx.author.avatar_url, content=message
@@ -82,7 +82,7 @@ class Webhook(commands.Cog):
     @webhook.command()
     async def say(self, ctx: commands.Context, *, message: str):
         """Sends a message to the channel as a webhook with your avatar and display name."""
-        await delete_quietly(ctx)
+        await self.delete_quietly(ctx)
         await self.send_to_channel(
             ctx.channel,
             ctx.me,
@@ -98,7 +98,7 @@ class Webhook(commands.Cog):
     @webhook.command()
     async def sudo(self, ctx: commands.Context, member: discord.Member, *, message: str):
         """Sends a message to the channel as a webhook with the specified member's avatar and display name."""
-        await delete_quietly(ctx)
+        await self.delete_quietly(ctx)
         await self.send_to_channel(
             ctx.channel,
             ctx.me,
@@ -130,7 +130,7 @@ class Webhook(commands.Cog):
     @webhook.command(hidden=True)
     async def clyde(self, ctx: commands.Context, *, message: str):
         """Sends a message to the channel as a webhook with Clyde's avatar and name."""
-        await delete_quietly(ctx)
+        await self.delete_quietly(ctx)
         await self.send_to_channel(
             ctx.channel,
             ctx.me,
@@ -284,6 +284,7 @@ class Webhook(commands.Cog):
             if send_result is not True:
                 return await ctx.send("The webhook was deleted so this session has been closed.")
 
+    @commands.cooldown(5, 10, commands.BucketType.guild)
     @commands.admin_or_permissions(manage_webhooks=True)
     @webhook.command(name="edit")
     async def webhook_edit(self, ctx: commands.Context, message: discord.Message, *, content: str):
@@ -302,7 +303,7 @@ class Webhook(commands.Cog):
         if not webhook:
             raise commands.BadArgument
         await webhook.edit_message(message.id, content=content)
-        await delete_quietly(ctx)
+        await self.delete_quietly(ctx)
 
     async def webhook_link_send(
         self,
