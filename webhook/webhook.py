@@ -2,7 +2,7 @@ import asyncio
 
 import aiohttp
 import discord
-from redbot.core import Config, checks, commands
+from redbot.core import Config, commands
 from redbot.core.utils.chat_formatting import humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
@@ -47,8 +47,8 @@ class Webhook(commands.Cog):
     async def webhook(self, ctx):
         """Webhook related commands."""
 
-    @checks.bot_has_permissions(manage_webhooks=True)
-    @checks.admin_or_permissions(manage_webhooks=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
+    @commands.admin_or_permissions(manage_webhooks=True)
     @webhook.command()
     async def create(
         self,
@@ -66,7 +66,7 @@ class Webhook(commands.Cog):
         await channel.create_webhook(name=webhook_name, reason=creation_reason)
         await ctx.tick()
 
-    @checks.admin_or_permissions(manage_webhooks=True)
+    @commands.admin_or_permissions(manage_webhooks=True)
     @webhook.command()
     async def send(self, ctx: commands.Context, webhook_link: str, *, message: str):
         """Sends a message to the specified webhook using your avatar and display name."""
@@ -78,7 +78,7 @@ class Webhook(commands.Cog):
         except InvalidWebhook:
             await ctx.send("You need to provide a valid webhook link.")
 
-    @checks.bot_has_permissions(manage_webhooks=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
     @webhook.command()
     async def say(self, ctx: commands.Context, *, message: str):
         """Sends a message to the channel as a webhook with your avatar and display name."""
@@ -93,8 +93,8 @@ class Webhook(commands.Cog):
             username=ctx.author.display_name,
         )
 
-    @checks.admin_or_permissions(manage_webhooks=True)
-    @checks.bot_has_permissions(manage_webhooks=True)
+    @commands.admin_or_permissions(manage_webhooks=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
     @webhook.command()
     async def sudo(self, ctx: commands.Context, member: discord.Member, *, message: str):
         """Sends a message to the channel as a webhook with the specified member's avatar and display name."""
@@ -109,8 +109,8 @@ class Webhook(commands.Cog):
             username=member.display_name,
         )
 
-    @checks.admin_or_permissions(manage_webhooks=True, manage_guild=True)
-    @checks.bot_has_permissions(manage_webhooks=True)
+    @commands.admin_or_permissions(manage_webhooks=True, manage_guild=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
     @webhook.command(hidden=True)
     async def loudsudo(self, ctx: commands.Context, member: discord.Member, *, message: str):
         """Sends a message to the channel as a webhook with the specified member's avatar and display name."""
@@ -125,8 +125,8 @@ class Webhook(commands.Cog):
             allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True),
         )
 
-    @checks.admin_or_permissions(manage_webhooks=True, manage_guild=True)
-    @checks.bot_has_permissions(manage_webhooks=True)
+    @commands.admin_or_permissions(manage_webhooks=True, manage_guild=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
     @webhook.command(hidden=True)
     async def clyde(self, ctx: commands.Context, *, message: str):
         """Sends a message to the channel as a webhook with Clyde's avatar and name."""
@@ -143,8 +143,8 @@ class Webhook(commands.Cog):
         )
 
     @commands.max_concurrency(1, commands.BucketType.guild)
-    @checks.has_permissions(manage_webhooks=True)
-    @checks.bot_has_permissions(manage_webhooks=True)
+    @commands.has_permissions(manage_webhooks=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
     @webhook.command()
     async def clear(self, ctx):
         """Delete all webhooks in the server."""
@@ -183,7 +183,7 @@ class Webhook(commands.Cog):
         except discord.NotFound:
             await ctx.send(f"{count} webhooks deleted.")
 
-    @checks.mod_or_permissions(ban_members=True)
+    @commands.mod_or_permissions(ban_members=True)
     @webhook.command()
     async def perms(self, ctx):
         """Show all members in the server that have `manage_webhook` permissions."""
@@ -240,7 +240,7 @@ class Webhook(commands.Cog):
             await menu(ctx, [embed], {emoji: close_menu})
 
     @commands.max_concurrency(1, commands.BucketType.channel)
-    @checks.admin_or_permissions(manage_webhooks=True)
+    @commands.admin_or_permissions(manage_webhooks=True)
     @webhook.command()
     async def session(self, ctx: commands.Context, webhook_link: str):
         """Initiate a session within this channel sending messages to a specified webhook link."""
@@ -283,6 +283,25 @@ class Webhook(commands.Cog):
             )
             if send_result is not True:
                 return await ctx.send("The webhook was deleted so this session has been closed.")
+
+    @commands.admin_or_permissions(manage_webhooks=True)
+    @webhook.command(name="edit")
+    async def webhook_edit(self, ctx: commands.Context, message: discord.Message, *, content: str):
+        """Edit a message sent by a webhook."""
+        if not message.webhook_id:
+            raise commands.BadArgument
+        if not message.channel.permissions_for(ctx.me).manage_webhooks:
+            return await ctx.send(f"I need `Manage Webhook` permission in {message.channel}.")
+        webhooks = await message.channel.webhooks()
+        webhook = None
+        for chan_webhook in webhooks:
+            if chan_webhook.type == discord.WebhookType.incoming:
+                if chan_webhook.id == message.webhook_id:
+                    webhook = chan_webhook
+                    break
+        if not webhook:
+            raise commands.BadArgument
+        await webhook.edit_message(message.id, content=content)
 
     async def webhook_link_send(
         self,
