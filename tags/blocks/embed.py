@@ -44,7 +44,10 @@ class EmbedBlock(Block):
             e = Embed.from_dict(data)
         except Exception as error:
             return str(error)
-        length = len(e)
+        try:
+            length = len(e)
+        except Exception as error:
+            return str(error)
         if length > 6000:
             return f"`MAX EMBED LENGTH REACHED ({length}/6000)`"
         ctx.response.actions["embed"] = e
