@@ -1,7 +1,7 @@
 import asyncio
 import time
 from copy import copy
-from typing import Literal, Optional, Tuple
+from typing import Optional
 
 import logging
 import discord
@@ -21,18 +21,15 @@ from .converters import TagConverter, TagName, TagScriptConverter
 from .objects import Tag
 from .adapters import MemberAdapter, TextChannelAdapter, GuildAdapter
 from .ctx import SilentContext
-from .errors import MissingTagPermissions
+from .errors import (
+    MissingTagPermissions,
+    RequireCheckFailure,
+    WhitelistCheckFailure,
+    BlacklistCheckFailure,
+)
 
-RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 log = logging.getLogger("red.phenom4n4n.tags")
-
-
-async def delete_quietly(message: discord.Message):
-    try:
-        await message.delete()
-    except discord.HTTPException:
-        pass
 
 
 async def send_quietly(destination: discord.abc.Messageable, content: str = None, **kwargs):
@@ -49,7 +46,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.4.9"
+    __version__ = "1.5.0"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -375,20 +372,23 @@ class Tags(commands.Cog):
         replying = False
 
         if actions:
-            if actions.get("requires") or actions.get("blacklist"):
-                check, response = await self.validate_checks(ctx, actions)
-                if check is False:
-                    if response is not None:
-                        if response:
-                            await ctx.send(response[:2000])
-                    else:
-                        start_adding_reactions(ctx.message, ["❌"])
-                    return
-            if delete := actions.get("delete"):
-                if ctx.channel.permissions_for(ctx.me).manage_messages:
-                    to_gather.append(delete_quietly(ctx.message))
-            if not delete and (reactu := actions.get("reactu")):
+            try:
+                await self.validate_checks(ctx, actions)
+            except RequireCheckFailure as error:
+                response = error.response
+                if response is not None:
+                    if response:
+                        await ctx.send(response[:2000])
+                else:
+                    start_adding_reactions(ctx.message, ["❌"])
+                return
+
+            if delete := actions.get("delete", False):
+                to_gather.append(self.delete_quietly(ctx))
+
+            if delete is False and (reactu := actions.get("reactu")):
                 to_gather.append(self.do_reactu(ctx, reactu))
+
             if actions.get("commands"):
                 for command in actions["commands"]:
                     if command.startswith("tag"):
@@ -397,6 +397,7 @@ class Tags(commands.Cog):
                     new = copy(ctx.message)
                     new.content = ctx.prefix + command
                     command_messages.append(new)
+
             if target := actions.get("target"):
                 if target == "dm":
                     destination = await ctx.author.create_dm()
@@ -476,30 +477,39 @@ class Tags(commands.Cog):
                 ctx.command = command
             await self.bot.invoke(ctx)
 
-    async def validate_checks(self, ctx: commands.Context, actions: dict) -> Tuple[bool, str]:
-        role_ids = [r.id for r in ctx.author.roles]
-        channel_id = ctx.channel.id
+    async def validate_checks(self, ctx: commands.Context, actions: dict):
+        to_gather = []
         if requires := actions.get("requires"):
-            for argument in requires["items"]:
-                role_or_channel = await self.role_or_channel_convert(ctx, argument)
-                if role_or_channel:
-                    if isinstance(role_or_channel, discord.Role):
-                        if role_or_channel.id not in role_ids:
-                            return False, requires["response"]
-                    else:
-                        if role_or_channel.id != channel_id:
-                            return False, requires["response"]
+            to_gather.append(self.validate_requires(ctx, requires))
         if blacklist := actions.get("blacklist"):
-            for argument in blacklist["items"]:
-                role_or_channel = await self.role_or_channel_convert(ctx, argument)
-                if role_or_channel:
-                    if isinstance(role_or_channel, discord.Role):
-                        if role_or_channel.id in role_ids:
-                            return False, blacklist["response"]
-                    else:
-                        if role_or_channel.id == channel_id:
-                            return False, blacklist["response"]
-        return True, ""
+            to_gather.append(self.validate_blacklist(ctx, blacklist))
+        if to_gather:
+            await asyncio.gather(*to_gather)
+
+    async def validate_requires(self, ctx: commands.Context, requires: dict):
+        for argument in requires["items"]:
+            role_or_channel = await self.role_or_channel_convert(ctx, argument)
+            if not role_or_channel:
+                continue
+            if isinstance(role_or_channel, discord.Role):
+                if role_or_channel in ctx.author.roles:
+                    return
+            else:
+                if role_or_channel == ctx.channel:
+                    return
+        raise RequireCheckFailure(requires["response"])
+
+    async def validate_blacklist(self, ctx: commands.Context, blacklist: dict):
+        for argument in blacklist["items"]:
+            role_or_channel = await self.role_or_channel_convert(ctx, argument)
+            if not role_or_channel:
+                continue
+            if isinstance(role_or_channel, discord.Role):
+                if role_or_channel in ctx.author.roles:
+                    raise RequireCheckFailure(blacklist["response"])
+            else:
+                if role_or_channel == ctx.channel:
+                    raise RequireCheckFailure(blacklist["response"])
 
     async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
         objects = await asyncio.gather(
@@ -533,3 +543,11 @@ class Tags(commands.Cog):
                     await msg.add_reaction(arg)
                 except discord.HTTPException:
                     pass
+
+    @staticmethod
+    async def delete_quietly(ctx: commands.Context):
+        if ctx.channel.permissions_for(ctx.me).manage_messages:
+            try:
+                await ctx.message.delete()
+            except discord.HTTPException:
+                pass
