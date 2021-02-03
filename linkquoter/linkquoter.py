@@ -101,7 +101,7 @@ class LinkQuoter(commands.Cog):
     """
 
     __version__ = "1.0.6"
-    
+
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
