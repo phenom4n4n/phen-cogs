@@ -260,7 +260,6 @@ class ReactRoles(MixinMeta):
 
         guild: discord.Guild = ctx.guild
         to_delete_message_emoji_ids = {}
-        to_delete_message_ids = []
         react_roles = []
         for index, (message_id, message_data) in enumerate(data.items(), start=1):
             data = message_data["reactroles"]
@@ -307,26 +306,15 @@ class ReactRoles(MixinMeta):
 
         color = await ctx.embed_color()
         description = "\n\n".join(react_roles)
-        if len(description) > 2048:
-            embeds = []
-            pages = list(pagify(description, delims=["\n\n"], page_length=2048))
-            for index, page in enumerate(pages, start=1):
-                e = discord.Embed(
-                    color=color,
-                    description=page,
-                )
-                e.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
-                e.set_footer(text=f"{index}/{len(pages)}")
-                embeds.append(e)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            e = discord.Embed(
-                color=color,
-                description=description,
-            )
-            e.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
-            emoji = self.bot.get_emoji(729917314769748019) or "❌"
-            await menu(ctx, [e], {emoji: close_menu})
+        embeds = []
+        pages = pagify(description, delims=["\n\n", "\n"])
+        base_embed = discord.Embed(color=color)
+        base_embed.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
+        for page in pages:
+            e = base_embed.copy()
+            e.description = page
+            embeds.append(e)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
 
         if to_delete_message_emoji_ids:
             for message_id, ids in to_delete_message_emoji_ids.items():
