@@ -342,14 +342,11 @@ class ReactRoles(MixinMeta):
     @commands.Cog.listener("on_raw_reaction_add")
     @commands.Cog.listener("on_raw_reaction_remove")
     async def on_raw_reaction_add_or_remove(self, payload: discord.RawReactionActionEvent):
-        log.debug("Begin reaction listener")
         if payload.guild_id is None:
-            log.debug("Not functioning in a guild")
             return
 
         # TODO add in listeners
         if not self._check_payload_to_cache(payload):
-            log.debug("Not cached")
             return
 
         if await self.bot.cog_disabled_in_guild_raw(self.qualified_name, payload.guild_id):
@@ -362,10 +359,8 @@ class ReactRoles(MixinMeta):
             member = guild.get_member(payload.user_id)
 
         if member is None or member.bot:
-            log.debug("Failed to get member or member is a bot")
             return
         if not guild.me.guild_permissions.manage_roles:
-            log.debug("No permissions to manage roles")
             return
 
         reacts = await self.config.custom(
