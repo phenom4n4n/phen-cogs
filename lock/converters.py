@@ -12,7 +12,7 @@ from redbot.core.utils.chat_formatting import inline
 class ChannelToggle(Converter):
     async def convert(self, ctx: commands.Context, arg: str) -> Union[bool, None]:
         arg = arg.lower()
-        if arg not in ["true", "default", "nuetral"]:
+        if arg not in ["true", "default", "neutral"]:
             raise BadArgument(
                 f"`{arg} is not a valid channel state. You use provide `true` or `default`."
             )
