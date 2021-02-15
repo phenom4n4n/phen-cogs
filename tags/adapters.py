@@ -4,7 +4,7 @@ from discord import Member, TextChannel, Guild
 from inspect import ismethod
 
 
-class SafeObjectAdapater(Adapter):
+class SafeObjectAdapter(Adapter):
     def __init__(self, base):
         self.object = base
 
@@ -27,16 +27,15 @@ class AttributeAdapter(Adapter):
     def __init__(self, base):
         self.object = base
         self.attributes = {
-            "id": self.object.id,
-            "created_at": self.object.created_at,
-            "timestamp": int(self.object.created_at.timestamp()),
-            "name": self.object.name,
+            "id": base.id,
+            "created_at": base.created_at,
+            "timestamp": int(base.created_at.timestamp()),
+            "name": getattr(base, "name", str(base)),
         }
         self.update_attributes()
 
     def update_attributes(self):
-        additional_attributes = {}
-        self.attributes.update(additional_attributes)
+        pass
 
     def get_value(self, ctx: Verb) -> str:
         if ctx.parameter == None:
@@ -91,14 +90,14 @@ class MemberAdapter(AttributeAdapter):
             "nick": self.object.display_name,
             "avatar": self.object.avatar_url,
             "discriminator": self.object.discriminator,
-            "joined_at": self.object.joined_at,
+            "joined_at": getattr(self.object, "joined_at", self.object.created_at),
             "mention": self.object.mention,
             "bot": self.object.bot,
         }
         self.attributes.update(additional_attributes)
 
 
-class TextChannelAdapter(AttributeAdapter):
+class ChannelAdapter(AttributeAdapter):
     """
     The ``{channel}`` block with no parameters returns the channel's full name
     but passing the attributes listed below to the block payload
@@ -129,12 +128,13 @@ class TextChannelAdapter(AttributeAdapter):
     """
 
     def update_attributes(self):
-        additional_attributes = {
-            "nsfw": self.object.nsfw,
-            "mention": self.object.mention,
-            "topic": self.object.topic or None,
-        }
-        self.attributes.update(additional_attributes)
+        if isinstance(self, TextChannel):
+            additional_attributes = {
+                "nsfw": self.object.nsfw,
+                "mention": self.object.mention,
+                "topic": self.object.topic or None,
+            }
+            self.attributes.update(additional_attributes)
 
 
 class GuildAdapter(AttributeAdapter):
