@@ -500,7 +500,7 @@ class Tags(commands.Cog):
             f"Migrated {migrated_guild_alias} aliases from {migrated_guilds} "
             "servers to tags. Moving on to global aliases.."
         )
-        
+
         migrated_global_alias = 0
         for entry in await alias_cog.config.entries():
             tagscript = "{c:" + entry["command"] + " {args}}"
