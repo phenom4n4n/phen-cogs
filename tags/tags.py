@@ -162,7 +162,7 @@ class Tags(commands.Cog):
         self, ctx, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""
     ):
         """
-        Manually invoke a tag with it's name and arguments.
+        Manually invoke a tag with its name and arguments.
 
         Restricting this command with permissions in servers will restrict all members from invoking tags.
         """
