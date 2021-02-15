@@ -94,9 +94,9 @@ class Tag(object):
     async def delete(self):
         if self.guild_id:
             async with self.config.guild_from_id(self.guild_id).tags() as t:
-                del e[self.name]
-            del self.cog.guild_tag_cache[ctx.guild.id][self.name]
+                del t[self.name]
+            del self.cog.guild_tag_cache[self.guild_id][self.name]
         else:
             async with self.config.tags() as e:
-                del e[self.name]
+                del t[self.name]
             del self.cog.global_tag_cache[self.name]
