@@ -53,9 +53,13 @@ class Tag(object):
         return interpreter.process(self.tagscript, seed_variables, **kwargs)
 
     async def update_config(self):
-        if self._real_tag and self.guild_id:
-            async with self.config.guild_from_id(self.guild_id).tags() as t:
-                t[self.name] = self.to_dict()
+        if self._real_tag:
+            if self.guild_id:
+                async with self.config.guild_from_id(self.guild_id).tags() as t:
+                    t[self.name] = self.to_dict()
+            else:
+                async with self.config.tags() as t:
+                    t[self.name] = self.to_dict()
 
     @classmethod
     def from_dict(
@@ -86,3 +90,13 @@ class Tag(object):
             "tag": self.tagscript,
             "author": self.author_id,  # backwards compatability
         }
+
+    async def delete(self):
+        if self.guild_id:
+            async with self.config.guild_from_id(self.guild_id).tags() as t:
+                del e[self.name]
+            del self.cog.guild_tag_cache[ctx.guild.id][self.name]
+        else:
+            async with self.config.tags() as e:
+                del e[self.name]
+            del self.cog.global_tag_cache[self.name]

@@ -12,7 +12,7 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate
+from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
 from redbot.cogs.alias.alias import Alias
 from TagScriptEngine import Interpreter, adapter, block
 from collections import defaultdict
@@ -216,8 +216,7 @@ class Tags(commands.Cog):
 
         tag = Tag(self, tag_name, tagscript, author_id=ctx.author.id, guild_id=ctx.guild.id)
         self.guild_tag_cache[ctx.guild.id][tag_name] = tag
-        async with self.config.guild(ctx.guild).tags() as t:
-            t[tag_name] = tag.to_dict()
+        await tag.update_config()
         await ctx.send(f"Tag `{tag}` added.")
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -229,17 +228,13 @@ class Tags(commands.Cog):
         tag.tagscript = tagscript
         await tag.update_config()
         await ctx.send(f"Tag `{tag}` edited.")
-        # await self.cache_tags()
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(aliases=["delete", "-"])
     async def remove(self, ctx: commands.Context, tag: TagConverter):
         """Delete a tag."""
-        async with self.config.guild(ctx.guild).tags() as e:
-            del e[str(tag)]
-        del self.guild_tag_cache[ctx.guild.id][str(tag)]
+        await tag.delete()
         await ctx.send("Tag deleted.")
-        # await self.cache_tags()
 
     @tag.command(name="info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
@@ -382,13 +377,16 @@ class Tags(commands.Cog):
 
         tag = Tag(self, tag_name, tagscript, author_id=ctx.author.id)
         self.global_tag_cache[tag_name] = tag
-        async with self.config.tags() as t:
-            t[tag_name] = tag.to_dict()
+        await tag.update_config()
         await ctx.send(f"Global tag `{tag}` added.")
 
     @tag_global.command(name="edit", aliases=["e"])
     async def tag_global_edit(
-        self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True), *, tagscript: TagScriptConverter
+        self,
+        ctx: commands.Context,
+        tag: TagConverter(check_global=True, global_priority=True),
+        *,
+        tagscript: TagScriptConverter,
     ):
         """Edit a global tag with TagScript."""
         tag.tagscript = tagscript
@@ -396,15 +394,17 @@ class Tags(commands.Cog):
         await ctx.send(f"Global tag `{tag}` edited.")
 
     @tag_global.command(name="remove", aliases=["delete", "-"])
-    async def tag_global_remove(self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)):
+    async def tag_global_remove(
+        self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)
+    ):
         """Delete a global tag."""
-        async with self.config.tags() as e:
-            del e[str(tag)]
-        del self.global_tag_cache[str(tag)]
+        await tag.delete()
         await ctx.send("Global tag deleted.")
 
     @tag_global.command(name="info")
-    async def tag_global_info(self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)):
+    async def tag_global_info(
+        self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)
+    ):
         """Get info about a global tag."""
         desc = [
             f"Author: {tag.author.mention if tag.author else tag.author_id}",
@@ -420,7 +420,9 @@ class Tags(commands.Cog):
         await ctx.send(embed=e)
 
     @tag_global.command(name="raw")
-    async def tag_global_raw(self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)):
+    async def tag_global_raw(
+        self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)
+    ):
         """Get a tag's raw content."""
         await ctx.send(
             escape_markdown(tag.tagscript[:2000]),
@@ -454,6 +456,69 @@ class Tags(commands.Cog):
             embed.set_footer(text=f"{index}/{len(pages)}")
             embeds.append(embed)
         await menu(ctx, embeds, DEFAULT_CONTROLS)
+
+    @commands.is_owner()
+    @commands.command()
+    async def migratealias(self, ctx: commands.Context):
+        """Migrate alias global and guild configs to tags."""
+        alias_cog = self.bot.get_cog("Alias")
+        if not alias_cog:
+            return await ctx.send("Alias cog must be loaded to migrate data.")
+
+        query = await ctx.send(f"Are you sure you want to migrate alias data to tags? (Y/n)")
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            response = await self.bot.wait_for("message", check=pred, timeout=30)
+        except asyncio.TimeoutError:
+            return await ctx.send("Query timed out, not migrating alias to tags.")
+
+        if pred.result is False:
+            return await ctx.send("Migration cancelled.")
+
+        migrated_guilds = 0
+        migrated_guild_alias = 0
+        all_guild_data: dict = await alias_cog.config.all_guilds()
+
+        for guild_id, guild_data in all_guild_data.items():
+            if not guild_data["entries"]:
+                continue
+            migrated_guilds += 1
+            for alias in guild_data["entries"]:
+                tagscript = "{c:" + alias["command"] + " {args}}"
+                tag = Tag(
+                    self,
+                    alias["name"],
+                    tagscript,
+                    author_id=alias["creator"],
+                    guild_id=alias["guild"],
+                    uses=alias["uses"],
+                )
+                self.guild_tag_cache[guild_id][alias["name"]] = tag
+                await tag.update_config()
+                migrated_guild_alias += 1
+        await ctx.send(
+            f"Migrated {migrated_guild_alias} aliases from {migrated_guilds} "
+            "servers to tags. Moving on to global aliases.."
+        )
+        
+        migrated_global_alias = 0
+        for entry in await alias_cog.config.entries():
+            tagscript = "{c:" + entry["command"] + " {args}}"
+            global_tag = Tag(
+                self,
+                entry["name"],
+                tagscript,
+                author_id=entry["creator"],
+                uses=alias["uses"],
+            )
+            self.global_tag_cache[entry["name"]] = global_tag
+            await global_tag.update_config()
+            migrated_global_alias += 1
+        await ctx.send(
+            f"Migrated {migrated_global_alias} global aliases to tags. "
+            "Migration completed, unload the alias cog to prevent command "
+            f"duplication with `{ctx.clean_prefix}unload alias`."
+        )
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
