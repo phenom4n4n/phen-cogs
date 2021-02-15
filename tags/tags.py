@@ -234,7 +234,7 @@ class Tags(commands.Cog):
     async def remove(self, ctx: commands.Context, tag: TagConverter):
         """Delete a tag."""
         await tag.delete()
-        await ctx.send("Tag deleted.")
+        await ctx.send(f"Tag {tag} deleted.")
 
     @tag.command(name="info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
@@ -399,7 +399,7 @@ class Tags(commands.Cog):
     ):
         """Delete a global tag."""
         await tag.delete()
-        await ctx.send("Global tag deleted.")
+        await ctx.send(f"Global tag {tag} deleted.")
 
     @tag_global.command(name="info")
     async def tag_global_info(
