@@ -9,11 +9,10 @@ class Tag(object):
     def __init__(
         self,
         cog: commands.Cog,
-        guild: discord.Guild,
         name: str,
         tagscript: str,
         *,
-        author: discord.User = None,
+        guild_id: int = None,
         author_id: int = None,
         uses: int = 0,
         real: bool = True,
@@ -21,14 +20,11 @@ class Tag(object):
         self.cog = cog
         self.config: Config = cog.config
         self.bot: Red = cog.bot
-        self.guild: Optional[
-            discord.Guild
-        ] = guild  # guild may not be present when using `tag process`
         self.name: str = name
         self.tagscript: str = tagscript
 
-        self.author: discord.User = author
-        self.author_id: int = author.id if author else author_id
+        self.guild_id = guild_id
+        self.author_id: int = author_id
         self.uses: int = uses
 
         self._real_tag: bool = real
@@ -39,6 +35,16 @@ class Tag(object):
     def __len__(self) -> int:
         return len(self.tagscript)
 
+    @property
+    def guild(self) -> Optional[discord.Guild]:
+        if self.guild_id:
+            if guild := self.bot.get_guild(self.guild_id):
+                return guild
+
+    @property
+    def author(self) -> Optional[discord.User]:
+        return self.bot.get_user(self.author_id)
+
     def run(
         self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs
     ) -> Interpreter.Response:
@@ -47,24 +53,33 @@ class Tag(object):
         return interpreter.process(self.tagscript, seed_variables, **kwargs)
 
     async def update_config(self):
-        if self._real_tag and self.guild:
-            async with self.config.guild(self.guild).tags() as t:
-                t[self.name].update(uses=self.uses, tag=self.tagscript)
+        if self._real_tag:
+            if self.guild_id:
+                async with self.config.guild_from_id(self.guild_id).tags() as t:
+                    t[self.name] = self.to_dict()
+            else:
+                async with self.config.tags() as t:
+                    t[self.name] = self.to_dict()
 
     @classmethod
-    def from_dict(cls, cog: commands.Cog, guild: discord.Guild, name: str, data: dict):
-        self = cls.__new__(cls)
-        self.cog = cog
-        self.config: Config = cog.config
-        self.bot: Red = cog.bot
-        self.guild: discord.Guild = guild
-        self.name: str = name
-
-        self.tagscript = data["tag"]
-        self.author_id = author_id = data.get("author_id", data.get("author"))
-        self.author = guild.get_member(author_id) if isinstance(guild, discord.Guild) else None
-        self.uses = data.get("uses", 0)
-        self._real_tag: bool = True
+    def from_dict(
+        cls,
+        cog: commands.Cog,
+        name: str,
+        data: dict,
+        *,
+        guild_id: int = None,
+        real_tag: bool = True,
+    ):
+        self = cls(
+            cog,
+            name,
+            data["tag"],
+            guild_id=guild_id,
+            author_id=data.get("author_id", data.get("author")),
+            uses=data.get("uses", 0),
+            real=real_tag,
+        )
 
         return self
 
@@ -73,5 +88,15 @@ class Tag(object):
             "author_id": self.author_id,
             "uses": self.uses,
             "tag": self.tagscript,
-            "author": self.author_id,
+            "author": self.author_id,  # backwards compatability
         }
+
+    async def delete(self):
+        if self.guild_id:
+            async with self.config.guild_from_id(self.guild_id).tags() as t:
+                del t[self.name]
+            del self.cog.guild_tag_cache[self.guild_id][self.name]
+        else:
+            async with self.config.tags() as t:
+                del t[self.name]
+            del self.cog.global_tag_cache[self.name]

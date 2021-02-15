@@ -15,9 +15,21 @@ class TagName(Converter):
 
 
 class TagConverter(Converter):
+    def __init__(self, *, check_global: bool = False, global_priority: bool = False):
+        self.check_global = check_global
+        self.global_priority = global_priority
+
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
+        if not ctx.guild:
+            if not await ctx.bot.is_owner(ctx.author):
+                raise BadArgument("Tags may not be used in guilds.")
         cog = ctx.bot.get_cog("Tags")
-        tag = cog.get_tag(ctx.guild, argument)
+        tag = cog.get_tag(
+            ctx.guild,
+            argument,
+            check_global=self.check_global,
+            global_priority=self.global_priority,
+        )
         if tag:
             return tag
         else:
