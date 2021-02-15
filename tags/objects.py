@@ -97,6 +97,6 @@ class Tag(object):
                 del t[self.name]
             del self.cog.guild_tag_cache[self.guild_id][self.name]
         else:
-            async with self.config.tags() as e:
+            async with self.config.tags() as t:
                 del t[self.name]
             del self.cog.global_tag_cache[self.name]
