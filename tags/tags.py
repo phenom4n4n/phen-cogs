@@ -716,28 +716,14 @@ class Tags(commands.Cog):
                 if role_or_channel == ctx.channel:
                     raise RequireCheckFailure(blacklist["response"])
 
-    @staticmethod
-    async def convert(coroutine: Coroutine):
-        try:
-            result = await coroutine
-        except commands.BadArgument:
-            pass
-        else:
-            return result
-
     async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
-        tasks = [
-            asyncio.ensure_future(self.convert(self.role_converter.convert(ctx, argument))),
-            asyncio.ensure_future(self.convert(self.channel_converter.convert(ctx, argument))),
-        ]
-        done, pending = await asyncio.wait(tasks, timeout=5, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
-
-        if len(done) == 0:
-            return None
-
-        return list(done)[0]
+        objects = await asyncio.gather(
+            self.role_converter.convert(ctx, argument),
+            self.channel_converter.convert(ctx, argument),
+            return_exceptions=True,
+        )
+        objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
+        return objects[0] if objects else None
 
     async def do_reactu(self, ctx: commands.Context, reactu: list):
         if reactu:
