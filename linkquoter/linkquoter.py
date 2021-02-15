@@ -100,7 +100,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.0.3"
+    __version__ = "1.0.6"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -220,7 +220,14 @@ class LinkQuoter(commands.Cog):
         if message.attachments:
             att = message.attachments[0]
             image = att.proxy_url
-            e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})")
+            e.add_field(name="Attachments", value=f"[{att.filename}]({att.url})", inline=False)
+
+        if not image and (stickers := getattr(message, "stickers", [])):
+            for sticker in stickers:
+                if sticker.image_url:
+                    image = str(sticker.image_url)
+                    e.add_field(name="Stickers", value=f"[{sticker.name}]({image})", inline=False)
+                    break
 
         if image:
             e.set_image(url=image)

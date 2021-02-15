@@ -41,7 +41,7 @@ class BanChart(commands.Cog):
     @commands.mod_or_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
     @commands.command()
-    async def banchart(self, ctx: commands.Context, limit: int = 5000):
+    async def banchart(self, ctx: commands.Context, limit: int = 10000):
         """Display a chart of the moderators with the most bans.
 
         This can take a while for servers with lots of bans."""

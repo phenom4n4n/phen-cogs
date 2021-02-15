@@ -1,4 +1,5 @@
 import typing
+import asyncio
 
 import aiohttp
 import discord
@@ -17,12 +18,18 @@ class AltDentifier(commands.Cog):
     Check new users with AltDentifier API
     """
 
-    __version__ = "1.0.2"
+    __version__ = "1.1.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
+
+    default_guild = {
+        "channel": None,
+        "actions": {"0": None, "1": None, "2": None, "3": None},
+        "whitelist": [],
+    }
 
     def __init__(self, bot):
         self.bot = bot
@@ -32,19 +39,20 @@ class AltDentifier(commands.Cog):
             identifier=60124753086205362,
             force_registration=True,
         )
-        default_guild = {
-            "channel": None,
-            "actions": {"0": None, "1": None, "2": None, "3": None},
-            "whitelist": [],
-        }
 
-        self.config.register_guild(**default_guild)
+        self.config.register_guild(**self.default_guild)
+        self.guild_data_cache = {}
+        self.task = asyncio.create_task(self.build_cache())
 
     async def red_delete_data_for_user(self, **kwargs):
         return
 
+    async def build_cache(self):
+        self.guild_data_cache = await self.config.all_guilds()
+
     def cog_unload(self):
         self.bot.loop.create_task(self.session.close())
+        self.task.cancel()
 
     @checks.mod_or_permissions(manage_guild=True)
     @commands.guild_only()
@@ -67,38 +75,39 @@ class AltDentifier(commands.Cog):
     @commands.guild_only()
     @commands.group()
     async def altset(self, ctx):
-        """AltDentifier Settings"""
-        if not ctx.subcommand_passed:
-            data = await self.config.guild(ctx.guild).all()
-            description = []
+        """Manage AltDentifier Settings."""
 
-            if data["channel"]:
-                channel = f"<#{data['channel']}>"
-            else:
-                channel = "None"
+    @altset.command()
+    async def settings(self, ctx: commands.Context):
+        """View AltDentifier Settings."""
+        data = await self.config.guild(ctx.guild).all()
+        description = []
 
-            description.append(f"AltDentifier Check Channel: {channel}")
-            description = "\n".join(description)
-            actionsDict = data["actions"]
-            actions = []
-            for key, value in actionsDict.items():
-                actions.append(f"{key}: {value}")
-            actions = box("\n".join(actions))
+        if data["channel"]:
+            channel = f"<#{data['channel']}>"
+        else:
+            channel = "None"
 
-            color = await self.bot.get_embed_colour(ctx)
-            e = discord.Embed(color=color, title=f"AltDentifier Settings", description=description)
-            e.add_field(name="Actions", value=actions, inline=False)
-            if data["whitelist"]:
-                e.add_field(name="Whitelist", value=humanize_list(data["whitelist"]), inline=False)
-            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-            await ctx.send(embed=e)
+        description.append(f"AltDentifier Check Channel: {channel}")
+        description = "\n".join(description)
+        actions = []
+        for key, value in data["actions"].items():
+            actions.append(f"{key}: {value}")
+        actions = box("\n".join(actions))
+
+        color = await self.bot.get_embed_colour(ctx)
+        e = discord.Embed(color=color, title=f"AltDentifier Settings", description=description)
+        e.add_field(name="Actions", value=actions, inline=False)
+        if data["whitelist"]:
+            e.add_field(name="Whitelist", value=humanize_list(data["whitelist"]), inline=False)
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        await ctx.send(embed=e)
 
     @altset.command()
     async def channel(self, ctx, channel: discord.TextChannel = None):
         """Set the channel to send AltDentifier join checks to.
 
         This also works as a toggle, so if no channel is provided, it will disable join checks for this server."""
-
         if not channel:
             await self.config.guild(ctx.guild).channel.clear()
             await ctx.send("Disabled AltDentifier join checks in this server.")
@@ -110,6 +119,7 @@ class AltDentifier(commands.Cog):
                 await ctx.send("I do not have permission to talk/send embeds in that channel.")
             else:
                 await self.config.guild(ctx.guild).channel.set(channel.id)
+        await self.build_cache()
         await ctx.tick()
 
     @altset.command()
@@ -143,6 +153,7 @@ class AltDentifier(commands.Cog):
         else:
             async with self.config.guild(ctx.guild).actions() as a:
                 a[level] = action.lower()
+        await self.build_cache()
         await ctx.tick()
 
     @altset.command(aliases=["wl"])
@@ -150,6 +161,7 @@ class AltDentifier(commands.Cog):
         """Whitelist a user from AltDentifier actions."""
         async with self.config.guild(ctx.guild).whitelist() as w:
             w.append(user_id)
+        await self.build_cache()
         await ctx.tick()
 
     @altset.command(aliases=["unwl"])
@@ -161,6 +173,7 @@ class AltDentifier(commands.Cog):
             except ValueError:
                 return await ctx.send("This user has not been whitelisted.")
             w.pop(index)
+        await self.build_cache()
         await ctx.tick()
 
     async def alt_request(self, member: discord.Member):
@@ -260,16 +273,18 @@ class AltDentifier(commands.Cog):
     async def clear_action(self, guild: discord.Guild, action: int):
         async with self.config.guild(guild).actions() as a:
             a[str(action)] = None
+        await self.build_cache()
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         if member.bot:
             return
-        guild = member.guild
-        data = await self.config.guild(guild).all()
-        if not data["channel"]:
+        guild: discord.Guild = member.guild
+        if not (data := self.guild_data_cache.get(guild.id)):
             return
-        channel = guild.get_channel(data["channel"])
+        if not (channel_id := data.get("channel")):
+            return
+        channel = guild.get_channel(channel_id)
         if not channel:
             await self.config.guild(guild).channel.clear()
             return
@@ -282,10 +297,12 @@ class AltDentifier(commands.Cog):
             except discord.Forbidden:
                 await self.config.guild(guild).channel.clear()
         else:
-            if member.id in data["whitelist"]:
+            if member.id in data.get("whitelist", []):
                 action = "This user was whitelisted so no actions were taken."
             else:
-                action = await self.take_action(guild, member, trust[0], data["actions"])
+                action = await self.take_action(
+                    guild, member, trust[0], data.get("actions", self.default_guild["actions"])
+                )
             e = self.gen_alt_embed(trust, member, actions=action)
             try:
                 await channel.send(embed=e)

@@ -1,14 +1,13 @@
-from typing import Literal
-
 import akinator
-import discord
 from akinator.async_aki import Akinator
+import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.vendored.discord.ext import menus
+import logging
 
-RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
+log = logging.getLogger("red.phenom4n4n.aki")
 
 
 class AkiMenu(menus.Menu):
@@ -25,31 +24,31 @@ class AkiMenu(menus.Menu):
     @menus.button("✅")
     async def yes(self, payload: discord.RawReactionActionEvent):
         self.num += 1
-        await self.aki.answer("yes")
+        await self.answer("yes")
         await self.send_current_question()
 
     @menus.button("❎")
     async def no(self, payload: discord.RawReactionActionEvent):
         self.num += 1
-        await self.aki.answer("no")
+        await self.answer("no")
         await self.send_current_question()
 
     @menus.button("❔")
     async def idk(self, payload: discord.RawReactionActionEvent):
         self.num += 1
-        await self.aki.answer("idk")
+        await self.answer("idk")
         await self.send_current_question()
 
     @menus.button("📉")
     async def probably(self, payload: discord.RawReactionActionEvent):
         self.num += 1
-        await self.aki.answer("probably")
+        await self.answer("probably")
         await self.send_current_question()
 
     @menus.button("📈")
     async def probably_not(self, payload: discord.RawReactionActionEvent):
         self.num += 1
-        await self.aki.answer("probably not")
+        await self.answer("probably not")
         await self.send_current_question()
 
     @menus.button("🔙")
@@ -91,12 +90,7 @@ class AkiMenu(menus.Menu):
             description=winner["description"],
         )
         win_embed.set_image(url=winner["absolute_picture_path"])
-        try:
-            await self.message.edit(embed=win_embed)
-        except discord.NotFound:
-            await self.ctx.send(embed=win_embed)
-        except discord.Forbidden:
-            pass
+        await self.edit_or_send(embed=win_embed)
         self.stop()
         # TODO allow for continuation of game
 
@@ -111,21 +105,30 @@ class AkiMenu(menus.Menu):
 
     async def finalize(self, timed_out: bool):
         if timed_out:
-            try:
-                await self.message.edit(content="Akinator game timed out.", embed=None)
-            except discord.NotFound:
-                await self.ctx.send("Akinator game timed out.")
-            except discord.Forbidden:
-                pass
+            await self.edit_or_send(content="Akinator game timed out.", embed=None)
 
     async def cancel(self):
+        await self.edit_or_send(content="Akinator game cancelled.", embed=None)
+        self.stop()
+
+    async def edit_or_send(self, **kwargs):
         try:
-            await self.message.edit(content="Akinator game cancelled.", embed=None)
+            await self.message.edit(**kwargs)
         except discord.NotFound:
-            await self.ctx.send("Akinator game cancelled.")
+            await self.ctx.send(**kwargs)
         except discord.Forbidden:
             pass
-        self.stop()
+
+    async def answer(self, message: str):
+        try:
+            await self.aki.answer(message)
+        except Exception as error:
+            log.exception(
+                f"Encountered an exception while answering with {message} during Akinator session",
+                exc_info=True,
+            )
+            await self.edit_or_send(content=f"Akinator game errored out:\n`{error}`", embed=None)
+            self.stop()
 
 
 class Aki(commands.Cog):
@@ -140,18 +143,8 @@ class Aki(commands.Cog):
             identifier=8237578807127857,
             force_registration=True,
         )
-        self.emojis = {
-            "✅": "yes",
-            "❎": "no",
-            "❔": "idk",
-            "📉": "probably",
-            "📈": "probably not",
-            "🔙": "back",
-            "🏆": "win",
-            "🗑️": "end",
-        }
 
-    async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
+    async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
         return
 
     @commands.max_concurrency(1, commands.BucketType.channel)

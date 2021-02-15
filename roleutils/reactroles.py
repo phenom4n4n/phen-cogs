@@ -260,7 +260,6 @@ class ReactRoles(MixinMeta):
 
         guild: discord.Guild = ctx.guild
         to_delete_message_emoji_ids = {}
-        to_delete_message_ids = []
         react_roles = []
         for index, (message_id, message_data) in enumerate(data.items(), start=1):
             data = message_data["reactroles"]
@@ -307,26 +306,15 @@ class ReactRoles(MixinMeta):
 
         color = await ctx.embed_color()
         description = "\n\n".join(react_roles)
-        if len(description) > 2048:
-            embeds = []
-            pages = list(pagify(description, delims=["\n\n"], page_length=2048))
-            for index, page in enumerate(pages, start=1):
-                e = discord.Embed(
-                    color=color,
-                    description=page,
-                )
-                e.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
-                e.set_footer(text=f"{index}/{len(pages)}")
-                embeds.append(e)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            e = discord.Embed(
-                color=color,
-                description=description,
-            )
-            e.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
-            emoji = self.bot.get_emoji(729917314769748019) or "❌"
-            await menu(ctx, [e], {emoji: close_menu})
+        embeds = []
+        pages = pagify(description, delims=["\n\n", "\n"])
+        base_embed = discord.Embed(color=color)
+        base_embed.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
+        for page in pages:
+            e = base_embed.copy()
+            e.description = page
+            embeds.append(e)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
 
         if to_delete_message_emoji_ids:
             for message_id, ids in to_delete_message_emoji_ids.items():
@@ -354,14 +342,11 @@ class ReactRoles(MixinMeta):
     @commands.Cog.listener("on_raw_reaction_add")
     @commands.Cog.listener("on_raw_reaction_remove")
     async def on_raw_reaction_add_or_remove(self, payload: discord.RawReactionActionEvent):
-        log.debug("Begin reaction listener")
         if payload.guild_id is None:
-            log.debug("Not functioning in a guild")
             return
 
         # TODO add in listeners
         if not self._check_payload_to_cache(payload):
-            log.debug("Not cached")
             return
 
         if await self.bot.cog_disabled_in_guild_raw(self.qualified_name, payload.guild_id):
@@ -374,10 +359,8 @@ class ReactRoles(MixinMeta):
             member = guild.get_member(payload.user_id)
 
         if member is None or member.bot:
-            log.debug("Failed to get member or member is a bot")
             return
         if not guild.me.guild_permissions.manage_roles:
-            log.debug("No permissions to manage roles")
             return
 
         reacts = await self.config.custom(
