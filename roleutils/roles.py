@@ -133,7 +133,10 @@ class Roles(MixinMeta):
         if role in await self.bot.get_admin_roles(role.guild):
             description.append(f"Admin Role: True")
         e = discord.Embed(
-            color=role.color, title=role.name, description="\n".join(description), timestamp=role.created_at
+            color=role.color,
+            title=role.name,
+            description="\n".join(description),
+            timestamp=role.created_at,
         )
         e.set_footer(text=role.id)
         return e
