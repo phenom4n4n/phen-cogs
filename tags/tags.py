@@ -10,6 +10,7 @@ from redbot.core import commands
 from redbot.core.commands import Requires, PrivilegeLevel
 from redbot.core.bot import Red
 from redbot.core.config import Config
+from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
@@ -47,7 +48,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "2.0.1"
+    __version__ = "2.0.2"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -110,13 +111,13 @@ class Tags(commands.Cog):
 
     async def cache_tags(self):
         guilds_data = await self.config.all_guilds()
-        for guild_id, guild_data in guilds_data.items():
-            for tag_name, tag_data in guild_data["tags"].items():
+        async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
+            async for tag_name, tag_data in AsyncIter(guild_data["tags"].items(), steps=50):
                 tag_object = Tag.from_dict(self, tag_name, tag_data, guild_id=guild_id)
                 self.guild_tag_cache[guild_id][tag_name] = tag_object
 
         global_tags = await self.config.tags()
-        for global_tag_name, global_tag_data in global_tags.items():
+        async for global_tag_name, global_tag_data in AsyncIter(global_tags.items(), steps=50):
             global_tag = Tag.from_dict(self, global_tag_name, global_tag_data)
             self.global_tag_cache[global_tag_name] = global_tag
         log.debug("tag cache built")
@@ -255,10 +256,11 @@ class Tags(commands.Cog):
     @tag.command(name="raw")
     async def tag_raw(self, ctx: commands.Context, tag: TagConverter):
         """Get a tag's raw content."""
-        await ctx.send(
-            escape_markdown(tag.tagscript[:2000]),
-            allowed_mentions=discord.AllowedMentions.none(),
-        )
+        for page in pagify(tag.tagscript, shorten_by=100):
+            await ctx.send(
+                escape_markdown(page),
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
 
     @tag.command(name="list")
     async def tag_list(self, ctx: commands.Context):
@@ -284,7 +286,7 @@ class Tags(commands.Cog):
         for index, page in enumerate(pages, 1):
             embed = e.copy()
             embed.description = page
-            embed.set_footer(text=f"{index}/{len(pages)}")
+            embed.set_footer(text=f"{index}/{len(pages)} | {len(tags)} tags")
             embeds.append(embed)
         await menu(ctx, embeds, DEFAULT_CONTROLS)
 
@@ -424,10 +426,11 @@ class Tags(commands.Cog):
         self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)
     ):
         """Get a tag's raw content."""
-        await ctx.send(
-            escape_markdown(tag.tagscript[:2000]),
-            allowed_mentions=discord.AllowedMentions.none(),
-        )
+        for page in pagify(tag.tagscript, shorten_by=100):
+            await ctx.send(
+                escape_markdown(page),
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
 
     @tag_global.command(name="list")
     async def tag_global_list(self, ctx: commands.Context):
@@ -453,7 +456,7 @@ class Tags(commands.Cog):
         for index, page in enumerate(pages, 1):
             embed = e.copy()
             embed.description = page
-            embed.set_footer(text=f"{index}/{len(pages)}")
+            embed.set_footer(text=f"{index}/{len(pages)} | {len(tags)} tags")
             embeds.append(embed)
         await menu(ctx, embeds, DEFAULT_CONTROLS)
 
@@ -479,7 +482,7 @@ class Tags(commands.Cog):
         migrated_guild_alias = 0
         all_guild_data: dict = await alias_cog.config.all_guilds()
 
-        for guild_id, guild_data in all_guild_data.items():
+        async for guild_id, guild_data in AsyncIter(all_guild_data.items(), steps=100):
             if not guild_data["entries"]:
                 continue
             migrated_guilds += 1
@@ -502,7 +505,7 @@ class Tags(commands.Cog):
         )
 
         migrated_global_alias = 0
-        for entry in await alias_cog.config.entries():
+        async for entry in AsyncIter(await alias_cog.config.entries(), steps=50):
             tagscript = "{c:" + entry["command"] + " {args}}"
             global_tag = Tag(
                 self,
