@@ -46,3 +46,6 @@ async def delete_quietly(message: discord.Message):
             await message.delete()
         except discord.HTTPException:
             pass
+
+def guild_roughly_chunked(guild: discord.Guild) -> bool:
+    return len(guild.members) / guild.member_count > 0.9

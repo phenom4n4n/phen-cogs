@@ -14,6 +14,7 @@ from .utils import (
     humanize_roles,
     is_allowed_by_hierarchy,
     is_allowed_by_role_hierarchy,
+    guild_roughly_chunked,
 )
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
@@ -71,10 +72,10 @@ class Roles(MixinMeta):
     #         return
     #     reason = get_audit_reason(ctx.author)
     #     if role in member.roles:
-    #         await member.remove_roles(*[role], reason=reason)
+    #         await member.remove_roles(role, reason=reason)
     #         await ctx.send(f"Removed `{role.name}` from **{member}**.")
     #     else:
-    #         await member.add_roles(*[role], reason=reason)
+    #         await member.add_roles(role, reason=reason)
     #         await ctx.send(f"Added `{role.name}` to **{member}**.")
 
     @commands.bot_has_permissions(embed_links=True)
@@ -88,6 +89,8 @@ class Roles(MixinMeta):
     @_role.command(aliases=["dump"])
     async def members(self, ctx: commands.Context, *, role: FuzzyRole):
         """Sends a list of members in a role."""
+        if guild_roughly_chunked(ctx.guild) is False and self.bot.intents.members:
+            await ctx.guild.chunk()
         if not role.members:
             return await ctx.send(f"`{role}` has no members.")
         members = "\n".join([f"{member} - {member.id}" for member in role.members])
@@ -114,21 +117,23 @@ class Roles(MixinMeta):
         await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
     async def get_info(self, role: discord.Role) -> discord.Embed:
-        description = (
-            f"{role.mention}\n"
-            f"Members: {len(role.members)} | Position: {role.position}\n"
-            f"Color: {role.color}\n"
-            f"Hoisted: {role.hoist}\n"
-            f"Mentionable: {role.mentionable}\n"
-        )
+        if guild_roughly_chunked(role.guild) is False and self.bot.intents.members:
+            await role.guild.chunk()
+        description = [
+            f"{role.mention}",
+            f"Members: {len(role.members)} | Position: {role.position}",
+            f"Color: {role.color}",
+            f"Hoisted: {role.hoist}",
+            f"Mentionable: {role.mentionable}",
+        ]
         if role.managed:
-            description += f"Managed: {role.managed}\n"
+            description.append(f"Managed: {role.managed}")
         if role in await self.bot.get_mod_roles(role.guild):
-            description += f"Mod Role: True"
+            description.append(f"Mod Role: True")
         if role in await self.bot.get_admin_roles(role.guild):
-            description += f"Admin Role: True"
+            description.append(f"Admin Role: True")
         e = discord.Embed(
-            color=role.color, title=role.name, description=description, timestamp=role.created_at
+            color=role.color, title=role.name, description="\n".join(description), timestamp=role.created_at
         )
         e.set_footer(text=role.id)
         return e
@@ -144,7 +149,7 @@ class Roles(MixinMeta):
             )
             return
         reason = get_audit_reason(ctx.author)
-        await member.add_roles(*[role], reason=reason)
+        await member.add_roles(role, reason=reason)
         await ctx.send(f"Added `{role.name}` to **{member}**.")
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -158,7 +163,7 @@ class Roles(MixinMeta):
             )
             return
         reason = get_audit_reason(ctx.author)
-        await member.remove_roles(*[role], reason=reason)
+        await member.remove_roles(role, reason=reason)
         await ctx.send(f"Removed `{role.name}` from **{member}**.")
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -180,18 +185,17 @@ class Roles(MixinMeta):
             else:
                 to_add.append(role)
         reason = get_audit_reason(ctx.author)
-        msg = ""
+        msg = []
         if to_add:
             await member.add_roles(*to_add, reason=reason)
-            msg += f"Added {humanize_roles(to_add)} to **{member}**."
+            msg.append(f"Added {humanize_roles(to_add)} to **{member}**.")
         if already_added:
-            msg += f"\n**{member}** already had {humanize_roles(already_added)}."
+            msg.append(f"**{member}** already had {humanize_roles(already_added)}.")
         if not_allowed:
-            msg += (
-                f"\nYou do not have permission to assign the roles {humanize_roles(not_allowed)}."
+            msg.append(
+                f"You do not have permission to assign the roles {humanize_roles(not_allowed)}."
             )
-        if msg:
-            await ctx.send(msg)
+        await ctx.send("\n".join(msg))
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -214,18 +218,17 @@ class Roles(MixinMeta):
             else:
                 to_rm.append(role)
         reason = get_audit_reason(ctx.author)
-        msg = ""
+        msg = []
         if to_rm:
             await member.remove_roles(*to_rm, reason=reason)
-            msg += f"Removed {humanize_roles(to_rm)} from **{member}**."
+            msg.append(f"Removed {humanize_roles(to_rm)} from **{member}**.")
         if not_added:
-            msg += f"\n**{member}** didn't have {humanize_roles(not_added)}."
+            msg.append(f"**{member}** didn't have {humanize_roles(not_added)}.")
         if not_allowed:
-            msg += (
-                f"\nYou do not have permission to assign the roles {humanize_roles(not_allowed)}."
+            msg.append(
+                f"You do not have permission to assign the roles {humanize_roles(not_allowed)}."
             )
-        if msg:
-            await ctx.send(msg)
+        await ctx.send("\n".join(msg))
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -383,7 +386,7 @@ class Roles(MixinMeta):
         fail_message: str = "Everyone in the server has this role.",
         adding: bool = True,
     ):
-        if ctx.guild.chunked is False and self.bot.intents.members:
+        if guild_roughly_chunked(ctx.guild) is False and self.bot.intents.members:
             await ctx.guild.chunk()
         member_list = self.get_member_list(members, role, adding)
         if not member_list:
