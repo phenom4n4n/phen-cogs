@@ -47,7 +47,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "2.0.0"
+    __version__ = "2.0.1"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -509,7 +509,7 @@ class Tags(commands.Cog):
                 entry["name"],
                 tagscript,
                 author_id=entry["creator"],
-                uses=alias["uses"],
+                uses=entry["uses"],
             )
             self.global_tag_cache[entry["name"]] = global_tag
             await global_tag.update_config()
