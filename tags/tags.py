@@ -48,7 +48,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "2.0.2"
+    __version__ = "2.0.3"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -330,15 +330,15 @@ class Tags(commands.Cog):
         await ctx.send(embed=e)
 
     @commands.is_owner()
-    @tag.command()
-    async def process(self, ctx: commands.Context, *, tagscript: str):
+    @tag.command(name="process")
+    async def tag_process(self, ctx: commands.Context, *, tagscript: str):
         """Process TagScript without storing."""
         tag = Tag(
             self,
             ctx.guild,
             "processed_tag",
             tagscript,
-            author=ctx.author,
+            author_id=ctx.author.id,
             real=False,
         )
         await self.process_tag(ctx, tag)
