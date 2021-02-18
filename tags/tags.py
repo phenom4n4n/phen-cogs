@@ -221,8 +221,8 @@ class Tags(commands.Cog):
         await ctx.send(f"Tag `{tag}` added.")
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(aliases=["e"])
-    async def edit(
+    @tag.command(name="edit", aliases=["e"])
+    async def tag_edit(
         self, ctx: commands.Context, tag: TagConverter, *, tagscript: TagScriptConverter
     ):
         """Edit a tag with TagScript."""
@@ -231,11 +231,11 @@ class Tags(commands.Cog):
         await ctx.send(f"Tag `{tag}` edited.")
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(aliases=["delete", "-"])
-    async def remove(self, ctx: commands.Context, tag: TagConverter):
+    @tag.command(name="remove", aliases=["delete", "-"])
+    async def tag_remove(self, ctx: commands.Context, tag: TagConverter):
         """Delete a tag."""
         await tag.delete()
-        await ctx.send(f"Tag {tag} deleted.")
+        await ctx.send(f"Tag `{tag}` deleted.")
 
     @tag.command(name="info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
@@ -291,9 +291,8 @@ class Tags(commands.Cog):
         await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.is_owner()
-    @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(aliases=["execute"])
-    async def run(self, ctx: commands.Context, *, tagscript: str):
+    @tag.command(name="run", aliases=["execute"])
+    async def tag_run(self, ctx: commands.Context, *, tagscript: str):
         """Execute TagScript without storing."""
         start = time.monotonic()
         author = MemberAdapter(ctx.author)
@@ -335,7 +334,6 @@ class Tags(commands.Cog):
         """Process TagScript without storing."""
         tag = Tag(
             self,
-            ctx.guild,
             "processed_tag",
             tagscript,
             author_id=ctx.author.id,
@@ -401,7 +399,7 @@ class Tags(commands.Cog):
     ):
         """Delete a global tag."""
         await tag.delete()
-        await ctx.send(f"Global tag {tag} deleted.")
+        await ctx.send(f"Global tag `{tag}` deleted.")
 
     @tag_global.command(name="info")
     async def tag_global_info(
