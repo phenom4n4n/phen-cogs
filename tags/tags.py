@@ -1,7 +1,7 @@
 import asyncio
 import time
 from copy import copy
-from typing import Optional
+from typing import Optional, List
 
 import logging
 import discord
@@ -627,14 +627,7 @@ class Tags(commands.Cog):
         if command_messages:
             silent = actions.get("silent", False)
             overrides = actions.get("overrides")
-            to_gather.append(
-                asyncio.gather(
-                    *[
-                        self.process_command(message, silent, overrides)
-                        for message in command_messages
-                    ]
-                )
-            )
+            to_gather.append(self.process_commands(command_messages, silent, overrides))
 
         if to_gather:
             await asyncio.gather(*to_gather)
@@ -654,6 +647,14 @@ class Tags(commands.Cog):
                 return await send_quietly(destination, content, **kwargs)
         else:
             return await send_quietly(destination, content, **kwargs)
+
+    async def process_commands(self, messages: List[discord.Message], silent: bool, overrides: dict):
+        command_tasks = []
+        for message in messages:
+            command_task = asyncio.create_task(self.process_command(message, silent, overrides))
+            command_tasks.append(command_task)
+            await asyncio.sleep(0.1)
+        await asyncio.gather(*command_tasks)
 
     async def process_command(
         self, command_message: discord.Message, silent: bool, overrides: dict
