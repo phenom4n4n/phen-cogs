@@ -585,7 +585,7 @@ class Tags(commands.Cog):
             except RequireCheckFailure as error:
                 response = error.response
                 if response is not None:
-                    if response:
+                    if response.strip():
                         await ctx.send(response[:2000])
                 else:
                     start_adding_reactions(ctx.message, ["❌"])
