@@ -1,6 +1,7 @@
 import logging
 from typing import List, Union, Optional
 import asyncio
+from enum import Enum
 
 import discord
 from redbot.core import commands
@@ -15,6 +16,11 @@ from .utils import my_role_heirarchy, delete_quietly
 
 log = logging.getLogger("red.phenom4n4n.roleutils.reactroles")
 
+class ReactRules(Enum):
+    NORMAL = "NORMAL"
+    UNIQUE = "UNIQUE"
+    VERIFY = "VERIFY"
+    DROP = "DROP"
 
 class ReactRoles(MixinMeta):
     """
@@ -106,7 +112,7 @@ class ReactRoles(MixinMeta):
         role: StrictRole,
     ):
         """Bind a reaction role to an emoji on a message."""
-        rules = "NORMAL"  # TODO rule arg parse converter
+        rules = ReactRules.NORMAL  # TODO rule arg parse converter
         emoji_id = self.emoji_id(emoji)
         async with self.config.custom("GuildMessage", ctx.guild.id, message.id).reactroles() as r:
             old_role = ctx.guild.get_role(r["react_to_roleid"].get(emoji_id))
@@ -124,7 +130,7 @@ class ReactRoles(MixinMeta):
 
                 if pred.result is not True:
                     return await ctx.send("Bind cancelled.")
-                rules = r["react_to_roleid"].get("rules", "NORMAL")
+                rules = r["react_to_roleid"].get("rules", ReactRules.NORMAL)
 
             r["react_to_roleid"][self.emoji_id(emoji)] = role.id
             r["channel"] = message.channel.id
