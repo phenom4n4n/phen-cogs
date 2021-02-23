@@ -160,6 +160,8 @@ class ReactRoles(MixinMeta):
         if not emoji_role_groups:
             raise commands.BadArgument
         channel = channel or ctx.channel
+        if not channel.permissions_for(ctx.me).send_messages:
+            return await ctx.send(f"I do not have permission to send messages in {channel.mention}.")
         if color is None:
             color = await ctx.embed_color()
         if name is None:
