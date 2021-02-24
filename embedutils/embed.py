@@ -53,6 +53,46 @@ def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
     return False
 
 
+class HelpFormattedCommand(commands.Command):
+    def __init__(self, *args, **kwargs):
+        add_example_info = kwargs.pop("add_example_info", False)
+        super().__init__(*args, **kwargs)
+        self._add_example_info = add_example_info
+
+    def format_help_for_context(self, ctx: commands.Context):
+        pre_processed = super().format_help_for_context(ctx)
+        if self._add_example_info is True:
+            n = "\n" if "\n\n" not in pre_processed else ""
+            output = [
+                f"{pre_processed}{n}",
+                'This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).',
+                "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
+            ]
+            return "\n".join(output)
+        else:
+            return pre_processed
+
+
+class HelpFormattedGroup(commands.Group):
+    def __init__(self, *args, **kwargs):
+        add_example_info = kwargs.pop("add_example_info", False)
+        super().__init__(*args, **kwargs)
+        self._add_example_info = add_example_info
+
+    def format_help_for_context(self, ctx: commands.Context):
+        pre_processed = super().format_help_for_context(ctx)
+        if self._add_example_info is True:
+            n = "\n" if "\n\n" not in pre_processed else ""
+            output = [
+                f"{pre_processed}{n}",
+                'This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).',
+                "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
+            ]
+            return "\n".join(output)
+        else:
+            return pre_processed
+
+
 class EmbedUtils(commands.Cog):
     """
     Create, post, and store embeds.
@@ -96,7 +136,7 @@ class EmbedUtils(commands.Cog):
     @commands.guild_only()
     @checks.mod_or_permissions(embed_links=True)
     @checks.bot_has_permissions(embed_links=True)
-    @commands.group(invoke_without_command=True)
+    @commands.group(cls=HelpFormattedGroup, invoke_without_command=True)
     async def embed(
         self,
         ctx,
@@ -121,20 +161,18 @@ class EmbedUtils(commands.Cog):
         e = discord.Embed(color=color, title=title, description=description)
         await channel.send(embed=e)
 
-    @embed.command(aliases=["fromjson"])
-    async def fromdata(self, ctx, *, data: StringToEmbed):
-        """Post an embed from valid JSON.
-
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+    @embed.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
+    async def embed_fromdata(self, ctx, *, data: StringToEmbed):
+        """
+        Post an embed from valid JSON.
+        """
         await ctx.tick()
 
-    @embed.command(aliases=["fromjsonfile", "fromdatafile"])
-    async def fromfile(self, ctx):
-        """Post an embed from a valid JSON file.
-
-        This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+    @embed.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
+    async def embed_fromfile(self, ctx):
+        """
+        Post an embed from a valid JSON file.
+        """
         if not ctx.message.attachments:
             return await ctx.send("You need to provide a file for this..")
         attachment = ctx.message.attachments[0]
@@ -170,7 +208,7 @@ class EmbedUtils(commands.Cog):
         fp = io.BytesIO(bytes(data, "utf-8"))
         await ctx.send(file=discord.File(fp, "embed.json"))
 
-    @embed.group(name="show", aliases=["view", "drop"], invoke_without_command=True)
+    @embed.group(cls=HelpFormattedGroup, name="show", aliases=["view", "drop"], invoke_without_command=True)
     async def com_drop(self, ctx, name: StoredEmbedConverter):
         """View an embed that is stored."""
         await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
@@ -229,7 +267,7 @@ class EmbedUtils(commands.Cog):
             await ctx.send("Ok, not removing this data..")
 
     @commands.mod_or_permissions(manage_messages=True)
-    @embed.group(name="edit", invoke_without_command=True)
+    @embed.group(cls=HelpFormattedGroup, name="edit", invoke_without_command=True)
     async def embed_edit(
         self,
         ctx: commands.Context,
@@ -240,30 +278,28 @@ class EmbedUtils(commands.Cog):
         description: str,
     ):
         """
-        Edit a message sent by me's embeds.
+        Edit a message sent [botname]'s embeds.
         """
         color = color or await ctx.embed_color()
         e = discord.Embed(color=color, title=title, description=description)
         await message.edit(embed=e)
         await ctx.tick()
 
-    @embed_edit.command(name="fromdata", aliases=["fromjson"])
+    @embed_edit.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
     async def embed_edit_fromdata(
         self, ctx: commands.Context, message: MyMessageConverter, *, data: StringToEmbed
     ):
-        """Edit a message's embed using valid JSON.
-
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        """
+        Edit a message's embed using valid JSON.
+        """
         await message.edit(embed=data)
         await ctx.tick()
 
-    @embed_edit.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    @embed_edit.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
     async def embed_edit_fromfile(self, ctx: commands.Context, message: MyMessageConverter):
-        """Edit a message's embed using a valid JSON file.
-
-        This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        """
+        Edit a message's embed using a valid JSON file.
+        """
         if not ctx.message.attachments:
             return await ctx.send("You need to provide a file for this..")
         attachment = ctx.message.attachments[0]
@@ -363,21 +399,19 @@ class EmbedUtils(commands.Cog):
         await self.store_embed(ctx, name, e)
         await ctx.tick()
 
-    @store.command(name="fromdata", aliases=["fromjson"])
+    @store.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
     async def store_fromdata(self, ctx, name: str, *, data: StringToEmbed):
-        """Store an embed from valid JSON on this server.
-
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        """
+        Store an embed from valid JSON on this server.
+        """
         await self.store_embed(ctx, name, data)
         await ctx.tick()
 
-    @store.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    @store.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
     async def store_fromfile(self, ctx, name: str):
-        """Store an embed from a valid JSON file on this server.
-
-        This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        """
+        Store an embed from a valid JSON file on this server.
+        """
         if not ctx.message.attachments:
             return await ctx.send("You need to provide a file for this..")
         attachment = ctx.message.attachments[0]
@@ -468,22 +502,18 @@ class EmbedUtils(commands.Cog):
         await self.global_store_embed(ctx, name, e, locked)
         await ctx.tick()
 
-    @global_store.command(name="fromdata", aliases=["fromjson"])
+    @global_store.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
     async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data: StringToEmbed):
         """Store an embed from valid JSON globally.
 
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
         The `locked` argument specifies whether the embed should be locked to owners only."""
         await self.global_store_embed(ctx, name, data, locked)
         await ctx.tick()
 
-    @global_store.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    @global_store.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
     async def global_store_fromfile(self, ctx, name: str, locked: bool):
         """Store an embed from a valid JSON file globally.
 
-        This doesn't actually need to be a `.json` file, but it should follow the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!").
         The `locked` argument specifies whether the embed should be locked to owners only."""
         if not ctx.message.attachments:
             return await ctx.send("You need to provide a file for this..")
@@ -577,12 +607,11 @@ class EmbedUtils(commands.Cog):
             embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]],
         )
 
-    @webhook.command(name="fromdata", aliases=["fromjson"])
+    @webhook.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
     async def webhook_fromdata(self, ctx: commands.Context, *, embeds: ListStringToEmbed):
-        """Send embeds through webhooks.
-
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        """
+        Send embeds through webhooks.
+        """
         cog = self.bot.get_cog("Webhook")
         try:
             await cog.send_to_channel(
@@ -595,12 +624,11 @@ class EmbedUtils(commands.Cog):
         except discord.HTTPException as error:
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
-    @webhook.command(name="fromfile", aliases=["fromjsonfile", "fromdatafile"])
+    @webhook.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
     async def webhook_fromfile(self, ctx: commands.Context):
-        """Send embeds through webhooks, using files.
-
-        This must be in the format expected by [this Discord documenation](https://discord.com/developers/docs/resources/channel#embed-object "Click me!").
-        Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8 "Click me!")."""
+        """
+        Send embeds through webhooks, using files.
+        """
         if not ctx.message.attachments:
             return await ctx.send("You need to provide a file for this..")
         attachment = ctx.message.attachments[0]
