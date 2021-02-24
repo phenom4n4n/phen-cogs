@@ -40,11 +40,13 @@ from .utils import my_role_heirarchy, delete_quietly
 
 log = logging.getLogger("red.phenom4n4n.roleutils.reactroles")
 
+
 class ReactRules(Enum):
     NORMAL = "NORMAL"
     UNIQUE = "UNIQUE"
     VERIFY = "VERIFY"
     DROP = "DROP"
+
 
 class ReactRoles(MixinMeta):
     """
@@ -191,7 +193,9 @@ class ReactRoles(MixinMeta):
             raise commands.BadArgument
         channel = channel or ctx.channel
         if not channel.permissions_for(ctx.me).send_messages:
-            return await ctx.send(f"I do not have permission to send messages in {channel.mention}.")
+            return await ctx.send(
+                f"I do not have permission to send messages in {channel.mention}."
+            )
         if color is None:
             color = await ctx.embed_color()
         if name is None:

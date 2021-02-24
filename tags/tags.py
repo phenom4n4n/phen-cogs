@@ -674,7 +674,9 @@ class Tags(commands.Cog):
         else:
             return await send_quietly(destination, content, **kwargs)
 
-    async def process_commands(self, messages: List[discord.Message], silent: bool, overrides: dict):
+    async def process_commands(
+        self, messages: List[discord.Message], silent: bool, overrides: dict
+    ):
         command_tasks = []
         for message in messages:
             command_task = asyncio.create_task(self.process_command(message, silent, overrides))
