@@ -79,7 +79,7 @@ class AkiMenu(menus.Menu):
     async def back(self, payload: discord.RawReactionActionEvent):
         try:
             await self.aki.back()
-        except akinator.exceptions.CantGoBackAnyFurther:
+        except akinator.CantGoBackAnyFurther:
             await self.ctx.send(
                 "You can't go back on the first question, try a different option instead.",
                 delete_after=10,
@@ -146,6 +146,8 @@ class AkiMenu(menus.Menu):
     async def answer(self, message: str):
         try:
             await self.aki.answer(message)
+        except akinator.AkiNoQuestions:
+            await self.win()
         except Exception as error:
             log.exception(
                 f"Encountered an exception while answering with {message} during Akinator session",
@@ -173,8 +175,8 @@ class Aki(commands.Cog):
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
-    @commands.group(invoke_without_command=True)
-    async def aki(self, ctx: commands.Context):
+    @commands.command()
+    async def aki(self, ctx: commands.Context, *, language: str.lower = "en"):
         """
         Start a game of Akinator!
 
@@ -191,10 +193,13 @@ class Aki(commands.Cog):
         await ctx.trigger_typing()
         aki = Akinator()
         try:
-            await aki.start_game()
+            await aki.start_game(language=language.replace(" ", "_"))
+        except akinator.InvalidLanguageError:
+            await ctx.send("Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>")
         except Exception:
-            return await ctx.send(
+            await ctx.send(
                 "I encountered an error while connecting to the Akinator servers."
             )
-        menu = AkiMenu(aki, await ctx.embed_color())
-        await menu.start(ctx)
+        else:
+            menu = AkiMenu(aki, await ctx.embed_color())
+            await menu.start(ctx)
