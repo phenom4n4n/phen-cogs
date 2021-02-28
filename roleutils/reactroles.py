@@ -25,7 +25,6 @@ SOFTWARE.
 import logging
 from typing import List, Union, Optional
 import asyncio
-from enum import Enum
 
 import discord
 from redbot.core import commands
@@ -41,7 +40,7 @@ from .utils import my_role_heirarchy, delete_quietly
 log = logging.getLogger("red.phenom4n4n.roleutils.reactroles")
 
 
-class ReactRules(Enum):
+class ReactRules:
     NORMAL = "NORMAL"
     UNIQUE = "UNIQUE"
     VERIFY = "VERIFY"
