@@ -185,12 +185,12 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed.command(name="frommsg", aliases=["frommessage"])
-    async def com_frommsg(self, ctx, message: discord.Message, index: int = 0):
+    async def embed_frommsg(self, ctx, message: discord.Message, index: int = 0):
         """Post an embed from a message.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
         embed = await self.frommsg(ctx, message, index)
-        if not embed:
+        if embed is None:
             return
         await ctx.send(embed=embed)
 
@@ -201,7 +201,7 @@ class EmbedUtils(commands.Cog):
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
         embed = await self.frommsg(ctx, message, index)
-        if not embed:
+        if embed is None:
             return
         data = embed.to_dict()
         data = json.dumps(data, indent=4)
@@ -324,7 +324,7 @@ class EmbedUtils(commands.Cog):
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
         embed = await self.frommsg(ctx, source, index)
-        if not embed:
+        if embed is None:
             return
         await target.edit(embed=embed)
         await ctx.tick()
@@ -431,7 +431,7 @@ class EmbedUtils(commands.Cog):
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
         embed = await self.frommsg(ctx, message, index)
-        if not embed:
+        if embed is None:
             return
         await ctx.send(embed=embed)
         await self.store_embed(ctx, name, embed)
@@ -444,7 +444,7 @@ class EmbedUtils(commands.Cog):
             embeds = await self.config.embeds()
             description = []
 
-            if not embeds:
+            if embed is Nones:
                 return
             for embed in embeds:
                 description.append(f"`{embed}`")
@@ -537,7 +537,7 @@ class EmbedUtils(commands.Cog):
         If the message has multiple embeds, you can pass a number to `index` to specify which embed.
         The `locked` argument specifies whether the embed should be locked to owners only."""
         embed = await self.frommsg(ctx, message, index)
-        if not embed:
+        if embed is None:
             return
         await ctx.send(embed=embed)
         await self.global_store_embed(ctx, name, embed, locked)
