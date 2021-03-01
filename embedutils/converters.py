@@ -47,8 +47,7 @@ class StringToEmbed(Converter):
         embed.set_footer(
             text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example"
         )
-        emoji = ctx.bot.get_emoji(736038541364297738) or "❌"
-        asyncio.create_task(menus.menu(ctx, [embed], {emoji: menus.close_menu}))
+        asyncio.create_task(menus.menu(ctx, [embed], {"❌": menus.close_menu}))
         raise CheckFailure
 
 

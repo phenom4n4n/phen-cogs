@@ -28,7 +28,7 @@ import json
 from typing import Optional, Union
 
 import discord
-from redbot.core import Config, checks, commands
+from redbot.core import Config, commands
 from redbot.core.utils import menus
 from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
@@ -134,8 +134,8 @@ class EmbedUtils(commands.Cog):
                         del e[name]
 
     @commands.guild_only()
-    @checks.mod_or_permissions(embed_links=True)
-    @checks.bot_has_permissions(embed_links=True)
+    @commands.mod_or_permissions(embed_links=True)
+    @commands.bot_has_permissions(embed_links=True)
     @commands.group(cls=HelpFormattedGroup, invoke_without_command=True)
     async def embed(
         self,
@@ -194,9 +194,9 @@ class EmbedUtils(commands.Cog):
             return
         await ctx.send(embed=embed)
 
-    @checks.bot_has_permissions(attach_files=True)
-    @embed.command()
-    async def download(self, ctx, message: discord.Message, index: int = 0):
+    @commands.bot_has_permissions(attach_files=True)
+    @embed.command(name="download")
+    async def embed_download(self, ctx, message: discord.Message, index: int = 0):
         """Download a JSON file for a message's embed.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
@@ -209,21 +209,21 @@ class EmbedUtils(commands.Cog):
         await ctx.send(file=discord.File(fp, "embed.json"))
 
     @embed.group(cls=HelpFormattedGroup, name="show", aliases=["view", "drop"], invoke_without_command=True)
-    async def com_drop(self, ctx, name: StoredEmbedConverter):
+    async def embed_drop(self, ctx, name: StoredEmbedConverter):
         """View an embed that is stored."""
         await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
         async with self.config.guild(ctx.guild).embeds() as a:
             a[name["name"]]["uses"] += 1
 
-    @com_drop.command(name="global")
-    async def global_drop(self, ctx, name: GlobalStoredEmbedConverter):
+    @embed_drop.command(name="global")
+    async def embed_drop_global(self, ctx, name: GlobalStoredEmbedConverter):
         """View an embed that is stored globally."""
         await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
         async with self.config.embeds() as a:
             a[name["name"]]["uses"] += 1
 
     @embed.command(name="info")
-    async def com_info(self, ctx, name: StoredEmbedConverter):
+    async def embed_info(self, ctx, name: StoredEmbedConverter):
         """Get info about an embed that is stored on this server."""
         e = discord.Embed(
             title=f"`{name['name']}` Info",
@@ -329,27 +329,20 @@ class EmbedUtils(commands.Cog):
         await target.edit(embed=embed)
         await ctx.tick()
 
-    @checks.mod_or_permissions(manage_guild=True)
+    @commands.mod_or_permissions(manage_guild=True)
     @embed.group()
-    async def store(self, ctx):
+    async def embed_store(self, ctx):
         """Store embeds for server use."""
-        if not ctx.subcommand_passed:
-            embeds = await self.config.guild(ctx.guild).embeds()
-            description = []
 
-            if not embeds:
-                return
-            for embed in embeds:
-                description.append(f"`{embed}`")
-            description = "\n".join(description)
+    @embed_store.command(name="download")
+    async def embed_store_download(self, ctx: commands.Context, embed: StoredEmbedConverter):
+        """Download a JSON file for a stored embed."""
+        data = json.dumps(embed["embed"], indent=4)
+        fp = io.BytesIO(bytes(data, "utf-8"))
+        await ctx.send(file=discord.File(fp, "embed.json"))
 
-            color = await self.bot.get_embed_colour(ctx)
-            e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
-            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-            await ctx.send(embed=e)
-
-    @embed.command(name="list")
-    async def store_list(self, ctx):
+    @embed_store.command(name="list")
+    async def embed_store_list(self, ctx):
         """View stored embeds."""
         _embeds = await self.config.guild(ctx.guild).embeds()
         if not _embeds:
@@ -375,12 +368,11 @@ class EmbedUtils(commands.Cog):
             await menu(ctx, embeds, DEFAULT_CONTROLS)
         else:
             e.description = description
-            emoji = self.bot.get_emoji(736038541364297738) or "❌"
-            controls = {emoji: close_menu}
+            controls = {"❌": close_menu}
             await menu(ctx, [e], controls)
 
-    @store.command(name="simple")
-    async def store_simple(
+    @embed_store.command(name="simple")
+    async def embed_store_simple(
         self,
         ctx,
         name: str,
@@ -399,16 +391,16 @@ class EmbedUtils(commands.Cog):
         await self.store_embed(ctx, name, e)
         await ctx.tick()
 
-    @store.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
-    async def store_fromdata(self, ctx, name: str, *, data: StringToEmbed):
+    @embed_store.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
+    async def embed_store_fromdata(self, ctx, name: str, *, data: StringToEmbed):
         """
         Store an embed from valid JSON on this server.
         """
         await self.store_embed(ctx, name, data)
         await ctx.tick()
 
-    @store.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
-    async def store_fromfile(self, ctx, name: str):
+    @embed_store.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
+    async def embed_store_fromfile(self, ctx, name: str):
         """
         Store an embed from a valid JSON file on this server.
         """
@@ -425,8 +417,8 @@ class EmbedUtils(commands.Cog):
             await self.store_embed(ctx, name, e)
         await ctx.tick()
 
-    @store.command(name="frommsg", aliases=["frommessage"])
-    async def store_frommsg(self, ctx, name: str, message: discord.Message, index: int = 0):
+    @embed_store.command(name="frommsg", aliases=["frommessage"])
+    async def embed_store_frommsg(self, ctx, name: str, message: discord.Message, index: int = 0):
         """Store an embed from a message on this server.
 
         If the message has multiple embeds, you can pass a number to `index` to specify which embed."""
@@ -436,7 +428,7 @@ class EmbedUtils(commands.Cog):
         await ctx.send(embed=embed)
         await self.store_embed(ctx, name, embed)
 
-    @checks.is_owner()
+    @commands.is_owner()
     @embed.group(name="global")
     async def global_store(self, ctx):
         """Store embeds for global use."""
@@ -444,7 +436,7 @@ class EmbedUtils(commands.Cog):
             embeds = await self.config.embeds()
             description = []
 
-            if embed is Nones:
+            if embeds is None:
                 return
             for embed in embeds:
                 description.append(f"`{embed}`")
@@ -624,6 +616,26 @@ class EmbedUtils(commands.Cog):
         except discord.HTTPException as error:
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
+    @webhook.command(name="frommsg", aliases=["frommessage"])
+    async def webhook_frommsg(self, ctx: commands.Context, message: discord.Message, index: int = 0):
+        """
+        Send embeds through webhooks.
+        """
+        embed = await self.frommsg(ctx, message, index)
+        if embed is None:
+            return
+        cog = self.bot.get_cog("Webhook")
+        try:
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                ctx=ctx,
+                embed=embed,
+            )
+        except discord.HTTPException as error:
+            await self.embed_convert_error(ctx, "Embed Send Error", error)
+
     @webhook.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
     async def webhook_fromfile(self, ctx: commands.Context):
         """
@@ -734,5 +746,4 @@ class EmbedUtils(commands.Cog):
         embed.set_footer(
             text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example"
         )
-        emoji = ctx.bot.get_emoji(736038541364297738) or "❌"
-        await menus.menu(ctx, [embed], {emoji: menus.close_menu})
+        await menus.menu(ctx, [embed], {"❌": menus.close_menu})
