@@ -36,10 +36,6 @@ from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 
-matplotlib.use("agg")
-import matplotlib.pyplot as plt
-
-plt.switch_backend("agg")
 from collections import Counter
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
@@ -236,75 +232,6 @@ class DisboardReminder(commands.Cog):
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
-    @commands.guild_only()
-    @commands.group(aliases=["bumplb", "bprmtop", "bprmlb"], invoke_without_command=True)
-    async def bumpleaderboard(self, ctx, amount: int = 10):
-        """View the top Bumpers in the server."""
-        if amount < 1:
-            raise commands.BadArgument
-
-        members_data = await self.config.all_members(ctx.guild)
-        members_list = [(member, data["count"]) for member, data in members_data.items()]
-        ordered_list = sorted(members_list, key=lambda m: m[1], reverse=True)[:(amount)]
-
-        mapped_strings = []
-        for index, member in enumerate(ordered_list, start=1):
-            mapped_strings.append(f"{index}. <@{member[0]}>: {member[1]}")
-        if not mapped_strings:
-            await ctx.send("There are no tracked bumpers in this server.")
-            return
-
-        color = await ctx.embed_color()
-        leaderboard_string = "\n".join(mapped_strings)
-        if len(leaderboard_string) > 2048:
-            embeds = []
-            leaderboard_pages = list(pagify(leaderboard_string))
-            for index, page in enumerate(leaderboard_pages, start=1):
-                embed = discord.Embed(color=color, title="Bump Leaderboard", description=page)
-                embed.set_footer(text=f"{index}/{len(leaderboard_pages)}")
-                embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-                embeds.append(embed)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            embed = discord.Embed(
-                color=color, title="Bump Leaderboard", description=leaderboard_string
-            )
-            embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
-            await ctx.send(embed=embed)
-
-    @commands.max_concurrency(1, commands.BucketType.guild)
-    @commands.cooldown(1, 15, commands.BucketType.guild)
-    @bumpleaderboard.command()
-    async def chart(self, ctx: commands.Context):
-        """View the top bumpers in a chart."""
-        async with ctx.typing():
-            counter = Counter()
-            members_data = await self.config.all_members(ctx.guild)
-            if not members_data:
-                await ctx.send("I have no bump data for this server.")
-                return
-
-            for member, data in members_data.items():
-                _member = ctx.guild.get_member(member)
-                if _member:
-                    if len(_member.display_name) >= 23:
-                        whole_name = "{}...".format(_member.display_name[:20]).replace("$", "\\$")
-                    else:
-                        whole_name = _member.display_name.replace("$", "\\$")
-                    counter[whole_name] = data["count"]
-                else:
-                    counter[str(member)] = data["count"]
-
-            task = functools.partial(self.create_chart, counter, ctx.guild)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                chart = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=discord.File(chart, "chart.png"))
-
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         d = datetime.fromtimestamp(remaining)
         await discord.utils.sleep_until(d)
@@ -411,59 +338,3 @@ class DisboardReminder(commands.Cog):
                     await message.delete()
                 except (discord.errors.Forbidden, discord.errors.NotFound):
                     pass
-
-    # original from https://github.com/aikaterna/aikaterna-cogs/tree/v3/chatchart
-    def create_chart(self, data: Counter, guild: discord.Guild):
-        plt.clf()
-        most_common = data.most_common()
-        total = sum(data.values())
-        sizes = [(x[1] / total) * 100 for x in most_common][:20]
-        labels = [
-            f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])
-        ]
-        if len(most_common) > 20:
-            others = sum([x[1] / total for x in most_common[20:]])
-            sizes.append(others)
-            labels.append("Others {:g}%".format(others))
-        title = plt.title(f"Top Bumpers", color="white")
-        title.set_va("top")
-        title.set_ha("center")
-        plt.gca().axis("equal")
-        colors = [
-            "r",
-            "darkorange",
-            "gold",
-            "y",
-            "olivedrab",
-            "green",
-            "darkcyan",
-            "mediumblue",
-            "darkblue",
-            "blueviolet",
-            "indigo",
-            "orchid",
-            "mediumvioletred",
-            "crimson",
-            "chocolate",
-            "yellow",
-            "limegreen",
-            "forestgreen",
-            "dodgerblue",
-            "slateblue",
-            "gray",
-        ]
-        pie = plt.pie(sizes, colors=colors, startangle=0)
-        plt.legend(
-            pie[0],
-            labels,
-            bbox_to_anchor=(0.7, 0.5),
-            loc="center",
-            fontsize=10,
-            bbox_transform=plt.gcf().transFigure,
-            facecolor="#ffffff",
-        )
-        plt.subplots_adjust(left=0.0, bottom=0.1, right=0.45)
-        image_object = BytesIO()
-        plt.savefig(image_object, format="PNG", facecolor="#36393E")
-        image_object.seek(0)
-        return image_object
