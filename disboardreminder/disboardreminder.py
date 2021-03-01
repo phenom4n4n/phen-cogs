@@ -30,7 +30,6 @@ from datetime import datetime
 from io import BytesIO
 
 import discord
-import matplotlib
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
