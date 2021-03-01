@@ -1,7 +1,7 @@
 from typing import List
 import discord
 from redbot.core import commands
-from redbot.core.commands import Converter, BadArgument, CheckFailure, MessageConverter
+from redbot.core.commands import Converter, BadArgument, CheckFailure, MessageConverter, TextChannelConverter
 import json
 from redbot.core.utils import menus
 import asyncio
@@ -117,3 +117,15 @@ class MyMessageConverter(MessageConverter):
                 f"I do not have permissions to send/edit messages in {message.channel.mention}."
             )
         return message
+
+
+class MessageableChannel(TextChannelConverter):
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.TextChannel:
+        channel = await super().convert(ctx, argument)
+        my_perms = channel.permissions_for(ctx.me)
+        if not (my_perms.send_messages and my_perms.embed_links):
+            raise BadArgument(f"I do not have permissions to send embeds in {channel.mention}.")
+        author_perms = channel.permissions_for(ctx.author)
+        if not (author_perms.send_messages and author_perms.embed_links):
+            raise BadArgument(f"You do not have permissions to send embeds in {channel.mention}.")
+        return channel

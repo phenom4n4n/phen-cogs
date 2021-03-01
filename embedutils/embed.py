@@ -39,6 +39,7 @@ from .converters import (
     GlobalStoredEmbedConverter,
     ListStringToEmbed,
     MyMessageConverter,
+    MessageableChannel,
 )
 
 
@@ -140,7 +141,7 @@ class EmbedUtils(commands.Cog):
     async def embed(
         self,
         ctx,
-        channel: Optional[discord.TextChannel],
+        channel: Optional[MessageableChannel],
         color: Optional[discord.Color],
         title: str,
         *,
@@ -150,13 +151,6 @@ class EmbedUtils(commands.Cog):
 
         Put the title in quotes if it is multiple words."""
         channel = channel or ctx.channel
-        my_perms = channel.permissions_for(ctx.me)
-        auth_perms = channel.permissions_for(ctx.author)
-        if not (
-            (my_perms.send_messages and my_perms.embed_links)
-            and (auth_perms.send_messages and auth_perms.embed_links)
-        ):
-            raise commands.BadArgument
         color = color or await ctx.embed_color()
         e = discord.Embed(color=color, title=title, description=description)
         await channel.send(embed=e)
@@ -169,7 +163,7 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
-    async def embed_fromfile(self, ctx):
+    async def embed_fromfile(self, ctx: commands.Context):
         """
         Post an embed from a valid JSON file.
         """
@@ -208,17 +202,19 @@ class EmbedUtils(commands.Cog):
         fp = io.BytesIO(bytes(data, "utf-8"))
         await ctx.send(file=discord.File(fp, "embed.json"))
 
-    @embed.group(cls=HelpFormattedGroup, name="show", aliases=["view", "drop"], invoke_without_command=True)
-    async def embed_drop(self, ctx, name: StoredEmbedConverter):
-        """View an embed that is stored."""
+    @embed.group(cls=HelpFormattedGroup, name="post", aliases=["view", "drop", "show"], invoke_without_command=True)
+    async def embed_post(self, ctx, name: StoredEmbedConverter, channel: MessageableChannel = None):
+        """Post an embed that is stored."""
+        channel = channel or ctx.channel
         await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
         async with self.config.guild(ctx.guild).embeds() as a:
             a[name["name"]]["uses"] += 1
 
-    @embed_drop.command(name="global")
-    async def embed_drop_global(self, ctx, name: GlobalStoredEmbedConverter):
-        """View an embed that is stored globally."""
-        await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
+    @embed_post.command(name="global")
+    async def embed_post_global(self, ctx, name: GlobalStoredEmbedConverter, channel: MessageableChannel = None):
+        """Post an embed that is stored globally."""
+        channel = channel or ctx.channel
+        await channel.send(embed=discord.Embed.from_dict(name["embed"]))
         async with self.config.embeds() as a:
             a[name["name"]]["uses"] += 1
 
