@@ -349,7 +349,7 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @commands.mod_or_permissions(manage_guild=True)
-    @embed.group()
+    @embed.group(name="store")
     async def embed_store(self, ctx):
         """Store embeds for server use."""
 
