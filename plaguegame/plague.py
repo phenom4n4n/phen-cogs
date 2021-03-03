@@ -89,7 +89,7 @@ async def has_role(ctx: commands.Context) -> bool:
 class Plague(commands.Cog):
     """A plague game."""
 
-    __version__ = "1.0.4"
+    __version__ = "1.0.5"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -425,7 +425,7 @@ class Plague(commands.Cog):
         await self.config.rate.set(rate)
         await ctx.send(f"The Plague Game rate has been set to {rate}%.")
 
-    @plagueset.command(name="settings", aliases="showsettings")
+    @plagueset.command(name="settings", aliases=["showsettings"])
     async def plagueset_settings(self, ctx: commands.Context):
         """View the Plague Game settings."""
         data = await self.config.all()
