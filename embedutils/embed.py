@@ -247,16 +247,6 @@ class EmbedUtils(commands.Cog):
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
 
-    @embed.command(aliases=["delete", "rm", "del"])
-    async def remove(self, ctx, name):
-        """Remove a stored embed on this server."""
-        try:
-            async with self.config.guild(ctx.guild).embeds() as a:
-                del a[name]
-            await ctx.send("Embed deleted.")
-        except KeyError:
-            await ctx.send("This is not a stored embed.")
-
     @embed.command(name="clear", hidden=True)
     async def clear(self, ctx):
         """Remove ALL embed data from the bot."""
@@ -352,6 +342,16 @@ class EmbedUtils(commands.Cog):
     @embed.group(name="store")
     async def embed_store(self, ctx):
         """Store embeds for server use."""
+
+    @embed_store.command(name="remove", aliases=["delete", "rm", "del"])
+    async def embed_store_remove(self, ctx, name):
+        """Remove a stored embed on this server."""
+        try:
+            async with self.config.guild(ctx.guild).embeds() as a:
+                del a[name]
+            await ctx.send("Embed deleted.")
+        except KeyError:
+            await ctx.send("This is not a stored embed.")
 
     @embed_store.command(name="download")
     async def embed_store_download(self, ctx: commands.Context, embed: StoredEmbedConverter):
