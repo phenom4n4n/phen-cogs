@@ -66,7 +66,7 @@ class HelpFormattedCommand(commands.Command):
             n = "\n" if "\n\n" not in pre_processed else ""
             output = [
                 f"{pre_processed}{n}",
-                'This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).',
+                "This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).",
                 "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
             ]
             return "\n".join(output)
@@ -86,7 +86,7 @@ class HelpFormattedGroup(commands.Group):
             n = "\n" if "\n\n" not in pre_processed else ""
             output = [
                 f"{pre_processed}{n}",
-                'This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).',
+                "This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).",
                 "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
             ]
             return "\n".join(output)
@@ -155,14 +155,21 @@ class EmbedUtils(commands.Cog):
         e = discord.Embed(color=color, title=title, description=description)
         await channel.send(embed=e)
 
-    @embed.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
+    @embed.command(
+        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+    )
     async def embed_fromdata(self, ctx, *, data: StringToEmbed):
         """
         Post an embed from valid JSON.
         """
         await ctx.tick()
 
-    @embed.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
+    @embed.command(
+        cls=HelpFormattedCommand,
+        name="fromfile",
+        aliases=["fromjsonfile", "fromdatafile"],
+        add_example_info=True,
+    )
     async def embed_fromfile(self, ctx: commands.Context):
         """
         Post an embed from a valid JSON file.
@@ -202,8 +209,15 @@ class EmbedUtils(commands.Cog):
         fp = io.BytesIO(bytes(data, "utf-8"))
         await ctx.send(file=discord.File(fp, "embed.json"))
 
-    @embed.group(cls=HelpFormattedGroup, name="post", aliases=["view", "drop", "show"], invoke_without_command=True)
-    async def embed_post(self, ctx, name: StoredEmbedConverter, channel: MessageableChannel = None):
+    @embed.group(
+        cls=HelpFormattedGroup,
+        name="post",
+        aliases=["view", "drop", "show"],
+        invoke_without_command=True,
+    )
+    async def embed_post(
+        self, ctx, name: StoredEmbedConverter, channel: MessageableChannel = None
+    ):
         """Post an embed that is stored."""
         channel = channel or ctx.channel
         await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
@@ -211,7 +225,9 @@ class EmbedUtils(commands.Cog):
             a[name["name"]]["uses"] += 1
 
     @embed_post.command(name="global")
-    async def embed_post_global(self, ctx, name: GlobalStoredEmbedConverter, channel: MessageableChannel = None):
+    async def embed_post_global(
+        self, ctx, name: GlobalStoredEmbedConverter, channel: MessageableChannel = None
+    ):
         """Post an embed that is stored globally."""
         channel = channel or ctx.channel
         await channel.send(embed=discord.Embed.from_dict(name["embed"]))
@@ -281,7 +297,9 @@ class EmbedUtils(commands.Cog):
         await message.edit(embed=e)
         await ctx.tick()
 
-    @embed_edit.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
+    @embed_edit.command(
+        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+    )
     async def embed_edit_fromdata(
         self, ctx: commands.Context, message: MyMessageConverter, *, data: StringToEmbed
     ):
@@ -291,7 +309,12 @@ class EmbedUtils(commands.Cog):
         await message.edit(embed=data)
         await ctx.tick()
 
-    @embed_edit.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
+    @embed_edit.command(
+        cls=HelpFormattedCommand,
+        name="fromfile",
+        aliases=["fromjsonfile", "fromdatafile"],
+        add_example_info=True,
+    )
     async def embed_edit_fromfile(self, ctx: commands.Context, message: MyMessageConverter):
         """
         Edit a message's embed using a valid JSON file.
@@ -387,7 +410,9 @@ class EmbedUtils(commands.Cog):
         await self.store_embed(ctx, name, e)
         await ctx.tick()
 
-    @embed_store.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
+    @embed_store.command(
+        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+    )
     async def embed_store_fromdata(self, ctx, name: str, *, data: StringToEmbed):
         """
         Store an embed from valid JSON on this server.
@@ -395,7 +420,12 @@ class EmbedUtils(commands.Cog):
         await self.store_embed(ctx, name, data)
         await ctx.tick()
 
-    @embed_store.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
+    @embed_store.command(
+        cls=HelpFormattedCommand,
+        name="fromfile",
+        aliases=["fromjsonfile", "fromdatafile"],
+        add_example_info=True,
+    )
     async def embed_store_fromfile(self, ctx, name: str):
         """
         Store an embed from a valid JSON file on this server.
@@ -490,7 +520,9 @@ class EmbedUtils(commands.Cog):
         await self.global_store_embed(ctx, name, e, locked)
         await ctx.tick()
 
-    @global_store.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
+    @global_store.command(
+        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+    )
     async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data: StringToEmbed):
         """Store an embed from valid JSON globally.
 
@@ -498,7 +530,12 @@ class EmbedUtils(commands.Cog):
         await self.global_store_embed(ctx, name, data, locked)
         await ctx.tick()
 
-    @global_store.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
+    @global_store.command(
+        cls=HelpFormattedCommand,
+        name="fromfile",
+        aliases=["fromjsonfile", "fromdatafile"],
+        add_example_info=True,
+    )
     async def global_store_fromfile(self, ctx, name: str, locked: bool):
         """Store an embed from a valid JSON file globally.
 
@@ -595,7 +632,9 @@ class EmbedUtils(commands.Cog):
             embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]],
         )
 
-    @webhook.command(cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True)
+    @webhook.command(
+        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+    )
     async def webhook_fromdata(self, ctx: commands.Context, *, embeds: ListStringToEmbed):
         """
         Send embeds through webhooks.
@@ -613,7 +652,9 @@ class EmbedUtils(commands.Cog):
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
     @webhook.command(name="frommsg", aliases=["frommessage"])
-    async def webhook_frommsg(self, ctx: commands.Context, message: discord.Message, index: int = 0):
+    async def webhook_frommsg(
+        self, ctx: commands.Context, message: discord.Message, index: int = 0
+    ):
         """
         Send embeds through webhooks.
         """
@@ -632,7 +673,12 @@ class EmbedUtils(commands.Cog):
         except discord.HTTPException as error:
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
-    @webhook.command(cls=HelpFormattedCommand, name="fromfile", aliases=["fromjsonfile", "fromdatafile"], add_example_info=True)
+    @webhook.command(
+        cls=HelpFormattedCommand,
+        name="fromfile",
+        aliases=["fromjsonfile", "fromdatafile"],
+        add_example_info=True,
+    )
     async def webhook_fromfile(self, ctx: commands.Context):
         """
         Send embeds through webhooks, using files.

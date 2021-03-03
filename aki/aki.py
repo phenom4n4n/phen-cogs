@@ -195,11 +195,11 @@ class Aki(commands.Cog):
         try:
             await aki.start_game(language=language.replace(" ", "_"))
         except akinator.InvalidLanguageError:
-            await ctx.send("Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>")
-        except Exception:
             await ctx.send(
-                "I encountered an error while connecting to the Akinator servers."
+                "Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>"
             )
+        except Exception:
+            await ctx.send("I encountered an error while connecting to the Akinator servers.")
         else:
             menu = AkiMenu(aki, await ctx.embed_color())
             await menu.start(ctx)

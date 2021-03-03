@@ -37,20 +37,24 @@ from .converters import Curable, FuzzyHuman, Infectable, hundred_int
 
 hn = humanize_number
 
+
 class GameState:
     INFECTED = "infected"
     HEALTHY = "healthy"
+
 
 class GameRole:
     DOCTOR = "Doctor"
     PLAGUEBEARER = "Plaguebearer"
     USER = "User"
 
+
 class NotificationType:
     INFECT = "infect"
     CURE = "cure"
     DOCTOR = "doctor"
     PLAGUEBEARER = "plaguebearer"
+
 
 async def is_infected(ctx):
     userState = await ctx.bot.get_cog("Plague").config.user(ctx.author).gameState()
@@ -454,7 +458,11 @@ class Plague(commands.Cog):
             f"Plaguebearers: {hn(grc[GameRole.PLAGUEBEARER])}",
             f"Jobless Users: {hn(grc[GameRole.USER])}",
         ]
-        e = discord.Embed(title=f"{await self.config.plagueName()} Stats", color=await ctx.embed_color(), description="\n".join(description))
+        e = discord.Embed(
+            title=f"{await self.config.plagueName()} Stats",
+            color=await ctx.embed_color(),
+            description="\n".join(description),
+        )
         await ctx.send(embed=e)
 
     async def infect_user(self, ctx, user: discord.User, auto=False):
@@ -535,7 +543,9 @@ class Plague(commands.Cog):
         infectables = []
         for user in not_bots:
             victim_data = await self.config.user(user).all()
-            if (victim_data["gameState"] != GameState.INFECTED) and (victim_data["gameRole"] != GameRole.DOCTOR):
+            if (victim_data["gameState"] != GameState.INFECTED) and (
+                victim_data["gameRole"] != GameRole.DOCTOR
+            ):
                 infectables.append(user)
         if not infectables:
             return

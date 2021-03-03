@@ -1,7 +1,13 @@
 from typing import List
 import discord
 from redbot.core import commands
-from redbot.core.commands import Converter, BadArgument, CheckFailure, MessageConverter, TextChannelConverter
+from redbot.core.commands import (
+    Converter,
+    BadArgument,
+    CheckFailure,
+    MessageConverter,
+    TextChannelConverter,
+)
 import json
 from redbot.core.utils import menus
 import asyncio
