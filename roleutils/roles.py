@@ -195,6 +195,42 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
+    @_role.command()
+    async def addmulti(self, ctx: commands.Context, role: StrictRole, *members: TouchableMember):
+        """Add a role to multiple members."""
+        if not members:
+            raise commands.BadArgument
+        reason = get_audit_reason(ctx.author)
+        msg = []
+        for member in members:
+            if role not in member.roles:
+                await member.add_roles(role, reason=reason)
+                msg.append(f"Added {role.name} to **{member}**.")
+            else:
+                msg.append(f"**{member}** already had {role.name}.")
+        await ctx.send("\n".join(msg))
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @_role.command()
+    async def removemulti(
+        self, ctx: commands.Context, role: StrictRole, *members: TouchableMember
+    ):
+        """Remove a role from multiple members."""
+        if not members:
+            raise commands.BadArgument
+        reason = get_audit_reason(ctx.author)
+        msg = []
+        for member in members:
+            if role in member.roles:
+                await member.remove_roles(role, reason=reason)
+                msg.append(f"Removed {role.name} from **{member}**.")
+            else:
+                msg.append(f"**{member}** didn't have {role.name}.")
+        await ctx.send("\n".join(msg))
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
     @commands.group(invoke_without_command=True)
     async def multirole(self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole):
         """Add multiple roles to a member."""
