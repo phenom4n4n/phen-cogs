@@ -24,6 +24,7 @@ SOFTWARE.
 
 import asyncio
 import time
+from collections import defaultdict
 from copy import copy
 from typing import Optional, List
 
@@ -39,8 +40,7 @@ from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
 from redbot.cogs.alias.alias import Alias
-from TagScriptEngine import Interpreter, adapter, block
-from collections import defaultdict
+import TagScriptEngine as tse
 
 from .blocks import stable_blocks
 from .converters import TagConverter, TagName, TagScriptConverter
@@ -72,7 +72,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "2.0.6"
+    __version__ = "2.0.7"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -92,22 +92,22 @@ class Tags(commands.Cog):
         self.config.register_global(**default_global)
 
         blocks = stable_blocks + [
-            block.MathBlock(),
-            block.RandomBlock(),
-            block.RangeBlock(),
-            block.AnyBlock(),
-            block.IfBlock(),
-            block.AllBlock(),
-            block.BreakBlock(),
-            block.StrfBlock(),
-            block.StopBlock(),
-            block.AssignmentBlock(),
-            block.FiftyFiftyBlock(),
-            block.ShortCutRedirectBlock("args"),
-            block.LooseVariableGetterBlock(),
-            block.SubstringBlock(),
+            tse.MathBlock(),
+            tse.RandomBlock(),
+            tse.RangeBlock(),
+            tse.AnyBlock(),
+            tse.IfBlock(),
+            tse.AllBlock(),
+            tse.BreakBlock(),
+            tse.StrfBlock(),
+            tse.StopBlock(),
+            tse.AssignmentBlock(),
+            tse.FiftyFiftyBlock(),
+            tse.ShortCutRedirectBlock("args"),
+            tse.LooseVariableGetterBlock(),
+            tse.SubstringBlock(),
         ]
-        self.engine = Interpreter(blocks)
+        self.engine = tse.Interpreter(blocks)
         self.role_converter = commands.RoleConverter()
         self.channel_converter = commands.TextChannelConverter()
         self.member_converter = commands.MemberConverter()
@@ -198,7 +198,7 @@ class Tags(commands.Cog):
             if response is True:
                 await ctx.send(e)
         else:
-            seed = {"args": adapter.StringAdapter(args)}
+            seed = {"args": tse.StringAdapter(args)}
             await self.process_tag(ctx, _tag, seed_variables=seed)
 
     @commands.guild_only()

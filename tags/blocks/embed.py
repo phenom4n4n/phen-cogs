@@ -24,9 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 import json
-from TagScriptEngine import Interpreter, adapter
-from TagScriptEngine.block.helpers import helper_parse_if
-from TagScriptEngine.interface import Block
+from TagScriptEngine import Interpreter, helper_parse_if, Block
 from discord import Embed
 
 
