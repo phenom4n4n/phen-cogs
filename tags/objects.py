@@ -26,7 +26,7 @@ import discord
 from typing import Optional
 from redbot.core import commands, Config
 from redbot.core.bot import Red
-from TagScriptEngine import Interpreter, adapter
+from TagScriptEngine import Interpreter, IntAdapter
 
 
 class Tag(object):
@@ -73,7 +73,7 @@ class Tag(object):
         self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs
     ) -> Interpreter.Response:
         self.uses += 1
-        seed_variables.update(uses=adapter.IntAdapter(self.uses))
+        seed_variables.update(uses=IntAdapter(self.uses))
         return interpreter.process(self.tagscript, seed_variables, **kwargs)
 
     async def update_config(self):
