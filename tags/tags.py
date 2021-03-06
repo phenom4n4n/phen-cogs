@@ -72,7 +72,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "2.0.5"
+    __version__ = "2.0.6"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -646,7 +646,7 @@ class Tags(commands.Cog):
 
         # this is going to become an asynchronous swamp
         msg = None
-        if content or embed:
+        if content or embed is not None:
             msg = await self.send_tag_response(ctx, destination, replying, content, embed=embed)
             if msg and (react := actions.get("react")):
                 to_gather.append(self.do_reactions(ctx, react, msg))
