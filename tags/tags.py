@@ -283,9 +283,10 @@ class Tags(commands.Cog):
     @tag.command(name="raw")
     async def tag_raw(self, ctx: commands.Context, tag: TagConverter):
         """Get a tag's raw content."""
-        for page in pagify(tag.tagscript, shorten_by=100):
+        tagscript = escape_markdown(tag.tagscript)
+        for page in pagify(tagscript):
             await ctx.send(
-                escape_markdown(page),
+                page,
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
@@ -451,9 +452,10 @@ class Tags(commands.Cog):
         self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)
     ):
         """Get a tag's raw content."""
-        for page in pagify(tag.tagscript, shorten_by=100):
+        tagscript = escape_markdown(tag.tagscript)
+        for page in pagify(tagscript):
             await ctx.send(
-                escape_markdown(page),
+                page,
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
