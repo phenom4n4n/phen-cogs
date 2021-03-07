@@ -3,7 +3,7 @@ TagScriptEngine Blocks
 ======================
 
 Read the official `TagScriptEngine documentation <https://github.com/JonSnowbd/TagScript/tree/v2/Documentation>`_
- for info on these blocks, I will add documentation for these later.
+for info on these blocks, I will add documentation for these later.
 
 -----------
 Core Blocks

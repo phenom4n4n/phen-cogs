@@ -95,7 +95,7 @@ Target Block
 Channel Block
 ^^^^^^^^^^^^^
 
-.. autoclass:: tags.adapters.TextChannelAdapter
+.. autoclass:: tags.adapters.ChannelAdapter
 
 ^^^^^^^^^^^^
 Server Block

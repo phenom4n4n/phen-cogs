@@ -31,11 +31,16 @@ class DeleteBlock(Block):
     """
     Delete blocks will delete the invocation message if the given parameter is true. If there is no parameter i.e. ``{delete}`` it will default to true.
 
-    Usage: ``{delete([bool])``
+    **Usage:** ``{delete([bool])``
 
-    Payload: None
+    **Payload:** None
 
-    Parameter: bool, None
+    **Parameter:** bool, None
+
+    **Examples:** ::
+
+        {delete}
+        {delete({args(1)}==delete)}
     """
 
     def will_accept(self, ctx: Interpreter.Context) -> bool:

@@ -29,13 +29,20 @@ from TagScriptEngine import Interpreter, Block
 
 class ReactBlock(Block):
     """
-    The react block will react with up to 5 emoji to the tag response message. The given emoji can be custom or unicode emoji. Emojis can be split with ",".
+    The react block will react with up to 5 emoji to the tag response message. 
+    The given emoji can be custom or unicode emoji. Emojis can be split with ",".
 
-    Usage: ``{react(<emoji,emoji>)}``
+    **Usage:** ``{react(<emoji,emoji>)}``
 
-    Payload: None
+    **Payload:** None
 
-    Parameter: emoji
+    **Parameter:** emoji
+
+    **Examples:** ::
+
+        {react(🅱️)}
+        {react(🍎,🍏)}
+        {react(<:kappa:754146174843355146>)}
     """
 
     def will_accept(self, ctx: Interpreter.Context) -> bool:
@@ -53,11 +60,17 @@ class ReactUBlock(Block):
     """
     The react block will react with up to 5 emoji to the tag invocation message. The given emoji can be custom or unicode emoji. Emojis can be split with ",".
 
-    Usage: ``{reactu(<emoji,emoji>)}``
+    **Usage:** ``{reactu(<emoji,emoji>)}``
 
-    Payload: None
+    **Payload:** None
 
-    Parameter: emoji
+    **Parameter:** emoji
+
+    **Examples:** ::
+
+        {react(🅱️)}
+        {react(🍎,🍏)}
+        {react(<:kappa:754146174843355146>)}
     """
 
     def will_accept(self, ctx: Interpreter.Context) -> bool:
