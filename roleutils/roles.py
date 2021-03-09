@@ -201,13 +201,21 @@ class Roles(MixinMeta):
         if not members:
             raise commands.BadArgument
         reason = get_audit_reason(ctx.author)
-        msg = []
+        already_members = []
+        success_members = []
         for member in members:
             if role not in member.roles:
                 await member.add_roles(role, reason=reason)
-                msg.append(f"Added {role.name} to **{member}**.")
+                success_members.append(member)
             else:
-                msg.append(f"**{member}** already had {role.name}.")
+                already_members.append(member)
+        msg = []
+        if success_members:
+            member_names = [f"**{member}**" for member in success_members]
+            msg.append(f"Added **{role}** to {humanize_list(member_names)}.")
+        if already_members:
+            member_names = [f"**{member}**" for member in already_members]
+            msg.append(f"{humanize_list(member_names)} already had **{role}**.")
         await ctx.send("\n".join(msg))
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -220,13 +228,21 @@ class Roles(MixinMeta):
         if not members:
             raise commands.BadArgument
         reason = get_audit_reason(ctx.author)
-        msg = []
+        already_members = []
+        success_members = []
         for member in members:
             if role in member.roles:
-                await member.remove_roles(role, reason=reason)
-                msg.append(f"Removed {role.name} from **{member}**.")
+                await member. remove_roles(role, reason=reason)
+                success_members.append(member)
             else:
-                msg.append(f"**{member}** didn't have {role.name}.")
+                already_members.append(member)
+        msg = []
+        if success_members:
+            member_names = [f"**{member}**" for member in success_members]
+            msg.append(f"Removed **{role}** from {humanize_list(member_names)}.")
+        if already_members:
+            member_names = [f"**{member}**" for member in already_members]
+            msg.append(f"{humanize_list(member_names)} didn't have **{role}**.")
         await ctx.send("\n".join(msg))
 
     @commands.admin_or_permissions(manage_roles=True)
