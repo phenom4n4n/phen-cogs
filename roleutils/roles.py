@@ -195,11 +195,9 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @_role.command(require_var_positional=True)
     async def addmulti(self, ctx: commands.Context, role: StrictRole, *members: TouchableMember):
         """Add a role to multiple members."""
-        if not members:
-            raise commands.BadArgument
         reason = get_audit_reason(ctx.author)
         already_members = []
         success_members = []
@@ -220,13 +218,11 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @_role.command(require_var_positional=True)
     async def removemulti(
         self, ctx: commands.Context, role: StrictRole, *members: TouchableMember
     ):
         """Remove a role from multiple members."""
-        if not members:
-            raise commands.BadArgument
         reason = get_audit_reason(ctx.author)
         already_members = []
         success_members = []
@@ -247,11 +243,9 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @commands.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True, require_var_positional=True)
     async def multirole(self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole):
         """Add multiple roles to a member."""
-        if not roles:
-            raise commands.BadArgument
         not_allowed = []
         already_added = []
         to_add = []
@@ -278,13 +272,11 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @multirole.command(name="remove")
+    @multirole.command(name="remove", require_var_positional=True)
     async def multirole_remove(
         self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole
     ):
         """Remove multiple roles from a member."""
-        if not roles:
-            raise commands.BadArgument
         not_allowed = []
         not_added = []
         to_rm = []
