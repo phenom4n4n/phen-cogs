@@ -195,11 +195,57 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @commands.group(invoke_without_command=True)
+    @_role.command(require_var_positional=True)
+    async def addmulti(self, ctx: commands.Context, role: StrictRole, *members: TouchableMember):
+        """Add a role to multiple members."""
+        reason = get_audit_reason(ctx.author)
+        already_members = []
+        success_members = []
+        for member in members:
+            if role not in member.roles:
+                await member.add_roles(role, reason=reason)
+                success_members.append(member)
+            else:
+                already_members.append(member)
+        msg = []
+        if success_members:
+            member_names = [f"**{member}**" for member in success_members]
+            msg.append(f"Added **{role}** to {humanize_list(member_names)}.")
+        if already_members:
+            member_names = [f"**{member}**" for member in already_members]
+            msg.append(f"{humanize_list(member_names)} already had **{role}**.")
+        await ctx.send("\n".join(msg))
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @_role.command(require_var_positional=True)
+    async def removemulti(
+        self, ctx: commands.Context, role: StrictRole, *members: TouchableMember
+    ):
+        """Remove a role from multiple members."""
+        reason = get_audit_reason(ctx.author)
+        already_members = []
+        success_members = []
+        for member in members:
+            if role in member.roles:
+                await member. remove_roles(role, reason=reason)
+                success_members.append(member)
+            else:
+                already_members.append(member)
+        msg = []
+        if success_members:
+            member_names = [f"**{member}**" for member in success_members]
+            msg.append(f"Removed **{role}** from {humanize_list(member_names)}.")
+        if already_members:
+            member_names = [f"**{member}**" for member in already_members]
+            msg.append(f"{humanize_list(member_names)} didn't have **{role}**.")
+        await ctx.send("\n".join(msg))
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.group(invoke_without_command=True, require_var_positional=True)
     async def multirole(self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole):
         """Add multiple roles to a member."""
-        if not roles:
-            raise commands.BadArgument
         not_allowed = []
         already_added = []
         to_add = []
@@ -226,13 +272,11 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @multirole.command(name="remove")
+    @multirole.command(name="remove", require_var_positional=True)
     async def multirole_remove(
         self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole
     ):
         """Remove multiple roles from a member."""
-        if not roles:
-            raise commands.BadArgument
         not_allowed = []
         not_added = []
         to_rm = []
