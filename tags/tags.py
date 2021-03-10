@@ -27,6 +27,7 @@ import time
 from collections import defaultdict
 from copy import copy
 from typing import Optional, List
+from urllib.parse import quote_plus
 
 import logging
 import discord
@@ -41,6 +42,8 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_ad
 from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
 from redbot.cogs.alias.alias import Alias
 import TagScriptEngine as tse
+import aiohttp
+import bs4
 
 from .blocks import stable_blocks
 from .converters import TagConverter, TagName, TagScriptConverter
@@ -66,13 +69,14 @@ async def send_quietly(destination: discord.abc.Messageable, content: str = None
 
 
 class Tags(commands.Cog):
-    """
+    DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
+    f"""
     Create and use tags.
 
-    The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
+    The TagScript documentation can be found [here]({DOCS_URL}).
     """
 
-    __version__ = "2.1.0"
+    __version__ = "2.1.1"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -109,6 +113,7 @@ class Tags(commands.Cog):
             tse.EmbedBlock(),
             tse.ReplaceBlock(),
             tse.PythonBlock(),
+            tse.URLEncodeBlock(),
         ]
         self.engine = tse.Interpreter(blocks)
         self.role_converter = commands.RoleConverter()
@@ -120,9 +125,13 @@ class Tags(commands.Cog):
         self.global_tag_cache = {}
         self.task = asyncio.create_task(self.cache_tags())
 
+        self.session = aiohttp.ClientSession()
+        self.docs: list = []
+
     def cog_unload(self):
         if self.task:
             self.task.cancel()
+        asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         if requester not in ("discord_deleted_user", "user"):
@@ -207,10 +216,10 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @commands.group(aliases=["customcom"])
     async def tag(self, ctx: commands.Context):
-        """
+        f"""
         Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks.
+        These commands use TagScriptEngine. [This site]({self.DOCS_URL}) has documentation on how to use TagScript blocks.
         """
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -218,10 +227,10 @@ class Tags(commands.Cog):
     async def tag_add(
         self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter
     ):
-        """
+        f"""
         Add a tag with TagScript.
 
-        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
+        [Tag usage guide]({self.DOCS_URL}blocks.html#usage)
         """
         tag = self.get_tag(ctx.guild, tag_name)
         if tag:
@@ -318,6 +327,34 @@ class Tags(commands.Cog):
             embeds.append(embed)
         await menu(ctx, embeds, DEFAULT_CONTROLS)
 
+    @tag.command(name="docs")
+    async def tag_docs(self, ctx: commands.Context, keyword: str = None):
+        f"""Search the [Tag documentation]({self.DOCS_URL})."""
+        e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation", url=self.DOCS_URL)
+        if keyword:
+            doc_tags = await self.doc_search(keyword)
+            description = []
+            for doc_tag in doc_tags:
+                href = doc_tag.get("href")
+                description.append(f"[`{doc_tag.text}`]({self.DOCS_URL}{href})")
+            url = f"{self.DOCS_URL}search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
+            e.url = url
+            e.description = "\n".join(description)
+        await ctx.send(embed=e)
+
+    async def doc_fetch(self):
+        # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
+        async with self.session.get(f"{self.DOCS_URL}genindex.html") as response:
+            text = await response.read()
+        soup = bs4.BeautifulSoup(text, "html.parser")
+        self.docs = soup.findAll("a")
+
+    async def doc_search(self, keyword: str) -> List[bs4.Tag]:
+        keyword = keyword.lower()
+        if self.docs is None:
+            await self.doc_fetch()
+        return [x for x in self.docs if keyword in str(x).lower()]
+
     @commands.is_owner()
     @tag.command(name="run", aliases=["execute"])
     async def tag_run(self, ctx: commands.Context, *, tagscript: str):
@@ -379,10 +416,10 @@ class Tags(commands.Cog):
     async def tag_global_add(
         self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter
     ):
-        """
+        f"""
         Add a global tag with TagScript.
 
-        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
+        [Tag usage guide]({self.DOCS_URL}blocks.html#usage)
         """
         tag = self.get_tag(None, tag_name, check_global=True)
         if tag:
