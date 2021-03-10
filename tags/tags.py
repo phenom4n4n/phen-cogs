@@ -338,7 +338,7 @@ class Tags(commands.Cog):
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
             doc_tags = await self.doc_search(keyword)
-            description = []
+            description = [f"Search for: `{keyword}`"]
             for doc_tag in doc_tags:
                 href = doc_tag.get("href")
                 description.append(f"[`{doc_tag.text}`]({DOCS_URL}{href})")
