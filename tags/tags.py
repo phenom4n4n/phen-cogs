@@ -77,10 +77,10 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here]({DOCS_URL}).
     """
 
-    __version__ = "2.1.1"
+    __version__ = "2.1.2"
 
     def format_help_for_context(self, ctx: commands.Context):
-        pre_processed = super().format_help_for_context(ctx).replace("{DOCS_URL}", DOCS_URL)
+        pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
@@ -129,7 +129,10 @@ class Tags(commands.Cog):
         self.session = aiohttp.ClientSession()
         self.docs: list = []
 
+        bot.add_dev_env_value("tags", lambda ctx: self)
+
     def cog_unload(self):
+        self.bot.remove_dev_env_value("tags")
         if self.task:
             self.task.cancel()
         asyncio.create_task(self.session.close())
@@ -217,10 +220,10 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @commands.group(aliases=["customcom"])
     async def tag(self, ctx: commands.Context):
-        f"""
+        """
         Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site]({DOCS_URL}) has documentation on how to use TagScript blocks.
+        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/) has documentation on how to use TagScript blocks.
         """
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -228,10 +231,10 @@ class Tags(commands.Cog):
     async def tag_add(
         self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter
     ):
-        f"""
+        """
         Add a tag with TagScript.
 
-        [Tag usage guide]({DOCS_URL}blocks.html#usage)
+        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
         """
         tag = self.get_tag(ctx.guild, tag_name)
         if tag:
@@ -330,7 +333,7 @@ class Tags(commands.Cog):
 
     @tag.command(name="docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
-        f"""Search the [Tag documentation]({DOCS_URL})."""
+        """Search the [Tag documentation](https://phen-cogs.readthedocs.io/en/latest/)."""
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
             doc_tags = await self.doc_search(keyword)
@@ -354,7 +357,7 @@ class Tags(commands.Cog):
 
     async def doc_search(self, keyword: str) -> List[bs4.Tag]:
         keyword = keyword.lower()
-        if self.docs is None:
+        if not self.docs:
             await self.doc_fetch()
         return [x for x in self.docs if keyword in str(x).lower()]
 
@@ -419,10 +422,10 @@ class Tags(commands.Cog):
     async def tag_global_add(
         self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter
     ):
-        f"""
+        """
         Add a global tag with TagScript.
 
-        [Tag usage guide]({DOCS_URL}blocks.html#usage)
+        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
         """
         tag = self.get_tag(None, tag_name, check_global=True)
         if tag:
