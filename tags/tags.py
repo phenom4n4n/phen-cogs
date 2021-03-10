@@ -334,6 +334,7 @@ class Tags(commands.Cog):
     @tag.command(name="docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
         """Search the [Tag documentation](https://phen-cogs.readthedocs.io/en/latest/)."""
+        await ctx.trigger_typing()
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
             doc_tags = await self.doc_search(keyword)
@@ -343,10 +344,16 @@ class Tags(commands.Cog):
                 description.append(f"[`{doc_tag.text}`]({DOCS_URL}{href})")
             url = f"{DOCS_URL}search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
             e.url = url
-            e.description = "\n".join(description)
+            embeds = []
+            description = "\n".join(description)
+            for page in pagify(description):
+                embed = e.copy()
+                embed.description = page
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
         else:
             e.url = DOCS_URL
-        await ctx.send(embed=e)
+            await ctx.send(embed=e)
 
     async def doc_fetch(self):
         # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
