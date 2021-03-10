@@ -61,16 +61,17 @@ from .errors import (
 log = logging.getLogger("red.phenom4n4n.tags")
 
 
+DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
+
+
 async def send_quietly(destination: discord.abc.Messageable, content: str = None, **kwargs):
     try:
         return await destination.send(content, **kwargs)
     except discord.HTTPException:
         pass
 
-
 class Tags(commands.Cog):
-    DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
-    f"""
+    """
     Create and use tags.
 
     The TagScript documentation can be found [here]({DOCS_URL}).
@@ -79,7 +80,7 @@ class Tags(commands.Cog):
     __version__ = "2.1.1"
 
     def format_help_for_context(self, ctx: commands.Context):
-        pre_processed = super().format_help_for_context(ctx)
+        pre_processed = super().format_help_for_context(ctx).replace("{DOCS_URL}", DOCS_URL)
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
@@ -219,7 +220,7 @@ class Tags(commands.Cog):
         f"""
         Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site]({self.DOCS_URL}) has documentation on how to use TagScript blocks.
+        These commands use TagScriptEngine. [This site]({DOCS_URL}) has documentation on how to use TagScript blocks.
         """
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -230,7 +231,7 @@ class Tags(commands.Cog):
         f"""
         Add a tag with TagScript.
 
-        [Tag usage guide]({self.DOCS_URL}blocks.html#usage)
+        [Tag usage guide]({DOCS_URL}blocks.html#usage)
         """
         tag = self.get_tag(ctx.guild, tag_name)
         if tag:
@@ -329,22 +330,24 @@ class Tags(commands.Cog):
 
     @tag.command(name="docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
-        f"""Search the [Tag documentation]({self.DOCS_URL})."""
-        e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation", url=self.DOCS_URL)
+        f"""Search the [Tag documentation]({DOCS_URL})."""
+        e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
             doc_tags = await self.doc_search(keyword)
             description = []
             for doc_tag in doc_tags:
                 href = doc_tag.get("href")
-                description.append(f"[`{doc_tag.text}`]({self.DOCS_URL}{href})")
-            url = f"{self.DOCS_URL}search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
+                description.append(f"[`{doc_tag.text}`]({DOCS_URL}{href})")
+            url = f"{DOCS_URL}search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
             e.url = url
             e.description = "\n".join(description)
+        else:
+            e.url = DOCS_URL
         await ctx.send(embed=e)
 
     async def doc_fetch(self):
         # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
-        async with self.session.get(f"{self.DOCS_URL}genindex.html") as response:
+        async with self.session.get(f"{DOCS_URL}genindex.html") as response:
             text = await response.read()
         soup = bs4.BeautifulSoup(text, "html.parser")
         self.docs = soup.findAll("a")
@@ -419,7 +422,7 @@ class Tags(commands.Cog):
         f"""
         Add a global tag with TagScript.
 
-        [Tag usage guide]({self.DOCS_URL}blocks.html#usage)
+        [Tag usage guide]({DOCS_URL}blocks.html#usage)
         """
         tag = self.get_tag(None, tag_name, check_global=True)
         if tag:
