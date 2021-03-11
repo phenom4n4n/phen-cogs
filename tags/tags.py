@@ -279,7 +279,7 @@ class Tags(commands.Cog):
 
     @tag.command(name="info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
-        """Get info about an tag that is stored on this server."""
+        """Get info about a tag that is stored on this server."""
         desc = [
             f"Author: {tag.author.mention if tag.author else tag.author_id}",
             f"Uses: {tag.uses}",
