@@ -59,8 +59,8 @@ class Roles(MixinMeta):
         await super().initialize()
 
     @commands.guild_only()
-    @commands.group(invoke_without_command=True, name="role")
-    async def _role(
+    @commands.group(invoke_without_command=True)
+    async def role(
         self, ctx: commands.Context, member: TouchableMember(False), *, role: StrictRole(False)
     ):
         """Base command for modifying roles.
@@ -103,14 +103,14 @@ class Roles(MixinMeta):
     #         await ctx.send(f"Added `{role.name}` to **{member}**.")
 
     @commands.bot_has_permissions(embed_links=True)
-    @_role.command()
+    @role.command()
     async def info(self, ctx: commands.Context, *, role: FuzzyRole):
         """Get information about a role."""
         await ctx.send(embed=await self.get_info(role))
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
-    @_role.command(aliases=["dump"])
+    @role.command(aliases=["dump"])
     async def members(self, ctx: commands.Context, *, role: FuzzyRole):
         """Sends a list of members in a role."""
         if guild_roughly_chunked(ctx.guild) is False and self.bot.intents.members:
@@ -125,7 +125,7 @@ class Roles(MixinMeta):
 
     @commands.bot_has_permissions(manage_roles=True)
     @commands.admin_or_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def create(
         self,
         ctx: commands.Context,
@@ -167,7 +167,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def add(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
         """Add a role to a member."""
         if role in member.roles:
@@ -181,7 +181,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def remove(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
         """Remove a role from a member."""
         if role not in member.roles:
@@ -195,7 +195,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command(require_var_positional=True)
+    @role.command(require_var_positional=True)
     async def addmulti(self, ctx: commands.Context, role: StrictRole, *members: TouchableMember):
         """Add a role to multiple members."""
         reason = get_audit_reason(ctx.author)
@@ -209,16 +209,14 @@ class Roles(MixinMeta):
                 already_members.append(member)
         msg = []
         if success_members:
-            member_names = [f"**{member}**" for member in success_members]
-            msg.append(f"Added **{role}** to {humanize_list(member_names)}.")
+            msg.append(f"Added **{role}** to {humanize_roles(success_members)}.")
         if already_members:
-            member_names = [f"**{member}**" for member in already_members]
-            msg.append(f"{humanize_list(member_names)} already had **{role}**.")
+            msg.append(f"{humanize_roles(already_members)} already had **{role}**.")
         await ctx.send("\n".join(msg))
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command(require_var_positional=True)
+    @role.command(require_var_positional=True)
     async def removemulti(
         self, ctx: commands.Context, role: StrictRole, *members: TouchableMember
     ):
@@ -234,11 +232,9 @@ class Roles(MixinMeta):
                 already_members.append(member)
         msg = []
         if success_members:
-            member_names = [f"**{member}**" for member in success_members]
-            msg.append(f"Removed **{role}** from {humanize_list(member_names)}.")
+            msg.append(f"Removed **{role}** from {humanize_roles(success_members)}.")
         if already_members:
-            member_names = [f"**{member}**" for member in already_members]
-            msg.append(f"{humanize_list(member_names)} didn't have **{role}**.")
+            msg.append(f"{humanize_roles(already_members)} didn't have **{role}**.")
         await ctx.send("\n".join(msg))
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -303,7 +299,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def color(
         self, ctx: commands.Context, role: StrictRole(check_integrated=False), color: discord.Color
     ):
@@ -315,14 +311,14 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def all(self, ctx: commands.Context, *, role: StrictRole):
         """Add a role to all members of the server."""
         await self.super_massrole(ctx, ctx.guild.members, role)
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command(aliases=["removeall"])
+    @role.command(aliases=["removeall"])
     async def rall(self, ctx: commands.Context, *, role: StrictRole):
         """Remove a role from all members of the server."""
         member_list = self.get_member_list(ctx.guild.members, role, False)
@@ -332,7 +328,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def humans(self, ctx: commands.Context, *, role: StrictRole):
         """Add a role to all humans (non-bots) in the server."""
         await self.super_massrole(
@@ -344,7 +340,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def rhumans(self, ctx: commands.Context, *, role: StrictRole):
         """Remove a role from all humans (non-bots) in the server."""
         await self.super_massrole(
@@ -357,7 +353,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def bots(self, ctx: commands.Context, *, role: StrictRole):
         """Add a role to all bots in the server."""
         await self.super_massrole(
@@ -369,7 +365,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command()
+    @role.command()
     async def rbots(self, ctx: commands.Context, *, role: StrictRole):
         """Remove a role from all bots in the server."""
         await self.super_massrole(
@@ -382,7 +378,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command(name="in")
+    @role.command(name="in")
     async def role_in(
         self, ctx: commands.Context, target_role: FuzzyRole, *, add_role: StrictRole
     ):
@@ -396,7 +392,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.command(name="rin")
+    @role.command(name="rin")
     async def role_rin(
         self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: StrictRole
     ):
@@ -412,7 +408,7 @@ class Roles(MixinMeta):
     @commands.check(targeter_cog)
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @_role.group()
+    @role.group()
     async def target(self, ctx: commands.Context):
         """
         Modify roles using 'targeting' args.
@@ -498,7 +494,7 @@ class Roles(MixinMeta):
                         await member.add_roles(*to_add, reason=reason)
                     except Exception as e:
                         failed.append(member)
-                        log.debug(f"Failed to add roles to {member}\n{e}")
+                        log.exception(f"Failed to add roles to {member}", exc_info=e)
                     else:
                         completed.append(member)
                 else:
@@ -510,7 +506,7 @@ class Roles(MixinMeta):
                         await member.remove_roles(*to_remove, reason=reason)
                     except Exception as e:
                         failed.append(member)
-                        log.debug(f"Failed to remove roles from {member}\n{e}")
+                        log.exception(f"Failed to remove roles from {member}", exc_info=e)
                     else:
                         completed.append(member)
                 else:

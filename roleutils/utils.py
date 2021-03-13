@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Tuple
+from typing import Tuple, List, Optional
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
@@ -52,8 +52,27 @@ def my_role_heirarchy(guild: discord.Guild, role: discord.Role) -> bool:
     return guild.me.top_role > role
 
 
-def humanize_roles(roles: list) -> str:
-    return humanize_list([f"`{role.name}`" for role in roles])
+def humanize_roles(
+    roles: List[discord.Role], *, mention: bool = False, bold: bool = True
+) -> Optional[str]:
+    if not roles:
+        return None
+    role_strings = []
+    for role in roles:
+        if role.is_default():
+            role_name = role.name.lstrip("@")
+        else:
+            role_name = role.name
+        if mention:
+            role_strings.append(role.mention)
+        elif bold:
+            role_strings.append(f"**{role_name}**")
+        else:
+            role_strings.append(role_name)
+    return humanize_list(role_strings)
+
+
+humanize_members = humanize_roles
 
 
 async def can_run_command(ctx: commands.Context, command: str) -> bool:
