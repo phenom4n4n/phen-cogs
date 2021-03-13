@@ -23,6 +23,8 @@ SOFTWARE.
 """
 
 from typing import Tuple, List, Optional
+import re
+
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
@@ -52,17 +54,21 @@ def my_role_heirarchy(guild: discord.Guild, role: discord.Role) -> bool:
     return guild.me.top_role > role
 
 
+MENTION_RE = re.compile(r"@(everyone|here|&[0-9]{17,21})")
+
+
+def escape_mentions(text: str):
+    return MENTION_RE.sub("@\u200b\\1", text)
+
+
 def humanize_roles(
-    roles: List[discord.Role], *, mention: bool = False, bold: bool = True
+    roles: List[discord.Role], *, mention: bool = False, bold: bool = False
 ) -> Optional[str]:
     if not roles:
         return None
     role_strings = []
     for role in roles:
-        if role.is_default():
-            role_name = role.name.lstrip("@")
-        else:
-            role_name = role.name
+        role_name = escape_mentions(role.name)
         if mention:
             role_strings.append(role.mention)
         elif bold:
@@ -73,7 +79,6 @@ def humanize_roles(
 
 
 humanize_members = humanize_roles
-
 
 async def can_run_command(ctx: commands.Context, command: str) -> bool:
     try:
