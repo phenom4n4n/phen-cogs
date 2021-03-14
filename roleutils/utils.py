@@ -62,7 +62,7 @@ def escape_mentions(text: str):
 
 
 def humanize_roles(
-    roles: List[discord.Role], *, mention: bool = False, bold: bool = False
+    roles: List[discord.Role], *, mention: bool = False, bold: bool = True
 ) -> Optional[str]:
     if not roles:
         return None
