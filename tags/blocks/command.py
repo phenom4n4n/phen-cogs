@@ -47,6 +47,9 @@ class CommandBlock(Block):
 
         {c:kick {target(id)} Chatflood/spam}
         # invokes ban command on the pinged user with the reason as "Chatflood/spam"
+
+        {c:nick edit {args}}
+        # makes a tag that aliases to the command `nick edit`
     """
 
     def will_accept(self, ctx: Interpreter.Context) -> bool:
