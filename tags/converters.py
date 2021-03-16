@@ -46,7 +46,7 @@ class TagConverter(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
         if not ctx.guild:
             if not await ctx.bot.is_owner(ctx.author):
-                raise BadArgument("Tags may not be used in guilds.")
+                raise BadArgument("Tags can only be used in guilds.")
         cog = ctx.bot.get_cog("Tags")
         tag = cog.get_tag(
             ctx.guild,

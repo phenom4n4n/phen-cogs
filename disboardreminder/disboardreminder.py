@@ -24,10 +24,8 @@ SOFTWARE.
 
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import asyncio
-import functools
 import logging
 from datetime import datetime
-from io import BytesIO
 
 import discord
 from redbot.core import Config, checks, commands
@@ -35,7 +33,6 @@ from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 
-from collections import Counter
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
 

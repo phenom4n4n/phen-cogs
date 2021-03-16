@@ -85,7 +85,7 @@ class PermissionsLocker(commands.Cog):
         default_global = {"permissions": 387136, "whitelisted": []}
         self.config.register_global(**default_global)
         self.perms = None
-        self._whitelist = None
+        self._whitelist = set()
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -93,7 +93,7 @@ class PermissionsLocker(commands.Cog):
     async def initialize(self):
         data = await self.config.all()
         self.perms = data["permissions"]
-        self._whitelist = data["whitelisted"]
+        self._whitelist.update(data["whitelisted"])
 
     @commands.is_owner()
     @commands.group()
@@ -115,7 +115,7 @@ class PermissionsLocker(commands.Cog):
         """Whitelist a guild from permission checks."""
         async with self.config.whitelisted() as w:
             w.append(guild)
-            self._whitelist = w
+        self._whitelist.add(guild)
         await ctx.tick()
 
     @permlock.command(aliases=["unwl"])
@@ -127,7 +127,7 @@ class PermissionsLocker(commands.Cog):
             except ValueError:
                 return await ctx.send("This is not a guild in the whitelist")
             w.pop(index)
-            self._whitelist = w
+        self._whitelist.remove(guild)
         await ctx.tick()
 
     @commands.bot_has_permissions(embed_links=True)

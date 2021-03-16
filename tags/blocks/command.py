@@ -24,8 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 
-from TagScriptEngine import Interpreter, adapter
-from TagScriptEngine.interface import Block
+from TagScriptEngine import Interpreter, Block
 
 
 class CommandBlock(Block):
@@ -41,7 +40,7 @@ class CommandBlock(Block):
 
     **Parameter:** None
 
-    **Example:** ::
+    **Examples:** ::
 
         {c:ping}
         # invokes ping command
@@ -87,7 +86,7 @@ class OverrideBlock(Block):
 
     **Parameter:** "admin", "mod", "permissions"
 
-    **Example:** ::
+    **Examples:** ::
 
         {override}
         # overrides all commands and permissions

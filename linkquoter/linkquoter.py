@@ -124,7 +124,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.0.6"
+    __version__ = "1.0.7"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -148,7 +148,7 @@ class LinkQuoter(commands.Cog):
         }
         self.config.register_guild(**default_guild)
 
-        self.enabled_guilds = []
+        self.enabled_guilds = set()
         self.task = asyncio.create_task(self.initialize())
 
     def cog_unload(self):
@@ -158,7 +158,7 @@ class LinkQuoter(commands.Cog):
     async def initialize(self):
         for guild_id, guild_data in (await self.config.all_guilds()).items():
             if guild_data["on"]:
-                self.enabled_guilds.append(guild_id)
+                self.enabled_guilds.add(guild_id)
 
     @staticmethod
     def get_name(user: Union[discord.Member, discord.User]) -> str:
@@ -359,12 +359,10 @@ class LinkQuoter(commands.Cog):
         await self.config.guild(ctx.guild).on.set(target_state)
         if target_state:
             await ctx.send("I will now automatically quote links.")
-            if ctx.guild.id not in self.enabled_guilds:
-                self.enabled_guilds.append(ctx.guild.id)
+            self.enabled_guilds.add(ctx.guild.id)
         else:
             await ctx.send("I will no longer automatically quote links.")
-            if ctx.guild.id in self.enabled_guilds:
-                self.enabled_guilds.pop(self.enabled_guilds.index(ctx.guild.id))
+            self.enabled_guilds.remove(ctx.guild.id)
 
     @linkquoteset.command(name="delete")
     async def linkquoteset_delete(self, ctx, true_or_false: bool = None):

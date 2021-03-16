@@ -24,8 +24,10 @@ SOFTWARE.
 
 import asyncio
 import time
+from collections import defaultdict
 from copy import copy
 from typing import Optional, List
+from urllib.parse import quote_plus
 
 import logging
 import discord
@@ -39,8 +41,9 @@ from redbot.core.utils.chat_formatting import box, humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
 from redbot.cogs.alias.alias import Alias
-from TagScriptEngine import Interpreter, adapter, block
-from collections import defaultdict
+import TagScriptEngine as tse
+import aiohttp
+import bs4
 
 from .blocks import stable_blocks
 from .converters import TagConverter, TagName, TagScriptConverter
@@ -58,21 +61,23 @@ from .errors import (
 log = logging.getLogger("red.phenom4n4n.tags")
 
 
+DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
+
+
 async def send_quietly(destination: discord.abc.Messageable, content: str = None, **kwargs):
     try:
         return await destination.send(content, **kwargs)
     except discord.HTTPException:
         pass
 
-
 class Tags(commands.Cog):
     """
     Create and use tags.
 
-    The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
+    The TagScript documentation can be found [here]({DOCS_URL}).
     """
 
-    __version__ = "2.0.5"
+    __version__ = "2.1.2"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -92,22 +97,26 @@ class Tags(commands.Cog):
         self.config.register_global(**default_global)
 
         blocks = stable_blocks + [
-            block.MathBlock(),
-            block.RandomBlock(),
-            block.RangeBlock(),
-            block.AnyBlock(),
-            block.IfBlock(),
-            block.AllBlock(),
-            block.BreakBlock(),
-            block.StrfBlock(),
-            block.StopBlock(),
-            block.AssignmentBlock(),
-            block.FiftyFiftyBlock(),
-            block.ShortCutRedirectBlock("args"),
-            block.LooseVariableGetterBlock(),
-            block.SubstringBlock(),
+            tse.MathBlock(),
+            tse.RandomBlock(),
+            tse.RangeBlock(),
+            tse.AnyBlock(),
+            tse.IfBlock(),
+            tse.AllBlock(),
+            tse.BreakBlock(),
+            tse.StrfBlock(),
+            tse.StopBlock(),
+            tse.AssignmentBlock(),
+            tse.FiftyFiftyBlock(),
+            tse.ShortCutRedirectBlock("args"),
+            tse.LooseVariableGetterBlock(),
+            tse.SubstringBlock(),
+            tse.EmbedBlock(),
+            tse.ReplaceBlock(),
+            tse.PythonBlock(),
+            tse.URLEncodeBlock(),
         ]
-        self.engine = Interpreter(blocks)
+        self.engine = tse.Interpreter(blocks)
         self.role_converter = commands.RoleConverter()
         self.channel_converter = commands.TextChannelConverter()
         self.member_converter = commands.MemberConverter()
@@ -117,9 +126,16 @@ class Tags(commands.Cog):
         self.global_tag_cache = {}
         self.task = asyncio.create_task(self.cache_tags())
 
+        self.session = aiohttp.ClientSession()
+        self.docs: list = []
+
+        bot.add_dev_env_value("tags", lambda ctx: self)
+
     def cog_unload(self):
+        self.bot.remove_dev_env_value("tags")
         if self.task:
             self.task.cancel()
+        asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         if requester not in ("discord_deleted_user", "user"):
@@ -198,7 +214,7 @@ class Tags(commands.Cog):
             if response is True:
                 await ctx.send(e)
         else:
-            seed = {"args": adapter.StringAdapter(args)}
+            seed = {"args": tse.StringAdapter(args)}
             await self.process_tag(ctx, _tag, seed_variables=seed)
 
     @commands.guild_only()
@@ -207,7 +223,7 @@ class Tags(commands.Cog):
         """
         Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks.
+        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/) has documentation on how to use TagScript blocks.
         """
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -263,7 +279,7 @@ class Tags(commands.Cog):
 
     @tag.command(name="info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
-        """Get info about an tag that is stored on this server."""
+        """Get info about a tag that is stored on this server."""
         desc = [
             f"Author: {tag.author.mention if tag.author else tag.author_id}",
             f"Uses: {tag.uses}",
@@ -280,9 +296,10 @@ class Tags(commands.Cog):
     @tag.command(name="raw")
     async def tag_raw(self, ctx: commands.Context, tag: TagConverter):
         """Get a tag's raw content."""
-        for page in pagify(tag.tagscript, shorten_by=100):
+        tagscript = escape_markdown(tag.tagscript)
+        for page in pagify(tagscript):
             await ctx.send(
-                escape_markdown(page),
+                page,
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
@@ -313,6 +330,43 @@ class Tags(commands.Cog):
             embed.set_footer(text=f"{index}/{len(pages)} | {len(tags)} tags")
             embeds.append(embed)
         await menu(ctx, embeds, DEFAULT_CONTROLS)
+
+    @tag.command(name="docs")
+    async def tag_docs(self, ctx: commands.Context, keyword: str = None):
+        """Search the [Tag documentation](https://phen-cogs.readthedocs.io/en/latest/)."""
+        await ctx.trigger_typing()
+        e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
+        if keyword:
+            doc_tags = await self.doc_search(keyword)
+            description = [f"Search for: `{keyword}`"]
+            for doc_tag in doc_tags:
+                href = doc_tag.get("href")
+                description.append(f"[`{doc_tag.text}`]({DOCS_URL}{href})")
+            url = f"{DOCS_URL}search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
+            e.url = url
+            embeds = []
+            description = "\n".join(description)
+            for page in pagify(description):
+                embed = e.copy()
+                embed.description = page
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            e.url = DOCS_URL
+            await ctx.send(embed=e)
+
+    async def doc_fetch(self):
+        # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
+        async with self.session.get(f"{DOCS_URL}genindex.html") as response:
+            text = await response.read()
+        soup = bs4.BeautifulSoup(text, "html.parser")
+        self.docs = soup.findAll("a")
+
+    async def doc_search(self, keyword: str) -> List[bs4.Tag]:
+        keyword = keyword.lower()
+        if not self.docs:
+            await self.doc_fetch()
+        return [x for x in self.docs if keyword in str(x).lower()]
 
     @commands.is_owner()
     @tag.command(name="run", aliases=["execute"])
@@ -448,9 +502,10 @@ class Tags(commands.Cog):
         self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)
     ):
         """Get a tag's raw content."""
-        for page in pagify(tag.tagscript, shorten_by=100):
+        tagscript = escape_markdown(tag.tagscript)
+        for page in pagify(tagscript):
             await ctx.send(
-                escape_markdown(page),
+                page,
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
@@ -646,7 +701,7 @@ class Tags(commands.Cog):
 
         # this is going to become an asynchronous swamp
         msg = None
-        if content or embed:
+        if content or embed is not None:
             msg = await self.send_tag_response(ctx, destination, replying, content, embed=embed)
             if msg and (react := actions.get("react")):
                 to_gather.append(self.do_reactions(ctx, react, msg))

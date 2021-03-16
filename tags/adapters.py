@@ -22,8 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from TagScriptEngine import Verb
-from TagScriptEngine.interface import Adapter
+from TagScriptEngine import Verb, Adapter
 from discord import Member, TextChannel, Guild
 from inspect import ismethod
 

@@ -34,7 +34,7 @@ Message blocks modify the tag's output.
 Embed Block
 ^^^^^^^^^^^
 
-.. autoclass:: tags.blocks.EmbedBlock
+.. autoclass:: TagScriptEngine.EmbedBlock
 
 ^^^^^^^^^^^^^^
 Redirect Block

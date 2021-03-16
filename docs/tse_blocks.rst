@@ -3,7 +3,7 @@ TagScriptEngine Blocks
 ======================
 
 Read the official `TagScriptEngine documentation <https://github.com/JonSnowbd/TagScript/tree/v2/Documentation>`_
- for info on these blocks, I will add documentation for these later.
+for info on these blocks, I will add documentation for these later.
 
 -----------
 Core Blocks
@@ -65,6 +65,34 @@ Any Block
 
 .. autoclass:: TagScriptEngine.block.AnyBlock
 
+^^^^^^^^^^^^^^^^^
+Fifty-fifty Block
+^^^^^^^^^^^^^^^^^
+
+.. autoclass:: TagScriptEngine.block.FiftyFiftyBlock
+
+^^^^^^^^^^
+Stop Block
+^^^^^^^^^^
+
+.. autoclass:: TagScriptEngine.block.StopBlock
+
+-------------
+String Blocks
+-------------
+
+^^^^^^^^^^^^^^^
+Replace Block
+^^^^^^^^^^^^^^^
+
+.. autoclass:: TagScriptEngine.block.ReplaceBlock
+
+^^^^^^^^^^^^^^^
+URLEncode Block
+^^^^^^^^^^^^^^^
+
+.. autoclass:: TagScriptEngine.block.URLEncodeBlock
+
 --------------------
 Miscellaneous Blocks
 --------------------
@@ -75,20 +103,8 @@ Strftime Block
 
 .. autoclass:: TagScriptEngine.block.StrfBlock
 
-^^^^^^^^^^
-Stop Block
-^^^^^^^^^^
-
-.. autoclass:: TagScriptEngine.block.StopBlock
-
 ^^^^^^^^^^^^^^^
 Substring Block
 ^^^^^^^^^^^^^^^
 
 .. autoclass:: TagScriptEngine.block.SubstringBlock
-
-^^^^^^^^^^^^^^^^^
-Fifty-fifty Block
-^^^^^^^^^^^^^^^^^
-
-.. autoclass:: TagScriptEngine.block.FiftyFiftyBlock

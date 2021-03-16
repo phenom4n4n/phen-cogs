@@ -24,8 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 
-from TagScriptEngine import Interpreter, adapter
-from TagScriptEngine.interface import Block
+from TagScriptEngine import Interpreter, Block
 
 
 class RequireBlock(Block):
@@ -44,7 +43,7 @@ class RequireBlock(Block):
 
     **Parameter:** role, channel
 
-    **Usage:** ::
+    **Examples:** ::
 
         {require(Moderator)}
         {require(#general, #bot-cmds):This tag can only be run in #general and #bot-cmds.}
@@ -82,7 +81,7 @@ class BlacklistBlock(Block):
 
     **Parameter:** role, channel
 
-    **Usage:** ::
+    **Examples:** ::
 
         {blacklist(Muted)}
         {blacklist(#support):This tag is not allowed in #support.}
