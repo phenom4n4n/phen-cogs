@@ -45,7 +45,7 @@ import TagScriptEngine as tse
 import aiohttp
 import bs4
 
-from .blocks import stable_blocks
+from .blocks import *
 from .converters import TagConverter, TagName, TagScriptConverter
 from .objects import Tag
 from .adapters import MemberAdapter, ChannelAdapter, GuildAdapter, SafeObjectAdapter
@@ -74,10 +74,10 @@ class Tags(commands.Cog):
     """
     Create and use tags.
 
-    The TagScript documentation can be found [here]({DOCS_URL}).
+    The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.1.2"
+    __version__ = "2.1.3"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -101,7 +101,7 @@ class Tags(commands.Cog):
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
-        blocks = stable_blocks + [
+        tse_blocks = [
             tse.MathBlock(),
             tse.RandomBlock(),
             tse.RangeBlock(),
@@ -120,8 +120,23 @@ class Tags(commands.Cog):
             tse.ReplaceBlock(),
             tse.PythonBlock(),
             tse.URLEncodeBlock(),
+            # tse.RequireBlock(),
+            # tse.BlacklistBlock(),
+            # tse.CommandBlock(),
+            # tse.OverrideBlock(),
         ]
-        self.engine = tse.Interpreter(blocks)
+        tag_blocks = [
+            RequireBlock(),
+            BlacklistBlock(),
+            CommandBlock(),
+            DeleteBlock(),
+            SilentBlock(),
+            ReactBlock(),
+            RedirectBlock(),
+            ReactUBlock(),
+            OverrideBlock(),
+        ]
+        self.engine = tse.Interpreter(tse_blocks + tag_blocks)
         self.role_converter = commands.RoleConverter()
         self.channel_converter = commands.TextChannelConverter()
         self.member_converter = commands.MemberConverter()

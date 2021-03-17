@@ -29,18 +29,6 @@ from .require_blacklist import RequireBlock, BlacklistBlock
 from .react import ReactBlock, ReactUBlock
 from .redirect import RedirectBlock
 
-stable_blocks = [
-    CommandBlock(),
-    DeleteBlock(),
-    SilentBlock(),
-    RequireBlock(),
-    BlacklistBlock(),
-    ReactBlock(),
-    RedirectBlock(),
-    ReactUBlock(),
-    OverrideBlock(),
-]
-
 __all__ = (
     "CommandBlock",
     "DeleteBlock",
