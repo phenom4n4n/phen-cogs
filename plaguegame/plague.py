@@ -89,7 +89,7 @@ async def has_role(ctx: commands.Context) -> bool:
 class Plague(commands.Cog):
     """A plague game."""
 
-    __version__ = "1.0.5"
+    __version__ = "1.0.6"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -443,20 +443,23 @@ class Plague(commands.Cog):
         e.set_author(name=f"Plague Game Settings", icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=e)
 
+    async def get_plague_stats(self) -> Counter:
+        data = Counter()
+        async for user_data in AsyncIter((await self.config.all_users()).values()):
+            data[user_data["gameRole"]] += 1
+            data[user_data["gameState"]] += 1
+        return data
+
     @plagueset.command(name="stats")
     async def plagueset_stats(self, ctx: commands.Context):
         """View plague game stats."""
-        grc = Counter()
-        gsc = Counter()
-        async for user_data in AsyncIter((await self.config.all_users()).values()):
-            grc[user_data["gameRole"]] += 1
-            gsc[user_data["gameState"]] += 1
+        data = await self.get_plague_stats()
         description = [
-            f"Infected Users: {hn(gsc[GameState.INFECTED])}",
-            f"Healhy Users: {hn(gsc[GameState.HEALTHY])}",
-            f"Doctors: {hn(grc[GameRole.DOCTOR])}",
-            f"Plaguebearers: {hn(grc[GameRole.PLAGUEBEARER])}",
-            f"Jobless Users: {hn(grc[GameRole.USER])}",
+            f"Infected Users: {hn(data[GameState.INFECTED])}",
+            f"Healhy Users: {hn(data[GameState.HEALTHY])}",
+            f"Doctors: {hn(data[GameRole.DOCTOR])}",
+            f"Plaguebearers: {hn(data[GameRole.PLAGUEBEARER])}",
+            f"Jobless Users: {hn(data[GameRole.USER])}",
         ]
         e = discord.Embed(
             title=f"{await self.config.plagueName()} Stats",
