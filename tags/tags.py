@@ -82,7 +82,12 @@ class Tags(commands.Cog):
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
-        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
+        text = [
+            f"{pre_processed}{n}",
+            f"Cog Version: **{self.__version__}**",
+            f"TagScriptEngine Version: **{tse.__version__}**",
+        ]
+        return "\n".join(text)
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
