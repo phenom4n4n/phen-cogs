@@ -80,6 +80,7 @@ def humanize_roles(
 
 humanize_members = humanize_roles
 
+
 async def can_run_command(ctx: commands.Context, command: str) -> bool:
     try:
         result = await ctx.bot.get_command(command).can_run(ctx, check_all_parents=True)

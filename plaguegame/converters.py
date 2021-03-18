@@ -51,12 +51,15 @@ class FuzzyMember(MemberConverter):
             member = await super().convert(ctx, argument)
         except BadArgument:
             guild = ctx.guild
-            result = [(m[2], m[1]) for m in process.extract(
-                argument,
-                {m: unidecode(m.display_name) for m in guild.members},
-                limit=None,
-                score_cutoff=75,
-            )]
+            result = [
+                (m[2], m[1])
+                for m in process.extract(
+                    argument,
+                    {m: unidecode(m.display_name) for m in guild.members},
+                    limit=None,
+                    score_cutoff=75,
+                )
+            ]
             if not result:
                 raise BadArgument(f'Member "{argument}" not found.' if self.response else None)
 

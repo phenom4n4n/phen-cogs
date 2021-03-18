@@ -70,6 +70,7 @@ async def send_quietly(destination: discord.abc.Messageable, content: str = None
     except discord.HTTPException:
         pass
 
+
 class Tags(commands.Cog):
     """
     Create and use tags.
@@ -419,8 +420,7 @@ class Tags(commands.Cog):
             e.add_field(name="Actions", value=output.actions, inline=False)
         if output.variables:
             vars = "\n".join(
-                f"{name}: {type(obj).__name__}"
-                for name, obj in output.variables.items()
+                f"{name}: {type(obj).__name__}" for name, obj in output.variables.items()
             )
 
             e.add_field(name="Variables", value=vars, inline=False)

@@ -93,12 +93,15 @@ class FuzzyRole(RoleConverter):
         else:
             return basic_role
         guild = ctx.guild
-        result = [(r[2], r[1]) for r in process.extract(
-            argument,
-            {r: unidecode(r.name) for r in guild.roles},
-            limit=None,
-            score_cutoff=75,
-        )]
+        result = [
+            (r[2], r[1])
+            for r in process.extract(
+                argument,
+                {r: unidecode(r.name) for r in guild.roles},
+                limit=None,
+                score_cutoff=75,
+            )
+        ]
         if not result:
             raise BadArgument(f'Role "{argument}" not found.' if self.response else None)
 
