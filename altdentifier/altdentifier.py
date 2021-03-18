@@ -107,16 +107,10 @@ class AltDentifier(commands.Cog):
         data = await self.config.guild(ctx.guild).all()
         description = []
 
-        if data["channel"]:
-            channel = f"<#{data['channel']}>"
-        else:
-            channel = "None"
-
+        channel = f"<#{data['channel']}>" if data["channel"] else "None"
         description.append(f"AltDentifier Check Channel: {channel}")
         description = "\n".join(description)
-        actions = []
-        for key, value in data["actions"].items():
-            actions.append(f"{key}: {value}")
+        actions = [f"{key}: {value}" for key, value in data["actions"].items()]
         actions = box("\n".join(actions))
 
         color = await self.bot.get_embed_colour(ctx)

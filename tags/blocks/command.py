@@ -64,10 +64,9 @@ class CommandBlock(Block):
         if actions:
             if len(actions) >= 3:
                 return f"`COMMAND LIMIT REACHED (3)`"
-            ctx.response.actions["commands"].append(command)
         else:
             ctx.response.actions["commands"] = []
-            ctx.response.actions["commands"].append(command)
+        ctx.response.actions["commands"].append(command)
         return ""
 
 

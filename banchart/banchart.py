@@ -115,7 +115,7 @@ class BanChart(commands.Cog):
             f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])
         ]
         if len(most_common) > 20:
-            others = sum([x[1] / total for x in most_common[20:]])
+            others = sum(x[1] / total for x in most_common[20:])
             sizes.append(others)
             labels.append("Others {:g}%".format(others))
         title = plt.title(title, color="white")

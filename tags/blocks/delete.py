@@ -50,7 +50,7 @@ class DeleteBlock(Block):
     def process(self, ctx: Interpreter.Context) -> Optional[str]:
         if "delete" in ctx.response.actions.keys():
             return None
-        if ctx.verb.parameter == None:
+        if ctx.verb.parameter is None:
             value = True
         else:
             value = helper_parse_if(ctx.verb.parameter)

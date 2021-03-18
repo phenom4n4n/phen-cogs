@@ -52,7 +52,7 @@ def comstats_cog(ctx: commands.Context):
 
 
 def disabled_or_data(data):
-    return data if data else "Disabled"
+    return data or "Disabled"
 
 
 class Baron(commands.Cog):
@@ -109,10 +109,7 @@ class Baron(commands.Cog):
         Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2).
         """
         await ctx.trigger_typing()
-        if time:
-            date = ctx.message.created_at - time
-        else:
-            date = self.bot.user.created_at
+        date = ctx.message.created_at - time if time else self.bot.user.created_at
         guilds = [
             guild.me.joined_at
             for guild in self.bot.guilds
@@ -286,7 +283,7 @@ class Baron(commands.Cog):
 
         Pass 0 to disable.
         """
-        if ratio not in range(0, 100):
+        if ratio not in range(100):
             raise commands.BadArgument
         await self.config.bot_ratio.set(ratio)
         await ctx.send(

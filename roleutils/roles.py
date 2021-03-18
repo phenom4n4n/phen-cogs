@@ -123,7 +123,7 @@ class Roles(MixinMeta):
             await ctx.guild.chunk()
         if not role.members:
             return await ctx.send(f"`{role}` has no members.")
-        members = "\n".join([f"{member} - {member.id}" for member in role.members])
+        members = "\n".join(f"{member} - {member.id}" for member in role.members)
         if len(members) > 2000:
             await ctx.send(file=text_to_file(members, f"members.txt"))
         else:

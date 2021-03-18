@@ -28,10 +28,7 @@ class ForceMention(commands.Cog):
 
         Will automatically delete the command invocation.
         """
-        if message:
-            message = f"{role.mention}\n{message}"
-        else:
-            message = role.mention
+        message = f"{role.mention}\n{message}" if message else role.mention
         try:
             await ctx.message.delete()
         except:
@@ -43,17 +40,15 @@ class ForceMention(commands.Cog):
     ):
         mentionPerms = discord.AllowedMentions(roles=True)
         me = channel.guild.me
-        if role.mentionable:
+        if (
+            not role.mentionable
+            and not channel.permissions_for(me).mention_everyone
+            and channel.permissions_for(me).manage_roles
+            and me.top_role > role
+        ):
+            await role.edit(mentionable=True)
             await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
-        elif channel.permissions_for(me).mention_everyone:
-            await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
-        elif channel.permissions_for(me).manage_roles:
-            if me.top_role > role:
-                await role.edit(mentionable=True)
-                await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
-                await asyncio.sleep(1.5)
-                await role.edit(mentionable=False)
-            else:
-                await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
+            await asyncio.sleep(1.5)
+            await role.edit(mentionable=False)
         else:
             await channel.send(message, allowed_mentions=mentionPerms, **kwargs)

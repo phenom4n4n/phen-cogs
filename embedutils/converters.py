@@ -93,11 +93,11 @@ class StoredEmbedConverter(Converter):
         cog = ctx.bot.get_cog("EmbedUtils")
         data = await cog.config.guild(ctx.guild).embeds()
         embed = data.get(name)
-        if embed:
-            embed.update(name=name)
-            return embed
-        else:
+        if not embed:
             raise BadArgument(f'Embed "{name}" not found.')
+
+        embed.update(name=name)
+        return embed
 
 
 class GlobalStoredEmbedConverter(Converter):
