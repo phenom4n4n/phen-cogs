@@ -45,7 +45,7 @@ import TagScriptEngine as tse
 import aiohttp
 import bs4
 
-from .blocks import stable_blocks
+from .blocks import *
 from .converters import TagConverter, TagName, TagScriptConverter
 from .objects import Tag
 from .adapters import MemberAdapter, ChannelAdapter, GuildAdapter, SafeObjectAdapter
@@ -70,19 +70,25 @@ async def send_quietly(destination: discord.abc.Messageable, content: str = None
     except discord.HTTPException:
         pass
 
+
 class Tags(commands.Cog):
     """
     Create and use tags.
 
-    The TagScript documentation can be found [here]({DOCS_URL}).
+    The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.1.2"
+    __version__ = "2.1.3"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
-        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
+        text = [
+            f"{pre_processed}{n}",
+            f"Cog Version: **{self.__version__}**",
+            f"TagScriptEngine Version: **{tse.__version__}**",
+        ]
+        return "\n".join(text)
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -96,7 +102,7 @@ class Tags(commands.Cog):
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
-        blocks = stable_blocks + [
+        tse_blocks = [
             tse.MathBlock(),
             tse.RandomBlock(),
             tse.RangeBlock(),
@@ -115,8 +121,23 @@ class Tags(commands.Cog):
             tse.ReplaceBlock(),
             tse.PythonBlock(),
             tse.URLEncodeBlock(),
+            # tse.RequireBlock(),
+            # tse.BlacklistBlock(),
+            # tse.CommandBlock(),
+            # tse.OverrideBlock(),
         ]
-        self.engine = tse.Interpreter(blocks)
+        tag_blocks = [
+            RequireBlock(),
+            BlacklistBlock(),
+            CommandBlock(),
+            DeleteBlock(),
+            SilentBlock(),
+            ReactBlock(),
+            RedirectBlock(),
+            ReactUBlock(),
+            OverrideBlock(),
+        ]
+        self.engine = tse.Interpreter(tse_blocks + tag_blocks)
         self.role_converter = commands.RoleConverter()
         self.channel_converter = commands.TextChannelConverter()
         self.member_converter = commands.MemberConverter()
@@ -171,11 +192,11 @@ class Tags(commands.Cog):
         global_priority: bool = False,
     ) -> Optional[Tag]:
         tag = None
-        if global_priority is True and check_global is True:
+        if global_priority and check_global:
             return self.global_tag_cache.get(tag_name)
         if guild is not None:
             tag = self.guild_tag_cache[guild.id].get(tag_name)
-        if tag is None and check_global is True:
+        if tag is None and check_global:
             tag = self.global_tag_cache.get(tag_name)
         return tag
 
@@ -399,8 +420,9 @@ class Tags(commands.Cog):
             e.add_field(name="Actions", value=output.actions, inline=False)
         if output.variables:
             vars = "\n".join(
-                [f"{name}: {type(obj).__name__}" for name, obj in output.variables.items()]
+                f"{name}: {type(obj).__name__}" for name, obj in output.variables.items()
             )
+
             e.add_field(name="Variables", value=vars, inline=False)
         e.add_field(name="Output", value=output.body or "NO OUTPUT", inline=False)
 
@@ -743,8 +765,9 @@ class Tags(commands.Cog):
         self, command_message: discord.Message, silent: bool, overrides: dict
     ):
         ctx = await self.bot.get_context(
-            command_message, cls=SilentContext if silent is True else commands.Context
+            command_message, cls=SilentContext if silent else commands.Context
         )
+
         if ctx.valid:
             if overrides:
                 command = copy(ctx.command)
@@ -781,12 +804,13 @@ class Tags(commands.Cog):
             role_or_channel = await self.role_or_channel_convert(ctx, argument)
             if not role_or_channel:
                 continue
-            if isinstance(role_or_channel, discord.Role):
-                if role_or_channel in ctx.author.roles:
-                    return
-            else:
-                if role_or_channel == ctx.channel:
-                    return
+            if (
+                isinstance(role_or_channel, discord.Role)
+                and role_or_channel in ctx.author.roles
+                or not isinstance(role_or_channel, discord.Role)
+                and role_or_channel == ctx.channel
+            ):
+                return
         raise RequireCheckFailure(requires["response"])
 
     async def validate_blacklist(self, ctx: commands.Context, blacklist: dict):
@@ -794,12 +818,13 @@ class Tags(commands.Cog):
             role_or_channel = await self.role_or_channel_convert(ctx, argument)
             if not role_or_channel:
                 continue
-            if isinstance(role_or_channel, discord.Role):
-                if role_or_channel in ctx.author.roles:
-                    raise RequireCheckFailure(blacklist["response"])
-            else:
-                if role_or_channel == ctx.channel:
-                    raise RequireCheckFailure(blacklist["response"])
+            if (
+                isinstance(role_or_channel, discord.Role)
+                and role_or_channel in ctx.author.roles
+                or not isinstance(role_or_channel, discord.Role)
+                and role_or_channel == ctx.channel
+            ):
+                raise RequireCheckFailure(blacklist["response"])
 
     async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
         objects = await asyncio.gather(

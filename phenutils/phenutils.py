@@ -60,13 +60,11 @@ class PhenUtils(commands.Cog):
         new_message = copy(ctx.message)
         new_message.content = ctx.prefix + command.strip()
         if sequential:
-            for i in range(times):
+            for _ in range(times):
                 await self.bot.process_commands(new_message)
                 await asyncio.sleep(1)
         else:
-            todo = []
-            for i in range(times):
-                todo.append(self.bot.process_commands(new_message))
+            todo = [self.bot.process_commands(new_message) for _ in range(times)]
             await asyncio.gather(*todo)
 
     @commands.is_owner()

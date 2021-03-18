@@ -29,7 +29,7 @@ from TagScriptEngine import Interpreter, Block
 
 class ReactBlock(Block):
     """
-    The react block will react with up to 5 emoji to the tag response message. 
+    The react block will react with up to 5 emoji to the tag response message.
     The given emoji can be custom or unicode emoji. Emojis can be split with ",".
 
     **Usage:** ``{react(<emoji,emoji>)}``

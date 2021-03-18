@@ -231,9 +231,9 @@ class Webhook(commands.Cog):
                         strings.append(string)
         if not members:
             await ctx.send("No one here has `manage_webhook` permissions other than the owner.")
-        embeds = []
         strings = "\n".join(strings)
         if len(strings) > 2000:
+            embeds = []
             for page in pagify(strings):
                 embed = discord.Embed(
                     color=await ctx.embed_color(),
@@ -320,10 +320,12 @@ class Webhook(commands.Cog):
         webhooks = await message.channel.webhooks()
         webhook = None
         for chan_webhook in webhooks:
-            if chan_webhook.type == discord.WebhookType.incoming:
-                if chan_webhook.id == message.webhook_id:
-                    webhook = chan_webhook
-                    break
+            if (
+                chan_webhook.type == discord.WebhookType.incoming
+                and chan_webhook.id == message.webhook_id
+            ):
+                webhook = chan_webhook
+                break
         if not webhook:
             raise commands.BadArgument
         await webhook.edit_message(message.id, content=content)
