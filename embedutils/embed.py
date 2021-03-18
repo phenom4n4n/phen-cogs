@@ -62,16 +62,16 @@ class HelpFormattedCommand(commands.Command):
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
-        if self._add_example_info is True:
-            n = "\n" if "\n\n" not in pre_processed else ""
-            output = [
-                f"{pre_processed}{n}",
-                "This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).",
-                "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
-            ]
-            return "\n".join(output)
-        else:
+        if self._add_example_info is not True:
             return pre_processed
+
+        n = "\n" if "\n\n" not in pre_processed else ""
+        output = [
+            f"{pre_processed}{n}",
+            "This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).",
+            "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
+        ]
+        return "\n".join(output)
 
 
 class HelpFormattedGroup(commands.Group):
@@ -82,16 +82,16 @@ class HelpFormattedGroup(commands.Group):
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
-        if self._add_example_info is True:
-            n = "\n" if "\n\n" not in pre_processed else ""
-            output = [
-                f"{pre_processed}{n}",
-                "This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).",
-                "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
-            ]
-            return "\n".join(output)
-        else:
+        if self._add_example_info is not True:
             return pre_processed
+
+        n = "\n" if "\n\n" not in pre_processed else ""
+        output = [
+            f"{pre_processed}{n}",
+            "This must be in the format expected by [this Discord documentation](https://discord.com/developers/docs/resources/channel#embed-object).",
+            "Here's [a json example](https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8).",
+        ]
+        return "\n".join(output)
 
 
 class EmbedUtils(commands.Cog):
@@ -366,10 +366,8 @@ class EmbedUtils(commands.Cog):
         _embeds = await self.config.guild(ctx.guild).embeds()
         if not _embeds:
             return await ctx.send("There are no stored embeds on this server.")
-        description = []
+        description = [f"`{embed}`" for embed in _embeds]
 
-        for embed in _embeds:
-            description.append(f"`{embed}`")
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
@@ -458,20 +456,20 @@ class EmbedUtils(commands.Cog):
     @embed.group(name="global")
     async def global_store(self, ctx):
         """Store embeds for global use."""
-        if not ctx.subcommand_passed:
-            embeds = await self.config.embeds()
-            description = []
+        if ctx.subcommand_passed:
+            return
 
-            if embeds is None:
-                return
-            for embed in embeds:
-                description.append(f"`{embed}`")
-            description = "\n".join(description)
+        embeds = await self.config.embeds()
+        if embeds is None:
+            return
+        description = [f"`{embed}`" for embed in embeds]
 
-            color = await self.bot.get_embed_colour(ctx)
-            e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
-            e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
-            await ctx.send(embed=e)
+        description = "\n".join(description)
+
+        color = await self.bot.get_embed_colour(ctx)
+        e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
+        e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
+        await ctx.send(embed=e)
 
     @global_store.command(name="remove", aliases=["delete", "rm", "del"])
     async def global_remove(self, ctx, name):
@@ -487,10 +485,8 @@ class EmbedUtils(commands.Cog):
     async def global_list(self, ctx):
         """View global embeds."""
         embeds = await self.config.embeds()
-        description = []
+        description = [f"`{embed}`" for embed in embeds]
 
-        for embed in embeds:
-            description.append(f"`{embed}`")
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
@@ -734,10 +730,9 @@ class EmbedUtils(commands.Cog):
         try:
             data = data[name]
             embed = data["embed"]
-            if data["locked"] == True:
-                if not await self.bot.is_owner(ctx.author):
-                    await ctx.send("This is not a stored embed.")
-                    return
+            if data["locked"] == True and not await self.bot.is_owner(ctx.author):
+                await ctx.send("This is not a stored embed.")
+                return
         except KeyError:
             await ctx.send("This is not a stored embed.")
             return
@@ -749,9 +744,8 @@ class EmbedUtils(commands.Cog):
             embed = message.embeds[index]
             if embed.type == "rich":
                 return embed
-            else:
-                await ctx.send("This is not a valid embed/index.")
-                return
+            await ctx.send("This is not a valid embed/index.")
+            return
         except IndexError:
             await ctx.send("This is not a valid embed/index.")
             return

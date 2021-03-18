@@ -250,14 +250,12 @@ class DisboardReminder(commands.Cog):
                     await channel.send(message, allowed_mentions=allowed_mentions)
             else:
                 await self.config.guild(guild).role.clear()
-        elif channel:
+        else:
             message = data["message"]
             try:
                 await channel.send(message, allowed_mentions=allowed_mentions)
             except discord.errors.Forbidden:
                 await self.config.guild(guild).channel.clear()
-        else:
-            await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
 
     @commands.Cog.listener("on_message_without_command")
@@ -289,22 +287,20 @@ class DisboardReminder(commands.Cog):
             and author != message.guild.me
             and author.id != 302050872383242240
             and channel == bump_channel
-        ):
-            if my_perms.send_messages:
-                await asyncio.sleep(2)
-                try:
-                    await message.delete()
-                except (discord.errors.Forbidden, discord.errors.NotFound):
-                    pass
+        ) and my_perms.send_messages:
+            await asyncio.sleep(2)
+            try:
+                await message.delete()
+            except (discord.errors.Forbidden, discord.errors.NotFound):
+                pass
 
         if not (message.author.id == 302050872383242240 and message.embeds):
             return
         embed = message.embeds[0]
         if "Bump done" in embed.description:
             last_bump = self.bump_cache.get(guild.id) or data["nextBump"]
-            if last_bump:
-                if not (last_bump - message.created_at.timestamp() <= 0):
-                    return
+            if last_bump and not (last_bump - message.created_at.timestamp() <= 0):
+                return
             next_bump = message.created_at.timestamp() + 7200
             self.bump_cache[guild.id] = next_bump
             await self.config.guild(guild).nextBump.set(next_bump)

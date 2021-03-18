@@ -224,11 +224,11 @@ class ReactRoles(MixinMeta):
             binds = {}
             for (emoji, role) in emoji_role_groups:
                 emoji_id = self.emoji_id(emoji)
-                if emoji_id not in binds.keys() and role.id not in binds.values():
+                if emoji_id in binds or role.id in binds.values():
+                    duplicates[emoji] = role
+                else:
                     binds[emoji_id] = role.id
                     await message.add_reaction(emoji)
-                else:
-                    duplicates[emoji] = role
             r["react_to_roleid"] = binds
         if duplicates:
             dupes = "The following groups were duplicates and weren't added:\n"
