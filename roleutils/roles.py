@@ -123,7 +123,7 @@ class Roles(MixinMeta):
             await ctx.guild.chunk()
         if not role.members:
             return await ctx.send(f"`{role}` has no members.")
-        members = "\n".join([f"{member} - {member.id}" for member in role.members])
+        members = "\n".join(f"{member} - {member.id}" for member in role.members)
         if len(members) > 2000:
             await ctx.send(file=text_to_file(members, f"members.txt"))
         else:
@@ -167,9 +167,7 @@ class Roles(MixinMeta):
         """Change a role's name."""
         old_name = role.name
         await role.edit(name=name)
-        await ctx.send(
-            f"Changed **{old_name}** to **{name}**.", embed=await self.get_info(role)
-        )
+        await ctx.send(f"Changed **{old_name}** to **{name}**.", embed=await self.get_info(role))
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -188,7 +186,9 @@ class Roles(MixinMeta):
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command(name="remove")
-    async def role_remove(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
+    async def role_remove(
+        self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole
+    ):
         """Remove a role from a member."""
         if role not in member.roles:
             await ctx.send(
@@ -232,7 +232,7 @@ class Roles(MixinMeta):
         success_members = []
         for member in members:
             if role in member.roles:
-                await member. remove_roles(role, reason=reason)
+                await member.remove_roles(role, reason=reason)
                 success_members.append(member)
             else:
                 already_members.append(member)

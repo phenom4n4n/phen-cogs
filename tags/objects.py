@@ -95,7 +95,7 @@ class Tag(object):
         guild_id: int = None,
         real_tag: bool = True,
     ):
-        self = cls(
+        return cls(
             cog,
             name,
             data["tag"],
@@ -104,8 +104,6 @@ class Tag(object):
             uses=data.get("uses", 0),
             real=real_tag,
         )
-
-        return self
 
     def to_dict(self):
         return {

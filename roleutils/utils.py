@@ -41,7 +41,7 @@ async def is_allowed_by_role_hierarchy(
     mod: discord.Member,
     role: discord.Role,
 ) -> Tuple[bool, str]:
-    if role >= bot_me.top_role and not bot_me.id == mod.guild.owner_id:
+    if role >= bot_me.top_role and bot_me.id != mod.guild.owner_id:
         return (False, f"I am not higher than `{role}` in hierarchy.")
     else:
         return (
@@ -79,6 +79,7 @@ def humanize_roles(
 
 
 humanize_members = humanize_roles
+
 
 async def can_run_command(ctx: commands.Context, command: str) -> bool:
     try:

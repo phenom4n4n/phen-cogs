@@ -146,16 +146,11 @@ class PermissionsLocker(commands.Cog):
             inline=False,
         )
         if data["whitelisted"]:
-            whitelisted = []
-            for item in data["whitelisted"]:
-                whitelisted.append(str(item))
+            whitelisted = [str(item) for item in data["whitelisted"]]
             e.add_field(name="Whitelisted", value=", ".join(whitelisted), inline=False)
         await ctx.send(embed=e)
 
     async def humanize_perms(self, permissions: discord.Permissions, check: bool):
         perms = dict(permissions)
-        perms_list = []
-        for key, value in perms.items():
-            if value == check:
-                perms_list.append(f"+ {key}")
+        perms_list = [f"+ {key}" for key, value in perms.items() if value == check]
         return "\n".join(perms_list)

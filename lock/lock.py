@@ -255,10 +255,10 @@ class Lock(commands.Cog):
         await ctx.trigger_typing()
         if not channel:
             channel = ctx.channel
-        if not roles_or_members:
-            roles_or_members = [ctx.guild.default_role]
-        else:
+        if roles_or_members:
             roles_or_members = roles_or_members[:10]
+        else:
+            roles_or_members = [ctx.guild.default_role]
         succeeded = []
         cancelled = []
         failed = []
@@ -279,9 +279,7 @@ class Lock(commands.Cog):
         elif isinstance(channel, discord.VoiceChannel):
             for role in roles_or_members:
                 current_perms = channel.overwrites_for(role)
-                if current_perms.connect != False and current_perms.connect != state:
-                    cancelled.append(inline(role.name))
-                else:
+                if current_perms.connect in [False, state]:
                     current_perms.update(connect=state)
                     try:
                         await channel.set_permissions(role, overwrite=current_perms, reason=reason)
@@ -289,6 +287,8 @@ class Lock(commands.Cog):
                     except:
                         failed.append(inline(role.name))
 
+                else:
+                    cancelled.append(inline(role.name))
         msg = ""
         if succeeded:
             msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
@@ -430,18 +430,18 @@ class Lock(commands.Cog):
         invalid_perms = []
         valid_perms = []
         not_allowed: List[str] = []
-        for perm in old_perms.keys():
-            if perm not in base_perms.keys():
+        for perm in old_perms:
+            if perm in base_perms:
+                valid_perms.append(f"`{perm}`")
+            else:
                 invalid_perms.append(f"`{perm}`")
                 del permissions[perm]
-            else:
-                valid_perms.append(f"`{perm}`")
         overwrite.update(**permissions)
         if invalid_perms:
             invalid = (
                 f"\nThe following permissions were invalid:\n{humanize_list(invalid_perms)}\n"
             )
-            possible = humanize_list([f"`{perm}`" for perm in base_perms.keys()])
+            possible = humanize_list([f"`{perm}`" for perm in base_perms])
             invalid += f"Possible permissions are:\n{possible}"
         else:
             invalid = ""

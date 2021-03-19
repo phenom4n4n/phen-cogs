@@ -40,7 +40,7 @@ class ChannelToggle(Converter):
             raise BadArgument(
                 f"`{arg} is not a valid channel state. You use provide `true` or `default`."
             )
-        if arg == "neutral" or arg == "default":
+        if arg in ["neutral", "default"]:
             ret = None
         elif arg == "true":
             ret = True
@@ -80,15 +80,15 @@ class FuzzyRole(RoleConverter):
         else:
             return basic_role
         guild = ctx.guild
-        result = []
-        for r in process.extract(
-            argument,
-            {r: unidecode(r.name) for r in guild.roles},
-            limit=None,
-            score_cutoff=75,
-        ):
-            result.append((r[2], r[1]))
-
+        result = [
+            (r[2], r[1])
+            for r in process.extract(
+                argument,
+                {r: unidecode(r.name) for r in guild.roles},
+                limit=None,
+                score_cutoff=75,
+            )
+        ]
         if not result:
             raise BadArgument(f'Role "{argument}" not found.' if self.response else None)
 
