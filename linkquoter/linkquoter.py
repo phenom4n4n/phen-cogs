@@ -446,8 +446,6 @@ class LinkQuoter(commands.Cog):
         guild: discord.Guild = message.guild
         if guild.id not in self.enabled_guilds:
             return
-        if not await self.bot.message_eligible_as_command(message):
-            return
         guild: discord.Guild = message.guild
         if "no quote" in message.content.lower():
             return
@@ -467,6 +465,10 @@ class LinkQuoter(commands.Cog):
             quoted_message = await LinkToMessage().convert(ctx, message.content)
         except BadArgument:
             return
+
+        if not await self.bot.message_eligible_as_command(message):
+            return
+
         cog = webhook_check(ctx)
         data = await self.config.guild(ctx.guild).all()
         tasks = []
