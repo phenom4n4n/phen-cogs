@@ -624,25 +624,21 @@ class Tags(commands.Cog):
     async def on_message_without_command(self, message: discord.Message):
         if message.author.bot:
             return
-        if message.guild:
-            if not isinstance(message.author, discord.Member):
-                return
-            if not await self.bot.message_eligible_as_command(message):
-                return
-        else:
-            if not (await self.bot.allowed_by_whitelist_blacklist(message.author)):
-                return
-        await self.handle_message(message)
 
-    async def handle_message(self, message: discord.Message):
         try:
             prefix = await Alias.get_prefix(self, message)
         except ValueError:
             return
         tag_command = message.content[len(prefix) :]
         tag_split = tag_command.split(" ", 1)
-        if self.get_tag(message.guild, tag_split[0], check_global=True):
+        if self.get_tag(message.guild, tag_split[0], check_global=True) and await self.message_eligible_as_tag(message):
             await self.invoke_tag_message(message, prefix, tag_command)
+
+    async def message_eligible_as_tag(self, message: discord.Message) -> bool:
+        if message.guild:
+            return isinstance(message.author, discord.Member) and await self.bot.message_eligible_as_command(message)
+        else:
+            return await self.bot.allowed_by_whitelist_blacklist(message.author)
 
     async def invoke_tag_message(self, message: discord.Message, prefix: str, tag_command: str):
         new_message = copy(message)
