@@ -34,41 +34,12 @@ from redbot.core.utils.chat_formatting import box
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
 
-async def before_invoke_hook(ctx: commands.Context):
-    if not ctx.guild or isinstance(ctx.command, commands.commands._AlwaysAvailableCommand):
-        return
-    guild = ctx.guild
-    if guild.me == guild.owner:
-        return
-    if await ctx.bot.is_owner(ctx.author):
-        return
-    cog = ctx.bot.get_cog("PermissionsLocker")
-    if guild.id in cog._whitelist:
-        return
-    me = guild.me
-
-    requiredPerms = discord.Permissions(cog.perms)
-    myPerms = ctx.channel.permissions_for(me)
-    if not myPerms.is_superset(requiredPerms):
-        missingPerms = await cog.humanize_perms(
-            discord.Permissions((myPerms.value ^ requiredPerms.value) & requiredPerms.value),
-            True,
-        )
-        await ctx.send(
-            "Hello there!\nI'm missing the following permissions. Without these permissions, I cannot function properly. "
-            "Please check your guild and channel permissions to ensure I have these permissions:"
-            f"\n{box(missingPerms, 'diff')}",
-            delete_after=60,
-        )
-        raise commands.CheckFailure()
-
-
 class PermissionsLocker(commands.Cog):
     """
     Force permissions for the bot.
     """
 
-    __version__ = "1.2.3"
+    __version__ = "1.3.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -92,8 +63,39 @@ class PermissionsLocker(commands.Cog):
 
     async def initialize(self):
         data = await self.config.all()
-        self.perms = data["permissions"]
+        self.perms = discord.Permissions(data["permissions"])
         self._whitelist.update(data["whitelisted"])
+        self.bot.before_invoke(self.before_invoke_hook)
+
+    def cog_unload(self):
+        self.bot.remove_before_invoke_hook(self.before_invoke_hook)
+
+    async def before_invoke_hook(self, ctx: commands.Context):
+        if not ctx.guild or isinstance(ctx.command, commands.commands._AlwaysAvailableCommand):
+            return
+        guild = ctx.guild
+        if guild.me == guild.owner:
+            return
+        if await ctx.bot.is_owner(ctx.author):
+            return
+        if guild.id in self._whitelist:
+            return
+        me = guild.me
+
+        required_perms = self.perms
+        myPerms = ctx.channel.permissions_for(me)
+        if not myPerms.is_superset(required_perms):
+            missingPerms = await self.humanize_perms(
+                discord.Permissions((myPerms.value ^ required_perms.value) & required_perms.value),
+                True,
+            )
+            await ctx.send(
+                "Hello there!\nI'm missing the following permissions. Without these permissions, I cannot function properly. "
+                "Please check your guild and channel permissions to ensure I have these permissions:"
+                f"\n{box(missingPerms, 'diff')}",
+                delete_after=60,
+            )
+            raise commands.CheckFailure()
 
     @commands.is_owner()
     @commands.group()
