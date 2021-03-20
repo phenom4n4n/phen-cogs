@@ -37,7 +37,6 @@ async def setup(bot: Red) -> None:
     cog = PermissionsLocker(bot)
     await cog.initialize()
     bot.add_cog(cog)
-    bot.before_invoke(before_invoke_hook)
 
 
 def teardown(bot: Red):
