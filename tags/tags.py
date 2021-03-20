@@ -130,7 +130,6 @@ class Tags(commands.Cog):
             ReactBlock(),
             RedirectBlock(),
             ReactUBlock(),
-            OverrideBlock(),
         ]
         self.engine = tse.Interpreter(tse_blocks + tag_blocks)
         self.role_converter = commands.RoleConverter()
