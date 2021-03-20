@@ -48,7 +48,6 @@ import bs4
 from .blocks import *
 from .converters import TagConverter, TagName, TagScriptConverter
 from .objects import Tag
-from .adapters import MemberAdapter, ChannelAdapter, GuildAdapter, SafeObjectAdapter
 from .ctx import SilentContext
 from .errors import (
     MissingTagPermissions,
@@ -78,7 +77,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.1.3"
+    __version__ = "2.1.4"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -121,16 +120,12 @@ class Tags(commands.Cog):
             tse.ReplaceBlock(),
             tse.PythonBlock(),
             tse.URLEncodeBlock(),
-            # tse.RequireBlock(),
-            # tse.BlacklistBlock(),
-            # tse.CommandBlock(),
-            # tse.OverrideBlock(),
+            tse.RequireBlock(),
+            tse.BlacklistBlock(),
+            tse.CommandBlock(),
+            tse.OverrideBlock(),
         ]
         tag_blocks = [
-            RequireBlock(),
-            BlacklistBlock(),
-            CommandBlock(),
-            DeleteBlock(),
             SilentBlock(),
             ReactBlock(),
             RedirectBlock(),
@@ -655,9 +650,9 @@ class Tags(commands.Cog):
     async def process_tag(
         self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
     ) -> str:
-        author = MemberAdapter(ctx.author)
-        target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
-        channel = ChannelAdapter(ctx.channel)
+        author = tse.MemberAdapter(ctx.author)
+        target = tse.MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
+        channel = tse.ChannelAdapter(ctx.channel)
         seed = {
             "author": author,
             "user": author,
@@ -666,7 +661,7 @@ class Tags(commands.Cog):
             "channel": channel,
         }
         if ctx.guild:
-            guild = GuildAdapter(ctx.guild)
+            guild = tse.GuildAdapter(ctx.guild)
             seed.update(guild=guild, server=guild)
         seed_variables.update(seed)
 

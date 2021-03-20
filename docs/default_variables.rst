@@ -19,7 +19,7 @@ Meta variables reference meta attributes about the tag invocation.
 Args Block
 ^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.adapter.StringAdapter
+.. autoclass:: TagScriptEngine.StringAdapter
 
     The ``{args}`` block represents the arguments passed after the tag name when invoking 
     a tag. If no parameter is passed, it returns all the text after the invocation name.
@@ -50,7 +50,7 @@ Args Block
 Uses Block
 ^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.adapter.IntAdapter
+.. autoclass:: TagScriptEngine.IntAdapter
 
     The ``{uses}`` block returns the number of times a tag has been used.
 
@@ -77,7 +77,7 @@ These blocks reference Discord objects from the tag invocation context.
 Author Block
 ^^^^^^^^^^^^
 
-.. autoclass:: tags.adapters.MemberAdapter
+.. autoclass:: TagScriptEngine.MemberAdapter
 
 ^^^^^^^^^^^^
 Target Block
@@ -95,10 +95,10 @@ Target Block
 Channel Block
 ^^^^^^^^^^^^^
 
-.. autoclass:: tags.adapters.ChannelAdapter
+.. autoclass:: TagScriptEngine.ChannelAdapter
 
 ^^^^^^^^^^^^
 Server Block
 ^^^^^^^^^^^^
 
-.. autoclass:: tags.adapters.GuildAdapter
+.. autoclass:: TagScriptEngine.GuildAdapter

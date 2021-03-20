@@ -3,7 +3,7 @@ TagScriptEngine Blocks
 ======================
 
 Read the official `TagScriptEngine documentation <https://github.com/JonSnowbd/TagScript/tree/v2/Documentation>`_
-for info on these blocks, I will add documentation for these later.
+for info on these blocks, documentation will be added for these later.
 
 -----------
 Core Blocks
@@ -13,13 +13,13 @@ Core Blocks
 Assignment Block
 ^^^^^^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.AssignmentBlock
+.. autoclass:: TagScriptEngine.AssignmentBlock
 
 ^^^^^^^^^^^^
 Random Block
 ^^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.RandomBlock
+.. autoclass:: TagScriptEngine.RandomBlock
 
 .. _MathBlock:
 
@@ -27,13 +27,13 @@ Random Block
 Math Block
 ^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.MathBlock
+.. autoclass:: TagScriptEngine.MathBlock
 
 ^^^^^^^^^^^
 Range Block
 ^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.RangeBlock
+.. autoclass:: TagScriptEngine.RangeBlock
 
 --------------
 Control Blocks
@@ -45,37 +45,37 @@ Control Blocks
 If Block
 ^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.IfBlock
+.. autoclass:: TagScriptEngine.IfBlock
 
 ^^^^^^^^^^^
 Break Block
 ^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.BreakBlock
+.. autoclass:: TagScriptEngine.BreakBlock
 
 ^^^^^^^^^
 All Block
 ^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.AllBlock
+.. autoclass:: TagScriptEngine.AllBlock
 
 ^^^^^^^^^
 Any Block
 ^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.AnyBlock
+.. autoclass:: TagScriptEngine.AnyBlock
 
 ^^^^^^^^^^^^^^^^^
 Fifty-fifty Block
 ^^^^^^^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.FiftyFiftyBlock
+.. autoclass:: TagScriptEngine.FiftyFiftyBlock
 
 ^^^^^^^^^^
 Stop Block
 ^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.StopBlock
+.. autoclass:: TagScriptEngine.StopBlock
 
 -------------
 String Blocks
@@ -85,13 +85,13 @@ String Blocks
 Replace Block
 ^^^^^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.ReplaceBlock
+.. autoclass:: TagScriptEngine.ReplaceBlock
 
 ^^^^^^^^^^^^^^^
 URLEncode Block
 ^^^^^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.URLEncodeBlock
+.. autoclass:: TagScriptEngine.URLEncodeBlock
 
 --------------------
 Miscellaneous Blocks
@@ -101,10 +101,10 @@ Miscellaneous Blocks
 Strftime Block
 ^^^^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.StrfBlock
+.. autoclass:: TagScriptEngine.StrfBlock
 
 ^^^^^^^^^^^^^^^
 Substring Block
 ^^^^^^^^^^^^^^^
 
-.. autoclass:: TagScriptEngine.block.SubstringBlock
+.. autoclass:: TagScriptEngine.SubstringBlock

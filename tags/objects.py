@@ -29,7 +29,7 @@ from redbot.core.bot import Red
 from TagScriptEngine import Interpreter, IntAdapter
 
 
-class Tag(object):
+class Tag:
     def __init__(
         self,
         cog: commands.Cog,
@@ -110,7 +110,6 @@ class Tag(object):
             "author_id": self.author_id,
             "uses": self.uses,
             "tag": self.tagscript,
-            "author": self.author_id,  # backwards compatability
         }
 
     async def delete(self):

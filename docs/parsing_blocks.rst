@@ -16,13 +16,13 @@ channels, or setting tag cooldowns (soon).
 Require Block
 ^^^^^^^^^^^^^
 
-.. autoclass:: tags.blocks.RequireBlock
+.. autoclass:: TagScriptEngine.RequireBlock
 
 ^^^^^^^^^^^^^^^
 Blacklist Block
 ^^^^^^^^^^^^^^^
 
-.. autoclass:: tags.blocks.BlacklistBlock
+.. autoclass:: TagScriptEngine.BlacklistBlock
 
 --------------
 Message Blocks
@@ -73,10 +73,10 @@ with bot commands.
 Command Block
 ^^^^^^^^^^^^^
 
-.. autoclass:: tags.blocks.CommandBlock
+.. autoclass:: TagScriptEngine.CommandBlock
 
 ^^^^^^^^^^^^^^
 Override Block
 ^^^^^^^^^^^^^^
 
-.. autoclass:: tags.blocks.OverrideBlock
+.. autoclass:: TagScriptEngine.OverrideBlock
