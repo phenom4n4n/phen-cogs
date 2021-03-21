@@ -77,7 +77,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.1.5"
+    __version__ = "2.1.6"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -126,6 +126,7 @@ class Tags(commands.Cog):
             tse.OverrideBlock(),
         ]
         tag_blocks = [
+            DeleteBlock(),
             SilentBlock(),
             ReactBlock(),
             RedirectBlock(),
