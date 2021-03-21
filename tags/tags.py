@@ -77,7 +77,7 @@ class Tags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.1.4"
+    __version__ = "2.1.5"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -388,10 +388,10 @@ class Tags(commands.Cog):
     async def tag_run(self, ctx: commands.Context, *, tagscript: str):
         """Execute TagScript without storing."""
         start = time.monotonic()
-        author = MemberAdapter(ctx.author)
-        target = MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
-        channel = ChannelAdapter(ctx.channel)
-        guild = GuildAdapter(ctx.guild)
+        author = tse.MemberAdapter(ctx.author)
+        target = tse.MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
+        channel = tse.ChannelAdapter(ctx.channel)
+        guild = tse.GuildAdapter(ctx.guild)
         seed = {
             "author": author,
             "user": author,
