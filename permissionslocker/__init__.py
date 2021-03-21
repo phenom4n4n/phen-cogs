@@ -37,4 +37,3 @@ async def setup(bot: Red) -> None:
     cog = PermissionsLocker(bot)
     await cog.initialize()
     bot.add_cog(cog)
-
