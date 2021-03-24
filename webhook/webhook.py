@@ -385,7 +385,9 @@ class Webhook(commands.Cog):
         if webhook_list:
             webhook = webhook_list[0]
         else:
-            creation_reason = f"Webhook creation requested by {author} ({author.id})" if author else ""
+            creation_reason = (
+                f"Webhook creation requested by {author} ({author.id})" if author else ""
+            )
             if reason:
                 creation_reason += f" Reason: {reason}"
             if len(chan_hooks) == 10:
