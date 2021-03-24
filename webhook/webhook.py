@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import asyncio
+from typing import Optional
 
 import aiohttp
 import discord
@@ -384,7 +385,7 @@ class Webhook(commands.Cog):
         if webhook_list:
             webhook = webhook_list[0]
         else:
-            creation_reason = f"Webhook creation requested by {author} ({author.id})"
+            creation_reason = f"Webhook creation requested by {author} ({author.id})" if author else ""
             if reason:
                 creation_reason += f" Reason: {reason}"
             if len(chan_hooks) == 10:
@@ -400,28 +401,28 @@ class Webhook(commands.Cog):
     async def send_to_channel(
         self,
         channel: discord.TextChannel,
-        me: discord.Member,
-        author: discord.Member,
+        me: discord.Member = None,
+        author: discord.Member = None,
         *,
         reason: str = None,
         ctx: commands.Context = None,
-        allowed_mentions: discord.AllowedMentions = discord.AllowedMentions(
-            users=False, everyone=False, roles=False
-        ),
+        allowed_mentions: discord.AllowedMentions = None,
         **kwargs,
-    ):
-        """Cog function that other cogs can implement using `bot.get_cog("Webhook")`
-        for ease of use when using webhooks and quicker invokes with caching."""
+    ) -> Optional[discord.WebhookMessage]:
+        """
+        Cog function that other cogs can implement using `bot.get_cog("Webhook")`
+        for ease of use when using webhooks and quicker invokes with caching.
+        """
+        if allowed_mentions is None:
+            allowed_mentions = self.bot.allowed_mentions
         while True:
             webhook = await self.get_webhook(
                 channel=channel, me=me, author=author, reason=reason, ctx=ctx
             )
             try:
-                await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
+                return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
             except (discord.InvalidArgument, discord.NotFound):
                 del self.cache[channel.id]
-            else:
-                return True
 
     async def edit_webhook_message(self, link: str, message_id: int, json: dict):
         async with self.session.patch(
