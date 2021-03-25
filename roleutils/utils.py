@@ -32,7 +32,9 @@ from redbot.core.utils.chat_formatting import humanize_list
 
 
 async def is_allowed_by_hierarchy(bot: Red, mod: discord.Member, member: discord.Member) -> bool:
-    return mod.guild.owner_id == mod.id or mod.top_role >= member.top_role or await bot.is_owner(mod)
+    return (
+        mod.guild.owner_id == mod.id or mod.top_role >= member.top_role or await bot.is_owner(mod)
+    )
 
 
 async def is_allowed_by_role_hierarchy(
