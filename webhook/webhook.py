@@ -425,9 +425,8 @@ class Webhook(commands.Cog):
             try:
                 return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
             except (discord.InvalidArgument, discord.NotFound):
+                tries += 1
                 del self.cache[channel.id]
-            else:
-                tries += 5
 
     async def edit_webhook_message(self, link: str, message_id: int, json: dict):
         async with self.session.patch(
