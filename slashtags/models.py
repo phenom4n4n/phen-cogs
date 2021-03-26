@@ -266,6 +266,4 @@ class InteractionResponse:
             initial_response=initial,
             flags=flags,
         )
-        if self.sent is False:
-            self.sent = True
         return data
