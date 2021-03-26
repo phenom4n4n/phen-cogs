@@ -349,7 +349,11 @@ class Tags(commands.Cog):
 
     @tag.command(name="docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
-        """Search the [Tag documentation](https://phen-cogs.readthedocs.io/en/latest/)."""
+        """
+        Search the Tag documentation for a block.
+        
+        https://phen-cogs.readthedocs.io/en/latest/
+        """
         await ctx.trigger_typing()
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
