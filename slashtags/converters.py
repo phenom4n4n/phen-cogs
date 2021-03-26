@@ -29,7 +29,7 @@ from redbot.core import commands
 from .errors import MissingTagPermissions
 from .objects import SlashTag
 
-SLASH_NAME = re.compile(r"^[\w-]{1,32}$")
+SLASH_NAME = re.compile(r"^{?([\w-]{1,32})}?$")
 
 
 class TagName(commands.Converter):
@@ -42,11 +42,12 @@ class TagName(commands.Converter):
             ...
         if len(argument) > 32:
             raise commands.BadArgument("Slash command names may not exceed 32 characters.")
-        if not SLASH_NAME.match(argument):
+        match = SLASH_NAME.match(argument)
+        if not match:
             raise commands.BadArgument(
                 "Slash command characters must be alphanumeric or '_' or '-'."
             )
-        return "".join(argument.split())
+        return match.group(1)
 
 
 class TagConverter(commands.Converter):

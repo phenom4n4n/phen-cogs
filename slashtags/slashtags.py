@@ -18,7 +18,7 @@ from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .blocks import HideBlock
 from .context import SlashContext
-from .converters import TagConverter, TagName, TagScriptConverter
+from .converters import TagConverter, TagName, TagScriptConverter, SLASH_NAME
 from .errors import (
     BlacklistCheckFailure,
     MissingTagPermissions,
@@ -218,7 +218,7 @@ class SlashTags(commands.Cog):
 
         try:
             description = await self.send_and_query_response(
-                ctx, "What should the tag description to be?"
+                ctx, "What should the tag description to be? (maximum 100 characters)", pred=MessagePredicate.length_less(101, ctx)
             )
         except asyncio.TimeoutError:
             await ctx.send("Tag addition timed out.")
@@ -307,9 +307,16 @@ class SlashTags(commands.Cog):
         return message.content
 
     async def get_option(self, ctx: commands.Context) -> SlashOption:
-        title = await self.send_and_query_response(ctx, "What should the argument name be?")
+        name_desc = (
+            "What should the argument name be?\n"
+            "Slash argument names may not exceed 32 characters and can only contain characters "
+            "that are alphanumeric or '_' or '-'."
+        )
+        name_pred = MessagePredicate.regex(SLASH_NAME, ctx)
+        await self.send_and_query_response(ctx, name, name_pred)
+        title = name_pred.result.group(1)
         description = await self.send_and_query_response(
-            ctx, "What should the argument description be?"
+            ctx, "What should the argument description be? (maximum 100 characters)", MessagePredicate.length_less(101, ctx)
         )
 
         valid_option_types = [
