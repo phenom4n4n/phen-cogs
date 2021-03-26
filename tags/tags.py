@@ -351,7 +351,7 @@ class Tags(commands.Cog):
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
         """
         Search the Tag documentation for a block.
-        
+
         https://phen-cogs.readthedocs.io/en/latest/
         """
         await ctx.trigger_typing()
