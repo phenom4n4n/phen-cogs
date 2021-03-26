@@ -556,9 +556,7 @@ class SlashTags(commands.Cog):
         **kwargs,
     ) -> str:
         for option in interaction.options:
-            # seed_variables[option.name] = self.get_adapter(option.type)(option.value)
-            # only valid until i handle resolved interaction data -ugh
-            seed_variables[option.name] = tse.StringAdapter(option.value)
+            seed_variables[option.name] = self.get_adapter(option.type)(option.value)
         for original_option in interaction.command.options:
             if original_option.name not in seed_variables:
                 seed_variables[original_option.name] = empty_adapter
