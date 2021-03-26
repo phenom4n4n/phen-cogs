@@ -219,7 +219,9 @@ class SlashTags(commands.Cog):
 
         try:
             description = await self.send_and_query_response(
-                ctx, "What should the tag description to be? (maximum 100 characters)", pred=MessagePredicate.length_less(101, ctx)
+                ctx,
+                "What should the tag description to be? (maximum 100 characters)",
+                pred=MessagePredicate.length_less(101, ctx),
             )
         except asyncio.TimeoutError:
             await ctx.send("Tag addition timed out.")
@@ -317,7 +319,9 @@ class SlashTags(commands.Cog):
         await self.send_and_query_response(ctx, name_desc, name_pred)
         title = name_pred.result.group(1)
         description = await self.send_and_query_response(
-            ctx, "What should the argument description be? (maximum 100 characters)", MessagePredicate.length_less(101, ctx)
+            ctx,
+            "What should the argument description be? (maximum 100 characters)",
+            MessagePredicate.length_less(101, ctx),
         )
 
         valid_option_types = [
@@ -479,7 +483,9 @@ class SlashTags(commands.Cog):
         """Clear all slash tags for this server."""
         pred = MessagePredicate.yes_or_no(ctx)
         try:
-            await self.send_and_query_response(ctx, "Are you sure you want to delete all slash tags on this server? (Y/n)", pred)
+            await self.send_and_query_response(
+                ctx, "Are you sure you want to delete all slash tags on this server? (Y/n)", pred
+            )
         except asyncio.TimeoutError:
             return await ctx.send("Timed out, not deleting slash tags.")
         if not pred.result:
@@ -650,26 +656,40 @@ class SlashTags(commands.Cog):
         if command_messages:
             silent = actions.get("silent", False)
             overrides = actions.get("overrides")
-            to_gather.append(self.process_commands(interaction, command_messages, silent, overrides))
+            to_gather.append(
+                self.process_commands(interaction, command_messages, silent, overrides)
+            )
 
         if to_gather:
             await asyncio.gather(*to_gather)
 
     async def process_commands(
-        self, interaction: InteractionResponse, messages: List[discord.Message], silent: bool, overrides: dict
+        self,
+        interaction: InteractionResponse,
+        messages: List[discord.Message],
+        silent: bool,
+        overrides: dict,
     ):
         command_tasks = []
         for message in messages:
             log.debug(message)
-            command_task = self.create_task(self.process_command(interaction, message, silent, overrides))
+            command_task = self.create_task(
+                self.process_command(interaction, message, silent, overrides)
+            )
             command_tasks.append(command_task)
             await asyncio.sleep(0.1)
         await asyncio.gather(*command_tasks)
 
     async def process_command(
-        self, interaction: InteractionResponse, command_message: discord.Message, silent: bool, overrides: dict
+        self,
+        interaction: InteractionResponse,
+        command_message: discord.Message,
+        silent: bool,
+        overrides: dict,
     ):
-        ctx = await self.bot.get_context(command_message, cls=partial(SlashContext, interaction=interaction))
+        ctx = await self.bot.get_context(
+            command_message, cls=partial(SlashContext, interaction=interaction)
+        )
         if ctx.valid:
             if overrides:
                 command = copy(ctx.command)

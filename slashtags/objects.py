@@ -347,6 +347,7 @@ class SlashTag:
         except KeyError:
             pass
 
+
 def implement_partial_methods(cls):
     msg = discord.Message
     for name in discord.Message.__slots__:
