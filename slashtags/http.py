@@ -51,6 +51,12 @@ class SlashHTTP:
         )
         return self.request(route)
 
+    def put_slash_commands(self, commands: list):
+        route = Route(
+            "PUT", "/applications/{application_id}/commands", application_id=self.application_id
+        )
+        return self.request(route, json=commands)
+
     def add_guild_slash_command(self, guild_id: int, command: dict):
         route = Route(
             "POST",
@@ -88,6 +94,15 @@ class SlashHTTP:
             guild_id=guild_id,
         )
         return self.request(route)
+
+    def put_guild_slash_commands(self, guild_id: int, commands: list):
+        route = Route(
+            "PUT",
+            "/applications/{application_id}/guilds/{guild_id}/commands",
+            application_id=self.application_id,
+            guild_id=guild_id,
+        )
+        return self.request(route, json=commands)
 
     def send_message(
         self,

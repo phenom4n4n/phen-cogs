@@ -206,14 +206,17 @@ class CommandModel:
         self._parse_response_data(data)
 
     async def delete(self):
-        try:
-            del self.cog.command_cache[self.id]
-        except KeyError:
-            pass
+        self.remove_from_cache()
         if self.guild_id:
             await self.http.remove_guild_slash_command(self.guild_id, self.id)
         else:
             await self.http.remove_slash_command(self.id)
+
+    def remove_from_cache(self):
+        try:
+            del self.cog.command_cache[self.id]
+        except KeyError:
+            pass
 
 
 class SlashTag:
@@ -330,12 +333,19 @@ class SlashTag:
         if self.guild_id:
             async with self.config.guild_from_id(self.guild_id).tags() as t:
                 del t[str(self.id)]
-            del self.cog.guild_tag_cache[self.guild_id][self.id]
         else:
             async with self.config.tags() as t:
                 del t[str(self.id)]
-            del self.cog.global_tag_cache[self.id]
+        self.remove_from_cache()
 
+    def remove_from_cache(self):
+        try:
+            if self.guild_id:
+                del self.cog.guild_tag_cache[self.guild_id][self.id]
+            else:
+                del self.cog.global_tag_cache[self.id]
+        except KeyError:
+            pass
 
 def implement_partial_methods(cls):
     msg = discord.Message

@@ -5,10 +5,10 @@ from .models import InteractionResponse
 
 
 class SlashContext(commands.Context):
-    def __init__(self, *, message: InteractionResponse, **kwargs):
-        self.interaction: InteractionResponse = message
-        super().__init__(message=message, **kwargs)
-        self.send = message.send
+    def __init__(self, *, interaction: InteractionResponse, **kwargs):
+        self.interaction: InteractionResponse = interaction
+        super().__init__(**kwargs)
+        self.send = interaction.send
 
     def __repr__(self):
         return (
@@ -21,6 +21,7 @@ class SlashContext(commands.Context):
     def from_interaction(cls, interaction: InteractionResponse):
         args_values = [o.value for o in interaction.options]
         return cls(
+            interaction=interaction,
             message=interaction,
             bot=interaction.bot,
             args=args_values,

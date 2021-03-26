@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from copy import copy
 from typing import Coroutine, List, Optional
+from functools import partial
 
 import discord
 import TagScriptEngine as tse
@@ -49,7 +50,7 @@ class SlashTags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.1.6"
+    __version__ = "0.1.7"
     __author__ = ["PhenoM4n4n"]
 
     OPTION_ADAPTERS = {
@@ -313,7 +314,7 @@ class SlashTags(commands.Cog):
             "that are alphanumeric or '_' or '-'."
         )
         name_pred = MessagePredicate.regex(SLASH_NAME, ctx)
-        await self.send_and_query_response(ctx, name, name_pred)
+        await self.send_and_query_response(ctx, name_desc, name_pred)
         title = name_pred.result.group(1)
         description = await self.send_and_query_response(
             ctx, "What should the argument description be? (maximum 100 characters)", MessagePredicate.length_less(101, ctx)
@@ -473,6 +474,27 @@ class SlashTags(commands.Cog):
         await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.is_owner()
+    @slashtag.command(name="clear", hidden=True)
+    async def slashtag_clear(self, ctx: commands.Context):
+        """Clear all slash tags for this server."""
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            await self.send_and_query_response(ctx, "Are you sure you want to delete all slash tags on this server? (Y/n)", pred)
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out, not deleting slash tags.")
+        if not pred.result:
+            return await ctx.send("Ok, not deleting slash tags.")
+        guild: discord.Guild = ctx.guild
+        await self.http.put_guild_slash_commands(guild.id, [])
+        for tag_name, tag in copy(self.guild_tag_cache[guild.id]).items():
+            tag.remove_from_cache()
+            tag.command.remove_from_cache()
+            del tag
+        self.guild_tag_cache[guild.id].clear()
+        await self.config.guild(guild).tags.clear()
+        await ctx.send("Tags deleted.")
+
+    @commands.is_owner()
     @slashtag.command(name="appid")
     async def slashtag_appid(self, ctx: commands.Context, id: int = None):
         """
@@ -624,29 +646,30 @@ class SlashTags(commands.Cog):
             msg = await self.send_tag_response(destination, content, embed=embed, hidden=hide)
         else:
             await interaction.defer()
+
         if command_messages:
             silent = actions.get("silent", False)
             overrides = actions.get("overrides")
-            to_gather.append(self.process_commands(command_messages, silent, overrides))
+            to_gather.append(self.process_commands(interaction, command_messages, silent, overrides))
 
         if to_gather:
             await asyncio.gather(*to_gather)
 
     async def process_commands(
-        self, messages: List[discord.Message], silent: bool, overrides: dict
+        self, interaction: InteractionResponse, messages: List[discord.Message], silent: bool, overrides: dict
     ):
         command_tasks = []
         for message in messages:
             log.debug(message)
-            command_task = self.create_task(self.process_command(message, silent, overrides))
+            command_task = self.create_task(self.process_command(interaction, message, silent, overrides))
             command_tasks.append(command_task)
             await asyncio.sleep(0.1)
         await asyncio.gather(*command_tasks)
 
     async def process_command(
-        self, command_message: discord.Message, silent: bool, overrides: dict
+        self, interaction: InteractionResponse, command_message: discord.Message, silent: bool, overrides: dict
     ):
-        ctx = await self.bot.get_context(command_message)
+        ctx = await self.bot.get_context(command_message, cls=partial(SlashContext, interaction=interaction))
         if ctx.valid:
             if overrides:
                 command = copy(ctx.command)
