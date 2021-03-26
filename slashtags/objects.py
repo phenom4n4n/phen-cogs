@@ -125,6 +125,10 @@ class CommandModel:
             self
         )
 
+    @property
+    def qualified_name(self) -> str:
+        return self.name
+
     def to_request(self) -> dict:
         data = {
             "name": self.name,
