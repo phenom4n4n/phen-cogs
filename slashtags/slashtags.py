@@ -12,17 +12,19 @@ from redbot.core.bot import Red
 from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.chat_formatting import (box, humanize_list, inline,
-                                               pagify)
-from redbot.core.utils.menus import (DEFAULT_CONTROLS, menu,
-                                     start_adding_reactions)
+from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .blocks import HideBlock
 from .context import SlashContext
 from .converters import TagConverter, TagName, TagScriptConverter
-from .errors import (BlacklistCheckFailure, MissingTagPermissions,
-                     RequireCheckFailure, WhitelistCheckFailure)
+from .errors import (
+    BlacklistCheckFailure,
+    MissingTagPermissions,
+    RequireCheckFailure,
+    WhitelistCheckFailure,
+)
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
 from .objects import CommandModel, FakeMessage, SlashOption, SlashTag
@@ -66,7 +68,7 @@ class SlashTags(commands.Cog):
             f"{pre_processed}{n}",
             f"Cog Version: **{self.__version__}**",
             f"TagScriptEngine Version: **{tse.__version__}**",
-            f"Author: {humanize_list(self.__author__)}"
+            f"Author: {humanize_list(self.__author__)}",
         ]
         return "\n".join(text)
 
