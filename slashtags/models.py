@@ -225,10 +225,7 @@ class InteractionResponse:
         allowed_mentions: discord.AllowedMentions = None,
         hidden: bool = False,
     ):
-        if hidden is True:
-            flags = 64
-        else:
-            flags = None
+        flags = 64 if hidden else None
         initial = not self.sent
         data = await self.http.send_message(
             self.__token,
@@ -259,13 +256,15 @@ class InteractionResponse:
             else:
                 return message
 
-    async def defer(self):
+    async def defer(self, *, hidden: bool = False):
+        flags = 64 if hidden else None
         initial = not self.sent
         data = await self.http.send_message(
             self.__token,
             self.id,
             type=5,
             initial_response=initial,
+            flags=flags,
         )
         if self.sent is False:
             self.sent = True
