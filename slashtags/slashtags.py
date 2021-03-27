@@ -50,7 +50,7 @@ class SlashTags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.1.7"
+    __version__ = "0.1.8"
     __author__ = ["PhenoM4n4n"]
 
     OPTION_ADAPTERS = {
