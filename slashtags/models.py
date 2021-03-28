@@ -112,7 +112,7 @@ class InteractionMessage(discord.Message):
 
 
 class UnknownCommand:
-    qualified_name = "unknown command"
+    qualified_name = "unknown slash command"
 
     def __bool__(self):
         return False

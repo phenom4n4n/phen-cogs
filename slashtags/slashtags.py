@@ -589,7 +589,7 @@ class SlashTags(commands.Cog):
     async def handle_interaction(self, interaction: InteractionResponse):
         # await interaction.defer()
         command = interaction.command
-        if command:
+        if isinstance(command, CommandModel):
             tag = self.get_tag(interaction.guild, command.id)
             await self.process_tag(interaction, tag)
         elif interaction.command_id == self.eval_command:
