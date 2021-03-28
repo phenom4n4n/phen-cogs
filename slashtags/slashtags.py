@@ -1,16 +1,38 @@
+"""
+MIT License
+
+Copyright (c) 2020-2021 phenom4n4n
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import asyncio
 import logging
 from collections import defaultdict
 from copy import copy
-from typing import Coroutine, List, Optional
+from typing import Coroutine, List, Optional, Dict
 from functools import partial
 
 import discord
 import TagScriptEngine as tse
-from discord.utils import escape_markdown
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
@@ -38,6 +60,9 @@ optional_member = SlashOption(
 )
 empty_adapter = tse.StringAdapter("")
 
+PL = commands.PrivilegeLevel
+RS = commands.Requires
+
 
 def dev_check(ctx: commands.Context):
     return ctx.bot.get_cog("Dev")
@@ -50,7 +75,7 @@ class SlashTags(commands.Cog):
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.1.7"
+    __version__ = "0.1.8"
     __author__ = ["PhenoM4n4n"]
 
     OPTION_ADAPTERS = {
@@ -118,7 +143,7 @@ class SlashTags(commands.Cog):
         self.emoji_converter = commands.EmojiConverter()
 
         self.command_cache = {}
-        self.guild_tag_cache = defaultdict(dict)
+        self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache = {}
 
         self.load_task = self.create_task(self.initialize_task())
@@ -224,7 +249,7 @@ class SlashTags(commands.Cog):
                 pred=MessagePredicate.length_less(101, ctx),
             )
         except asyncio.TimeoutError:
-            await ctx.send("Tag addition timed out.")
+            return await ctx.send("Tag addition timed out.")
 
         pred = MessagePredicate.yes_or_no(ctx)
         try:
@@ -462,7 +487,7 @@ class SlashTags(commands.Cog):
             if len(tagscript) > 23:
                 tagscript = tagscript[:20] + "..."
             tagscript = tagscript.replace("\n", " ")
-            description.append(f"`{tag.name}` - {escape_markdown(tagscript)}")
+            description.append(f"`{tag.name}` - {discord.utils.escape_markdown(tagscript)}")
         description = "\n".join(description)
 
         e = discord.Embed(color=await ctx.embed_color())
@@ -695,17 +720,17 @@ class SlashTags(commands.Cog):
                 command = copy(ctx.command)
                 # command = commands.Command()
                 # command = ctx.command.copy() # does not work as it makes ctx a regular argument
-                requires: Requires = copy(command.requires)
+                requires: RS = copy(command.requires)
                 priv_level = requires.privilege_level
                 if priv_level not in (
-                    PrivilegeLevel.NONE,
-                    PrivilegeLevel.BOT_OWNER,
-                    PrivilegeLevel.GUILD_OWNER,
+                    PL.NONE,
+                    PL.BOT_OWNER,
+                    PL.GUILD_OWNER,
                 ):
-                    if overrides["admin"] and priv_level is PrivilegeLevel.ADMIN:
-                        requires.privilege_level = PrivilegeLevel.NONE
-                    elif overrides["mod"] and priv_level is PrivilegeLevel.MOD:
-                        requires.privilege_level = PrivilegeLevel.NONE
+                    if overrides["admin"] and priv_level is PL.ADMIN:
+                        requires.privilege_level = PL.NONE
+                    elif overrides["mod"] and priv_level is PL.MOD:
+                        requires.privilege_level = PL.NONE
                 if overrides["permissions"] and requires.user_perms:
                     requires.user_perms = discord.Permissions.none()
                 command.requires = requires
