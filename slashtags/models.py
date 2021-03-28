@@ -228,7 +228,7 @@ class InteractionResponse:
 
     async def send(
         self,
-        content: str,
+        content: str = None,
         *,
         embed: discord.Embed = None,
         embeds: List[discord.Embed] = [],

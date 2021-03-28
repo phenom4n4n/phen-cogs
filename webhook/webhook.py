@@ -417,13 +417,15 @@ class Webhook(commands.Cog):
         """
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
-        while True:
+        tries = 0
+        while tries < 5:
             webhook = await self.get_webhook(
                 channel=channel, me=me, author=author, reason=reason, ctx=ctx
             )
             try:
                 return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
             except (discord.InvalidArgument, discord.NotFound):
+                tries += 1
                 del self.cache[channel.id]
 
     async def edit_webhook_message(self, link: str, message_id: int, json: dict):
