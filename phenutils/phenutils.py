@@ -144,6 +144,8 @@ class PhenUtils(commands.Cog):
 
         You may reply to a message to reinvoke it or pass a message ID/link.
         """
+        if not ctx.guild.chunked:
+            await ctx.guild.chunk()
         if not message:
             if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
                 message = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(
