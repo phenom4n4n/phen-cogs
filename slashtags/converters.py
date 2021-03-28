@@ -42,15 +42,15 @@ class TagName(commands.Converter):
             raise commands.BadArgument("Slash tag names may not exceed 32 characters.")
         match = SLASH_NAME.match(argument)
         if not match:
-            raise commands.BadArgument(
-                "Slash tag characters must be alphanumeric or '_' or '-'."
-            )
+            raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
         name = match.group(1)
         if self.check_command:
             cog = ctx.bot.get_cog("SlashTags")
             for tag in cog.guild_tag_cache[ctx.guild.id].values():
                 if tag.name == name:
-                    raise commands.BadArgument(f"A slash tag named `{name}` is already registered.")   
+                    raise commands.BadArgument(
+                        f"A slash tag named `{name}` is already registered."
+                    )
         return name
 
 

@@ -98,6 +98,7 @@ class InteractionMessage(discord.Message):
 
     async def delete(self, *, delay=None):
         if delay is not None:
+
             async def delete():
                 await asyncio.sleep(delay)
                 try:
@@ -108,6 +109,7 @@ class InteractionMessage(discord.Message):
             asyncio.ensure_future(delete(), loop=self._state.loop)
         else:
             await self.http.delete_message(self.__token, self.id)
+
 
 class InteractionResponse:
     def __init__(self, *, cog, data: dict):
