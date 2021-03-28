@@ -34,6 +34,7 @@ from .http import SlashHTTP
 
 log = logging.getLogger("red.phenom4n4n.slashtags.models")
 
+
 class SlashOptionType(IntEnum):
     SUB_COMMAND = 1
     SUB_COMMAND_GROUP = 2
@@ -169,8 +170,8 @@ class InteractionResponse:
 
     @property
     def jump_url(self):
-        guild_id = getattr(self.guild, 'id', '@me')
-        return f'https://discord.com/channels/{guild_id}/{self.channel.id}/{self.id}'
+        guild_id = getattr(self.guild, "id", "@me")
+        return f"https://discord.com/channels/{guild_id}/{self.channel.id}/{self.id}"
 
     def _parse_options(self, options: List[dict], resolved: Dict[str, Dict[str, dict]]):
         for o in options:
