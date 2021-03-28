@@ -113,6 +113,9 @@ class InteractionMessage(discord.Message):
 class UnknownCommand:
     qualified_name = "unknown command"
 
+    def __bool__(self):
+        return False
+
 
 class InteractionResponse:
     def __init__(self, *, cog, data: dict):
