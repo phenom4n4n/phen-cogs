@@ -34,7 +34,6 @@ from .http import SlashHTTP
 
 log = logging.getLogger("red.phenom4n4n.slashtags.models")
 
-
 class SlashOptionType(IntEnum):
     SUB_COMMAND = 1
     SUB_COMMAND_GROUP = 2
@@ -111,6 +110,10 @@ class InteractionMessage(discord.Message):
             await self.http.delete_message(self.__token, self.id)
 
 
+class UnknownCommand:
+    qualified_name = "unknown command"
+
+
 class InteractionResponse:
     def __init__(self, *, cog, data: dict):
         self.cog = cog
@@ -162,7 +165,12 @@ class InteractionResponse:
 
     @property
     def command(self):
-        return self.cog.get_command(self.command_id)
+        return self.cog.get_command(self.command_id) or UnknownCommand()
+
+    @property
+    def jump_url(self):
+        guild_id = getattr(self.guild, 'id', '@me')
+        return f'https://discord.com/channels/{guild_id}/{self.channel.id}/{self.id}'
 
     def _parse_options(self, options: List[dict], resolved: Dict[str, Dict[str, dict]]):
         for o in options:
