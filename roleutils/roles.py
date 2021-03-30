@@ -143,6 +143,9 @@ class Roles(MixinMeta):
         """Creates a role.
 
         Color and whether it is hoisted can be specified."""
+        if len(ctx.guild.roles) >= 250:
+            return await ctx.send("You've already got the maximum amount of roles discord allows")
+     
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
         await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
