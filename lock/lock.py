@@ -42,7 +42,7 @@ class Lock(commands.Cog):
     Advanced channel and server locking.
     """
 
-    __version__ = "1.1.3"
+    __version__ = "1.1.4"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -72,7 +72,11 @@ class Lock(commands.Cog):
         """Lock a channel. Provide a role or member if you would like to lock it for them.
 
         You can only lock a maximum of 10 things at once."""
-        await ctx.trigger_typing()
+        try:
+            await ctx.trigger_typing()
+        except discord.Forbidden: # when another bot is faster to lock
+            return
+
         if not channel:
             channel = ctx.channel
         if not roles_or_members:
@@ -135,7 +139,11 @@ class Lock(commands.Cog):
         """Prevent users from viewing a channel. Provide a role or member if you would like to lock it for them.
 
         You can only lock a maximum of 10 things at once."""
-        await ctx.trigger_typing()
+        try:
+            await ctx.trigger_typing()
+        except discord.Forbidden: # when another bot is faster to lock
+            return
+
         if not channel:
             channel = ctx.channel
         if not roles_or_members:
@@ -252,7 +260,11 @@ class Lock(commands.Cog):
 
         If you would like to override-unlock for something, you can do so by pass `true` as the state argument.
         You can only unlock a maximum of 10 things at once."""
-        await ctx.trigger_typing()
+        try:
+            await ctx.trigger_typing()
+        except discord.Forbidden: # when another bot is faster to lock
+            return
+
         if not channel:
             channel = ctx.channel
         if roles_or_members:
@@ -313,7 +325,11 @@ class Lock(commands.Cog):
 
         If you would like to override-unlock for something, you can do so by pass `true` as the state argument.
         You can only unlock a maximum of 10 things at once."""
-        await ctx.trigger_typing()
+        try:
+            await ctx.trigger_typing()
+        except discord.Forbidden: # when another bot is faster to lock
+            return
+
         if not channel:
             channel = ctx.channel
         if not roles_or_members:
