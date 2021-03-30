@@ -74,7 +74,7 @@ class Lock(commands.Cog):
         You can only lock a maximum of 10 things at once."""
         try:
             await ctx.trigger_typing()
-        except discord.Forbidden: # when another bot is faster to lock
+        except discord.Forbidden:  # when another bot is faster to lock
             return
 
         if not channel:
@@ -141,7 +141,7 @@ class Lock(commands.Cog):
         You can only lock a maximum of 10 things at once."""
         try:
             await ctx.trigger_typing()
-        except discord.Forbidden: # when another bot is faster to lock
+        except discord.Forbidden:  # when another bot is faster to lock
             return
 
         if not channel:
@@ -262,7 +262,7 @@ class Lock(commands.Cog):
         You can only unlock a maximum of 10 things at once."""
         try:
             await ctx.trigger_typing()
-        except discord.Forbidden: # when another bot is faster to lock
+        except discord.Forbidden:  # when another bot is faster to lock
             return
 
         if not channel:
@@ -327,7 +327,7 @@ class Lock(commands.Cog):
         You can only unlock a maximum of 10 things at once."""
         try:
             await ctx.trigger_typing()
-        except discord.Forbidden: # when another bot is faster to lock
+        except discord.Forbidden:  # when another bot is faster to lock
             return
 
         if not channel:
