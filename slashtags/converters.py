@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 import re
 
 from discord.utils import escape_mentions
@@ -33,21 +34,24 @@ SLASH_NAME = re.compile(r"^{?([\w-]{1,32})}?$")
 
 
 class TagName(commands.Converter):
-    def __init__(self, *, check_command: bool = False):
+    def __init__(self, *, check_command: bool = True):
         self.check_command = check_command
 
     async def convert(self, ctx: commands.Converter, argument: str) -> str:
-        if self.check_command:
-            # TODO check if tag name is already registered to this guild
-            ...
         if len(argument) > 32:
-            raise commands.BadArgument("Slash command names may not exceed 32 characters.")
+            raise commands.BadArgument("Slash tag names may not exceed 32 characters.")
         match = SLASH_NAME.match(argument)
         if not match:
-            raise commands.BadArgument(
-                "Slash command characters must be alphanumeric or '_' or '-'."
-            )
-        return match.group(1)
+            raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
+        name = match.group(1)
+        if self.check_command:
+            cog = ctx.bot.get_cog("SlashTags")
+            for tag in cog.guild_tag_cache[ctx.guild.id].values():
+                if tag.name == name:
+                    raise commands.BadArgument(
+                        f"A slash tag named `{name}` is already registered."
+                    )
+        return name
 
 
 class TagConverter(commands.Converter):

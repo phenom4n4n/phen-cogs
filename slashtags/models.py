@@ -21,9 +21,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 import logging
 from enum import IntEnum
 from typing import Dict, List
+import asyncio
 
 import discord
 from redbot.core.bot import Red
@@ -94,8 +96,26 @@ class InteractionMessage(discord.Message):
             allowed_mentions=allowed_mentions,
         )
 
-    async def delete(self):
-        return await self.http.delete_message(self.__token, self.id)
+    async def delete(self, *, delay=None):
+        if delay is not None:
+
+            async def delete():
+                await asyncio.sleep(delay)
+                try:
+                    await self.http.delete_message(self.__token, self.id)
+                except discord.HTTPException:
+                    pass
+
+            asyncio.ensure_future(delete(), loop=self._state.loop)
+        else:
+            await self.http.delete_message(self.__token, self.id)
+
+
+class UnknownCommand:
+    qualified_name = "unknown slash command"
+
+    def __bool__(self):
+        return False
 
 
 class InteractionResponse:
@@ -149,7 +169,12 @@ class InteractionResponse:
 
     @property
     def command(self):
-        return self.cog.get_command(self.command_id)
+        return self.cog.get_command(self.command_id) or UnknownCommand()
+
+    @property
+    def jump_url(self):
+        guild_id = getattr(self.guild, "id", "@me")
+        return f"https://discord.com/channels/{guild_id}/{self.channel.id}/{self.id}"
 
     def _parse_options(self, options: List[dict], resolved: Dict[str, Dict[str, dict]]):
         for o in options:
@@ -224,6 +249,7 @@ class InteractionResponse:
         tts: bool = False,
         allowed_mentions: discord.AllowedMentions = None,
         hidden: bool = False,
+        delete_after: int = None,
     ):
         flags = 64 if hidden else None
         initial = not self.sent
@@ -254,6 +280,8 @@ class InteractionResponse:
             except Exception as e:
                 log.exception(f"Failed to create message object for data:\n{data}", exc_info=e)
             else:
+                if delete_after is not None:
+                    await message.delete(delay=delete_after)
                 return message
 
     async def defer(self, *, hidden: bool = False):

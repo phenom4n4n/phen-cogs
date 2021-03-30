@@ -280,7 +280,7 @@ class EmbedUtils(commands.Cog):
         description: str,
     ):
         """
-        Edit a message sent [botname]'s embeds.
+        Edit a message sent by [botname]'s embeds.
         """
         color = color or await ctx.embed_color()
         e = discord.Embed(color=color, title=title, description=description)
