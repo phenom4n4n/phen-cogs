@@ -147,7 +147,7 @@ class Roles(MixinMeta):
         """
         if len(ctx.guild.roles) >= 250:
             return await ctx.send("This server has reached the maximum role limit (250).")
-     
+
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
         await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
@@ -460,7 +460,9 @@ class Roles(MixinMeta):
             return
         verb = "add" if adding else "remove"
         word = "to" if adding else "from"
-        await ctx.send(f"Beginning to {verb} **{role.name}** {word} **{len(member_list)}** members.")
+        await ctx.send(
+            f"Beginning to {verb} **{role.name}** {word} **{len(member_list)}** members."
+        )
         async with ctx.typing():
             result = await self.massrole(member_list, [role], get_audit_reason(ctx.author), adding)
             result_text = f"{verb.title()[:5]}ed **{role.name}** {word} **{len(result['completed'])}** members."
