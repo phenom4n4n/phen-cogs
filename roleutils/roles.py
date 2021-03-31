@@ -122,7 +122,7 @@ class Roles(MixinMeta):
         if guild_roughly_chunked(ctx.guild) is False and self.bot.intents.members:
             await ctx.guild.chunk()
         if not role.members:
-            return await ctx.send(f"`{role}` has no members.")
+            return await ctx.send(f"**{role}** has no members.")
         members = "\n".join(f"{member} - {member.id}" for member in role.members)
         if len(members) > 2000:
             await ctx.send(file=text_to_file(members, f"members.txt"))
@@ -140,9 +140,14 @@ class Roles(MixinMeta):
         *,
         name: str = None,
     ):
-        """Creates a role.
+        """
+        Creates a role.
 
-        Color and whether it is hoisted can be specified."""
+        Color and whether it is hoisted can be specified.
+        """
+        if len(ctx.guild.roles) >= 250:
+            return await ctx.send("This server has reached the maximum role limit (250).")
+     
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
         await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
@@ -176,12 +181,12 @@ class Roles(MixinMeta):
         """Add a role to a member."""
         if role in member.roles:
             await ctx.send(
-                f"**{member}** already has the role `{role}`. Maybe try removing it instead."
+                f"**{member}** already has the role **{role}**. Maybe try removing it instead."
             )
             return
         reason = get_audit_reason(ctx.author)
         await member.add_roles(role, reason=reason)
-        await ctx.send(f"Added `{role.name}` to **{member}**.")
+        await ctx.send(f"Added **{role.name}** to **{member}**.")
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -192,12 +197,12 @@ class Roles(MixinMeta):
         """Remove a role from a member."""
         if role not in member.roles:
             await ctx.send(
-                f"**{member}** doesn't have the role `{role}`. Maybe try adding it instead."
+                f"**{member}** doesn't have the role **{role}**. Maybe try adding it instead."
             )
             return
         reason = get_audit_reason(ctx.author)
         await member.remove_roles(role, reason=reason)
-        await ctx.send(f"Removed `{role.name}` from **{member}**.")
+        await ctx.send(f"Removed **{role.name}** from **{member}**.")
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -381,7 +386,7 @@ class Roles(MixinMeta):
             ctx,
             [member for member in target_role.members],
             add_role,
-            f"Every member of `{target_role}` has this role.",
+            f"Every member of **{target_role}** has this role.",
         )
 
     @commands.admin_or_permissions(manage_roles=True)
@@ -395,7 +400,7 @@ class Roles(MixinMeta):
             ctx,
             [member for member in target_role.members],
             remove_role,
-            f"No one in `{target_role}` has this role.",
+            f"No one in **{target_role}** has this role.",
             False,
         )
 
@@ -421,7 +426,7 @@ class Roles(MixinMeta):
             ctx,
             args,
             role,
-            f"No one was found with the given args that was eligible to recieve `{role}`.",
+            f"No one was found with the given args that was eligible to recieve **{role}**.",
         )
 
     @target.command(name="remove")
@@ -435,7 +440,7 @@ class Roles(MixinMeta):
             ctx,
             args,
             role,
-            f"No one was found with the given args that was eligible have `{role}` removed from them.",
+            f"No one was found with the given args that was eligible have **{role}** removed from them.",
             False,
         )
 
@@ -455,10 +460,10 @@ class Roles(MixinMeta):
             return
         verb = "add" if adding else "remove"
         word = "to" if adding else "from"
-        await ctx.send(f"Beginning to {verb} `{role.name}` {word} **{len(member_list)}** members.")
+        await ctx.send(f"Beginning to {verb} **{role.name}** {word} **{len(member_list)}** members.")
         async with ctx.typing():
             result = await self.massrole(member_list, [role], get_audit_reason(ctx.author), adding)
-            result_text = f"{verb.title()[:5]}ed `{role.name}` {word} **{len(result['completed'])}** members."
+            result_text = f"{verb.title()[:5]}ed **{role.name}** {word} **{len(result['completed'])}** members."
             if result["skipped"]:
                 result_text += (
                     f"\nSkipped {verb[:5]}ing roles for **{len(result['skipped'])}** members."
