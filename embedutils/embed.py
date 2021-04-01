@@ -99,7 +99,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.1.4"
+    __version__ = "1.1.5"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -220,7 +220,7 @@ class EmbedUtils(commands.Cog):
     ):
         """Post an embed that is stored."""
         channel = channel or ctx.channel
-        await ctx.send(embed=discord.Embed.from_dict(name["embed"]))
+        await channel.send(embed=discord.Embed.from_dict(name["embed"]))
         async with self.config.guild(ctx.guild).embeds() as a:
             a[name["name"]]["uses"] += 1
 
