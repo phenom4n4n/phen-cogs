@@ -198,14 +198,14 @@ class CustomPing(commands.Cog):
     async def pingset_hostlatency(self, ctx: commands.Context, true_or_false: bool = None):
         """Toggle displaying host latency on the ping command."""
         target_state = (
-            true_or_false
-            if true_or_false is not None
-            else not (await self.config.host_latency())
+            true_or_false if true_or_false is not None else not (await self.config.host_latency())
         )
         await self.config.host_latency.set(target_state)
         self.settings["host_latency"] = target_state
         word = " " if target_state else " not "
-        await ctx.send(f"Host latency will{word}be displayed on the `{ctx.clean_prefix}ping` command.")
+        await ctx.send(
+            f"Host latency will{word}be displayed on the `{ctx.clean_prefix}ping` command."
+        )
 
 
 async def setup(bot):
