@@ -32,7 +32,7 @@ import time
 
 import discord
 import speedtest
-from redbot.core import checks, commands
+from redbot.core import commands, Config
 
 old_ping = None
 
@@ -42,6 +42,17 @@ class CustomPing(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.config = Config.get_conf(
+            self,
+            identifier=325236743863625234572,
+            force_registration=True,
+        )
+        default_global = {"host_latency": True}
+        self.config.register_global(**default_global)
+        self.settings = {}
+
+    async def initialize(self):
+        self.settings = await self.config.all()
 
     async def red_delete_data_for_user(self, **kwargs):
         return
@@ -55,7 +66,7 @@ class CustomPing(commands.Cog):
                 pass
             self.bot.add_command(old_ping)
 
-    @checks.bot_has_permissions(embed_links=True)
+    @commands.bot_has_permissions(embed_links=True)
     @commands.cooldown(2, 5, commands.BucketType.user)
     @commands.group(invoke_without_command=True)
     async def ping(self, ctx):
@@ -83,10 +94,15 @@ class CustomPing(commands.Cog):
         else:
             color = discord.Colour.green()
 
+        if not self.settings["host_latency"]:
+            e.title = "Pong!"
+
         e.color = color
         try:
             await message.edit(embed=e)
         except discord.NotFound:
+            return
+        if not self.settings["host_latency"]:
             return
 
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
@@ -170,14 +186,34 @@ class CustomPing(commands.Cog):
         else:
             color = discord.Colour.green()
         e = discord.Embed(color=color, title="Shard Pings", description="\n".join(description))
-        e.set_footer(text=f"Average: {average_ping}ms")
+        e.set_footer(text=f"Average: {round(average_ping, 2)}ms")
         await ctx.send(embed=e)
 
+    @commands.is_owner()
+    @commands.group()
+    async def pingset(self, ctx: commands.Context):
+        """Manage CustomPing settings."""
 
-def setup(bot):
-    ping = CustomPing(bot)
+    @pingset.command(name="hostlatency")
+    async def pingset_hostlatency(self, ctx: commands.Context, true_or_false: bool = None):
+        """Toggle displaying host latency on the ping command."""
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.host_latency())
+        )
+        await self.config.host_latency.set(target_state)
+        self.settings["host_latency"] = target_state
+        word = " " if target_state else " not "
+        await ctx.send(f"Host latency will{word}be displayed on the `{ctx.clean_prefix}ping` command.")
+
+
+async def setup(bot):
     global old_ping
     old_ping = bot.get_command("ping")
     if old_ping:
         bot.remove_command(old_ping.name)
-    bot.add_cog(ping)
+
+    cog = CustomPing(bot)
+    await cog.initialize()
+    bot.add_cog(cog)
