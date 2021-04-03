@@ -92,7 +92,7 @@ class BanChart(commands.Cog):
                 name = str(user)
                 if len(name) > 23:
                     name = name[:20] + "..."
-                counter[name] += 1
+                counter[name.replace("$", "\\$")] += 1
             task = functools.partial(
                 self.create_chart, counter, f"Ban Mods for the last {limit} bans"
             )
