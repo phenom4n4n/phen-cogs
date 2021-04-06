@@ -49,7 +49,8 @@
 | Webhook | Send messages through webhooks. |
 
 # Contact
-If you have a feature request or have found a bug, open a PR/issue or join my [support server](https://discord.gg/cGJ8JmX).
+If you encounter bugs or require support, go to *#support_phen-cogs* on the [cog support server](https://discord.gg/GET4DVk).
+For feature requests, open a PR/issue on this repo.
 
 # Credits
 [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot)
