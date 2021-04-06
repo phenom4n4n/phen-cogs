@@ -101,7 +101,7 @@ class ReactRoles(MixinMeta):
         return emoji if isinstance(emoji, str) else str(emoji.id)
 
     @commands.admin_or_permissions(manage_roles=True)
-    @commands.group(aliases=["rr"])
+    @commands.group()
     async def reactrole(self, ctx: commands.Context):
         """Base command for Reaction Role management."""
 
