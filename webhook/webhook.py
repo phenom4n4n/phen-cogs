@@ -75,7 +75,6 @@ class Webhook(commands.Cog):
         self.config.register_global(monkey_patch=False)
 
         self.cache = {}
-        self.session = aiohttp.ClientSession()
 
         self.old_send = commands.Context.send
         self._monkey_patched = False
@@ -87,7 +86,6 @@ class Webhook(commands.Cog):
 
     def cog_unload(self):
         self._remove_monkeypatch()
-        asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, **kwargs):
         return
@@ -498,12 +496,3 @@ class Webhook(commands.Cog):
             except (discord.InvalidArgument, discord.NotFound):
                 tries += 1
                 del self.cache[channel.id]
-
-    async def edit_webhook_message(self, link: str, message_id: int, json: dict):
-        async with self.session.patch(
-            f"{link}/messages/{message_id}",
-            json=json,
-            headers={"Content-Type": "application/json"},
-        ) as response:
-            response = await response.json()
-            return response
