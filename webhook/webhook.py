@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import asyncio
+from functools import partial
 from typing import Optional
 
 import aiohttp
@@ -31,6 +32,18 @@ from redbot.core import Config, commands
 from redbot.core.utils.chat_formatting import humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
+
+
+async def _monkeypatch_send(ctx: commands.Context, *args, **kwargs) -> discord.Message:
+    self = ctx.bot.get_cog("Webhook")
+    try:
+        webhook = await self.get_webhook(ctx=ctx)
+        kwargs["username"] = ctx.author.display_name
+        kwargs["avatar_url"] = ctx.author.avatar_url
+        kwargs["wait"] = True
+        return await webhook.send(*args, **kwargs)
+    except discord.HTTPException:
+        return await self.old_send(*args, **kwargs)
 
 
 class FakeResponse:
@@ -48,16 +61,39 @@ class Webhook(commands.Cog):
 
     __author__ = "PhenoM4n4n"
 
+    __version__ = "1.1.0"
+
     def __init__(self, bot):
         self.bot = bot
+        self.config = Config.get_conf(
+            self,
+            identifier=2352346345723453463,
+            force_registration=True,
+        )
+        self.config.register_global(monkey_patch=False)
+
         self.cache = {}
         self.session = aiohttp.ClientSession()
 
+        self.old_send = commands.Context.send
+        self._monkey_patched = False
+
+    async def initialize(self):
+        data = await self.config.all()
+        if data["monkey_patch"]:
+            self._apply_monkeypatch()
+
     def cog_unload(self):
-        self.bot.loop.create_task(self.session.close())
+        self._remove_monkeypatch()
+        asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, **kwargs):
         return
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     @staticmethod
     async def delete_quietly(ctx: commands.Context):
@@ -331,6 +367,39 @@ class Webhook(commands.Cog):
             raise commands.BadArgument
         await webhook.edit_message(message.id, content=content)
         await self.delete_quietly(ctx)
+
+    def _apply_monkeypatch(self):
+        if not self._monkey_patched:
+            commands.Context.send = self._webhook_monkeypatch_send
+            self._monkey_patched = True
+
+    def _remove_monkeypatch(self):
+        if self._monkey_patched:
+            commands.Context.send = self.old_send
+            self._monkey_patched = False
+
+    @property
+    def _webhook_monkeypatch_send(self):
+        return _monkeypatch_send
+
+    @commands.is_owner()
+    @webhook.command(name="monkeypatch", hidden=True)
+    async def webhook_monkeypatch(self, ctx: commands.Context, true_or_false: bool = None):
+        """
+        Monkeypatch `commands.Context.send` to use webhooks.
+        
+        Don't run this if you don't know what monkeypatch means.
+        """
+        target_state = (
+            true_or_false if true_or_false is not None else not (await self.config.monkey_patch())
+        )
+        await self.config.monkey_patch.set(target_state)
+        if target_state:
+            self._apply_monkeypatch()
+            await ctx.send("Command responses will use webhooks.")
+        else:
+            self._remove_monkeypatch()
+            await ctx.send("Command responses will be sent normally.")
 
     async def webhook_link_send(
         self,
