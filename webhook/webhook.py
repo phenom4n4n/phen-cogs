@@ -34,16 +34,16 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_ad
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 
-async def _monkeypatch_send(ctx: commands.Context, *args, **kwargs) -> discord.Message:
+async def _monkeypatch_send(ctx: commands.Context, content: str = None, **kwargs) -> discord.Message:
     self = ctx.bot.get_cog("Webhook")
     try:
         webhook = await self.get_webhook(ctx=ctx)
         kwargs["username"] = ctx.author.display_name
         kwargs["avatar_url"] = ctx.author.avatar_url
         kwargs["wait"] = True
-        return await webhook.send(*args, **kwargs)
+        return await webhook.send(content, **kwargs)
     except discord.HTTPException:
-        return await self.old_send(*args, **kwargs)
+        return await self.old_send(content, **kwargs)
 
 
 class FakeResponse:
@@ -61,7 +61,7 @@ class Webhook(commands.Cog):
 
     __author__ = "PhenoM4n4n"
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
     def __init__(self, bot):
         self.bot = bot
