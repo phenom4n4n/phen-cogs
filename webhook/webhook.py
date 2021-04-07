@@ -33,7 +33,9 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_ad
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 
-async def _monkeypatch_send(ctx: commands.Context, content: str = None, **kwargs) -> discord.Message:
+async def _monkeypatch_send(
+    ctx: commands.Context, content: str = None, **kwargs
+) -> discord.Message:
     self = ctx.bot.get_cog("Webhook")
     try:
         webhook = await self.get_webhook(ctx=ctx)
