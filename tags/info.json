@@ -10,7 +10,7 @@
     "required_cogs": {},
     "requirements": [
         "PyParsing",
-        "git+https://github.com/phenom4n4n/TagScript.git@79d0bfd95aa4f330fb89071d4c83aabd3bb9e118",
+        "git+https://github.com/phenom4n4n/TagScript.git@c6e89b34df66354f7f3c7d1f3569d8957fbc13e2",
         "beautifulsoup4"
     ],
     "tags": [
