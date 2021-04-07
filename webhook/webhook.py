@@ -23,7 +23,6 @@ SOFTWARE.
 """
 
 import asyncio
-from functools import partial
 from typing import Optional
 
 import aiohttp
@@ -387,7 +386,7 @@ class Webhook(commands.Cog):
     async def webhook_monkeypatch(self, ctx: commands.Context, true_or_false: bool = None):
         """
         Monkeypatch `commands.Context.send` to use webhooks.
-        
+
         Don't run this if you don't know what monkeypatch means.
         """
         target_state = (
