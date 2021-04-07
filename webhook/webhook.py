@@ -35,6 +35,7 @@ from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 async def _monkeypatch_send(ctx: commands.Context, content: str = None, **kwargs) -> discord.Message:
     self = ctx.bot.get_cog("Webhook")
+    original_kwargs = kwargs.copy()
     try:
         webhook = await self.get_webhook(ctx=ctx)
         kwargs["username"] = ctx.author.display_name
@@ -42,7 +43,7 @@ async def _monkeypatch_send(ctx: commands.Context, content: str = None, **kwargs
         kwargs["wait"] = True
         return await webhook.send(content, **kwargs)
     except discord.HTTPException:
-        return await self.old_send(content, **kwargs)
+        return await super(commands.Context, ctx).send(content, **original_kwargs)
 
 
 class FakeResponse:
@@ -60,7 +61,7 @@ class Webhook(commands.Cog):
 
     __author__ = "PhenoM4n4n"
 
-    __version__ = "1.1.1"
+    __version__ = "1.1.2"
 
     def __init__(self, bot):
         self.bot = bot
