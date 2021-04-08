@@ -369,9 +369,17 @@ class Baron(commands.Cog):
         Pass `False` at the end if you would like to view servers that are greater than the specified number.
         """
         if less_than:
-            guilds = [guild async for guild in AsyncIter(self.bot.guilds, steps=100) if guild.member_count < members]
+            guilds = [
+                guild
+                async for guild in AsyncIter(self.bot.guilds, steps=100)
+                if guild.member_count < members
+            ]
         else:
-            guilds = [guild async for guild in AsyncIter(self.bot.guilds, steps=100) if guild.member_count > members]
+            guilds = [
+                guild
+                async for guild in AsyncIter(self.bot.guilds, steps=100)
+                if guild.member_count > members
+            ]
         if not guilds:
             return await ctx.send(
                 f"There are no servers with a member count {'less' if less_than else 'greater'} than {members}."
@@ -458,7 +466,9 @@ class Baron(commands.Cog):
         await self.leave_guilds(ctx, guilds, reason)
 
     @baron_leave.command(name="botfarms")
-    async def baron_leave_botfarms(self, ctx: commands.Context, rate: int = 75, confirm: bool = False):
+    async def baron_leave_botfarms(
+        self, ctx: commands.Context, rate: int = 75, confirm: bool = False
+    ):
         """Leave servers with the given bot to member ratio."""
         if rate not in range(1, 100):
             raise commands.BadArgument
@@ -474,9 +484,15 @@ class Baron(commands.Cog):
         )
 
     @baron_leave.command(name="members")
-    async def baron_leave_members(self, ctx: commands.Context, members: int, confirm: bool = False):
+    async def baron_leave_members(
+        self, ctx: commands.Context, members: int, confirm: bool = False
+    ):
         """Leave all servers that have less members than the given number."""
-        guilds = [guild async for guild in AsyncIter(self.bot.guilds, steps=100) if guild.member_count < members]
+        guilds = [
+            guild
+            async for guild in AsyncIter(self.bot.guilds, steps=100)
+            if guild.member_count < members
+        ]
         if not guilds:
             await ctx.send(f"There are no servers with a member count less than {members}.")
         await self.leave_guilds(
@@ -497,7 +513,9 @@ class Baron(commands.Cog):
 
     @commands.check(comstats_cog)
     @baron_leave.command(name="commands")
-    async def baron_leave_commands(self, ctx: commands.Context, commands: int, confirm: bool = False):
+    async def baron_leave_commands(
+        self, ctx: commands.Context, commands: int, confirm: bool = False
+    ):
         """Leave all servers that have used less commands than the given number."""
         cog = self.bot.get_cog("CommandStats")
         data = await cog.config.guilddata()
@@ -550,17 +568,25 @@ class Baron(commands.Cog):
         )
 
     async def leave_guilds(
-        self, ctx: commands.Context, guilds: list, message: str, *, notify_guilds: bool = True, confirmed: bool = False,
+        self,
+        ctx: commands.Context,
+        guilds: list,
+        message: str,
+        *,
+        notify_guilds: bool = True,
+        confirmed: bool = False,
     ):
         data = await self.config.all()
-        unwl_guilds = [guild async for guild in AsyncIter(guilds, steps=100) if guild.id not in data["whitelist"]]
+        unwl_guilds = [
+            guild
+            async for guild in AsyncIter(guilds, steps=100)
+            if guild.id not in data["whitelist"]
+        ]
         if not unwl_guilds:
             await ctx.send("There are no servers to leave that aren't whitelisted.")
             return
 
-        name_ids = "\n".join(
-            f"{guild.name} - ({guild.id})" for guild in unwl_guilds[:5]
-        )
+        name_ids = "\n".join(f"{guild.name} - ({guild.id})" for guild in unwl_guilds[:5])
 
         guild_preview = name_ids + (
             f"\nand {len(unwl_guilds) - 5} other servers.." if len(unwl_guilds) > 5 else ""
@@ -698,7 +724,8 @@ class Baron(commands.Cog):
             await guild.leave()
             await self.baron_log("min_member_leave", guild=guild)
         elif data["bot_ratio"] and (
-            len([x async for x in AsyncIter(guild.members, steps=100) if x.bot]) / guild.member_count
+            len([x async for x in AsyncIter(guild.members, steps=100) if x.bot])
+            / guild.member_count
         ) > (data["bot_ratio"] / 100):
             await self.notify_guild(
                 guild,
