@@ -44,7 +44,7 @@ async def _monkeypatch_send(
         kwargs["avatar_url"] = ctx.author.avatar_url
         kwargs["wait"] = True
         return await webhook.send(content, **kwargs)
-    except discord.HTTPException:
+    except Exception:
         return await super(commands.Context, ctx).send(content, **original_kwargs)
 
 
@@ -63,7 +63,7 @@ class Webhook(commands.Cog):
 
     __author__ = "PhenoM4n4n"
 
-    __version__ = "1.1.2"
+    __version__ = "1.1.3"
 
     def __init__(self, bot):
         self.bot = bot
