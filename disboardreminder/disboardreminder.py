@@ -24,11 +24,9 @@ SOFTWARE.
 
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import asyncio
-import functools
 import logging
 from collections import defaultdict
 from datetime import datetime
-from io import BytesIO
 from typing import Optional
 from collections import Counter
 
