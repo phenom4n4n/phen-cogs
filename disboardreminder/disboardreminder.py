@@ -24,17 +24,25 @@ SOFTWARE.
 
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import asyncio
+import functools
 import logging
+from collections import defaultdict
 from datetime import datetime
+from io import BytesIO
+from typing import Optional
+from collections import Counter
 
 import discord
-from redbot.core import Config, checks, commands
+from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
+from redbot.core.utils.predicates import MessagePredicate
 
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
+
+from .converters import FuzzyRole, StrictRole
 
 
 class DisboardReminder(commands.Cog):
@@ -42,7 +50,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.1.1"
+    __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -57,10 +65,13 @@ class DisboardReminder(commands.Cog):
         default_guild = {
             "channel": None,
             "role": None,
+            "reward_role": None,
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
             "tyMessage": "{member} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild.id}>.",
             "nextBump": None,
+            "lock": False,
             "clean": False,
+            "weekly": Counter(),
         }
         default_member = {
             "count": 0,
@@ -72,14 +83,15 @@ class DisboardReminder(commands.Cog):
         self.bump_cache = {}
         self.channel_cache = {}
         self.load_check = asyncio.create_task(self.bump_worker())
-        self.tasks = []
+        self.tasks = defaultdict(list)
 
     def cog_unload(self):
         if self.load_check:
             self.load_check.cancel()
         if self.tasks:
-            for task in self.tasks:
-                task.cancel()
+            for guild_id, task_list in self.tasks.items():
+                for task in task_list:
+                    task.cancel()
 
     async def red_delete_data_for_user(self, requester, user_id):
         for guild, members in await self.config.all_members():
@@ -100,11 +112,12 @@ class DisboardReminder(commands.Cog):
                 now = datetime.utcnow().timestamp()
                 remaining = timer - now
                 if remaining <= 0:
-                    self.tasks.append(asyncio.create_task(self.bump_message(guild)))
+                    self.tasks[guild.id].append(asyncio.create_task(self.bump_message(guild)))
                 else:
-                    self.tasks.append(asyncio.create_task(self.bump_timer(guild, timer)))
+                    self.tasks[guild.id].append(asyncio.create_task(self.bump_timer(guild, timer)))
+                await asyncio.sleep(0.2)
 
-    @checks.admin_or_permissions(manage_guild=True)
+    @commands.admin_or_permissions(manage_guild=True)
     @commands.guild_only()
     @commands.group(aliases=["bprm"])
     async def bumpreminder(self, ctx):
@@ -134,17 +147,37 @@ class DisboardReminder(commands.Cog):
         else:
             raise commands.BadArgument
 
-    @checks.has_permissions(mention_everyone=True)
+    @commands.has_permissions(mention_everyone=True)
     @bumpreminder.command()
-    async def pingrole(self, ctx, role: discord.Role = None):
-        """Set a role to ping for bump reminders. If no role is provided, it will clear the current role."""
+    async def pingrole(self, ctx: commands.Context, role: FuzzyRole = None):
+        """
+        Set a role to ping for bump reminders.
 
+        If no role is provided, it will clear the current role.
+        """
         if not role:
             await self.config.guild(ctx.guild).role.clear()
             await ctx.send("Cleared the role for bump reminders.")
         else:
             await self.config.guild(ctx.guild).role.set(role.id)
             await ctx.send(f"Set {role.name} to ping for bump reminders.")
+
+    # @commands.is_owner()
+    # @commands.has_permissions(manage_roles=True)
+    # @bumpreminder.command(name="rewardrole")
+    async def bumpreminder_rewardrole(self, ctx: commands.Context, role: StrictRole = None):
+        """
+        Set a reward role to give to the top bumper.
+
+        If no role is provided, it will clear the current role.
+        """
+        if not role:
+            await self.config.guild(ctx.guild).reward_role.clear()
+            await ctx.send("Cleared the bump reward role.")
+        else:
+            await self.config.guild(ctx.guild).reward_role.set(role.id)
+            await ctx.send(f"Set {role.name} as the bump reward role.")
+            await self.assign_reward_role(ctx.guild, role)
 
     @bumpreminder.command(aliases=["ty"])
     async def thankyou(self, ctx, *, message: str = None):
@@ -155,7 +188,6 @@ class DisboardReminder(commands.Cog):
         `{guild}` - This server
 
         Usage: `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`"""
-
         if message:
             await self.config.guild(ctx.guild).tyMessage.set(message)
             await ctx.tick()
@@ -166,7 +198,6 @@ class DisboardReminder(commands.Cog):
     @bumpreminder.command()
     async def message(self, ctx, *, message: str = None):
         """Change the message used for reminders. Providing no message will reset to the default message."""
-
         if message:
             await self.config.guild(ctx.guild).message.set(message)
             await ctx.tick()
@@ -176,10 +207,9 @@ class DisboardReminder(commands.Cog):
 
     @bumpreminder.command()
     async def clean(self, ctx, true_or_false: bool = None):
-        """Toggle whether the bot should keep the bump channel "clean."
+        """Toggle whether [botname] should keep the bump channel "clean."
 
-        The bot will remove all messages in the channel except for bump messages."""
-
+        [botname] will remove all failed invoke messages by Disboard."""
         target_state = (
             true_or_false
             if true_or_false is not None
@@ -190,6 +220,39 @@ class DisboardReminder(commands.Cog):
             await ctx.send("I will now clean the bump channel.")
         else:
             await ctx.send("I will no longer clean the bump channel.")
+
+    @commands.has_permissions(manage_roles=True)
+    @bumpreminder.command()
+    async def lock(self, ctx, true_or_false: bool = None):
+        """Toggle whether the bot should automatically lock/unlock the bump channel."""
+        target_state = (
+            true_or_false
+            if true_or_false is not None
+            else not (await self.config.guild(ctx.guild).lock())
+        )
+        await self.config.guild(ctx.guild).lock.set(target_state)
+        if target_state:
+            await ctx.send("I will now auto-lock the bump channel.")
+        else:
+            await ctx.send("I will no longer auto-lock the bump channel.")
+
+    @commands.is_owner()
+    @bumpreminder.command(hidden=True)
+    async def resetweekly(self, ctx: commands.Context):
+        """Reset the weekly bump leaderboard."""
+        pred = MessagePredicate.yes_or_no(ctx=ctx)
+        await ctx.send("Are you sure you want to reset the weekly bump leaderboard?")
+        try:
+            await self.bot.wait_for("message", check=pred, timeout=30)
+        except asyncio.TimeoutError:
+            return await ctx.send(
+                "Confirmation timed out, not resetting the weekly bump leaderboard.."
+            )
+        if pred.result is True:
+            await self.config.guild(ctx.guild).weekly.clear()
+            await ctx.send(f"Weekly bump leaderboard reset.")
+        else:
+            await ctx.send(f"Alright, not resetting the weekly bump leaderboard..")
 
     @bumpreminder.command()
     async def settings(self, ctx):
@@ -205,9 +268,15 @@ class DisboardReminder(commands.Cog):
             pingrole = pingrole.mention
         else:
             pingrole = "None"
+        if reward_role := guild.get_role(data["reward_role"]):
+            reward_role = reward_role.mention
+        else:
+            reward_role = "None"
         description = [
             f"**Channel:** {channel}",
             f"**Ping Role:** {pingrole}",
+            # f"**Reward Role:** {reward_role}",
+            f"**Auto-lock:** {data['lock']}",
             f"**Clean Mode:** {data['clean']}",
         ]
         description = "\n".join(description)
@@ -228,35 +297,193 @@ class DisboardReminder(commands.Cog):
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         await ctx.send(embed=e)
 
+    @commands.is_owner()
+    @commands.guild_only()
+    @commands.group(aliases=["bumplb", "bprmtop", "bprmlb"], invoke_without_command=True, hidden=True)
+    async def bumpleaderboard(self, ctx, amount: int = 10):
+        """View the top Bumpers in the server."""
+        if amount < 1:
+            raise commands.BadArgument
+
+        members_data = await self.config.all_members(ctx.guild)
+        members_list = [(member, data["count"]) for member, data in members_data.items()]
+        ordered_list = sorted(members_list, key=lambda m: m[1], reverse=True)[:(amount)]
+
+        mapped_strings = [
+            f"{index}. <@{member[0]}>: {member[1]}"
+            for index, member in enumerate(ordered_list, start=1)
+        ]
+
+        if not mapped_strings:
+            await ctx.send("There are no tracked bumpers in this server.")
+            return
+
+        color = await ctx.embed_color()
+        leaderboard_string = "\n".join(mapped_strings)
+        if len(leaderboard_string) > 2048:
+            embeds = []
+            leaderboard_pages = list(pagify(leaderboard_string))
+            for index, page in enumerate(leaderboard_pages, start=1):
+                embed = discord.Embed(color=color, title="Bump Leaderboard", description=page)
+                embed.set_footer(text=f"{index}/{len(leaderboard_pages)}")
+                embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            embed = discord.Embed(
+                color=color, title="Bump Leaderboard", description=leaderboard_string
+            )
+            embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+            await ctx.send(embed=embed)
+
+    @bumpleaderboard.command(name="weekly")
+    async def bumpleaderboard_weekly(self, ctx: commands.Context, amount: int = 10):
+        """View the top Bumpers in the server."""
+        if amount < 1:
+            raise commands.BadArgument
+
+        members_data = await self.config.guild(ctx.guild).weekly()
+        members_list = [(member, count) for member, count in members_data.most_common()]
+        members_list.sort(key=lambda m: m[1], reverse=True)
+
+        mapped_strings = [
+            f"{index}. <@{member_id}>: {member_count}"
+            for index, (member_id, member_count) in enumerate(
+                members_list, start=1
+            )
+        ]
+
+        if not mapped_strings:
+            await ctx.send("There are no tracked weekly bumpers in this server.")
+            return
+
+        color = await ctx.embed_color()
+        leaderboard_string = "\n".join(mapped_strings)
+        if len(leaderboard_string) > 2048:
+            embeds = []
+            leaderboard_pages = list(pagify(leaderboard_string))
+            for index, page in enumerate(leaderboard_pages, start=1):
+                embed = discord.Embed(
+                    color=color, title="Weekly Bump Leaderboard", description=page
+                )
+                embed.set_footer(text=f"{index}/{len(leaderboard_pages)}")
+                embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+                embeds.append(embed)
+            await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            embed = discord.Embed(
+                color=color, title="Weekly Bump Leaderboard", description=leaderboard_string
+            )
+            embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon_url)
+            await ctx.send(embed=embed)
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.cooldown(1, 15, commands.BucketType.guild)
+    @bumpleaderboard.command()
+    async def chart(self, ctx: commands.Context):
+        """View the top bumpers in a chart."""
+        async with ctx.typing():
+            counter = Counter()
+            members_data = await self.config.all_members(ctx.guild)
+            if not members_data:
+                await ctx.send("I have no bump data for this server.")
+                return
+
+            for member, data in members_data.items():
+                _member = ctx.guild.get_member(member)
+                if _member:
+                    if len(_member.display_name) >= 23:
+                        whole_name = "{}...".format(_member.display_name[:20]).replace("$", "\\$")
+                    else:
+                        whole_name = _member.display_name.replace("$", "\\$")
+                    counter[whole_name] = data["count"]
+                else:
+                    counter[str(member)] = data["count"]
+
+            task = functools.partial(self.create_chart, counter, ctx.guild)
+            task = self.bot.loop.run_in_executor(None, task)
+            try:
+                chart = await asyncio.wait_for(task, timeout=60)
+            except asyncio.TimeoutError:
+                return await ctx.send(
+                    "An error occurred while generating this image. Try again later."
+                )
+        await ctx.send(file=discord.File(chart, "chart.png"))
+
     async def bump_timer(self, guild: discord.Guild, remaining: int):
         d = datetime.fromtimestamp(remaining)
         await discord.utils.sleep_until(d)
         await self.bump_message(guild)
 
     async def bump_message(self, guild: discord.Guild):
+        guild = self.bot.get_guild(guild.id)
+        if not guild:
+            return
         data = await self.config.guild(guild).all()
         channel = guild.get_channel(data["channel"])
-        allowed_mentions = discord.AllowedMentions(roles=True)
+
         if not channel or not channel.permissions_for(guild.me).send_messages:
             await self.config.guild(guild).channel.clear()
-        elif data["role"]:
+            return
+
+        my_perms = channel.permissions_for(guild.me)
+        if data["lock"] and my_perms.manage_roles:
+            if my_perms.send_messages is not True:
+                my_perms.update(send_messages=True)
+                await channel.set_permissions(
+                    guild.me, overwrite=my_perms, reason="DisboardReminder auto-lock"
+                )
+
+            current_perms = channel.overwrites_for(guild.default_role)
+            if current_perms.send_messages is not None:
+                current_perms.update(send_messages=None)
+                await channel.set_permissions(
+                    guild.default_role,
+                    overwrite=current_perms,
+                    reason="DisboardReminder auto-lock",
+                )
+
+        if data["role"]:
             role = guild.get_role(data["role"])
             if role:
                 message = f"{role.mention}: {data['message']}"
-                cog = self.bot.get_cog("ForceMention")
-                if cog:
-                    await cog.forcemention(channel, role, message)
-                else:
-                    await channel.send(message, allowed_mentions=allowed_mentions)
+                await self.bot.get_cog("ForceMention").forcemention(channel, role, message)
             else:
                 await self.config.guild(guild).role.clear()
         else:
             message = data["message"]
+            mentionPerms = discord.AllowedMentions(roles=True)
             try:
-                await channel.send(message, allowed_mentions=allowed_mentions)
+                await channel.send(message, allowed_mentions=mentionPerms)
             except discord.errors.Forbidden:
                 await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
+
+    async def get_top_bumper(self, guild: discord.Guild) -> Optional[discord.Member]:
+        members_data = await self.config.all_members(guild)
+        members_list = []
+        if not guild.chunked:
+            await guild.chunk()
+        for member, data in members_data.items():
+            if member := guild.get_member(member):
+                members_list.append((member, data["count"]))
+        if members_list:
+            members_list.sort(key=lambda m: m[1], reverse=True)
+            return members_list[0][0]
+
+    async def assign_reward_role(self, guild: discord.Guild, role: discord.Role):
+        if role.position >= guild.me.top_role.position:
+            await self.config.guild(guild).reward_role.clear()
+            return
+        member = await self.get_top_bumper(guild)
+        if not member:
+            return
+        if role.members:
+            for m in role.members:
+                if m != member:
+                    await m.remove_roles(role, reason="Not the top bumper")
+        if role.id not in [r.id for r in member.roles]:
+            await member.add_roles(role, reason="Top bumper")
 
     @commands.Cog.listener("on_message_without_command")
     async def disboard_remind(self, message: discord.Message):
@@ -268,6 +495,8 @@ class DisboardReminder(commands.Cog):
         guild: discord.Guild = message.guild
         me: discord.Member = guild.me
 
+        if author.id != 302050872383242240:
+            return
         bump_chan_id = self.channel_cache.get(guild.id)
         if not bump_chan_id:
             return
@@ -284,10 +513,10 @@ class DisboardReminder(commands.Cog):
 
         if (
             clean
-            and author != message.guild.me
+            and author.id != guild.me.id
             and author.id != 302050872383242240
-            and channel == bump_channel
-        ) and my_perms.send_messages:
+            and channel.id == bump_channel.id
+        ) and my_perms.manage_messages:
             await asyncio.sleep(2)
             try:
                 await message.delete()
@@ -315,18 +544,98 @@ class DisboardReminder(commands.Cog):
                     .replace("{guild}", guild.name)
                     .replace("{guild.id}", str(guild.id))
                 )
-            except discord.errors.Forbidden:
+            except discord.Forbidden:
                 pass
 
             current_count = await self.config.member_from_ids(guild.id, member_id).count()
             current_count += 1
             await self.config.member_from_ids(guild.id, member_id).count.set(current_count)
+            weekly_counter = data["weekly"]
+            weekly_counter[str(member_id)] += 1
+            await self.config.guild(guild).weekly.set(weekly_counter)
 
-            await self.bump_timer(message.guild, next_bump)
+            if data["lock"] and my_perms.manage_roles:
+                if my_perms.send_messages is not True:
+                    my_perms.update(send_messages=True)
+                    await bump_channel.set_permissions(
+                        me, overwrite=my_perms, reason="DisboardReminder auto-lock"
+                    )
+
+                current_perms = bump_channel.overwrites_for(guild.default_role)
+                if current_perms.send_messages is not False:
+                    current_perms.update(send_messages=False)
+                    await bump_channel.set_permissions(
+                        guild.default_role,
+                        overwrite=current_perms,
+                        reason="DisboardReminder auto-lock",
+                    )
+
+            # if reward_role := guild.get_role(data["reward_role"]):
+            #    await self.assign_reward_role(guild, reward_role)
+
+            self.tasks[guild.id].append(
+                asyncio.create_task(self.bump_timer(message.guild, next_bump))
+            )
         else:
-            if my_perms.send_messages and clean and channel == bump_channel:
+            if my_perms.manage_messages and clean and channel.id == bump_channel.id:
                 await asyncio.sleep(2)
                 try:
                     await message.delete()
                 except (discord.errors.Forbidden, discord.errors.NotFound):
                     pass
+
+    # original from https://github.com/aikaterna/aikaterna-cogs/tree/v3/chatchart
+    def create_chart(self, data: Counter, guild: discord.Guild):
+        plt.clf()
+        most_common = data.most_common()
+        total = sum(data.values())
+        sizes = [(x[1] / total) * 100 for x in most_common][:20]
+        labels = [
+            f"{x[0]} {round(sizes[index], 1):g}%" for index, x in enumerate(most_common[:20])
+        ]
+        if len(most_common) > 20:
+            others = sum(x[1] / total for x in most_common[20:])
+            sizes.append(others)
+            labels.append("Others {:g}%".format(others))
+        title = plt.title(f"Top Bumpers", color="white")
+        title.set_va("top")
+        title.set_ha("center")
+        plt.gca().axis("equal")
+        colors = [
+            "r",
+            "darkorange",
+            "gold",
+            "y",
+            "olivedrab",
+            "green",
+            "darkcyan",
+            "mediumblue",
+            "darkblue",
+            "blueviolet",
+            "indigo",
+            "orchid",
+            "mediumvioletred",
+            "crimson",
+            "chocolate",
+            "yellow",
+            "limegreen",
+            "forestgreen",
+            "dodgerblue",
+            "slateblue",
+            "gray",
+        ]
+        pie = plt.pie(sizes, colors=colors, startangle=0)
+        plt.legend(
+            pie[0],
+            labels,
+            bbox_to_anchor=(0.7, 0.5),
+            loc="center",
+            fontsize=10,
+            bbox_transform=plt.gcf().transFigure,
+            facecolor="#ffffff",
+        )
+        plt.subplots_adjust(left=0.0, bottom=0.1, right=0.45)
+        image_object = BytesIO()
+        plt.savefig(image_object, format="PNG", facecolor="#36393E")
+        image_object.seek(0)
+        return image_object
