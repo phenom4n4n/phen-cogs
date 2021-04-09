@@ -299,7 +299,9 @@ class DisboardReminder(commands.Cog):
 
     @commands.is_owner()
     @commands.guild_only()
-    @commands.group(aliases=["bumplb", "bprmtop", "bprmlb"], invoke_without_command=True, hidden=True)
+    @commands.group(
+        aliases=["bumplb", "bprmtop", "bprmlb"], invoke_without_command=True, hidden=True
+    )
     async def bumpleaderboard(self, ctx, amount: int = 10):
         """View the top Bumpers in the server."""
         if amount < 1:
@@ -348,9 +350,7 @@ class DisboardReminder(commands.Cog):
 
         mapped_strings = [
             f"{index}. <@{member_id}>: {member_count}"
-            for index, (member_id, member_count) in enumerate(
-                members_list, start=1
-            )
+            for index, (member_id, member_count) in enumerate(members_list, start=1)
         ]
 
         if not mapped_strings:
