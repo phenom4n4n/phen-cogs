@@ -24,11 +24,12 @@ SOFTWARE.
 
 import logging
 from typing import Optional
+from collections import defaultdict
 
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import humanize_list, humanize_timedelta, text_to_file
+from redbot.core.utils.chat_formatting import humanize_list, humanize_timedelta, text_to_file, pagify
 from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
 from colorsys import rgb_to_hsv
 
@@ -148,12 +149,14 @@ class Roles(MixinMeta):
     @role.command(name="colors")
     async def role_colors(self, ctx: commands.Context):
         """Sends the server's roles, ordered by color."""
-        roles = [r for r in ctx.guild.roles if r.color.value]
-        roles.sort(key=self.get_hsv)
+        roles = defaultdict(list)
+        for r in ctx.guild.roles:
+            roles[str(r.color)].append(r)
+        roles = dict(sorted(roles.items(), key=lambda v:self.get_hsv(v[1][0])))
 
-        for role_group in chunks(roles, 86):
-            text = "\n".join(role.mention for role in role_group)
-            e = discord.Embed(color=role_group[0].color, description=text)
+        lines = [f"**{color}**\n{' '.join(r.mention for r in rs)}" for color, rs in roles.items()]
+        for page in pagify("\n".join(lines)):
+            e = discord.Embed(description=page)
             await ctx.send(embed=e)
 
     @commands.bot_has_permissions(manage_roles=True)
