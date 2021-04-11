@@ -29,7 +29,12 @@ from collections import defaultdict
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import humanize_list, humanize_timedelta, text_to_file, pagify
+from redbot.core.utils.chat_formatting import (
+    humanize_list,
+    humanize_timedelta,
+    text_to_file,
+    pagify,
+)
 from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
 from colorsys import rgb_to_hsv
 
@@ -152,7 +157,7 @@ class Roles(MixinMeta):
         roles = defaultdict(list)
         for r in ctx.guild.roles:
             roles[str(r.color)].append(r)
-        roles = dict(sorted(roles.items(), key=lambda v:self.get_hsv(v[1][0])))
+        roles = dict(sorted(roles.items(), key=lambda v: self.get_hsv(v[1][0])))
 
         lines = [f"**{color}**\n{' '.join(r.mention for r in rs)}" for color, rs in roles.items()]
         for page in pagify("\n".join(lines)):
