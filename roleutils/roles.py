@@ -30,6 +30,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import humanize_list, humanize_timedelta, text_to_file
 from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
+from colorsys import rgb_to_hsv
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole, TouchableMember, TargeterArgs
@@ -47,6 +48,15 @@ log = logging.getLogger("red.phenom4n4n.roleutils")
 def targeter_cog(ctx: commands.Context):
     cog = ctx.bot.get_cog("Targeter")
     return cog is not None and hasattr(cog, "args_to_list")
+
+
+def chunks(l, n):
+    """
+    Yield successive n-sized chunks from l.
+    https://github.com/flaree/flare-cogs/blob/08b78e33ab814aa4da5422d81a5037ae3df51d4e/commandstats/commandstats.py#L16
+    """
+    for i in range(0, len(l), n):
+        yield l[i : i + n]
 
 
 class Roles(MixinMeta):
@@ -128,6 +138,23 @@ class Roles(MixinMeta):
             await ctx.send(file=text_to_file(members, f"members.txt"))
         else:
             await ctx.send(members)
+
+    @staticmethod
+    def get_hsv(role: discord.Role):
+        return rgb_to_hsv(*role.color.to_rgb())
+
+    @commands.bot_has_permissions(embed_links=True)
+    @commands.admin_or_permissions(manage_roles=True)
+    @role.command(name="colors")
+    async def role_colors(self, ctx: commands.Context):
+        """Sends the server's roles, ordered by color."""
+        roles = [r for r in ctx.guild.roles if r.color.value]
+        roles.sort(key=self.get_hsv)
+
+        for role_group in chunks(roles, 86):
+            text = "\n".join(role.mention for role in role_group)
+            e = discord.Embed(color=role_group[0].color, description=text)
+            await ctx.send(embed=e)
 
     @commands.bot_has_permissions(manage_roles=True)
     @commands.admin_or_permissions(manage_roles=True)
