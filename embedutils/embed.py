@@ -99,7 +99,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.1.5"
+    __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -156,11 +156,18 @@ class EmbedUtils(commands.Cog):
         await channel.send(embed=e)
 
     @embed.command(
-        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+        cls=HelpFormattedCommand, name="fromjson", aliases=["fromdata"], add_example_info=True
     )
-    async def embed_fromdata(self, ctx, *, data: StringToEmbed):
+    async def embed_fromjson(self, ctx, *, data: StringToEmbed):
         """
         Post an embed from valid JSON.
+        """
+        await ctx.tick()
+
+    @embed.command(name="fromyaml")
+    async def embed_fromyaml(self, ctx, *, data: StringToEmbed(conversion_type="yaml")):
+        """
+        Post an embed from valid YAML.
         """
         await ctx.tick()
 
@@ -288,13 +295,23 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_edit.command(
-        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+        cls=HelpFormattedCommand, name="fromjson", aliases=["fromdata"], add_example_info=True
     )
-    async def embed_edit_fromdata(
+    async def embed_edit_fromjson(
         self, ctx: commands.Context, message: MyMessageConverter, *, data: StringToEmbed
     ):
         """
         Edit a message's embed using valid JSON.
+        """
+        await message.edit(embed=data)
+        await ctx.tick()
+
+    @embed_edit.command(name="fromyaml")
+    async def embed_edit_fromyaml(
+        self, ctx: commands.Context, message: MyMessageConverter, *, data: StringToEmbed(conversion_type="yaml")
+    ):
+        """
+        Edit a message's embed using valid YAML.
         """
         await message.edit(embed=data)
         await ctx.tick()
@@ -409,11 +426,19 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_store.command(
-        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+        cls=HelpFormattedCommand, name="fromjson", aliases=["fromdata"], add_example_info=True
     )
-    async def embed_store_fromdata(self, ctx, name: str, *, data: StringToEmbed):
+    async def embed_store_fromjson(self, ctx, name: str, *, data: StringToEmbed):
         """
         Store an embed from valid JSON on this server.
+        """
+        await self.store_embed(ctx, name, data)
+        await ctx.tick()
+
+    @embed_store.command(name="fromyaml")
+    async def embed_store_fromyaml(self, ctx, name: str, *, data: StringToEmbed(conversion_type="yaml")):
+        """
+        Store an embed from valid YAML on this server.
         """
         await self.store_embed(ctx, name, data)
         await ctx.tick()
@@ -517,9 +542,9 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @global_store.command(
-        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+        cls=HelpFormattedCommand, name="fromjson", aliases=["fromdata"], add_example_info=True
     )
-    async def global_store_fromdata(self, ctx, name: str, locked: bool, *, data: StringToEmbed):
+    async def global_store_fromjson(self, ctx, name: str, locked: bool, *, data: StringToEmbed):
         """Store an embed from valid JSON globally.
 
         The `locked` argument specifies whether the embed should be locked to owners only."""
@@ -629,11 +654,28 @@ class EmbedUtils(commands.Cog):
         )
 
     @webhook.command(
-        cls=HelpFormattedCommand, name="fromdata", aliases=["fromjson"], add_example_info=True
+        cls=HelpFormattedCommand, name="fromjson", aliases=["fromdata"], add_example_info=True
     )
-    async def webhook_fromdata(self, ctx: commands.Context, *, embeds: ListStringToEmbed):
+    async def webhook_fromjson(self, ctx: commands.Context, *, embeds: ListStringToEmbed):
         """
-        Send embeds through webhooks.
+        Send embeds through webhooks using JSON.
+        """
+        cog = self.bot.get_cog("Webhook")
+        try:
+            await cog.send_to_channel(
+                ctx.channel,
+                ctx.me,
+                ctx.author,
+                ctx=ctx,
+                embeds=embeds[:10],
+            )
+        except discord.HTTPException as error:
+            await self.embed_convert_error(ctx, "Embed Send Error", error)
+
+    @webhook.command(name="fromyaml")
+    async def webhook_fromyaml(self, ctx: commands.Context, *, embeds: ListStringToEmbed(conversion_type="yaml")):
+        """
+        Send embeds through webhooks using YAML.
         """
         cog = self.bot.get_cog("Webhook")
         try:
@@ -748,29 +790,6 @@ class EmbedUtils(commands.Cog):
             return
         except IndexError:
             await ctx.send("This is not a valid embed/index.")
-            return
-
-    async def str_embed_converter(self, ctx, data):
-        data = data.strip("`")
-        try:
-            data = json.loads(data)
-        except json.decoder.JSONDecodeError as error:
-            await self.embed_convert_error(ctx, "JSON Parse Error", error)
-            return
-        if data.get("embed"):
-            data = data["embed"]
-        if data.get("timestamp"):
-            data["timestamp"] = data["timestamp"].strip("Z")
-        try:
-            e = discord.Embed.from_dict(data)
-        except Exception as error:
-            await self.embed_convert_error(ctx, "Embed Parse Error", error)
-            return
-        try:
-            await ctx.send(embed=e)
-            return e
-        except discord.errors.HTTPException as error:
-            await self.embed_convert_error(ctx, "Embed Send Error", error)
             return
 
     async def embed_convert_error(self, ctx: commands.Context, error_type: str, error: Exception):

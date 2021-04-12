@@ -1,4 +1,7 @@
+import asyncio
+import json
 from typing import List
+
 import discord
 from redbot.core import commands
 from redbot.core.commands import (
@@ -8,46 +11,82 @@ from redbot.core.commands import (
     MessageConverter,
     TextChannelConverter,
 )
-import json
 from redbot.core.utils import menus
-import asyncio
+import yaml
 
 
 class StringToEmbed(Converter):
+    def __init__(self, *, conversion_type: str = "json"):
+        self.CONVERSION_TYPES = {
+            "json": self.load_from_json,
+            "yaml": self.load_from_yaml,
+        }
+
+        self.conversion_type = conversion_type.lower()
+        try:
+            self.converter = self.CONVERSION_TYPES[self.conversion_type]
+        except KeyError as exc:
+            raise ValueError(f"{conversion_type} is not a valid conversion type for Embed conversion") from exc
+
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Embed:
         data = argument.strip("`")
-        try:
-            data = json.loads(data)
-        except json.decoder.JSONDecodeError as error:
-            await self.embed_convert_error(ctx, "JSON Parse Error", error)
-            return
+        data = await self.converter(ctx, data)
         if data.get("embed"):
             data = data["embed"]
         elif data.get("embeds"):
             data = data.get("embeds")[0]
-        if not isinstance(data, dict):
+        self.check_data_type(ctx, data)
+        e = await self.create_embed(ctx, data)
+        await self.validate_embed(ctx, e)
+        return e
+
+    def check_data_type(self, ctx: commands.Context, data, *, data_type = dict):
+        if not isinstance(data, data_type):
             raise BadArgument(
-                "This doesn't seem to be properly formatted embed"
-                f" JSON. Refer to the link on `{ctx.clean_prefix}help {ctx.command.qualified_name}`."
+                f"This doesn't seem to be properly formatted embed {self.conversion_type.upper()}. "
+                f"Refer to the link on `{ctx.clean_prefix}help {ctx.command.qualified_name}`."
             )
-        if data.get("timestamp"):
-            data["timestamp"] = data["timestamp"].strip("Z")
+
+    async def load_from_json(self, ctx: commands.Context, data: str, **kwargs) -> dict:
+        try:
+            data = json.loads(data)
+        except json.decoder.JSONDecodeError as error:
+            await self.embed_convert_error(ctx, "JSON Parse Error", error)
+        self.check_data_type(ctx, data, **kwargs)
+        return data
+
+    async def load_from_yaml(self, ctx: commands.Context, data: str, **kwargs) -> dict:
+        try:
+            data = yaml.safe_load(data)
+        except Exception as error:
+            await self.embed_convert_error(ctx, "YAML Parse Error", error)
+        self.check_data_type(ctx, data, **kwargs)
+        return data
+
+    async def create_embed(self, ctx: commands.Context, data: dict) -> discord.Embed:
+        if timestamp := data.get("timestamp"):
+            data["timestamp"] = timestamp.strip("Z")
         try:
             e = discord.Embed.from_dict(data)
+            length = len(e)
+            if length > 6000:
+                raise BadArgument(f"Embed size exceeds Discord limit of 6000 characters ({length}).")
+        except BadArgument:
+            raise
         except Exception as error:
             await self.embed_convert_error(ctx, "Embed Parse Error", error)
-            return
+        return e
+
+    async def validate_embed(self, ctx: commands.Context, embed: discord.Embed):
         try:
-            await ctx.send(embed=e)
-            return e
+            await ctx.channel.send(embed=embed) # ignore tips/monkeypatch cogs
         except discord.errors.HTTPException as error:
             await self.embed_convert_error(ctx, "Embed Send Error", error)
-            return
 
     async def embed_convert_error(self, ctx: commands.Context, error_type: str, error: Exception):
         embed = discord.Embed(
             color=await ctx.embed_color(),
-            title=error_type,
+            title=f"{error_type}: `{type(error).__name__}`",
             description=f"```py\n{error}\n```",
         )
         embed.set_footer(
@@ -60,28 +99,23 @@ class StringToEmbed(Converter):
 class ListStringToEmbed(StringToEmbed):
     async def convert(self, ctx: commands.Context, argument: str) -> List[discord.Embed]:
         data = argument.strip("`")
-        try:
-            data = json.loads(data)
-        except json.decoder.JSONDecodeError as error:
-            await self.embed_convert_error(ctx, "JSON Parse Error", error)
-            return
-        if data.get("embed"):
+        data = await self.converter(ctx, data, data_type=(dict, list))
+        if isinstance(data, list):
+            pass
+        elif data.get("embed"):
             data = [data["embed"]]
         elif data.get("embeds"):
             data = data.get("embeds")
+            if isinstance(data, dict):
+                data = list(data.values())
         else:
             data = [data]
+        self.check_data_type(ctx, data, data_type=list)
+
         embeds = []
         for embed_data in data:
-            if embed_data.get("timestamp"):
-                embed_data["timestamp"] = embed_data["timestamp"].strip("Z")
-            try:
-                e = discord.Embed.from_dict(embed_data)
-            except Exception as error:
-                await self.embed_convert_error(ctx, "Embed Parse Error", error)
-                return
-            else:
-                embeds.append(e)
+            e = await self.create_embed(ctx, embed_data)
+            embeds.append(e)
         if embeds:
             return embeds
         else:
