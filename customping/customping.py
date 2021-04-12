@@ -29,12 +29,14 @@ import asyncio
 import concurrent
 import datetime
 import time
+import logging
 
 import discord
 import speedtest
 from redbot.core import commands, Config
 
 old_ping = None
+log = logging.getLogger("red.phenom4n4n.customping")
 
 
 class CustomPing(commands.Cog):
@@ -111,19 +113,20 @@ class CustomPing(commands.Cog):
             s = speedtest.Speedtest(secure=True)
             await loop.run_in_executor(executor, s.get_servers)
             await loop.run_in_executor(executor, s.get_best_server)
-        except speedtest.ConfigRetrievalError:
-            return
+        except Exception as exc:
+            log.exception("An exception occured while fetching host latency.", exc_info=exc)
+            host_latency = "`Failed`"
         else:
             result = s.results.dict()
-            hostPing = round(result["ping"], 2)
+            host_latency = round(result["ping"], 2)
 
-            e.title = "Pong!"
-            e.description = e.description + f"\nHost Latency: {hostPing}ms"
-            await asyncio.sleep(0.25)
-            try:
-                await message.edit(embed=e)
-            except discord.NotFound:
-                return
+        e.title = "Pong!"
+        e.description = e.description + f"\nHost Latency: {host_latency}ms"
+        await asyncio.sleep(0.25)
+        try:
+            await message.edit(embed=e)
+        except discord.NotFound:
+            return
 
     @ping.command()
     async def moreinfo(self, ctx: commands.Context):
