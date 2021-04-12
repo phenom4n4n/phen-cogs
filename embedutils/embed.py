@@ -308,7 +308,11 @@ class EmbedUtils(commands.Cog):
 
     @embed_edit.command(name="fromyaml")
     async def embed_edit_fromyaml(
-        self, ctx: commands.Context, message: MyMessageConverter, *, data: StringToEmbed(conversion_type="yaml")
+        self,
+        ctx: commands.Context,
+        message: MyMessageConverter,
+        *,
+        data: StringToEmbed(conversion_type="yaml"),
     ):
         """
         Edit a message's embed using valid YAML.
@@ -436,7 +440,9 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_store.command(name="fromyaml")
-    async def embed_store_fromyaml(self, ctx, name: str, *, data: StringToEmbed(conversion_type="yaml")):
+    async def embed_store_fromyaml(
+        self, ctx, name: str, *, data: StringToEmbed(conversion_type="yaml")
+    ):
         """
         Store an embed from valid YAML on this server.
         """
@@ -673,7 +679,9 @@ class EmbedUtils(commands.Cog):
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
     @webhook.command(name="fromyaml")
-    async def webhook_fromyaml(self, ctx: commands.Context, *, embeds: ListStringToEmbed(conversion_type="yaml")):
+    async def webhook_fromyaml(
+        self, ctx: commands.Context, *, embeds: ListStringToEmbed(conversion_type="yaml")
+    ):
         """
         Send embeds through webhooks using YAML.
         """

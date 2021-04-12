@@ -26,7 +26,9 @@ class StringToEmbed(Converter):
         try:
             self.converter = self.CONVERSION_TYPES[self.conversion_type]
         except KeyError as exc:
-            raise ValueError(f"{conversion_type} is not a valid conversion type for Embed conversion") from exc
+            raise ValueError(
+                f"{conversion_type} is not a valid conversion type for Embed conversion"
+            ) from exc
 
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Embed:
         data = argument.strip("`")
@@ -40,7 +42,7 @@ class StringToEmbed(Converter):
         await self.validate_embed(ctx, e)
         return e
 
-    def check_data_type(self, ctx: commands.Context, data, *, data_type = dict):
+    def check_data_type(self, ctx: commands.Context, data, *, data_type=dict):
         if not isinstance(data, data_type):
             raise BadArgument(
                 f"This doesn't seem to be properly formatted embed {self.conversion_type.upper()}. "
@@ -70,7 +72,9 @@ class StringToEmbed(Converter):
             e = discord.Embed.from_dict(data)
             length = len(e)
             if length > 6000:
-                raise BadArgument(f"Embed size exceeds Discord limit of 6000 characters ({length}).")
+                raise BadArgument(
+                    f"Embed size exceeds Discord limit of 6000 characters ({length})."
+                )
         except BadArgument:
             raise
         except Exception as error:
@@ -79,7 +83,7 @@ class StringToEmbed(Converter):
 
     async def validate_embed(self, ctx: commands.Context, embed: discord.Embed):
         try:
-            await ctx.channel.send(embed=embed) # ignore tips/monkeypatch cogs
+            await ctx.channel.send(embed=embed)  # ignore tips/monkeypatch cogs
         except discord.errors.HTTPException as error:
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
