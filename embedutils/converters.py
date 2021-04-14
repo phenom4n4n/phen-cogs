@@ -16,18 +16,19 @@ import yaml
 
 
 class StringToEmbed(Converter):
-    def __init__(self, *, conversion_type: str = "json"):
+    def __init__(self, *, conversion_type: str = "json", validate: bool = True):
         self.CONVERSION_TYPES = {
             "json": self.load_from_json,
             "yaml": self.load_from_yaml,
         }
 
+        self.validate = validate
         self.conversion_type = conversion_type.lower()
         try:
             self.converter = self.CONVERSION_TYPES[self.conversion_type]
         except KeyError as exc:
             raise ValueError(
-                f"{conversion_type} is not a valid conversion type for Embed conversion"
+                f"{conversion_type} is not a valid conversion type for Embed conversion."
             ) from exc
 
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Embed:
@@ -39,7 +40,8 @@ class StringToEmbed(Converter):
             data = data.get("embeds")[0]
         self.check_data_type(ctx, data)
         e = await self.create_embed(ctx, data)
-        await self.validate_embed(ctx, e)
+        if self.validate:
+            await self.validate_embed(ctx, e)
         return e
 
     def check_data_type(self, ctx: commands.Context, data, *, data_type=dict):
