@@ -3,7 +3,7 @@ class WebhookError(RuntimeError):
 
 
 class InvalidWebhook(WebhookError):
-    pass
+    """Raised if given webhook link is invalid"""
 
 
 class WebhookNotMatched(WebhookError):
