@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 import asyncio
-from typing import Optional
+from typing import Optional, Dict, Union
 
 import aiohttp
 import discord
@@ -32,38 +32,16 @@ from redbot.core.utils.chat_formatting import humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
-
-async def _monkeypatch_send(
-    ctx: commands.Context, content: str = None, **kwargs
-) -> discord.Message:
-    self = ctx.bot.get_cog("Webhook")
-    original_kwargs = kwargs.copy()
-    try:
-        webhook = await self.get_webhook(ctx=ctx)
-        kwargs["username"] = ctx.author.display_name
-        kwargs["avatar_url"] = ctx.author.avatar_url
-        kwargs["wait"] = True
-        return await webhook.send(content, **kwargs)
-    except Exception:
-        return await super(commands.Context, ctx).send(content, **original_kwargs)
-
-
-class FakeResponse:
-    def __init__(self):
-        self.status = 403
-        self.reason = "Forbidden"
-
-
-class InvalidWebhook(Exception):
-    pass
-
+from .utils import USER_MENTIONS, WEBHOOK_RE, _monkeypatch_send, FakeResponse
+from .errors import InvalidWebhook, WebhookNotMatched
+from .converters import WebhookLinkConverter
 
 class Webhook(commands.Cog):
     """Webhook utility commands."""
 
     __author__ = "PhenoM4n4n"
 
-    __version__ = "1.1.3"
+    __version__ = "1.2.0"
 
     def __init__(self, bot):
         self.bot = bot
@@ -74,7 +52,10 @@ class Webhook(commands.Cog):
         )
         self.config.register_global(monkey_patch=False)
 
-        self.cache = {}
+        self.webhook_sessions: Dict[int, discord.Webhook] = {}
+        self.channel_cache: Dict[int, discord.Webhook] = {}
+        self.link_cache: Dict[int, discord.Webhook] = {}
+        self.session = aiohttp.ClientSession()
 
         self.old_send = commands.Context.send
         self._monkey_patched = False
@@ -85,6 +66,7 @@ class Webhook(commands.Cog):
             self._apply_monkeypatch()
 
     def cog_unload(self):
+        asyncio.create_task(self.session.close())
         self._remove_monkeypatch()
 
     async def red_delete_data_for_user(self, **kwargs):
@@ -129,7 +111,7 @@ class Webhook(commands.Cog):
 
     @commands.admin_or_permissions(manage_webhooks=True)
     @webhook.command()
-    async def send(self, ctx: commands.Context, webhook_link: str, *, message: str):
+    async def send(self, ctx: commands.Context, webhook_link: WebhookLinkConverter, *, message: str):
         """Sends a message to the specified webhook using your avatar and display name."""
         await self.delete_quietly(ctx)
         try:
@@ -183,7 +165,7 @@ class Webhook(commands.Cog):
             content=message,
             avatar_url=member.avatar_url,
             username=member.display_name,
-            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True),
+            allowed_mentions=USER_MENTIONS,
         )
 
     @commands.admin_or_permissions(manage_webhooks=True, manage_guild=True)
@@ -200,7 +182,7 @@ class Webhook(commands.Cog):
             content=message,
             avatar_url="https://discordapp.com/assets/f78426a064bc9dd24847519259bc42af.png",
             username="C​I​​​​​​y​d​e",
-            allowed_mentions=discord.AllowedMentions(everyone=False, roles=False, users=True),
+            allowed_mentions=USER_MENTIONS,
         )
 
     @commands.max_concurrency(1, commands.BucketType.guild)
@@ -245,65 +227,48 @@ class Webhook(commands.Cog):
             await ctx.send(f"{count} webhooks deleted.")
 
     @commands.mod_or_permissions(ban_members=True)
-    @webhook.command()
-    async def perms(self, ctx):
+    @webhook.command(name="permissions", aliases=["perms"])
+    async def webhook_permissions(self, ctx: commands.Context):
         """Show all members in the server that have `manage_webhook` permissions."""
-        await ctx.trigger_typing()
-        members = []
-        strings = []
-        roles = []
-        for role in ctx.guild.roles:
-            if role.permissions.is_superset(
-                discord.Permissions(536870912)
-            ) or role.permissions.is_superset(discord.Permissions(8)):
-                roles.append(role)
-                for member in role.members:
-                    if member not in members:
-                        members.append(member)
-                        string = (
-                            f"[{member.mention} - {member}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')"
-                            if member.bot
-                            else f"{member.mention} - {member}"
-                        )
-                        strings.append(string)
-        if not members:
-            await ctx.send("No one here has `manage_webhook` permissions other than the owner.")
-        strings = "\n".join(strings)
-        if len(strings) > 2000:
+        async with ctx.typing():
+            roles = []
+            lines = []
+            total_members = []
+
+            for role in ctx.guild.roles:
+                if role.permissions.manage_webhooks:
+                    roles.append(role)
+                    lines.append(role.mention)
+                    members = []
+                    for member in role.members:
+                        if member not in total_members:
+                            total_members.append(member)
+                            member_string = f"{member.mention} - {member}"
+                            if member.bot:
+                                member_string = f"[{member_string}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')"
+                            members.append(member_string)
+                    if members:
+                        lines.append(humanize_list(members))
+
+            if not lines:
+                await ctx.send("No one here has `manage_webhook` permissions other than the owner.")
+
+            base_embed = discord.Embed(color= await ctx.embed_color(), title="Users with `manage_webhook` Permissions")
+            base_embed.set_footer(text=f"{len(roles)} roles | {len(total_members)} members")
             embeds = []
-            for page in pagify(strings):
-                embed = discord.Embed(
-                    color=await ctx.embed_color(),
-                    title="Users with `manage_webhook` Permissions",
-                    description=page,
-                )
-                if roles:
-                    embed.add_field(
-                        name="Roles:",
-                        value=humanize_list([role.mention for role in roles]),
-                        inline=False,
-                    )
+
+            for page in pagify("\n".join(lines)):
+                embed = base_embed.copy()
+                embed.description = page
                 embeds.append(embed)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            embed = discord.Embed(
-                color=await ctx.embed_color(),
-                title="Users with `manage_webhook` Permissions",
-                description=strings,
-            )
-            if roles:
-                embed.add_field(
-                    name="Roles:",
-                    value=humanize_list([role.mention for role in roles]),
-                    inline=False,
-                )
-            emoji = self.bot.get_emoji(736038541364297738) or "❌"
-            await menu(ctx, [embed], {emoji: close_menu})
+
+        controls = {"\N{CROSS MARK}": close_menu} if len(embeds) == 1 else DEFAULT_CONTROLS
+        await menu(ctx, embeds, controls)
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.admin_or_permissions(manage_webhooks=True)
-    @webhook.command()
-    async def session(self, ctx: commands.Context, webhook_link: str):
+    @webhook.command(name="session")
+    async def webhook_session(self, ctx: commands.Context, webhook_link: str):
         """Initiate a session within this channel sending messages to a specified webhook link."""
         if ctx.channel.permissions_for(ctx.me).manage_messages:
             try:
@@ -344,6 +309,17 @@ class Webhook(commands.Cog):
             )
             if send_result is not True:
                 return await ctx.send("The webhook was deleted so this session has been closed.")
+
+    @commands.Cog.listener()
+    async def on_message_without_command(self, message: discord.Message):
+        author: discord.Member = message.author
+        if author.bot:
+            return
+        channel: discord.TextChannel = message.channel
+        if not (webhook := self.webhook_sessions.get(channel.id)):
+            return
+        webhook: discord.Webhook
+        await webhook.send(message.content, embeds=message.embeds, username=author.display_name, avatar_url=author.avatar_url, allowed_mentions=USER_MENTIONS)
 
     @commands.cooldown(5, 10, commands.BucketType.guild)
     @commands.admin_or_permissions(manage_webhooks=True)
@@ -401,9 +377,29 @@ class Webhook(commands.Cog):
             self._remove_monkeypatch()
             await ctx.send("Command responses will be sent normally.")
 
+    def get_webhook_from_link(self, link: Union[discord.Webhook, int, str]) -> discord.Webhook:
+        if isinstance(link, int):
+            return self.link_cache.get(link)
+        elif isinstance(link, discord.Webhook):
+            if link.id not in self.link_cache:
+                self.link_cache[link.id] = link
+            return link
+        else:
+            match = WEBHOOK_RE.search(link)
+            if not match:
+                raise WebhookNotMatched("That doesn't look like a webhook link.")
+
+            webhook_id = int(match.group("id"))
+            if webhook := self.link_cache.get(webhook_id):
+                pass
+            else:
+                webhook = discord.Webhook.from_url(match.group(0), adapter=discord.AsyncWebhookAdapter(self.session))
+                self.link_cache[webhook.id] = webhook
+            return webhook
+
     async def webhook_link_send(
         self,
-        link: str,
+        link: Union[discord.Webhook, int, str],
         username: str,
         avatar_url: str,
         *,
@@ -412,18 +408,20 @@ class Webhook(commands.Cog):
         ),
         **kwargs,
     ):
+        webhook = self.get_webhook_from_link(link)
+        if not webhook:
+            raise 
         try:
-            async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(
-                    link, adapter=discord.AsyncWebhookAdapter(session)
-                )
-                await webhook.send(
-                    username=username,
-                    avatar_url=avatar_url,
-                    allowed_mentions=allowed_mentions,
-                    **kwargs,
-                )
-                return True
+            webhook = discord.Webhook.from_url(
+                link, adapter=discord.AsyncWebhookAdapter(self.session)
+            )
+            await webhook.send(
+                username=username,
+                avatar_url=avatar_url,
+                allowed_mentions=allowed_mentions,
+                **kwargs,
+            )
+            return True
         except (discord.InvalidArgument, discord.NotFound):
             raise InvalidWebhook("You need to provide a valid webhook link.")
 
@@ -442,7 +440,7 @@ class Webhook(commands.Cog):
             author = author or ctx.author
             reason = (reason or f"For the {ctx.command.qualified_name} command",)
 
-        if webhook := self.cache.get(channel.id):
+        if webhook := self.channel_cache.get(channel.id):
             return webhook
         if me and not channel.permissions_for(me).manage_webhooks:
             raise discord.Forbidden(
@@ -466,7 +464,7 @@ class Webhook(commands.Cog):
                 reason=creation_reason,
                 avatar=await me.avatar_url.read(),
             )
-        self.cache[channel.id] = webhook
+        self.channel_cache[channel.id] = webhook
         return webhook
 
     async def send_to_channel(
@@ -495,4 +493,4 @@ class Webhook(commands.Cog):
                 return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
             except (discord.InvalidArgument, discord.NotFound):
                 tries += 1
-                del self.cache[channel.id]
+                del self.channel_cache[channel.id]
