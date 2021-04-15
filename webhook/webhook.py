@@ -36,6 +36,7 @@ from .utils import USER_MENTIONS, WEBHOOK_RE, _monkeypatch_send, FakeResponse
 from .errors import InvalidWebhook, WebhookNotMatched
 from .converters import WebhookLinkConverter
 
+
 class Webhook(commands.Cog):
     """Webhook utility commands."""
 
@@ -111,7 +112,9 @@ class Webhook(commands.Cog):
 
     @commands.admin_or_permissions(manage_webhooks=True)
     @webhook.command()
-    async def send(self, ctx: commands.Context, webhook_link: WebhookLinkConverter, *, message: str):
+    async def send(
+        self, ctx: commands.Context, webhook_link: WebhookLinkConverter, *, message: str
+    ):
         """Sends a message to the specified webhook using your avatar and display name."""
         await self.delete_quietly(ctx)
         try:
@@ -251,9 +254,13 @@ class Webhook(commands.Cog):
                         lines.append(humanize_list(members))
 
             if not lines:
-                await ctx.send("No one here has `manage_webhook` permissions other than the owner.")
+                await ctx.send(
+                    "No one here has `manage_webhook` permissions other than the owner."
+                )
 
-            base_embed = discord.Embed(color= await ctx.embed_color(), title="Users with `manage_webhook` Permissions")
+            base_embed = discord.Embed(
+                color=await ctx.embed_color(), title="Users with `manage_webhook` Permissions"
+            )
             base_embed.set_footer(text=f"{len(roles)} roles | {len(total_members)} members")
             embeds = []
 
@@ -319,7 +326,13 @@ class Webhook(commands.Cog):
         if not (webhook := self.webhook_sessions.get(channel.id)):
             return
         webhook: discord.Webhook
-        await webhook.send(message.content, embeds=message.embeds, username=author.display_name, avatar_url=author.avatar_url, allowed_mentions=USER_MENTIONS)
+        await webhook.send(
+            message.content,
+            embeds=message.embeds,
+            username=author.display_name,
+            avatar_url=author.avatar_url,
+            allowed_mentions=USER_MENTIONS,
+        )
 
     @commands.cooldown(5, 10, commands.BucketType.guild)
     @commands.admin_or_permissions(manage_webhooks=True)
@@ -393,7 +406,9 @@ class Webhook(commands.Cog):
             if webhook := self.link_cache.get(webhook_id):
                 pass
             else:
-                webhook = discord.Webhook.from_url(match.group(0), adapter=discord.AsyncWebhookAdapter(self.session))
+                webhook = discord.Webhook.from_url(
+                    match.group(0), adapter=discord.AsyncWebhookAdapter(self.session)
+                )
                 self.link_cache[webhook.id] = webhook
             return webhook
 
@@ -410,7 +425,7 @@ class Webhook(commands.Cog):
     ):
         webhook = self.get_webhook_from_link(link)
         if not webhook:
-            raise 
+            raise
         try:
             webhook = discord.Webhook.from_url(
                 link, adapter=discord.AsyncWebhookAdapter(self.session)
