@@ -38,7 +38,6 @@ from .converters import WebhookLinkConverter
 from .session import Session
 
 
-
 class Webhook(commands.Cog):
     """Webhook utility commands."""
 
@@ -279,17 +278,23 @@ class Webhook(commands.Cog):
     async def webhook_session(self, ctx: commands.Context, webhook_link: WebhookLinkConverter):
         """Initiate a session within this channel sending messages to a specified webhook link."""
         if ctx.channel.id in self.webhook_sessions:
-            return await ctx.send(f"This channel already has an ongoing session. Use `{ctx.clean_prefix}webhook session close` to close it.")
+            return await ctx.send(
+                f"This channel already has an ongoing session. Use `{ctx.clean_prefix}webhook session close` to close it."
+            )
         session = Session(self, channel=ctx.channel, author=ctx.author, webhook=webhook_link)
         await session.initialize(ctx)
 
     @webhook_session.command(name="close")
-    async def webhook_session_close(self, ctx: commands.Context, channel: discord.TextChannel = None):
+    async def webhook_session_close(
+        self, ctx: commands.Context, channel: discord.TextChannel = None
+    ):
         """Close an ongoing webhook session in a channel."""
         channel = channel or ctx.channel
         session = self.webhook_sessions.get(channel.id)
         if not session:
-            return await ctx.send(f"This channel does not have an ongoing webhook session. Start one with `{ctx.clean_prefix}webhook session`.")
+            return await ctx.send(
+                f"This channel does not have an ongoing webhook session. Start one with `{ctx.clean_prefix}webhook session`."
+            )
         await session.close()
 
     @commands.Cog.listener()

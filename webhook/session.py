@@ -5,6 +5,7 @@ from redbot.core.commands import Context
 
 from .errors import InvalidWebhook
 
+
 class Session:
     def __init__(
         self,
@@ -12,7 +13,7 @@ class Session:
         *,
         channel: discord.TextChannel,
         webhook: discord.Webhook,
-        author: discord.Member
+        author: discord.Member,
     ):
         self.cog = cog
         self.channel = channel
@@ -26,9 +27,16 @@ class Session:
             description=f"Session Created by `{self.author}`.",
         )
         try:
-            await self.cog.webhook_link_send(self.webhook, username="Webhook Session", avatar_url="https://imgur.com/BMeddyn.png", embed=e)
+            await self.cog.webhook_link_send(
+                self.webhook,
+                username="Webhook Session",
+                avatar_url="https://imgur.com/BMeddyn.png",
+                embed=e,
+            )
         except InvalidWebhook:
-            await self.channel_send("Session initialization failed as provided webhook link was invalid.")
+            await self.channel_send(
+                "Session initialization failed as provided webhook link was invalid."
+            )
         else:
             self.cog.webhook_sessions[self.channel.id] = self
             await self.channel_send(
