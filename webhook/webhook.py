@@ -38,6 +38,7 @@ from .converters import WebhookLinkConverter
 from .session import Session
 
 
+
 class Webhook(commands.Cog):
     """Webhook utility commands."""
 
@@ -400,6 +401,7 @@ class Webhook(commands.Cog):
         webhook = self.get_webhook_from_link(link)
         if not webhook:
             raise InvalidWebhook("Webhook not cached or found.")
+
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
         try:
