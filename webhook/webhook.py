@@ -236,20 +236,20 @@ class Webhook(commands.Cog):
         async with ctx.typing():
             roles = []
             lines = []
-            total_members = []
+            total_members = set()
 
             for role in ctx.guild.roles:
-                if role.permissions.manage_webhooks:
+                perms = role.permissions
+                if perms.administrator or perms.manage_webhooks:
                     roles.append(role)
                     lines.append(f"**{role}** | {role.mention}")
                     members = []
-                    for member in role.members:
-                        if member not in total_members:
-                            total_members.append(member)
-                            member_string = f"{member} ({member.id})"
-                            if member.bot:
-                                member_string = f"[{member_string}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')"
-                            members.append(member_string)
+                    for member in filter(lambda m: m not in total_members, role.members):
+                        total_members.add(member)
+                        member_string = f"{member} ({member.id})"
+                        if member.bot:
+                            member_string = f"[{member_string}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')"
+                        members.append(member_string)
                     if members:
                         lines.append(humanize_list(members))
 
