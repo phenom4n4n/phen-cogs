@@ -89,7 +89,8 @@ class StringToEmbed(Converter):
         except discord.errors.HTTPException as error:
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
-    async def embed_convert_error(self, ctx: commands.Context, error_type: str, error: Exception):
+    @staticmethod
+    async def embed_convert_error(ctx: commands.Context, error_type: str, error: Exception):
         embed = discord.Embed(
             color=await ctx.embed_color(),
             title=f"{error_type}: `{type(error).__name__}`",
