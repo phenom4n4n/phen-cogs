@@ -443,9 +443,7 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_store.command(name="fromyaml")
-    async def embed_store_fromyaml(
-        self, ctx, name: str, *, data: YAML_CONVERTER
-    ):
+    async def embed_store_fromyaml(self, ctx, name: str, *, data: YAML_CONVERTER):
         """
         Store an embed from valid YAML on this server.
         """
@@ -683,7 +681,10 @@ class EmbedUtils(commands.Cog):
 
     @webhook.command(name="fromyaml")
     async def webhook_fromyaml(
-        self, ctx: commands.Context, *, embeds: ListStringToEmbed(conversion_type="yaml") # noqa: F821
+        self,
+        ctx: commands.Context,
+        *,
+        embeds: ListStringToEmbed(conversion_type="yaml"),  # noqa: F821
     ):
         """
         Send embeds through webhooks using YAML.
