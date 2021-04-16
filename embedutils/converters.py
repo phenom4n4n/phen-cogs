@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import List
+from typing import List, Dict, Union, Optional
 
 import discord
 from redbot.core import commands
@@ -16,7 +16,9 @@ import yaml
 
 
 class StringToEmbed(Converter):
-    def __init__(self, *, conversion_type: str = "json", validate: bool = True):
+    def __init__(
+        self, *, conversion_type: str = "json", validate: bool = True, content: bool = False
+    ):
         self.CONVERSION_TYPES = {
             "json": self.load_from_json,
             "yaml": self.load_from_yaml,
@@ -24,6 +26,7 @@ class StringToEmbed(Converter):
 
         self.validate = validate
         self.conversion_type = conversion_type.lower()
+        self.allow_content = content
         try:
             self.converter = self.CONVERSION_TYPES[self.conversion_type]
         except KeyError as exc:
@@ -34,15 +37,20 @@ class StringToEmbed(Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Embed:
         data = argument.strip("`")
         data = await self.converter(ctx, data)
+        content = self.get_content(data)
+
         if data.get("embed"):
             data = data["embed"]
         elif data.get("embeds"):
             data = data.get("embeds")[0]
         self.check_data_type(ctx, data)
-        e = await self.create_embed(ctx, data)
+
+        fields = await self.create_embed(ctx, data, content=content)
+        content = fields["content"]
+        embed = fields["embed"]
         if self.validate:
-            await self.validate_embed(ctx, e)
-        return e
+            await self.validate_embed(ctx, embed, content=content)
+        return embed
 
     def check_data_type(self, ctx: commands.Context, data, *, data_type=dict):
         if not isinstance(data, data_type):
@@ -67,7 +75,17 @@ class StringToEmbed(Converter):
         self.check_data_type(ctx, data, **kwargs)
         return data
 
-    async def create_embed(self, ctx: commands.Context, data: dict) -> discord.Embed:
+    def get_content(self, data: dict, *, content: str = None) -> Optional[str]:
+        content = data.pop("content", content)
+        if content is not None and not self.allow_content:
+            raise BadArgument("The `content` field is not supported for this command.")
+        return content
+
+    async def create_embed(
+        self, ctx: commands.Context, data: dict, *, content: str = None
+    ) -> Dict[str, Union[discord.Embed, str]]:
+        content = self.get_content(data, content=content)
+
         if timestamp := data.get("timestamp"):
             data["timestamp"] = timestamp.strip("Z")
         try:
@@ -81,15 +99,18 @@ class StringToEmbed(Converter):
             raise
         except Exception as error:
             await self.embed_convert_error(ctx, "Embed Parse Error", error)
-        return e
+        return {"embed": e, "content": content}
 
-    async def validate_embed(self, ctx: commands.Context, embed: discord.Embed):
+    async def validate_embed(
+        self, ctx: commands.Context, embed: discord.Embed, *, content: str = None
+    ):
         try:
-            await ctx.channel.send(embed=embed)  # ignore tips/monkeypatch cogs
+            await ctx.channel.send(content, embed=embed)  # ignore tips/monkeypatch cogs
         except discord.errors.HTTPException as error:
             await self.embed_convert_error(ctx, "Embed Send Error", error)
 
-    async def embed_convert_error(self, ctx: commands.Context, error_type: str, error: Exception):
+    @staticmethod
+    async def embed_convert_error(ctx: commands.Context, error_type: str, error: Exception):
         embed = discord.Embed(
             color=await ctx.embed_color(),
             title=f"{error_type}: `{type(error).__name__}`",
@@ -106,6 +127,7 @@ class ListStringToEmbed(StringToEmbed):
     async def convert(self, ctx: commands.Context, argument: str) -> List[discord.Embed]:
         data = argument.strip("`")
         data = await self.converter(ctx, data, data_type=(dict, list))
+
         if isinstance(data, list):
             pass
         elif data.get("embed"):
@@ -120,8 +142,9 @@ class ListStringToEmbed(StringToEmbed):
 
         embeds = []
         for embed_data in data:
-            e = await self.create_embed(ctx, embed_data)
-            embeds.append(e)
+            fields = await self.create_embed(ctx, embed_data)
+            embed = fields["embed"]
+            embeds.append(embed)
         if embeds:
             return embeds
         else:
