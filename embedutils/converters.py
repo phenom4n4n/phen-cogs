@@ -16,7 +16,9 @@ import yaml
 
 
 class StringToEmbed(Converter):
-    def __init__(self, *, conversion_type: str = "json", validate: bool = True, content: bool = False):
+    def __init__(
+        self, *, conversion_type: str = "json", validate: bool = True, content: bool = False
+    ):
         self.CONVERSION_TYPES = {
             "json": self.load_from_json,
             "yaml": self.load_from_yaml,
@@ -79,7 +81,9 @@ class StringToEmbed(Converter):
             raise BadArgument("The `content` field is not supported for this command.")
         return content
 
-    async def create_embed(self, ctx: commands.Context, data: dict, *, content: str = None) -> Dict[str, Union[discord.Embed, str]]:
+    async def create_embed(
+        self, ctx: commands.Context, data: dict, *, content: str = None
+    ) -> Dict[str, Union[discord.Embed, str]]:
         content = self.get_content(data, content=content)
 
         if timestamp := data.get("timestamp"):
@@ -97,7 +101,9 @@ class StringToEmbed(Converter):
             await self.embed_convert_error(ctx, "Embed Parse Error", error)
         return {"embed": e, "content": content}
 
-    async def validate_embed(self, ctx: commands.Context, embed: discord.Embed, *, content: str = None):
+    async def validate_embed(
+        self, ctx: commands.Context, embed: discord.Embed, *, content: str = None
+    ):
         try:
             await ctx.channel.send(content, embed=embed)  # ignore tips/monkeypatch cogs
         except discord.errors.HTTPException as error:
