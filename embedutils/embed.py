@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import asyncio
 import io
 import json
 from typing import Optional, Union
@@ -650,14 +649,18 @@ class EmbedUtils(commands.Cog):
         """Send embeds through webhooks.
 
         Running this command with stored embed names will send up to 10 embeds through a webhook."""
-        await self.webhook_send(ctx, embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]])
+        await self.webhook_send(
+            ctx, embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]]
+        )
 
     @webhook.command(name="global", require_var_positional=True)
     async def webhook_global(self, ctx: commands.Context, *embeds: GlobalStoredEmbedConverter):
         """Send global embeds through webhooks.
 
         Running this command with global stored embed names will send up to 10 embeds through a webhook."""
-        await self.webhook_send(ctx, embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]])
+        await self.webhook_send(
+            ctx, embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]]
+        )
 
     @webhook.command(name="json", aliases=["fromjson", "fromdata"], add_example_info=True)
     async def webhook_json(self, ctx: commands.Context, *, embeds: ListStringToEmbed):

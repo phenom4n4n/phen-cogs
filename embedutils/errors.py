@@ -12,6 +12,7 @@ class EmbedNotFound(EmbedUtilsException):
 class EmbedFileError(EmbedUtilsException):
     """Provides error messages when users supply invalid/no embed files."""
 
+
 class EmbedConversionError(EmbedUtilsException):
     def __init__(self, ctx: commands.Context, error_type: str, error: Exception):
         self.ctx = ctx
