@@ -23,7 +23,7 @@ def _add_example_help(pre_processed: str, *, info_type: str = "json") -> str:
     n = "\n" if "\n\n" not in pre_processed else ""
     info_type = info_type.lower()
     info = INFO_EXAMPLES[info_type]
-    return (f"{pre_processed}{n}\n{info}",)
+    return f"{pre_processed}{n}\n{info}"
 
 
 class HelpFormatter:
@@ -49,7 +49,9 @@ class HelpFormattedGroup(HelpFormatter, commands.Group):
     def command(self, name=None, cls=HelpFormattedCommand, **kwargs):
         return super().command(name, cls, **kwargs)
 
-    def group(self, name=None, cls=HelpFormattedCommand, **kwargs):
+    def group(self, name=None, cls=None, **kwargs):
+        if cls is None:
+            cls = type(self)
         return super().group(name, cls, **kwargs)
 
 
