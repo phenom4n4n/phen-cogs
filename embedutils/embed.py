@@ -320,12 +320,12 @@ class EmbedUtils(commands.Cog):
         add_example_info=True,
         info_type="yaml",
     )
-    async def embed_edit_yamlfile(self, ctx: commands.Context):
+    async def embed_edit_yamlfile(self, ctx: commands.Context, message: MyMessageConverter):
         """
         Edit a message's embed using a valid YAML file.
         """
         data = await self.get_file_from_message(ctx, file_types=("yaml", "txt"))
-        await YAML_CONVERTER.convert(ctx, data)
+        e = await YAML_CONVERTER.convert(ctx, data)
         await message.edit(embed=e)
         await ctx.tick()
 
