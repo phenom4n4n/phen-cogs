@@ -169,13 +169,18 @@ class Tags(commands.Cog):
         guilds_data = await self.config.all_guilds()
         async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
             async for tag_name, tag_data in AsyncIter(guild_data["tags"].items(), steps=50):
-                tag_object = Tag.from_dict(self, tag_name, tag_data, guild_id=guild_id)
-                self.guild_tag_cache[guild_id][tag_name] = tag_object
+                tag = Tag.from_dict(self, tag_name, tag_data, guild_id=guild_id)
+                self.guild_tag_cache[guild_id][tag_name] = tag
+                for alias in tag.aliases:
+                    self.guild_tag_cache[alias] = tag
 
         global_tags = await self.config.tags()
         async for global_tag_name, global_tag_data in AsyncIter(global_tags.items(), steps=50):
             global_tag = Tag.from_dict(self, global_tag_name, global_tag_data)
             self.global_tag_cache[global_tag_name] = global_tag
+            for alias in global_tag.aliases:
+                self.global_tag_cache[alias] = global_tag
+
         log.debug("tag cache built")
 
     def get_tag(

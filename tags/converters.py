@@ -31,10 +31,18 @@ from .errors import MissingTagPermissions
 
 
 class TagName(Converter):
+    def __init__(self, *, allow_named_tags: bool = False):
+        self.allow_named_tags = allow_named_tags
+
     async def convert(self, ctx: commands.Converter, argument: str) -> str:
         command = ctx.bot.get_command(argument)
         if command:
             raise BadArgument(f"`{argument}` is already a registered command.")
+        cog = ctx.bot.get_cog("Tags")
+        if not self.allow_named_tags:
+            tag = cog.get_tag(ctx.guild, argument=check_global)
+            if tag:
+                raise BadArgument(f"`{argument}` is already a registered tag or alias.")
         return "".join(argument.split())
 
 

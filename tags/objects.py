@@ -22,8 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from typing import Optional, List
+
 import discord
-from typing import Optional
 from redbot.core import commands, Config
 from redbot.core.bot import Red
 from TagScriptEngine import Interpreter, IntAdapter
@@ -40,11 +41,13 @@ class Tag:
         author_id: int = None,
         uses: int = 0,
         real: bool = True,
+        aliases: List[str] = [],
     ):
         self.cog = cog
         self.config: Config = cog.config
         self.bot: Red = cog.bot
         self.name: str = name
+        self.aliases = aliases
         self.tagscript: str = tagscript
 
         self.guild_id = guild_id
@@ -103,6 +106,7 @@ class Tag:
             author_id=data.get("author_id", data.get("author")),
             uses=data.get("uses", 0),
             real=real_tag,
+            aliases=data.get("aliases", []),
         )
 
     def to_dict(self):
@@ -110,14 +114,27 @@ class Tag:
             "author_id": self.author_id,
             "uses": self.uses,
             "tag": self.tagscript,
+            "aliases": self.aliases,
         }
 
     async def delete(self):
         if self.guild_id:
             async with self.config.guild_from_id(self.guild_id).tags() as t:
                 del t[self.name]
-            del self.cog.guild_tag_cache[self.guild_id][self.name]
         else:
             async with self.config.tags() as t:
                 del t[self.name]
-            del self.cog.global_tag_cache[self.name]
+        self.remove_from_cache()
+
+    def remove_from_cache(self):
+        if self.guild:
+            path = self.cog.guild_tag_cache[self.guild_id]
+        else:
+            path = self.cog.global_tag_cache
+
+        try:
+            del path[self.guild_id][self.name]
+            for alias in aliases:
+                del path[alias]
+        except KeyError:
+            pass
