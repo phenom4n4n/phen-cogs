@@ -43,6 +43,9 @@ from .converters import (
 )
 
 
+YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
+
+
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
     cog = ctx.bot.get_cog("Webhook")
     if (
@@ -165,7 +168,7 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed.command(name="fromyaml")
-    async def embed_fromyaml(self, ctx, *, data: StringToEmbed(conversion_type="yaml")):
+    async def embed_fromyaml(self, ctx, *, data: YAML_CONVERTER):
         """
         Post an embed from valid YAML.
         """
@@ -312,7 +315,7 @@ class EmbedUtils(commands.Cog):
         ctx: commands.Context,
         message: MyMessageConverter,
         *,
-        data: StringToEmbed(conversion_type="yaml"),
+        data: YAML_CONVERTER,
     ):
         """
         Edit a message's embed using valid YAML.
@@ -441,7 +444,7 @@ class EmbedUtils(commands.Cog):
 
     @embed_store.command(name="fromyaml")
     async def embed_store_fromyaml(
-        self, ctx, name: str, *, data: StringToEmbed(conversion_type="yaml")
+        self, ctx, name: str, *, data: YAML_CONVERTER
     ):
         """
         Store an embed from valid YAML on this server.
@@ -680,7 +683,7 @@ class EmbedUtils(commands.Cog):
 
     @webhook.command(name="fromyaml")
     async def webhook_fromyaml(
-        self, ctx: commands.Context, *, embeds: ListStringToEmbed(conversion_type="yaml")
+        self, ctx: commands.Context, *, embeds: ListStringToEmbed(conversion_type="yaml") # noqa: F821
     ):
         """
         Send embeds through webhooks using YAML.
