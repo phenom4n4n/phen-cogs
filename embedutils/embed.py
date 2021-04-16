@@ -45,7 +45,9 @@ from .errors import EmbedUtilsException, EmbedNotFound, EmbedFileError, EmbedCon
 
 
 YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
+YAML_CONTENT_CONVERTER = StringToEmbed(conversion_type="yaml", content=True)
 JSON_CONVERTER = StringToEmbed()
+JSON_CONTENT_CONVERTER = StringToEmbed(content=True)
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
@@ -153,14 +155,14 @@ class EmbedUtils(commands.Cog):
         await channel.send(embed=e)
 
     @embed.command(name="json", aliases=["fromjson", "fromdata"], add_example_info=True)
-    async def embed_json(self, ctx, *, data: JSON_CONVERTER):
+    async def embed_json(self, ctx, *, data: JSON_CONTENT_CONVERTER):
         """
         Post an embed from valid JSON.
         """
         await ctx.tick()
 
-    @embed.command(name="yaml", aliases=["fromyaml"])
-    async def embed_yaml(self, ctx, *, data: YAML_CONVERTER):
+    @embed.command(name="yaml", aliases=["fromyaml"], add_example_info=True, info_type="yaml")
+    async def embed_yaml(self, ctx, *, data: YAML_CONTENT_CONVERTER):
         """
         Post an embed from valid YAML.
         """
@@ -176,7 +178,7 @@ class EmbedUtils(commands.Cog):
         Post an embed from a valid JSON file.
         """
         data = await self.get_file_from_message(ctx, file_types=("json", "txt"))
-        await JSON_CONVERTER.convert(ctx, data)
+        await JSON_CONTENT_CONVERTER.convert(ctx, data)
         await ctx.tick()
 
     @embed.command(
@@ -190,7 +192,7 @@ class EmbedUtils(commands.Cog):
         Post an embed from a valid YAML file.
         """
         data = await self.get_file_from_message(ctx, file_types=("yaml", "txt"))
-        await YAML_CONVERTER.convert(ctx, data)
+        await YAML_CONTENT_CONVERTER.convert(ctx, data)
         await ctx.tick()
 
     @embed.command(
@@ -324,6 +326,7 @@ class EmbedUtils(commands.Cog):
         """
         data = await self.get_file_from_message(ctx, file_types=("yaml", "txt"))
         await YAML_CONVERTER.convert(ctx, data)
+        await message.edit(embed=e)
         await ctx.tick()
 
     @embed_edit.command(
@@ -669,7 +672,7 @@ class EmbedUtils(commands.Cog):
         """
         await self.webhook_send(ctx, embeds=embeds[:10])
 
-    @webhook.command(name="yaml", aliases=["fromyaml"])
+    @webhook.command(name="yaml", aliases=["fromyaml"], add_example_info=True, info_type="yaml")
     async def webhook_yaml(
         self,
         ctx: commands.Context,
@@ -757,13 +760,17 @@ class EmbedUtils(commands.Cog):
         embed = discord.Embed.from_dict(embed)
         return embed, data["author"], data["uses"], data["locked"]
 
-    async def cog_command_error(self, ctx: commands.Context, error: Exception):
-        if isinstance(error, EmbedConversionError):
-            await StringToEmbed.embed_convert_error(error.ctx, error.error_type, error.error)
-        elif isinstance(error, EmbedUtilsException):
-            try:
-                await ctx.reply(error)
-            except discord.HTTPException:
-                await ctx.send(error)
+    async def cog_command_error(self, ctx: commands.Context, exc: Exception):
+        if isinstance(exc, commands.CommandInvokeError):
+            error = exc.original
+            if isinstance(error, EmbedConversionError):
+                await StringToEmbed.embed_convert_error(error.ctx, error.error_type, error.error)
+            elif isinstance(error, EmbedUtilsException):
+                try:
+                    await ctx.reply(error)
+                except discord.HTTPException:
+                    await ctx.send(error)
+            else:
+                await self.bot.on_command_error(ctx, exc, unhandled_by_cog=True)
         else:
-            raise error
+            await self.bot.on_command_error(ctx, exc, unhandled_by_cog=True)
