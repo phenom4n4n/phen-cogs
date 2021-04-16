@@ -241,12 +241,12 @@ class Webhook(commands.Cog):
             for role in ctx.guild.roles:
                 if role.permissions.manage_webhooks:
                     roles.append(role)
-                    lines.append(role.mention)
+                    lines.append(f"**{role}** | {role.mention}")
                     members = []
                     for member in role.members:
                         if member not in total_members:
                             total_members.append(member)
-                            member_string = f"{member.mention} - {member}"
+                            member_string = f"{member} ({member.id})"
                             if member.bot:
                                 member_string = f"[{member_string}](https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO 'This user is a bot')"
                             members.append(member_string)
