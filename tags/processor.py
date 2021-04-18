@@ -12,20 +12,15 @@ from .errors import *
 
 
 class Processor:
-    @commands.Cog.listener()
-    async def on_message_without_command(self, message: discord.Message):
-        if message.author.bot:
+    @command.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: Exception):
+        if not isinstance(error, commands.CommandNotFound):
             return
-
-        try:
-            prefix = await Alias.get_prefix(self, message)
-        except ValueError:
-            return
-        tag_command = message.content[len(prefix) :]
-        tag_split = tag_command.split(" ", 1)
-        if self.get_tag(
-            message.guild, tag_split[0], check_global=True
-        ) and await self.message_eligible_as_tag(message):
+        message: discord.Message = ctx.message
+        tag = self.get_tag(ctx.guild, ctx.invoked_with, check_global=True)
+        if tag and await self.message_eligible_as_tag(message):
+            prefix = ctx.prefix
+            tag_command = message.content[len(prefix):]
             await self.invoke_tag_message(message, prefix, tag_command)
 
     async def message_eligible_as_tag(self, message: discord.Message) -> bool:
