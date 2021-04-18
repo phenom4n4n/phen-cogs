@@ -108,6 +108,23 @@ class Tag:
             async with self.config_path.tags() as t:
                 t[self.name] = self.to_dict()
 
+    async def initialize(self) -> str:
+        self.add_to_cache()
+        await self.update_config()
+        return f"{self.name_prefix} `{self}` added."
+
+    def add_to_cache(self):
+        path = self.cache_path
+        path[self.name] = self
+        for alias in self.aliases:
+            path[alias] = self
+
+    def remove_from_cache(self):
+        path = self.cache_path
+        del path[self.guild_id][self.name]
+        for alias in self.aliases:
+            del path[alias]
+
     @classmethod
     def from_dict(
         cls,
@@ -142,18 +159,6 @@ class Tag:
             del t[self.name]
         self.remove_from_cache()
         return f"{self.name_prefix} `{self}` deleted."
-
-    def add_to_cache(self):
-        path = self.cache_path
-        path[self.name] = self
-        for alias in self.aliases:
-            path[alias] = self
-
-    def remove_from_cache(self):
-        path = self.cache_path
-        del path[self.guild_id][self.name]
-        for alias in self.aliases:
-            del path[alias]
 
     async def add_alias(self, alias: str) -> str:
         if len(self.aliases) >= ALIAS_LIMIT:

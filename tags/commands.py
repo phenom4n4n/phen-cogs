@@ -44,6 +44,9 @@ from .errors import *
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
 
+DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
+
+
 class Commands:
     @staticmethod
     def generate_tag_list(tags: Set[Tag]) -> Dict[str, List[str]]:
@@ -122,27 +125,48 @@ class Commands:
 
         [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
         """
-        tag = self.get_tag(ctx.guild, tag_name)
+        await self.create_tag(ctx, tag_name, tagscript)
+
+    def validate_tag_count(self, guild: discord.Guild):
+        tag_count = len(self.get_unique_tags(guild))
+        if guild:
+            if tag_count >= TAG_GUILD_LIMIT:
+                raise TagFeedbackError(f"This server has reached the limit of **{TAG_GUILD_LIMIT}** tags.")
+        else:
+            if tag_count >= TAG_GLOBAL_LIMIT:
+                raise TagFeedbackError(f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags.")
+
+    async def create_tag(self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False):
+        kwargs = {"author_id": ctx.author.id}
+
+        if global_tag:
+            tag = self.get_tag(None, tag_name, global_priority=True)
+            guild = None
+        else:
+            tag = self.get_tag(guild, tag_name, check_global=False)
+            guild = ctx.guild
+            kwargs["guild_id"] = guild.id
+        self.validate_tag_count(guild)
+
         if tag:
+            tag_prefix = tag.name_prefix
             msg = await ctx.send(
-                f"`{tag_name}` is already registered tag. Would you like to overwrite it?"
+                f"`{tag_name}` is already a registered {tag_prefix.lower()}. Would you like to overwrite it?"
             )
             start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
             pred = ReactionPredicate.yes_or_no(msg, ctx.author)
             try:
                 await ctx.bot.wait_for("reaction_add", check=pred, timeout=30)
             except asyncio.TimeoutError:
-                return await ctx.send("Tag edit cancelled.")
+                return await ctx.send(f"{tag_prefix} edit cancelled.")
 
             if pred.result is False:
-                return await ctx.send("Tag edit cancelled.")
+                return await ctx.send(f"{tag_prefix} edit cancelled.")
             await ctx.send(await tag.edit_tagscript(tagscript))
             return
 
-        tag = Tag(self, tag_name, tagscript, author_id=ctx.author.id, guild_id=ctx.guild.id)
-        tag.add_to_cache()
-        await tag.update_config()
-        await ctx.send(f"Tag `{tag}` added.")
+        tag = Tag(self, tag_name, tagscript, **kwargs)
+        await ctx.send(await tag.initialize())
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="alias")
@@ -250,21 +274,13 @@ class Commands:
     async def tag_run(self, ctx: commands.Context, *, tagscript: str):
         """Execute TagScript without storing."""
         start = time.monotonic()
-        author = tse.MemberAdapter(ctx.author)
-        target = tse.MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
-        channel = tse.ChannelAdapter(ctx.channel)
-        guild = tse.GuildAdapter(ctx.guild)
-        seed = {
-            "author": author,
-            "user": author,
-            "target": target,
-            "member": target,
-            "channel": channel,
-            "guild": guild,
-            "server": guild,
-        }
+        seed = self.get_seed_from_context(ctx)
         output = self.engine.process(tagscript, seed_variables=seed)
         end = time.monotonic()
+        actions = output.actions
+
+        content = output.body[:2000] if output.body else None
+        await self.send_tag_response(ctx, actions, content)
 
         e = discord.Embed(
             color=await ctx.embed_color(),
@@ -272,15 +288,14 @@ class Commands:
             description=f"Executed in **{round((end - start) * 1000, 3)}** ms",
         )
         e.add_field(name="Input", value=tagscript, inline=False)
-        if output.actions:
-            e.add_field(name="Actions", value=output.actions, inline=False)
+        if actions:
+            e.add_field(name="Actions", value=actions, inline=False)
         if output.variables:
-            vars = "\n".join(
-                f"{name}: {type(obj).__name__}" for name, obj in output.variables.items()
+            variables = "\n".join(
+                f"`{name}`: {adapter}" for name, adapter in output.variables.items()
             )
 
             e.add_field(name="Variables", value=vars, inline=False)
-        e.add_field(name="Output", value=output.body or "NO OUTPUT", inline=False)
 
         await ctx.send(embed=e)
 
@@ -312,27 +327,7 @@ class Commands:
 
         [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
         """
-        tag = self.get_tag(None, tag_name, check_global=True)
-        if tag:
-            msg = await ctx.send(
-                f"`{tag_name}` is already registered global tag. Would you like to overwrite it?"
-            )
-            start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
-            pred = ReactionPredicate.yes_or_no(msg, ctx.author)
-            try:
-                await ctx.bot.wait_for("reaction_add", check=pred, timeout=30)
-            except asyncio.TimeoutError:
-                return await ctx.send("Global tag edit cancelled.")
-
-            if pred.result is False:
-                return await ctx.send("Global tag edit cancelled.")
-            await ctx.send(await tag.edit_tagscript(tagscript))
-            return
-
-        tag = Tag(self, tag_name, tagscript, author_id=ctx.author.id)
-        tag.add_to_cache()
-        await tag.update_config()
-        await ctx.send(f"Global tag `{tag}` added.")
+        await self.create_tag(ctx, tag_name, tagscript, global_tag=True)
 
     @tag_global.command(name="alias")
     async def tag_global_alias(self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName):
@@ -436,8 +431,7 @@ class Commands:
                     guild_id=alias["guild"],
                     uses=alias["uses"],
                 )
-                tag.add_to_cache()
-                await tag.update_config()
+                await tag.initialize()
                 migrated_guild_alias += 1
         await ctx.send(
             f"Migrated {migrated_guild_alias} aliases from {migrated_guilds} "
@@ -454,8 +448,7 @@ class Commands:
                 author_id=entry["creator"],
                 uses=entry["uses"],
             )
-            tag.add_to_cache()
-            await global_tag.update_config()
+            await global_tag.initialize()
             migrated_global_alias += 1
         await ctx.send(
             f"Migrated {migrated_global_alias} global aliases to tags. "

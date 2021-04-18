@@ -1,6 +1,9 @@
+from typing import List
+
 from redbot.core import commands
 from redbot.cogs.alias.alias import Alias
 import TagScriptEngine as tse
+
 from .objects import Tag, SilentContext
 from .errors import *
 
@@ -36,9 +39,8 @@ class Processor:
         ctx = await self.bot.get_context(new_message)
         await self.bot.invoke(ctx)
 
-    async def process_tag(
-        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
-    ) -> str:
+    @staticmethod
+    def get_seed_from_context(ctx: commands.Context) -> Dict[str, tse.Adapter]:
         author = tse.MemberAdapter(ctx.author)
         target = tse.MemberAdapter(ctx.message.mentions[0]) if ctx.message.mentions else author
         channel = tse.ChannelAdapter(ctx.channel)
@@ -52,6 +54,12 @@ class Processor:
         if ctx.guild:
             guild = tse.GuildAdapter(ctx.guild)
             seed.update(guild=guild, server=guild)
+        return seed
+
+    async def process_tag(
+        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
+    ) -> str:
+        seed = self.get_seed_from_context(ctx)
         seed_variables.update(seed)
 
         output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
@@ -60,8 +68,6 @@ class Processor:
         command_messages = []
         content = output.body[:2000] if output.body else None
         actions = output.actions
-        embed = actions.get("embed")
-        destination = ctx.channel
         replying = False
 
         if actions:
@@ -80,7 +86,7 @@ class Processor:
                 to_gather.append(self.delete_quietly(ctx))
 
             if delete is False and (reactu := actions.get("reactu")):
-                to_gather.append(self.do_reactu(ctx, reactu))
+                to_gather.append(self.react_to_list(ctx.message, reactu))
 
             if actions.get("commands"):
                 for command in actions["commands"]:
@@ -91,26 +97,10 @@ class Processor:
                     new.content = ctx.prefix + command
                     command_messages.append(new)
 
-            if target := actions.get("target"):
-                if target == "dm":
-                    destination = await ctx.author.create_dm()
-                elif target == "reply":
-                    replying = True
-                else:
-                    try:
-                        chan = await self.channel_converter.convert(ctx, target)
-                    except commands.BadArgument:
-                        pass
-                    else:
-                        if chan.permissions_for(ctx.me).send_messages:
-                            destination = chan
-
         # this is going to become an asynchronous swamp
-        msg = None
-        if content or embed is not None:
-            msg = await self.send_tag_response(ctx, destination, replying, content, embed=embed)
-            if msg and (react := actions.get("react")):
-                to_gather.append(self.do_reactions(ctx, react, msg))
+        msg = await self.send_tag_response(ctx, actions, content, embed=embed)
+        if msg and (react := actions.get("react")):
+            to_gather.append(self.react_to_list(ctx, msg, react))
         if command_messages:
             silent = actions.get("silent", False)
             overrides = actions.get("overrides")
@@ -119,14 +109,42 @@ class Processor:
         if to_gather:
             await asyncio.gather(*to_gather)
 
+    @staticmethod
+    async def send_quietly(destination: discord.abc.Messageable, content: str = None, **kwargs):
+        try:
+            return await destination.send(content, **kwargs)
+        except discord.HTTPException:
+            pass
+
     async def send_tag_response(
         self,
         ctx: commands.Context,
-        destination: discord.abc.Messageable,
-        replying: bool,
+        actions: dict,
         content: str = None,
         **kwargs,
     ) -> Optional[discord.Message]:
+        destination = ctx.channel
+        embed = actions.get("embed")
+        replying = False
+
+        if target := actions.get("target"):
+            if target == "dm":
+                destination = await ctx.author.create_dm()
+            elif target == "reply":
+                replying = True
+            else:
+                try:
+                    chan = await self.channel_converter.convert(ctx, target)
+                except commands.BadArgument:
+                    pass
+                else:
+                    if chan.permissions_for(ctx.me).send_messages:
+                        destination = chan
+
+        if not (content or embed is not None):
+            return
+        kwargs["embed"] = embed
+
         if replying:
             try:
                 return await ctx.reply(content, **kwargs)
@@ -219,29 +237,19 @@ class Processor:
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
 
-    async def do_reactu(self, ctx: commands.Context, reactu: list):
-        if reactu:
-            for arg in reactu:
-                try:
-                    arg = await self.emoji_converter.convert(ctx, arg)
-                except commands.BadArgument:
-                    pass
-                try:
-                    await ctx.message.add_reaction(arg)
-                except discord.HTTPException:
-                    pass
-
-    async def do_reactions(self, ctx: commands.Context, react: list, msg: discord.Message):
-        if msg and react:
-            for arg in react:
-                try:
-                    arg = await self.emoji_converter.convert(ctx, arg)
-                except commands.BadArgument:
-                    pass
-                try:
-                    await msg.add_reaction(arg)
-                except discord.HTTPException:
-                    pass
+    @staticmethod
+    async def react_to_list(ctx: commands.Context, message: discord.Message, args: List[str]):
+        if not (message and args):
+            return
+        for arg in args:
+            try:
+                arg = await self.emoji_converter.convert(ctx, arg)
+            except commands.BadArgument:
+                pass
+            try:
+                await ctx.message.add_reaction(arg)
+            except discord.HTTPException:
+                pass
 
     @staticmethod
     async def delete_quietly(ctx: commands.Context):
