@@ -1,5 +1,6 @@
 from typing import List
 
+import discord
 from redbot.core import commands
 from redbot.cogs.alias.alias import Alias
 import TagScriptEngine as tse
