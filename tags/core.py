@@ -52,6 +52,7 @@ log = logging.getLogger("red.phenom4n4n.tags")
 
 DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
 
+
 async def send_quietly(destination: discord.abc.Messageable, content: str = None, **kwargs):
     try:
         return await destination.send(content, **kwargs)
