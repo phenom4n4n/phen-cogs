@@ -27,7 +27,12 @@ from typing import Optional, List
 import discord
 from redbot.core import commands, Config
 from redbot.core.bot import Red
+from redbor.core.utils.chat_formatting import humanize_number as hn
 from TagScriptEngine import Interpreter, IntAdapter
+
+from .errors import *
+
+ALIAS_LIMIT = 10
 
 
 class Tag:
@@ -62,6 +67,20 @@ class Tag:
     def __len__(self) -> int:
         return len(self.tagscript)
 
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __repr__(self) -> str:
+        return f"<Tag name={self.name!r} length={len(self)} aliases={self.aliases!r}>"
+
+    @property
+    def cache_path(self) -> dict:
+        return self.cog.guild_tag_cache[self.guild_id] if self.guild_id else self.cog.global_tag_cache
+
+    @property
+    def config_path(self):
+        return self.config.guild_from_id(self.guild_id) if self.guild_id else self.config
+
     @property
     def guild(self) -> Optional[discord.Guild]:
         if self.guild_id:
@@ -72,6 +91,10 @@ class Tag:
     def author(self) -> Optional[discord.User]:
         return self.bot.get_user(self.author_id)
 
+    @property
+    def name_prefix(self):
+        return "Tag" if self.guild_id else "Global tag"
+
     def run(
         self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs
     ) -> Interpreter.Response:
@@ -81,12 +104,8 @@ class Tag:
 
     async def update_config(self):
         if self._real_tag:
-            if self.guild_id:
-                async with self.config.guild_from_id(self.guild_id).tags() as t:
-                    t[self.name] = self.to_dict()
-            else:
-                async with self.config.tags() as t:
-                    t[self.name] = self.to_dict()
+            async with self.config_path.tags() as t:
+                t[self.name] = self.to_dict()
 
     @classmethod
     def from_dict(
@@ -118,23 +137,40 @@ class Tag:
         }
 
     async def delete(self):
-        if self.guild_id:
-            async with self.config.guild_from_id(self.guild_id).tags() as t:
-                del t[self.name]
-        else:
-            async with self.config.tags() as t:
-                del t[self.name]
+        async with self.config_path.tags() as t:
+            del t[self.name]
         self.remove_from_cache()
 
-    def remove_from_cache(self):
-        if self.guild:
-            path = self.cog.guild_tag_cache[self.guild_id]
-        else:
-            path = self.cog.global_tag_cache
+    def add_to_cache(self):
+        path = self.cache_path
+        path[self.name] = self
+        for alias in self.aliases:
+            path[alias] = self
 
-        try:
-            del path[self.guild_id][self.name]
-            for alias in aliases:
-                del path[alias]
-        except KeyError:
-            pass
+    def remove_from_cache(self):
+        path = self.cache_path
+        del path[self.guild_id][self.name]
+        for alias in self.aliases:
+            del path[alias]
+
+    async def add_alias(self, alias: str):
+        if len(tag.aliases) >= ALIAS_LIMIT:
+            raise TagAliasError(f"This tag already has the maximum of {ALIAS_LIMIT} aliases.")
+
+        self.aliases.append(alias)
+        self.cache_path[alias] = tag
+        await self.update_config()
+
+    async def remove_alias(self, alias: str):
+        if alias not in self.aliases:
+            raise TagAliasError(f"`{alias}` is not a valid alias for `{tag}`.")
+
+        self.aliases.remove(alias)
+        del self.cache_path[alias]
+        await self.update_config()
+
+    async def edit_tagscript(self, tagscript: str):
+        old_tagscript = len(self.tagscript)
+        self.tagscript = tagscript
+        await self.update_config()
+        return f"Edited `{self.name}`'s tagscript from **{hn(old_tagscript)}** to **{hn(len(self.tagscript))}** characters."

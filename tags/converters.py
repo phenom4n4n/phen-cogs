@@ -24,36 +24,38 @@ SOFTWARE.
 
 from discord.utils import escape_mentions
 from redbot.core import commands
-from redbot.core.commands import BadArgument, Converter
 
 from .objects import Tag
 from .errors import MissingTagPermissions
 
 
-class TagName(Converter):
+class TagName(commands.Converter):
     def __init__(self, *, allow_named_tags: bool = False):
         self.allow_named_tags = allow_named_tags
 
-    async def convert(self, ctx: commands.Converter, argument: str) -> str:
+    async def convert(self, ctx: commands.Context, argument: str) -> str:
         command = ctx.bot.get_command(argument)
         if command:
-            raise BadArgument(f"`{argument}` is already a registered command.")
+            raise commands.BadArgument(f"`{argument}` is already a registered command.")
+
         cog = ctx.bot.get_cog("Tags")
         if not self.allow_named_tags:
-            tag = cog.get_tag(ctx.guild, argument=check_global)
+            tag = cog.get_tag(ctx.guild, argument, check_global=False)
             if tag:
                 raise BadArgument(f"`{argument}` is already a registered tag or alias.")
+
         return "".join(argument.split())
 
 
-class TagConverter(Converter):
+class TagConverter(commands.Converter):
     def __init__(self, *, check_global: bool = False, global_priority: bool = False):
         self.check_global = check_global
         self.global_priority = global_priority
 
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
         if not ctx.guild and not await ctx.bot.is_owner(ctx.author):
-            raise BadArgument("Tags can only be used in guilds.")
+            raise commands.BadArgument("Tags can only be used in guilds.")
+
         cog = ctx.bot.get_cog("Tags")
         tag = cog.get_tag(
             ctx.guild,
@@ -67,11 +69,11 @@ class TagConverter(Converter):
             raise BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
 
 
-class TagScriptConverter(Converter):
+class TagScriptConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> str:
         cog = ctx.bot.get_cog("Tags")
         try:
             await cog.validate_tagscript(ctx, argument)
         except MissingTagPermissions as e:
-            raise BadArgument(str(e))
+            raise commands.BadArgument(str(e))
         return argument

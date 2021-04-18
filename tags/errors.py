@@ -25,11 +25,15 @@ SOFTWARE.
 from typing import Optional
 
 
-class MissingTagPermissions(Exception):
+class TagError(Exception):
+    """Base exception class."""
+
+
+class MissingTagPermissions(TagError):
     """Raised when a user doesn't have permissions to use a block in a tag."""
 
 
-class RequireCheckFailure(Exception):
+class RequireCheckFailure(TagError):
     """
     Raised during tag invocation if the user fails to fulfill
     blacklist or whitelist requirements.
@@ -46,3 +50,7 @@ class WhitelistCheckFailure(RequireCheckFailure):
 
 class BlacklistCheckFailure(RequireCheckFailure):
     """Raised when a user is in a blacklisted channel or has a blacklisted role."""
+
+
+class TagAliasError(TagError):
+    """Raised to provide feedback if an error occurs while adding/removing a tag alias."""
