@@ -76,7 +76,9 @@ class Tag:
 
     @property
     def cache_path(self) -> dict:
-        return self.cog.guild_tag_cache[self.guild_id] if self.guild_id else self.cog.global_tag_cache
+        return (
+            self.cog.guild_tag_cache[self.guild_id] if self.guild_id else self.cog.global_tag_cache
+        )
 
     @property
     def config_path(self):
@@ -162,7 +164,9 @@ class Tag:
 
     async def add_alias(self, alias: str) -> str:
         if len(self.aliases) >= ALIAS_LIMIT:
-            raise TagAliasError(f"This {self.name_prefix.lower()} already has the maximum of {ALIAS_LIMIT} aliases.")
+            raise TagAliasError(
+                f"This {self.name_prefix.lower()} already has the maximum of {ALIAS_LIMIT} aliases."
+            )
 
         self.aliases.append(alias)
         self.cache_path[alias] = self
@@ -214,6 +218,7 @@ class Tag:
                 page,
                 allowed_mentions=discord.AllowedMentions.none(),
             )
+
 
 class SilentContext(commands.Context):
     """Modified Context class to prevent command output to users."""
