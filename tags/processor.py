@@ -20,7 +20,7 @@ class Processor:
         tag = self.get_tag(ctx.guild, ctx.invoked_with, check_global=True)
         if tag and await self.message_eligible_as_tag(message):
             prefix = ctx.prefix
-            tag_command = message.content[len(prefix):]
+            tag_command = message.content[len(prefix) :]
             await self.invoke_tag_message(message, prefix, tag_command)
 
     async def message_eligible_as_tag(self, message: discord.Message) -> bool:
