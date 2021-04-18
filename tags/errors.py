@@ -52,5 +52,9 @@ class BlacklistCheckFailure(RequireCheckFailure):
     """Raised when a user is in a blacklisted channel or has a blacklisted role."""
 
 
-class TagAliasError(TagError):
+class TagFeedbackError(TagError):
+    """Provides feedback to the user when running tag commands."""
+
+
+class TagAliasError(TagFeedbackError):
     """Raised to provide feedback if an error occurs while adding/removing a tag alias."""

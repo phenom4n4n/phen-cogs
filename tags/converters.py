@@ -69,6 +69,9 @@ class TagConverter(commands.Converter):
             raise BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
 
 
+GlobalTagConverter = TagConverter(check_global=True, global_priority=True)
+
+
 class TagScriptConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> str:
         cog = ctx.bot.get_cog("Tags")

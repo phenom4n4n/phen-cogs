@@ -27,11 +27,12 @@ from typing import Optional, List
 import discord
 from redbot.core import commands, Config
 from redbot.core.bot import Red
-from redbor.core.utils.chat_formatting import humanize_number as hn
+from redbor.core.utils.chat_formatting import humanize_number, pagify
 from TagScriptEngine import Interpreter, IntAdapter
 
 from .errors import *
 
+hn = humanize_number
 ALIAS_LIMIT = 10
 
 
@@ -136,10 +137,11 @@ class Tag:
             "aliases": self.aliases,
         }
 
-    async def delete(self):
+    async def delete(self) -> str:
         async with self.config_path.tags() as t:
             del t[self.name]
         self.remove_from_cache()
+        return f"{self.name_prefix} `{self}` deleted."
 
     def add_to_cache(self):
         path = self.cache_path
@@ -153,24 +155,66 @@ class Tag:
         for alias in self.aliases:
             del path[alias]
 
-    async def add_alias(self, alias: str):
-        if len(tag.aliases) >= ALIAS_LIMIT:
-            raise TagAliasError(f"This tag already has the maximum of {ALIAS_LIMIT} aliases.")
+    async def add_alias(self, alias: str) -> str:
+        if len(self.aliases) >= ALIAS_LIMIT:
+            raise TagAliasError(f"This {self.name_prefix.lower()} already has the maximum of {ALIAS_LIMIT} aliases.")
 
         self.aliases.append(alias)
-        self.cache_path[alias] = tag
+        self.cache_path[alias] = self
         await self.update_config()
+        return f"{alias} has been added as an alias to {self.name_prefix.lower()} `{self}`."
 
-    async def remove_alias(self, alias: str):
-        if alias not in self.aliases:
-            raise TagAliasError(f"`{alias}` is not a valid alias for `{tag}`.")
+    async def remove_alias(self, alias: str) -> str:
+        try:
+            self.aliases.remove(alias)
+        except ValueError as exc:
+            raise TagAliasError(f"`{alias}` is not a valid alias for `{self}`.") from exc
 
-        self.aliases.remove(alias)
         del self.cache_path[alias]
         await self.update_config()
+        return f"Alias `{alias}` removed from {self.name_prefix.lower()} `{self}`."
 
-    async def edit_tagscript(self, tagscript: str):
+    async def edit_tagscript(self, tagscript: str) -> str:
         old_tagscript = len(self.tagscript)
         self.tagscript = tagscript
         await self.update_config()
-        return f"Edited `{self.name}`'s tagscript from **{hn(old_tagscript)}** to **{hn(len(self.tagscript))}** characters."
+        return f"Edited `{self}`'s tagscript from **{hn(old_tagscript)}** to **{hn(len(self.tagscript))}** characters."
+
+    async def get_info(self, ctx: commands.Context) -> discord.Embed:
+        desc = [
+            f"Author: {self.author.mention if self.author else self.author_id}",
+            f"Uses: **{self.uses}**",
+            f"Length: **{hn(len(self))}**",
+        ]
+        if self.aliases:
+            desc.append(humanize_list([inline(alias) for alias in self.aliases]))
+        e = discord.Embed(
+            color=await ctx.embed_color(),
+            title=f"{self.name_prefix} `{self}` Info",
+            description="\n".join(desc),
+        )
+        if self.guild_id:
+            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        else:
+            e.set_author(name=ctx.me, icon_url=ctx.me.avatar_url)
+        return e
+
+    async def send_info(self, ctx: commands.Context) -> discord.Message:
+        return await ctx.send(embed=await self.get_info())
+
+    async def send_raw_tagscript(self, ctx: commands.Context):
+        tagscript = discord.utils.escape_markdown(self.tagscript)
+        for page in pagify(tagscript):
+            await ctx.send(
+                page,
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+
+class SilentContext(commands.Context):
+    """Modified Context class to prevent command output to users."""
+
+    async def send(self, *args, **kwargs):
+        pass
+
+    async def reply(self, *args, **kwargs):
+        pass
