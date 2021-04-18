@@ -4,7 +4,6 @@ from copy import copy
 
 import discord
 from redbot.core import commands
-from redbot.cogs.alias.alias import Alias
 import TagScriptEngine as tse
 
 from .objects import Tag, SilentContext
@@ -12,7 +11,7 @@ from .errors import *
 
 
 class Processor:
-    @command.Cog.listener()
+    @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception):
         if not isinstance(error, commands.CommandNotFound):
             return
