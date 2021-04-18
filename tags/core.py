@@ -23,10 +23,8 @@ SOFTWARE.
 """
 
 import asyncio
-import time
 from collections import defaultdict
-from copy import copy
-from typing import Optional, List, Set
+from typing import Optional, Set
 
 import logging
 import discord

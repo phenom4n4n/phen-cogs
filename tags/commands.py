@@ -65,7 +65,12 @@ class Commands:
 
     @commands.command(usage="<tag_name> [args]")
     async def invoketag(
-        self, ctx: commands.Context, response: Optional[bool], tag_name: str, *, args: Optional[str] = ""
+        self,
+        ctx: commands.Context,
+        response: Optional[bool],
+        tag_name: str,
+        *,
+        args: Optional[str] = "",
     ):
         """
         Manually invoke a tag with its name and arguments.
@@ -89,8 +94,10 @@ class Commands:
         guild = ctx.guild
         path = self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
         if not path:
-            return await ctx.send("This server has no tags." if guild else "No global tags have been added.")
-    
+            return await ctx.send(
+                "This server has no tags." if guild else "No global tags have been added."
+            )
+
         tags = path.keys()
         title = f"Tags in {guild}" if guild else "Global Tags"
         embed = discord.Embed(color=await ctx.embed_color(), title=title)
@@ -118,7 +125,11 @@ class Commands:
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="add", aliases=["create", "+"])
     async def tag_add(
-        self, ctx: commands.Context, tag_name: TagName(allow_named_tags=True), *, tagscript: TagScriptConverter
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(allow_named_tags=True),
+        *,
+        tagscript: TagScriptConverter,
     ):
         """
         Add a tag with TagScript.
@@ -131,12 +142,18 @@ class Commands:
         tag_count = len(self.get_unique_tags(guild))
         if guild:
             if tag_count >= TAG_GUILD_LIMIT:
-                raise TagFeedbackError(f"This server has reached the limit of **{TAG_GUILD_LIMIT}** tags.")
+                raise TagFeedbackError(
+                    f"This server has reached the limit of **{TAG_GUILD_LIMIT}** tags."
+                )
         else:
             if tag_count >= TAG_GLOBAL_LIMIT:
-                raise TagFeedbackError(f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags.")
+                raise TagFeedbackError(
+                    f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags."
+                )
 
-    async def create_tag(self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False):
+    async def create_tag(
+        self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False
+    ):
         kwargs = {"author_id": ctx.author.id}
 
         if global_tag:
@@ -176,7 +193,9 @@ class Commands:
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="unalias")
-    async def tag_unalias(self, ctx: commands.Context, tag: TagConverter, alias: TagName(allow_named_tags=True)):
+    async def tag_unalias(
+        self, ctx: commands.Context, tag: TagConverter, alias: TagName(allow_named_tags=True)
+    ):
         """Remove an alias for a tag."""
         await ctx.send(await tag.remove_alias(alias))
 
@@ -330,12 +349,16 @@ class Commands:
         await self.create_tag(ctx, tag_name, tagscript, global_tag=True)
 
     @tag_global.command(name="alias")
-    async def tag_global_alias(self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName):
+    async def tag_global_alias(
+        self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName
+    ):
         """Add an alias for a global tag."""
         await ctx.send(await tag.add_alias(alias))
 
     @tag_global.command(name="unalias")
-    async def tag_global_unalias(self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName(allow_named_tags=True)):
+    async def tag_global_unalias(
+        self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName(allow_named_tags=True)
+    ):
         """Remove an alias for a global tag."""
         await ctx.send(await tag.remove_alias(alias))
 
@@ -351,16 +374,12 @@ class Commands:
         await ctx.send(await tag.edit_tagscript(tagscript))
 
     @tag_global.command(name="remove", aliases=["delete", "-"])
-    async def tag_global_remove(
-        self, ctx: commands.Context, tag: GlobalTagConverter
-    ):
+    async def tag_global_remove(self, ctx: commands.Context, tag: GlobalTagConverter):
         """Delete a global tag."""
         await ctx.send(await tag.delete())
 
     @tag_global.command(name="info")
-    async def tag_global_info(
-        self, ctx: commands.Context, tag: GlobalTagConverter
-    ):
+    async def tag_global_info(self, ctx: commands.Context, tag: GlobalTagConverter):
         """Get info about a global tag."""
         await tag.send_info(ctx)
 
