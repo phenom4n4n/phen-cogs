@@ -37,7 +37,7 @@ from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
 import TagScriptEngine as tse
 import bs4
 
-from .converters import TagConverter, TagName, TagScriptConverter, GlobalTagConverter
+from .converters import TagConverter, TagName, TagScriptConverter, GlobalTagConverter, GuildTagConverter
 from .objects import Tag
 from .errors import *
 
@@ -55,11 +55,11 @@ class Commands:
 
         for tag in tags:
             aliases.extend(tag.aliases)
-            tagscript = tag.tagscript
+            tagscript = tag.tagscript.replace("\n", " ")
             if len(tagscript) > 23:
                 tagscript = tagscript[:20] + "..."
-            tagscript = tagscript.replace("\n", " ")
-            description.append(f"`{tag}` - {escape_markdown(tagscript)}")
+            tagscript = discord.utils.escape_markdown(tagscript)
+            description.append(f"`{tag}` - {tagscript}")
 
         return {"aliases": aliases, "description": description}
 
@@ -157,11 +157,11 @@ class Commands:
         kwargs = {"author_id": ctx.author.id}
 
         if global_tag:
-            tag = self.get_tag(None, tag_name, global_priority=True)
             guild = None
+            tag = self.get_tag(None, tag_name, global_priority=True)
         else:
-            tag = self.get_tag(guild, tag_name, check_global=False)
             guild = ctx.guild
+            tag = self.get_tag(guild, tag_name, check_global=False)
             kwargs["guild_id"] = guild.id
         self.validate_tag_count(guild)
 
@@ -187,14 +187,14 @@ class Commands:
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="alias")
-    async def tag_alias(self, ctx: commands.Context, tag: TagConverter, alias: TagName):
+    async def tag_alias(self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName):
         """Add an alias for a tag."""
         await ctx.send(await tag.add_alias(alias))
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="unalias")
     async def tag_unalias(
-        self, ctx: commands.Context, tag: TagConverter, alias: TagName(allow_named_tags=True)
+        self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName(allow_named_tags=True)
     ):
         """Remove an alias for a tag."""
         await ctx.send(await tag.remove_alias(alias))
@@ -202,24 +202,24 @@ class Commands:
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="edit", aliases=["e"])
     async def tag_edit(
-        self, ctx: commands.Context, tag: TagConverter, *, tagscript: TagScriptConverter
+        self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
     ):
         """Edit a tag with TagScript."""
         await ctx.send(await tag.edit_tagscript(tagscript))
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="remove", aliases=["delete", "-"])
-    async def tag_remove(self, ctx: commands.Context, tag: TagConverter):
+    async def tag_remove(self, ctx: commands.Context, tag: GuildTagConverter):
         """Delete a tag."""
         await ctx.send(await tag.delete())
 
     @tag.command(name="info")
-    async def tag_info(self, ctx: commands.Context, tag: TagConverter):
+    async def tag_info(self, ctx: commands.Context, tag: GuildTagConverter):
         """Get info about a tag that is stored on this server."""
         await tag.send_info(ctx)
 
     @tag.command(name="raw")
-    async def tag_raw(self, ctx: commands.Context, tag: TagConverter):
+    async def tag_raw(self, ctx: commands.Context, tag: GuildTagConverter):
         """Get a tag's raw content."""
         await tag.send_raw_tagscript(ctx)
 
@@ -339,7 +339,7 @@ class Commands:
 
     @tag_global.command(name="add", aliases=["create", "+"])
     async def tag_global_add(
-        self, ctx: commands.Context, tag_name: TagName, *, tagscript: TagScriptConverter
+        self, ctx: commands.Context, tag_name: TagName(global_priority=True), *, tagscript: TagScriptConverter
     ):
         """
         Add a global tag with TagScript.
@@ -385,7 +385,7 @@ class Commands:
 
     @tag_global.command(name="raw")
     async def tag_global_raw(
-        self, ctx: commands.Context, tag: TagConverter(check_global=True, global_priority=True)
+        self, ctx: commands.Context, tag: GlobalTagConverter
     ):
         """Get a tag's raw content."""
         await tag.send_raw_tagscript(ctx)

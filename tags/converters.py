@@ -28,41 +28,38 @@ from redbot.core import commands
 from .objects import Tag
 from .errors import MissingTagPermissions
 
+class TagSearcher:
+    def __init__(self, **search_kwargs):
+        self.search_kwargs = search_kwargs
 
-class TagName(commands.Converter):
-    def __init__(self, *, allow_named_tags: bool = False):
+    def get_tag(self, ctx: commands.Context, argument: str):
+        cog = ctx.bot.get_cog("Tags")
+        return cog.get_tag(ctx.guild, argument, **self.search_kwargs)
+
+class TagName(TagSearcher, commands.Converter):
+    def __init__(self, *, allow_named_tags: bool = False, **kwargs):
         self.allow_named_tags = allow_named_tags
+        super().__init__(**kwargs)
 
     async def convert(self, ctx: commands.Context, argument: str) -> str:
         command = ctx.bot.get_command(argument)
         if command:
             raise commands.BadArgument(f"`{argument}` is already a registered command.")
 
-        cog = ctx.bot.get_cog("Tags")
         if not self.allow_named_tags:
-            tag = cog.get_tag(ctx.guild, argument, check_global=False)
+            tag = self.get_tag(ctx, argument)
             if tag:
                 raise commands.BadArgument(f"`{argument}` is already a registered tag or alias.")
 
         return "".join(argument.split())
 
 
-class TagConverter(commands.Converter):
-    def __init__(self, *, check_global: bool = False, global_priority: bool = False):
-        self.check_global = check_global
-        self.global_priority = global_priority
-
+class TagConverter(TagSearcher, commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
         if not ctx.guild and not await ctx.bot.is_owner(ctx.author):
             raise commands.BadArgument("Tags can only be used in guilds.")
 
-        cog = ctx.bot.get_cog("Tags")
-        tag = cog.get_tag(
-            ctx.guild,
-            argument,
-            check_global=self.check_global,
-            global_priority=self.global_priority,
-        )
+        tag = self.get_tag(ctx, argument)
         if tag:
             return tag
         else:
@@ -70,6 +67,7 @@ class TagConverter(commands.Converter):
 
 
 GlobalTagConverter = TagConverter(check_global=True, global_priority=True)
+GuildTagConverter = TagConverter(check_global=False, global_priority=False)
 
 
 class TagScriptConverter(commands.Converter):

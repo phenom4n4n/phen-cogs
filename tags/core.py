@@ -127,8 +127,8 @@ class Tags(Commands, Processor, commands.Cog):
 
     def cog_unload(self):
         self.bot.remove_dev_env_value("tags")
-        if self.task:
-            self.task.cancel()
+        if self.cache_task:
+            self.cache_task.cancel()
         asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):

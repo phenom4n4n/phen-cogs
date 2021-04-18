@@ -27,7 +27,7 @@ from typing import Optional, List
 import discord
 from redbot.core import commands, Config
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import humanize_number, pagify
+from redbot.core.utils.chat_formatting import humanize_number, pagify, humanize_list, inline
 from TagScriptEngine import Interpreter, IntAdapter
 
 from .errors import *
@@ -123,7 +123,7 @@ class Tag:
 
     def remove_from_cache(self):
         path = self.cache_path
-        del path[self.guild_id][self.name]
+        del path[self.name]
         for alias in self.aliases:
             del path[alias]
 
@@ -209,7 +209,7 @@ class Tag:
         return e
 
     async def send_info(self, ctx: commands.Context) -> discord.Message:
-        return await ctx.send(embed=await self.get_info())
+        return await ctx.send(embed=await self.get_info(ctx))
 
     async def send_raw_tagscript(self, ctx: commands.Context):
         tagscript = discord.utils.escape_markdown(self.tagscript)

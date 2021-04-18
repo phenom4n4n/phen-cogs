@@ -1,4 +1,5 @@
-from typing import List
+from typing import List, Dict
+from copy import copy
 
 import discord
 from redbot.core import commands
@@ -99,7 +100,7 @@ class Processor:
                     command_messages.append(new)
 
         # this is going to become an asynchronous swamp
-        msg = await self.send_tag_response(ctx, actions, content, embed=embed)
+        msg = await self.send_tag_response(ctx, actions, content)
         if msg and (react := actions.get("react")):
             to_gather.append(self.react_to_list(ctx, msg, react))
         if command_messages:
@@ -150,9 +151,9 @@ class Processor:
             try:
                 return await ctx.reply(content, **kwargs)
             except discord.HTTPException:
-                return await send_quietly(destination, content, **kwargs)
+                return await self.send_quietly(destination, content, **kwargs)
         else:
-            return await send_quietly(destination, content, **kwargs)
+            return await self.send_quietly(destination, content, **kwargs)
 
     async def process_commands(
         self, messages: List[discord.Message], silent: bool, overrides: dict
