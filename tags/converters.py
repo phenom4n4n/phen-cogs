@@ -42,7 +42,7 @@ class TagName(commands.Converter):
         if not self.allow_named_tags:
             tag = cog.get_tag(ctx.guild, argument, check_global=False)
             if tag:
-                raise BadArgument(f"`{argument}` is already a registered tag or alias.")
+                raise commands.BadArgument(f"`{argument}` is already a registered tag or alias.")
 
         return "".join(argument.split())
 
@@ -66,7 +66,7 @@ class TagConverter(commands.Converter):
         if tag:
             return tag
         else:
-            raise BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
+            raise commands.BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
 
 
 GlobalTagConverter = TagConverter(check_global=True, global_priority=True)

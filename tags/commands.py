@@ -197,7 +197,7 @@ class Commands:
     @tag.command(name="info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
         """Get info about a tag that is stored on this server."""
-         await tag.send_info(ctx)
+        await tag.send_info(ctx)
 
     @tag.command(name="raw")
     async def tag_raw(self, ctx: commands.Context, tag: TagConverter):
