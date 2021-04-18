@@ -220,8 +220,8 @@ class Commands:
         await ctx.send(await tag.delete())
 
     @tag.command(name="info")
-    async def tag_info(self, ctx: commands.Context, tag: GuildTagConverter):
-        """Get info about a tag that is stored on this server."""
+    async def tag_info(self, ctx: commands.Context, tag: TagConverter):
+        """Get info about a global or server tag."""
         await tag.send_info(ctx)
 
     @tag.command(name="raw")
@@ -387,11 +387,6 @@ class Commands:
     async def tag_global_remove(self, ctx: commands.Context, tag: GlobalTagConverter):
         """Delete a global tag."""
         await ctx.send(await tag.delete())
-
-    @tag_global.command(name="info")
-    async def tag_global_info(self, ctx: commands.Context, tag: GlobalTagConverter):
-        """Get info about a global tag."""
-        await tag.send_info(ctx)
 
     @tag_global.command(name="raw")
     async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
