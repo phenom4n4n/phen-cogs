@@ -37,7 +37,13 @@ from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
 import TagScriptEngine as tse
 import bs4
 
-from .converters import TagConverter, TagName, TagScriptConverter, GlobalTagConverter, GuildTagConverter
+from .converters import (
+    TagConverter,
+    TagName,
+    TagScriptConverter,
+    GlobalTagConverter,
+    GuildTagConverter,
+)
 from .objects import Tag
 from .errors import *
 
@@ -339,7 +345,11 @@ class Commands:
 
     @tag_global.command(name="add", aliases=["create", "+"])
     async def tag_global_add(
-        self, ctx: commands.Context, tag_name: TagName(global_priority=True), *, tagscript: TagScriptConverter
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(global_priority=True),
+        *,
+        tagscript: TagScriptConverter,
     ):
         """
         Add a global tag with TagScript.
@@ -384,9 +394,7 @@ class Commands:
         await tag.send_info(ctx)
 
     @tag_global.command(name="raw")
-    async def tag_global_raw(
-        self, ctx: commands.Context, tag: GlobalTagConverter
-    ):
+    async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
         """Get a tag's raw content."""
         await tag.send_raw_tagscript(ctx)
 

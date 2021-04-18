@@ -28,6 +28,7 @@ from redbot.core import commands
 from .objects import Tag
 from .errors import MissingTagPermissions
 
+
 class TagSearcher:
     def __init__(self, **search_kwargs):
         self.search_kwargs = search_kwargs
@@ -35,6 +36,7 @@ class TagSearcher:
     def get_tag(self, ctx: commands.Context, argument: str):
         cog = ctx.bot.get_cog("Tags")
         return cog.get_tag(ctx.guild, argument, **self.search_kwargs)
+
 
 class TagName(TagSearcher, commands.Converter):
     def __init__(self, *, allow_named_tags: bool = False, **kwargs):
