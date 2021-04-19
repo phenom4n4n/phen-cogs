@@ -24,46 +24,59 @@ SOFTWARE.
 
 from discord.utils import escape_mentions
 from redbot.core import commands
-from redbot.core.commands import BadArgument, Converter
 
 from .objects import Tag
 from .errors import MissingTagPermissions
 
 
-class TagName(Converter):
-    async def convert(self, ctx: commands.Converter, argument: str) -> str:
+class TagSearcher:
+    def __init__(self, **search_kwargs):
+        self.search_kwargs = search_kwargs
+
+    def get_tag(self, ctx: commands.Context, argument: str):
+        cog = ctx.bot.get_cog("Tags")
+        return cog.get_tag(ctx.guild, argument, **self.search_kwargs)
+
+
+class TagName(TagSearcher, commands.Converter):
+    def __init__(self, *, allow_named_tags: bool = False, **kwargs):
+        self.allow_named_tags = allow_named_tags
+        super().__init__(**kwargs)
+
+    async def convert(self, ctx: commands.Context, argument: str) -> str:
         command = ctx.bot.get_command(argument)
         if command:
-            raise BadArgument(f"`{argument}` is already a registered command.")
+            raise commands.BadArgument(f"`{argument}` is already a registered command.")
+
+        if not self.allow_named_tags:
+            tag = self.get_tag(ctx, argument)
+            if tag:
+                raise commands.BadArgument(f"`{argument}` is already a registered tag or alias.")
+
         return "".join(argument.split())
 
 
-class TagConverter(Converter):
-    def __init__(self, *, check_global: bool = False, global_priority: bool = False):
-        self.check_global = check_global
-        self.global_priority = global_priority
-
+class TagConverter(TagSearcher, commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
         if not ctx.guild and not await ctx.bot.is_owner(ctx.author):
-            raise BadArgument("Tags can only be used in guilds.")
-        cog = ctx.bot.get_cog("Tags")
-        tag = cog.get_tag(
-            ctx.guild,
-            argument,
-            check_global=self.check_global,
-            global_priority=self.global_priority,
-        )
+            raise commands.BadArgument("Tags can only be used in guilds.")
+
+        tag = self.get_tag(ctx, argument)
         if tag:
             return tag
         else:
-            raise BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
+            raise commands.BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
 
 
-class TagScriptConverter(Converter):
+GlobalTagConverter = TagConverter(check_global=True, global_priority=True)
+GuildTagConverter = TagConverter(check_global=False, global_priority=False)
+
+
+class TagScriptConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> str:
         cog = ctx.bot.get_cog("Tags")
         try:
             await cog.validate_tagscript(ctx, argument)
         except MissingTagPermissions as e:
-            raise BadArgument(str(e))
+            raise commands.BadArgument(str(e))
         return argument
