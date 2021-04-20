@@ -24,7 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 
-from TagScriptEngine import Interpreter, Block
+from TagScriptEngine import Block, Interpreter
 
 
 class ReactBlock(Block):

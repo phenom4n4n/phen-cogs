@@ -22,14 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import logging
+
 import akinator
-from akinator.async_aki import Akinator
 import discord
+from akinator.async_aki import Akinator
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.vendored.discord.ext import menus
-import logging
 
 log = logging.getLogger("red.phenom4n4n.aki")
 

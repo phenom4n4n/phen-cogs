@@ -22,10 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import asyncio
 import logging
 from enum import IntEnum
 from typing import Dict, List
-import asyncio
 
 import discord
 from redbot.core.bot import Red

@@ -22,18 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Literal
-import matplotlib
 import re
 from io import BytesIO
+from typing import Literal
+
+import matplotlib
 
 matplotlib.use("agg")
-import functools
 import asyncio
+import functools
+
 import matplotlib.pyplot as plt
 
 plt.switch_backend("agg")
 from collections import Counter
+
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red

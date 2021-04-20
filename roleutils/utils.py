@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Tuple, List, Optional
 import re
+from typing import List, Optional, Tuple
 
 import discord
 from redbot.core import commands
