@@ -23,39 +23,46 @@ SOFTWARE.
 """
 
 import asyncio
+import logging
 from collections import defaultdict
 from typing import Optional, Set
 
-import logging
+import aiohttp
 import discord
+import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.commands import Requires, PrivilegeLevel
 from redbot.core.bot import Red
+from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
-import TagScriptEngine as tse
-import aiohttp
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
+                                     start_adding_reactions)
+from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
-from .blocks import *
-from .objects import Tag, SilentContext
-from .errors import *
+from .abc import CompositeMetaClass
+from .blocks import (DeleteBlock, ReactBlock, ReactUBlock, RedirectBlock,
+                     SilentBlock)
 from .commands import Commands
+from .errors import MissingTagPermissions, TagFeedbackError
+from .objects import SilentContext, Tag
 from .processor import Processor
-
 
 log = logging.getLogger("red.phenom4n4n.tags")
 
 
-class Tags(Commands, Processor, commands.Cog):
+class Tags(
+    Commands,
+    Processor, 
+    commands.Cog,
+    metaclass=CompositeMetaClass,
+):
     """
     Create and use tags.
 
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.2.0"
+    __version__ = "2.2.1"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -123,6 +130,7 @@ class Tags(Commands, Processor, commands.Cog):
         self.session = aiohttp.ClientSession()
         self.docs: list = []
 
+        super().__init__()
         bot.add_dev_env_value("tags", lambda ctx: self)
 
     def cog_unload(self):
