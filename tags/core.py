@@ -52,7 +52,7 @@ log = logging.getLogger("red.phenom4n4n.tags")
 
 class Tags(
     Commands,
-    Processor, 
+    Processor,
     commands.Cog,
     metaclass=CompositeMetaClass,
 ):

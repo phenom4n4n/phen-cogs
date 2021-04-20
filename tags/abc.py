@@ -45,6 +45,7 @@ class MixinMeta(ABC):
     def __init__(self, *_args):
         super().__init__()
 
+
 class CompositeMetaClass(type(commands.Cog), type(ABC)):
     """
     This allows the metaclass used for proper type detection to
