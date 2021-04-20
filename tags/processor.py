@@ -1,13 +1,13 @@
 import asyncio
-from typing import List, Dict
 from copy import copy
+from typing import Dict, List
 
 import discord
-from redbot.core import commands
 import TagScriptEngine as tse
+from redbot.core import commands
 
-from .objects import Tag, SilentContext
 from .errors import *
+from .objects import SilentContext, Tag
 
 
 class Processor:

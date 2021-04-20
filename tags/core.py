@@ -23,27 +23,27 @@ SOFTWARE.
 """
 
 import asyncio
+import logging
 from collections import defaultdict
 from typing import Optional, Set
 
-import logging
+import aiohttp
 import discord
+import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.commands import Requires, PrivilegeLevel
 from redbot.core.bot import Red
+from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
-import TagScriptEngine as tse
-import aiohttp
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
+                                     start_adding_reactions)
+from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .blocks import *
-from .objects import Tag, SilentContext
-from .errors import *
 from .commands import Commands
+from .errors import *
+from .objects import SilentContext, Tag
 from .processor import Processor
-
 
 log = logging.getLogger("red.phenom4n4n.tags")
 

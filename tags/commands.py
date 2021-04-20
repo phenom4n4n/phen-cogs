@@ -22,30 +22,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Optional, Set, Dict, List
+from typing import Dict, List, Optional, Set
 from urllib.parse import quote_plus
 
+import bs4
 import discord
+import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.commands import Requires, PrivilegeLevel
 from redbot.core.bot import Red
+from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.chat_formatting import humanize_list, pagify, inline
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
-import TagScriptEngine as tse
-import bs4
+from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, menu,
+                                     start_adding_reactions)
+from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
-from .converters import (
-    TagConverter,
-    TagName,
-    TagScriptConverter,
-    GlobalTagConverter,
-    GuildTagConverter,
-)
-from .objects import Tag
+from .converters import (GlobalTagConverter, GuildTagConverter, TagConverter,
+                         TagName, TagScriptConverter)
 from .errors import *
+from .objects import Tag
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
