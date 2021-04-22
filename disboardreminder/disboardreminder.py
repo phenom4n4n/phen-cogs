@@ -54,6 +54,8 @@ class DisboardReminder(commands.Cog):
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
+    default_guild_cache = {"channel": None, "tasks": {}}
+
     def __init__(self, bot: Red):
         self.bot = bot
         self.config = Config.get_conf(
@@ -72,17 +74,17 @@ class DisboardReminder(commands.Cog):
 
         self.channel_cache = {}
         self.bump_loop = self.create_task(self.bump_check_loop())
-        self.bump_tasks = defaultdict(set)
+        self.bump_tasks = defaultdict(dict)
+        # self.cache = defaultdict(lambda _: self.default_guild_cache.copy())
         bot.add_dev_env_value("bprm", lambda _: self)
 
     def cog_unload(self):
         self.bot.remove_dev_env_value("bprm")
         if self.bump_loop:
             self.bump_loop.cancel()
-        if self.bump_tasks:
-            for task_set in self.bump_tasks.values():
-                for task in task_set:
-                    task.cancel()
+        for tasks in self.bump_tasks.values():
+            for task in tasks.values():
+                task.cancel()
 
     def task_done_callback(self, task: asyncio.Task):
         try:
@@ -147,7 +149,7 @@ class DisboardReminder(commands.Cog):
                 return
             task = self.create_task(self.bump_timer(guild, end_time), name=task_name)
 
-        self.bump_tasks[guild.id].add(task)
+        self.bump_tasks[guild.id][task_name] = task
         await asyncio.sleep(0.2)
 
     @commands.admin_or_permissions(manage_guild=True)
@@ -322,7 +324,7 @@ class DisboardReminder(commands.Cog):
         *,
         lock,
     ):
-        await self.set_my_permissions(guild, channel)
+        await self.set_my_permissions(guild, channel, my_perms)
 
         current_perms = channel.overwrites_for(guild.default_role)
         check = False if lock else None
