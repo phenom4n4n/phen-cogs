@@ -28,7 +28,6 @@ import logging
 from collections import defaultdict
 from datetime import datetime
 from typing import Optional, Coroutine
-from collections import Counter
 
 import discord
 from redbot.core import Config, commands
@@ -115,7 +114,9 @@ class DisboardReminder(commands.Cog):
             await asyncio.sleep(60)
 
     async def bump_check_guilds(self):
-        async for guild_id, guild_data in AsyncIter((await self.config.all_guilds()).items(), steps=100):
+        async for guild_id, guild_data in AsyncIter(
+            (await self.config.all_guilds()).items(), steps=100
+        ):
             if channel_id := guild_data["channel"] and channel_id not in self.channel_cache:
                 self.channel_cache[guild_id] = channel_id
             if not (guild := self.bot.get_guild(guild_id)):
@@ -303,14 +304,21 @@ class DisboardReminder(commands.Cog):
         await self.bump_remind(guild)
 
     @staticmethod
-    async def set_my_permissions(guild: discord.Guild, channel: discord.TextChannel, my_perms: discord.Permissions):
+    async def set_my_permissions(
+        guild: discord.Guild, channel: discord.TextChannel, my_perms: discord.Permissions
+    ):
         if not my_perms.send_messages:
             my_perms.update(send_messages=True)
-            await channel.set_permissions(
-                guild.me, overwrite=my_perms, reason=LOCK_REASON
-            )
+            await channel.set_permissions(guild.me, overwrite=my_perms, reason=LOCK_REASON)
 
-    async def autolock_channel(self, guild: discord.Guild, channel: discord.TextChannel, my_perms: discord.Permissions, *, lock):
+    async def autolock_channel(
+        self,
+        guild: discord.Guild,
+        channel: discord.TextChannel,
+        my_perms: discord.Permissions,
+        *,
+        lock,
+    ):
         await self.set_my_permissions(guild, channel)
 
         current_perms = channel.overwrites_for(guild.default_role)
@@ -373,7 +381,13 @@ class DisboardReminder(commands.Cog):
         if "Bump done" in embed.description:
             return embed
 
-    async def respond_to_bump(self, data: dict, bump_channel: discord.TextChannel, message: discord.Message, embed: discord.Embed):
+    async def respond_to_bump(
+        self,
+        data: dict,
+        bump_channel: discord.TextChannel,
+        message: discord.Message,
+        embed: discord.Embed,
+    ):
         guild: discord.Guild = message.guild
         my_perms = bump_channel.permissions_for(guild.me)
         next_bump = message.created_at.timestamp() + 7200
