@@ -27,8 +27,6 @@ from pathlib import Path
 
 from redbot.core.bot import Red
 
-from .http import Route
-from .models import SlashOptionType
 from .slashtags import SlashTags
 
 with open(Path(__file__).parent / "info.json") as fp:

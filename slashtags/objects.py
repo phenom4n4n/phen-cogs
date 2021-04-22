@@ -30,7 +30,7 @@ from redbot.core.bot import Red
 from TagScriptEngine import IntAdapter, Interpreter, StringAdapter
 
 from .http import SlashHTTP
-from .models import SlashOptionType
+from .models import SlashOptionType, InteractionResponse
 
 
 class SlashOptionChoice:
@@ -130,15 +130,14 @@ class CommandModel:
         return self.name
 
     def to_request(self) -> dict:
-        data = {
+        return {
             "name": self.name,
             "description": self.description,
             "options": [o.to_dict() for o in self.options],
         }
-        return data
 
     def to_dict(self) -> dict:
-        data = {
+        return {
             "id": self.id,
             "application_id": self.application_id,
             "name": self.name,
@@ -146,7 +145,6 @@ class CommandModel:
             "options": [o.to_dict() for o in self.options],
             "guild_id": self.guild_id,
         }
-        return data
 
     @classmethod
     def from_dict(cls, cog, data: dict):
@@ -305,7 +303,7 @@ class SlashTag:
         guild_id: int = None,
         real_tag: bool = True,
     ):
-        self = cls(
+        return cls(
             cog,
             data["tag"],
             guild_id=guild_id,
@@ -314,8 +312,6 @@ class SlashTag:
             real=real_tag,
             command=CommandModel.from_dict(cog, data["command"]),
         )
-
-        return self
 
     def to_dict(self):
         return {
@@ -401,3 +397,33 @@ class FakeMessage(discord.Message):
             channel=interaction.channel,
             author=interaction.author,
         )
+
+
+class SlashContext(commands.Context):
+    def __init__(self, *, interaction: InteractionResponse, **kwargs):
+        self.interaction: InteractionResponse = interaction
+        super().__init__(**kwargs)
+        self.send = interaction.send
+
+    def __repr__(self):
+        return (
+            "<SlashContext interaction={0.interaction!r} invoked_with={0.invoked_with!r}>".format(
+                self
+            )
+        )
+
+    @classmethod
+    def from_interaction(cls, interaction: InteractionResponse):
+        args_values = [o.value for o in interaction.options]
+        return cls(
+            interaction=interaction,
+            message=interaction,
+            bot=interaction.bot,
+            args=args_values,
+            prefix="/",
+            command=interaction.command,
+            invoked_with=interaction.command_name,
+        )
+
+    async def tick(self):
+        await self.interaction.send("✅", hidden=True)

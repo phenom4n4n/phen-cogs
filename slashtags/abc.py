@@ -22,37 +22,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from discord import Message
-from redbot.core import commands
+from abc import ABC
 
-from .models import InteractionResponse
+import discord
+from redbot.core import Config, commands
+from redbot.core.bot import Red
 
 
-class SlashContext(commands.Context):
-    def __init__(self, *, interaction: InteractionResponse, **kwargs):
-        self.interaction: InteractionResponse = interaction
-        super().__init__(**kwargs)
-        self.send = interaction.send
+class MixinMeta(ABC):
+    """
+    Base class for well behaved type hint detection with composite class.
+    Basically, to keep developers sane when not all attributes are defined in each mixin.
 
-    def __repr__(self):
-        return (
-            "<SlashContext interaction={0.interaction!r} invoked_with={0.invoked_with!r}>".format(
-                self
-            )
-        )
+    Strategy borrowed from redbot.cogs.mutes.abc
+    """
 
-    @classmethod
-    def from_interaction(cls, interaction: InteractionResponse):
-        args_values = [o.value for o in interaction.options]
-        return cls(
-            interaction=interaction,
-            message=interaction,
-            bot=interaction.bot,
-            args=args_values,
-            prefix="/",
-            command=interaction.command,
-            invoked_with=interaction.command_name,
-        )
+    config: Config
+    bot: Red
 
-    async def tick(self):
-        await self.interaction.send("✅", hidden=True)
+    def __init__(self, *_args):
+        super().__init__()
+
+
+class CompositeMetaClass(type(commands.Cog), type(ABC)):
+    """
+    This allows the metaclass used for proper type detection to
+    coexist with discord.py's metaclass
+    """
