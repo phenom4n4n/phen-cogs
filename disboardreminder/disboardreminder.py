@@ -333,7 +333,7 @@ class DisboardReminder(commands.Cog):
         if not channel:
             await self.config.guild(guild).channel.clear()
             return
-        my_perms = channel.permissions_for(guild.me):
+        my_perms = channel.permissions_for(guild.me)
         if not my_perms.send_messages:
             await self.config.guild(guild).channel.clear()
             return
