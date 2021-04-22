@@ -193,7 +193,9 @@ class InteractionResponse:
                 try:
                     option = handler(o, option, resolved)
                 except Exception as error:
-                    log.exception("Failed to handle option data for option:\n%s" % o, exc_info=error)
+                    log.exception(
+                        "Failed to handle option data for option:\n%s" % o, exc_info=error
+                    )
             self.options.append(option)
 
     def _handle_option_channel(
