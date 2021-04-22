@@ -124,7 +124,7 @@ class DisboardReminder(commands.Cog):
     async def bump_check_guild(self, guild: discord.Guild, guild_data: dict):
         # task logic taken from redbot.cogs.mutes
         end_time = guild_data["nextBump"]
-        if not timer:
+        if not end_time:
             return
         now = datetime.utcnow().timestamp()
         remaining = end_time - now
