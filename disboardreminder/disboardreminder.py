@@ -373,7 +373,7 @@ class DisboardReminder(commands.Cog):
         if "Bump done" in embed.description:
             return embed
 
-    async def respond_to_bump(self, data: dict, bump_channel: discord.TextChannel, message: discord.Message):
+    async def respond_to_bump(self, data: dict, bump_channel: discord.TextChannel, message: discord.Message, embed: discord.Embed):
         guild: discord.Guild = message.guild
         my_perms = bump_channel.permissions_for(guild.me)
         next_bump = message.created_at.timestamp() + 7200
@@ -413,11 +413,11 @@ class DisboardReminder(commands.Cog):
         clean = data["clean"]
         my_perms = channel.permissions_for(me)
 
-        if embed = self.validate_success(message):
+        if embed := self.validate_success(message):
             last_bump = data["nextBump"]
             if last_bump and not (last_bump - message.created_at.timestamp() <= 0):
                 return
-            await self.respond_to_bump(data, bump_channel, message)
+            await self.respond_to_bump(data, bump_channel, message, embed)
         else:
             if my_perms.manage_messages and clean and channel == bump_channel:
                 await asyncio.sleep(2)
