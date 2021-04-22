@@ -324,7 +324,7 @@ class DisboardReminder(commands.Cog):
         *,
         lock,
     ):
-        await self.set_my_permissions(guild, channe, my_perms)
+        await self.set_my_permissions(guild, channel, my_perms)
 
         current_perms = channel.overwrites_for(guild.default_role)
         check = False if lock else None
