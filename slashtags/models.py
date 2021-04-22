@@ -77,7 +77,7 @@ class InteractionMessage(discord.Message):
         super().__init__(state=state, channel=channel, data=data)
         self.interaction = interaction
         self.http = interaction.http
-        self.__token = interaction.__token
+        self._token = interaction._token
 
     async def edit(
         self,
@@ -88,7 +88,7 @@ class InteractionMessage(discord.Message):
         allowed_mentions: discord.AllowedMentions = None,
     ):
         return await self.http.edit_message(
-            self.__token,
+            self._token,
             self.id,
             content=content,
             embed=embed,
@@ -102,13 +102,13 @@ class InteractionMessage(discord.Message):
             async def delete():
                 await asyncio.sleep(delay)
                 try:
-                    await self.http.delete_message(self.__token, self.id)
+                    await self.http.delete_message(self._token, self.id)
                 except discord.HTTPException:
                     pass
 
             asyncio.create_task(delete())
         else:
-            await self.http.delete_message(self.__token, self.id)
+            await self.http.delete_message(self._token, self.id)
 
     @property
     def reply(self):
@@ -135,7 +135,7 @@ class InteractionResponse:
         self._state: discord.state.AutoShardedConnectionState = self.bot._connection
         self.id = int(data["id"])
         self.version = data["version"]
-        self.__token = data["token"]
+        self._token = data["token"]
         self._original_data = data
 
         self.guild_id = guild_id = discord.utils._get_as_snowflake(data, "guild_id")
@@ -268,7 +268,7 @@ class InteractionResponse:
         flags = 64 if hidden else None
         initial = not self.sent
         data = await self.http.send_message(
-            self.__token,
+            self._token,
             self.id,
             type=4,
             initial_response=initial,
@@ -303,7 +303,7 @@ class InteractionResponse:
         flags = 64 if hidden else None
         initial = not self.sent
         data = await self.http.send_message(
-            self.__token,
+            self._token,
             self.id,
             type=5,
             initial_response=initial,
