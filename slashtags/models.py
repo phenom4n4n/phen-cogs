@@ -68,16 +68,16 @@ class ResponseOption:
 class InteractionMessage(discord.Message):
     def __init__(
         self,
-        token: int,
+        interaction,
         *,
         state: discord.state.AutoShardedConnectionState,
         channel: discord.TextChannel,
         data: dict,
-        http: SlashHTTP,
     ):
         super().__init__(state=state, channel=channel, data=data)
-        self.http = http
-        self.__token = token
+        self.interaction = interaction
+        self.http = interaction.http
+        self.__token = interaction.__token
 
     async def edit(
         self,
@@ -106,9 +106,13 @@ class InteractionMessage(discord.Message):
                 except discord.HTTPException:
                     pass
 
-            asyncio.ensure_future(delete(), loop=self._state.loop)
+            asyncio.create_task(delete())
         else:
             await self.http.delete_message(self.__token, self.id)
+
+    @property
+    def reply(self):
+        return self.interaction.send
 
 
 class UnknownCommand:
@@ -281,8 +285,7 @@ class InteractionResponse:
         if data:
             try:
                 message = InteractionMessage(
-                    self.__token,
-                    http=self.http,
+                    self,
                     data=data,
                     channel=self.channel,
                     state=self._state,
@@ -294,6 +297,8 @@ class InteractionResponse:
                     await message.delete(delay=delete_after)
                 return message
 
+    reply = send
+
     async def defer(self, *, hidden: bool = False):
         flags = 64 if hidden else None
         initial = not self.sent
@@ -304,4 +309,6 @@ class InteractionResponse:
             initial_response=initial,
             flags=flags,
         )
+        if self.sent is False:
+            self.sent = True
         return data
