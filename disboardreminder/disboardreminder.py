@@ -73,8 +73,10 @@ class DisboardReminder(commands.Cog):
         self.channel_cache = {}
         self.bump_loop = self.create_task(self.bump_check_loop())
         self.bump_tasks = defaultdict(set)
+        bot.add_dev_env_value("bprm", lambda _: self)
 
     def cog_unload(self):
+        self.bot.remove_dev_env_value("bprm")
         if self.bump_loop:
             self.bump_loop.cancel()
         if self.bump_tasks:
@@ -95,6 +97,13 @@ class DisboardReminder(commands.Cog):
         task.add_done_callback(self.task_done_callback)
         return task
 
+    async def initialize(self):
+        async for guild_id, guild_data in AsyncIter(
+            (await self.config.all_guilds()).items(), steps=100
+        ):
+            if guild_data["channel"]:
+                self.channel_cache[guild_id] = guild_data["channel"]
+
     async def red_delete_data_for_user(self, requester, user_id):
         for guild, members in await self.config.all_members():
             if user_id in members:
@@ -113,8 +122,6 @@ class DisboardReminder(commands.Cog):
         async for guild_id, guild_data in AsyncIter(
             (await self.config.all_guilds()).items(), steps=100
         ):
-            if guild_data["channel"] and guild_data["channel"] not in self.channel_cache:
-                self.channel_cache[guild_id] = guild_data["channel"]
             if not (guild := self.bot.get_guild(guild_id)):
                 continue
             await self.bump_check_guild(guild, guild_data)
@@ -365,7 +372,7 @@ class DisboardReminder(commands.Cog):
             return
         if message.author.id != DISBOARD_BOT_ID:
             return
-        bump_chan_id = self.channel_cache.get(guild)
+        bump_chan_id = self.channel_cache.get(guild.id)
         if not bump_chan_id:
             return
         return guild.get_channel(bump_chan_id)

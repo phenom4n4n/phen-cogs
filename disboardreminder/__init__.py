@@ -29,5 +29,7 @@ from .disboardreminder import DisboardReminder
 __red_end_user_data_statement__ = get_end_user_data_statement(__file__)
 
 
-def setup(bot):
-    bot.add_cog(DisboardReminder(bot))
+async def setup(bot):
+    cog = DisboardReminder(bot)
+    await cog.initialize()
+    bot.add_cog(cog)
