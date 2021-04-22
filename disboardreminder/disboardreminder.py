@@ -114,7 +114,9 @@ class DisboardReminder(commands.Cog):
             await asyncio.sleep(60)
 
     async def bump_check_guilds(self):
-        async for guild_id, guild_data in AsyncIter((await self.config.all_guilds()).items(), steps=100):
+        async for guild_id, guild_data in AsyncIter(
+            (await self.config.all_guilds()).items(), steps=100
+        ):
             if guild_data["channel"] and guild_data["channel"] not in self.channel_cache:
                 self.channel_cache[guild_id] = guild_data["channel"]
             if not (guild := self.bot.get_guild(guild_id)):
