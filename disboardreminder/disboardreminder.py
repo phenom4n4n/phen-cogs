@@ -25,9 +25,9 @@ SOFTWARE.
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import asyncio
 import logging
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import datetime
-from typing import Optional, Coroutine
+from typing import Coroutine, Optional
 
 import discord
 from redbot.core import Config, commands
