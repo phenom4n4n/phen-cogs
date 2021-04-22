@@ -23,30 +23,23 @@ SOFTWARE.
 """
 
 import logging
-from typing import Optional
 from collections import defaultdict
+from colorsys import rgb_to_hsv
+from typing import Optional
 
 import discord
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import (
-    humanize_list,
-    humanize_timedelta,
-    text_to_file,
-    pagify,
-)
-from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
-from colorsys import rgb_to_hsv
+from redbot.core.utils.chat_formatting import (humanize_list,
+                                               humanize_timedelta, pagify,
+                                               text_to_file)
+from redbot.core.utils.mod import (check_permissions, get_audit_reason,
+                                   is_admin_or_superior)
 
 from .abc import MixinMeta
-from .converters import FuzzyRole, StrictRole, TouchableMember, TargeterArgs
-from .utils import (
-    can_run_command,
-    humanize_roles,
-    is_allowed_by_hierarchy,
-    is_allowed_by_role_hierarchy,
-    guild_roughly_chunked,
-)
+from .converters import FuzzyRole, StrictRole, TargeterArgs, TouchableMember
+from .utils import (can_run_command, guild_roughly_chunked, humanize_roles,
+                    is_allowed_by_hierarchy, is_allowed_by_role_hierarchy)
 
 log = logging.getLogger("red.phenom4n4n.roleutils")
 

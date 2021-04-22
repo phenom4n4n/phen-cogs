@@ -29,20 +29,17 @@ from typing import Optional, Union
 import discord
 from redbot.core import Config, commands
 from redbot.core.utils import menus
-from redbot.core.utils.chat_formatting import box, humanize_list, pagify, inline
-from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
+from redbot.core.utils.chat_formatting import (box, humanize_list, inline,
+                                               pagify)
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
+                                     start_adding_reactions)
 
-from .converters import (
-    StringToEmbed,
-    StoredEmbedConverter,
-    GlobalStoredEmbedConverter,
-    ListStringToEmbed,
-    MyMessageConverter,
-    MessageableChannel,
-)
 from .commands import help_formatted_group
-from .errors import EmbedUtilsException, EmbedNotFound, EmbedFileError, EmbedConversionError
-
+from .converters import (GlobalStoredEmbedConverter, ListStringToEmbed,
+                         MessageableChannel, MyMessageConverter,
+                         StoredEmbedConverter, StringToEmbed)
+from .errors import (EmbedConversionError, EmbedFileError, EmbedNotFound,
+                     EmbedUtilsException)
 
 YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
 YAML_CONTENT_CONVERTER = StringToEmbed(conversion_type="yaml", content=True)

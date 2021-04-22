@@ -23,8 +23,9 @@ SOFTWARE.
 """
 
 from typing import Optional
+
 from discord import AllowedMentions
-from TagScriptEngine import Interpreter, Block
+from TagScriptEngine import Block, Interpreter
 
 
 class AllowedMentionsBlock(Block):

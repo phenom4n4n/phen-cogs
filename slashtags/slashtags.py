@@ -26,8 +26,8 @@ import asyncio
 import logging
 from collections import defaultdict
 from copy import copy
-from typing import Coroutine, List, Optional, Dict
 from functools import partial
+from typing import Coroutine, Dict, List, Optional
 
 import discord
 import TagScriptEngine as tse
@@ -35,19 +35,17 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
+from redbot.core.utils.chat_formatting import (box, humanize_list, inline,
+                                               pagify)
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, menu,
+                                     start_adding_reactions)
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .blocks import HideBlock
 from .context import SlashContext
-from .converters import TagConverter, TagName, TagScriptConverter, SLASH_NAME
-from .errors import (
-    BlacklistCheckFailure,
-    MissingTagPermissions,
-    RequireCheckFailure,
-    WhitelistCheckFailure,
-)
+from .converters import SLASH_NAME, TagConverter, TagName, TagScriptConverter
+from .errors import (BlacklistCheckFailure, MissingTagPermissions,
+                     RequireCheckFailure, WhitelistCheckFailure)
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
 from .objects import CommandModel, FakeMessage, SlashOption, SlashTag

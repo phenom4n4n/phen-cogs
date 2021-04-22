@@ -22,20 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Tuple, Union, List
+from typing import List, Tuple, Union
+
 import discord
-from unidecode import unidecode
-from redbot.core import commands
 from rapidfuzz import process
-from redbot.core.commands import (
-    BadArgument,
-    Converter,
-    MemberConverter,
-    RoleConverter,
-    EmojiConverter,
-    IDConverter,
-)
+from redbot.core import commands
+from redbot.core.commands import (BadArgument, Converter, EmojiConverter,
+                                  IDConverter, MemberConverter, RoleConverter)
 from redbot.core.utils.chat_formatting import inline
+from unidecode import unidecode
 
 from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
 

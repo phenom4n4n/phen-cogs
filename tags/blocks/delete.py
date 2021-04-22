@@ -24,7 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 
-from TagScriptEngine import Interpreter, helper_parse_if, Block
+from TagScriptEngine import Block, Interpreter, helper_parse_if
 
 
 class DeleteBlock(Block):

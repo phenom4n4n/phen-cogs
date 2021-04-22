@@ -23,10 +23,10 @@ SOFTWARE.
 """
 
 import discord
+from rapidfuzz import process
 from redbot.core import commands
 from redbot.core.commands import BadArgument, MemberConverter
 from unidecode import unidecode
-from rapidfuzz import process
 
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
