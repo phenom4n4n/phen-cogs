@@ -258,7 +258,7 @@ class DisboardReminder(commands.Cog):
         else:
             await ctx.send("I will no longer auto-lock the bump channel.")
 
-    @bumpreminder.command()
+    @bumpreminder.command(name="settings")
     async def bumpreminder_settings(self, ctx: commands.Context):
         """Show your Bump Reminder settings."""
         data = await self.config.guild(ctx.guild).all()
