@@ -112,7 +112,12 @@ class InteractionMessage(discord.Message):
 
 
 class UnknownCommand:
-    qualified_name = "unknown slash command"
+    name = "unknown slash command"
+    qualified_name = name
+    cog = None
+
+    def __str__(self):
+        return self.name
 
     def __bool__(self):
         return False
@@ -185,7 +190,10 @@ class InteractionResponse:
             except AttributeError:
                 pass
             else:
-                option = handler(o, option, resolved)
+                try:
+                    option = handler(o, option, resolved)
+                except Exception as error:
+                    log.exception("Failed to handle option data for option:\n%s" % o, exc_info=error)
             self.options.append(option)
 
     def _handle_option_channel(
@@ -278,7 +286,7 @@ class InteractionResponse:
                     state=self._state,
                 )
             except Exception as e:
-                log.exception(f"Failed to create message object for data:\n{data}", exc_info=e)
+                log.exception("Failed to create message object for data:\n%s" % data, exc_info=e)
             else:
                 if delete_after is not None:
                     await message.delete(delay=delete_after)
