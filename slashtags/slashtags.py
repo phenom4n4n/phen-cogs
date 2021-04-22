@@ -44,19 +44,15 @@ from .blocks import HideBlock
 from .commands import Commands
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
-from .objects import CommandModel, FakeMessage, SlashOption, SlashTag, SlashContext
+from .objects import (CommandModel, FakeMessage, SlashContext, SlashOption,
+                      SlashTag)
 from .processor import Processor
 from .utils import dev_check
 
 log = logging.getLogger("red.phenom4n4n.slashtags")
 
 
-class SlashTags(
-    Commands,
-    Processor,
-    commands.Cog,
-    metaclass=CompositeMetaClass
-):
+class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass):
     """
     Create custom slash commands.
 

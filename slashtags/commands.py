@@ -1,12 +1,11 @@
-from copy import copy
 import asyncio
-from typing import Coroutine, Dict, List, Optional
+from copy import copy
+from typing import List
 
 import discord
 from redbot.core import commands
+from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
-from redbot.core.utils.chat_formatting import (humanize_list, inline,
-                                               pagify)
 from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import MixinMeta
@@ -15,7 +14,8 @@ from .errors import (BlacklistCheckFailure, MissingTagPermissions,
                      RequireCheckFailure, WhitelistCheckFailure)
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
-from .objects import CommandModel, FakeMessage, SlashOption, SlashTag, SlashContext
+from .objects import (CommandModel, FakeMessage, SlashContext, SlashOption,
+                      SlashTag)
 from .utils import dev_check
 
 option = SlashOption(name="args", description="Arguments for the tag.", required=True)

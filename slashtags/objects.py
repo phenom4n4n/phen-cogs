@@ -30,7 +30,7 @@ from redbot.core.bot import Red
 from TagScriptEngine import IntAdapter, Interpreter, StringAdapter
 
 from .http import SlashHTTP
-from .models import SlashOptionType, InteractionResponse
+from .models import InteractionResponse, SlashOptionType
 
 
 class SlashOptionChoice:

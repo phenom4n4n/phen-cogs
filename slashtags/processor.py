@@ -4,14 +4,14 @@ from functools import partial
 from typing import List, Optional
 
 import discord
-from redbot.core import commands
 import TagScriptEngine as tse
+from redbot.core import commands
 
 from .abc import MixinMeta
 from .errors import (BlacklistCheckFailure, MissingTagPermissions,
                      RequireCheckFailure, WhitelistCheckFailure)
 from .models import InteractionResponse, SlashOptionType
-from .objects import SlashTag, FakeMessage, SlashContext
+from .objects import FakeMessage, SlashContext, SlashTag
 from .utils import dev_check
 
 empty_adapter = tse.StringAdapter("")
