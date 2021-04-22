@@ -116,8 +116,8 @@ class DisboardReminder(commands.Cog):
 
     async def bump_check_guilds(self):
         async for guild_id, guild_data in AsyncIter((await self.config.all_guilds()).items(), steps=100):
-            if channel_id := guild_data["channel"] and channel_id not in self.channel_cache:
-                self.channel_cache[guild_id] = channel_id
+            if guild_data["channel"] and guild_data["channel"] not in self.channel_cache:
+                self.channel_cache[guild_id] = guild_data["channel"]
             if not (guild := self.bot.get_guild(guild_id)):
                 continue
             await self.bump_check_guild(guild, guild_data)
@@ -411,7 +411,7 @@ class DisboardReminder(commands.Cog):
         if not data["channel"]:
             return
         clean = data["clean"]
-        my_perms = channel.permissions_for(me)
+        my_perms = channel.permissions_for(guild.me)
 
         if embed := self.validate_success(message):
             last_bump = data["nextBump"]
