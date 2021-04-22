@@ -23,19 +23,20 @@ SOFTWARE.
 """
 
 import asyncio
-from typing import Optional, Dict, Union
+from typing import Dict, Optional, Union
 
 import aiohttp
 import discord
 from redbot.core import Config, commands
 from redbot.core.utils.chat_formatting import humanize_list, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
+                                     start_adding_reactions)
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
-from .utils import USER_MENTIONS, WEBHOOK_RE, _monkeypatch_send, FakeResponse
-from .errors import InvalidWebhook, WebhookNotMatched
 from .converters import WebhookLinkConverter
+from .errors import InvalidWebhook, WebhookNotMatched
 from .session import Session
+from .utils import USER_MENTIONS, WEBHOOK_RE, FakeResponse, _monkeypatch_send
 
 
 class Webhook(commands.Cog):

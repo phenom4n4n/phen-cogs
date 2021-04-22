@@ -28,12 +28,12 @@ SOFTWARE.
 import asyncio
 import concurrent
 import datetime
-import time
 import logging
+import time
 
 import discord
 import speedtest
-from redbot.core import commands, Config
+from redbot.core import Config, commands
 
 old_ping = None
 log = logging.getLogger("red.phenom4n4n.customping")

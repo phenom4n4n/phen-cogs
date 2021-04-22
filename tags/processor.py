@@ -1,16 +1,19 @@
 import asyncio
-from typing import List, Dict
 from copy import copy
+from typing import Dict, List, Optional
 
 import discord
-from redbot.core import commands
 import TagScriptEngine as tse
+from redbot.core import commands
+from redbot.core.utils.menus import start_adding_reactions
 
-from .objects import Tag, SilentContext
-from .errors import *
+from .abc import MixinMeta
+from .errors import (BlacklistCheckFailure, RequireCheckFailure,
+                     WhitelistCheckFailure)
+from .objects import SilentContext, Tag
 
 
-class Processor:
+class Processor(MixinMeta):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception):
         if not isinstance(error, commands.CommandNotFound):
@@ -65,7 +68,6 @@ class Processor:
         command_messages = []
         content = output.body[:2000] if output.body else None
         actions = output.actions
-        replying = False
 
         if actions:
             try:
@@ -83,7 +85,7 @@ class Processor:
                 to_gather.append(self.delete_quietly(ctx))
 
             if delete is False and (reactu := actions.get("reactu")):
-                to_gather.append(self.react_to_list(ctx.message, reactu))
+                to_gather.append(self.react_to_list(ctx, ctx.message, reactu))
 
             if actions.get("commands"):
                 for command in actions["commands"]:
@@ -172,17 +174,17 @@ class Processor:
                 command = copy(ctx.command)
                 # command = commands.Command()
                 # command = ctx.command.copy() # does not work as it makes ctx a regular argument
-                requires: Requires = copy(command.requires)
+                requires: commands.Requires = copy(command.requires)
                 priv_level = requires.privilege_level
                 if priv_level not in (
-                    PrivilegeLevel.NONE,
-                    PrivilegeLevel.BOT_OWNER,
-                    PrivilegeLevel.GUILD_OWNER,
+                    commands.PrivilegeLevel.NONE,
+                    commands.PrivilegeLevel.BOT_OWNER,
+                    commands.PrivilegeLevel.GUILD_OWNER,
                 ):
-                    if overrides["admin"] and priv_level is PrivilegeLevel.ADMIN:
-                        requires.privilege_level = PrivilegeLevel.NONE
-                    elif overrides["mod"] and priv_level is PrivilegeLevel.MOD:
-                        requires.privilege_level = PrivilegeLevel.NONE
+                    if overrides["admin"] and priv_level is commands.PrivilegeLevel.ADMIN:
+                        requires.privilege_level = commands.PrivilegeLevel.NONE
+                    elif overrides["mod"] and priv_level is commands.PrivilegeLevel.MOD:
+                        requires.privilege_level = commands.PrivilegeLevel.NONE
                 if overrides["permissions"] and requires.user_perms:
                     requires.user_perms = discord.Permissions.none()
                 command.requires = requires
@@ -210,7 +212,7 @@ class Processor:
                 and role_or_channel == ctx.channel
             ):
                 return
-        raise RequireCheckFailure(requires["response"])
+        raise WhitelistCheckFailure(requires["response"])
 
     async def validate_blacklist(self, ctx: commands.Context, blacklist: dict):
         for argument in blacklist["items"]:
@@ -223,7 +225,7 @@ class Processor:
                 or not isinstance(role_or_channel, discord.Role)
                 and role_or_channel == ctx.channel
             ):
-                raise RequireCheckFailure(blacklist["response"])
+                raise BlacklistCheckFailure(blacklist["response"])
 
     async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
         objects = await asyncio.gather(
@@ -234,8 +236,9 @@ class Processor:
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
 
-    @staticmethod
-    async def react_to_list(ctx: commands.Context, message: discord.Message, args: List[str]):
+    async def react_to_list(
+        self, ctx: commands.Context, message: discord.Message, args: List[str]
+    ):
         if not (message and args):
             return
         for arg in args:
@@ -244,7 +247,7 @@ class Processor:
             except commands.BadArgument:
                 pass
             try:
-                await ctx.message.add_reaction(arg)
+                await message.add_reaction(arg)
             except discord.HTTPException:
                 pass
 

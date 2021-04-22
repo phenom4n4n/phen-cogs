@@ -22,43 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Optional
+from abc import ABC
 
-from TagScriptEngine import Block, Interpreter
+import discord
+from redbot.core import Config, commands
+from redbot.core.bot import Red
 
 
-class RedirectBlock(Block):
+class MixinMeta(ABC):
     """
-    Redirects the tag response to either the given channel, the author's DMs,
-    or uses a reply based on what is passed to the parameter.
+    Base class for well behaved type hint detection with composite class.
+    Basically, to keep developers sane when not all attributes are defined in each mixin.
 
-    **Usage:** ``{redirect(<"dm"|"reply"|channel>)}``
-
-    **Payload:** None
-
-    **Parameter:** "dm", "reply", channel
-
-    **Examples:** ::
-
-        {redirect(dm)}
-        {redirect(reply)}
-        {redirect(#general)}
-        {redirect(626861902521434160)}
+    Strategy borrowed from redbot.cogs.mutes.abc
     """
 
-    def will_accept(self, ctx: Interpreter.Context) -> bool:
-        dec = ctx.verb.declaration.lower()
-        return dec == "redirect"
+    config: Config
+    bot: Red
 
-    def process(self, ctx: Interpreter.Context) -> Optional[str]:
-        if not ctx.verb.parameter:
-            return None
-        param = ctx.verb.parameter.strip()
-        if param.lower() == "dm":
-            target = "dm"
-        elif param.lower() == "reply":
-            target = "reply"
-        else:
-            target = param
-        ctx.response.actions["target"] = target
-        return ""
+    emoji_converter: commands.EmojiConverter
+
+    def __init__(self, *_args):
+        super().__init__()
+
+
+class CompositeMetaClass(type(commands.Cog), type(ABC)):
+    """
+    This allows the metaclass used for proper type detection to
+    coexist with discord.py's metaclass
+    """

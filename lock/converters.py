@@ -22,15 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Union, Optional
+from typing import Optional, Union
 
 import discord
-from unidecode import unidecode
+from discord.ext.commands.converter import (Converter, RoleConverter,
+                                            TextChannelConverter)
 from rapidfuzz import process
-from discord.ext.commands.converter import Converter, RoleConverter, TextChannelConverter
 from redbot.core import commands
 from redbot.core.commands import BadArgument
 from redbot.core.utils.chat_formatting import inline
+from unidecode import unidecode
 
 
 class ChannelToggle(Converter):
