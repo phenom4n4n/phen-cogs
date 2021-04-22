@@ -577,18 +577,19 @@ class SlashTags(commands.Cog):
 
     @commands.Cog.listener(name="on_interaction_create")
     async def slash_command_parser(self, data: dict):
+        log.debug("Interaction data received:\n%s" % data)
         try:
             interaction = InteractionResponse(data=data, cog=self)
         except Exception as e:
             log.exception(
-                f"An exception occured while parsing an interaction:\n{data}", exc_info=e
+                "An exception occured while parsing an interaction:\n%s" % data, exc_info=e
             )
             return
         try:
             await self.handle_interaction(interaction)
         except Exception as e:
             log.exception(
-                f"An exception occured while handling an interaction:\n{data}", exc_info=e
+                "An exception occured while handling an interaction:\n%s" % data, exc_info=e
             )
             ctx = SlashContext.from_interaction(interaction)
             self.bot.dispatch("command_error", ctx, commands.CommandInvokeError(e))
@@ -704,7 +705,6 @@ class SlashTags(commands.Cog):
     ):
         command_tasks = []
         for message in messages:
-            log.debug(message)
             command_task = self.create_task(
                 self.process_command(interaction, message, silent, overrides)
             )
