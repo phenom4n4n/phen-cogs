@@ -573,33 +573,39 @@ class SlashTags(commands.Cog):
         self.eval_command = None
         await ctx.send("`/eval` has been deleted.")
 
-    @commands.Cog.listener(name="on_interaction_create")
-    async def slash_command_parser(self, data: dict):
+    @commands.Cog.listener()
+    async def on_interaction_create(self, data: dict):
         log.debug("Interaction data received:\n%s" % data)
+        handlers = {2: self.handle_slash_interaction, 3: self.handle_slash_button}
+        handler = handlers.get(data["type"], self.handle_slash_interaction)
         try:
-            interaction = InteractionResponse(data=data, cog=self)
-        except Exception as e:
-            log.exception(
-                "An exception occured while parsing an interaction:\n%s" % data, exc_info=e
-            )
-            return
-        try:
-            await self.handle_interaction(interaction)
+            await handler(data)
         except Exception as e:
             log.exception(
                 "An exception occured while handling an interaction:\n%s" % data, exc_info=e
             )
+
+    async def handle_slash_button(self, button):
+        ...
+
+    async def handle_slash_interaction(self, data: dict):
+        interaction = InteractionResponse(data=data, cog=self)
+        self.bot.dispatch("slash_interaction", interaction)
+
+    @commands.Cog.listener()
+    async def on_slash_interaction(self, interaction: InteractionResponse):
+        try:
+            command = interaction.command
+            if isinstance(command, CommandModel):
+                tag = self.get_tag(interaction.guild, command.id)
+                await self.process_tag(interaction, tag)
+            elif interaction.command_id == self.eval_command:
+                await self.slash_eval(interaction)
+            else:
+                log.debug("Unknown interaction created:\n%r" % interaction)
+        except Exception as e:
             ctx = SlashContext.from_interaction(interaction)
             self.bot.dispatch("command_error", ctx, commands.CommandInvokeError(e))
-
-    async def handle_interaction(self, interaction: InteractionResponse):
-        # await interaction.defer()
-        command = interaction.command
-        if isinstance(command, CommandModel):
-            tag = self.get_tag(interaction.guild, command.id)
-            await self.process_tag(interaction, tag)
-        elif interaction.command_id == self.eval_command:
-            await self.slash_eval(interaction)
 
     async def slash_eval(self, interaction: InteractionResponse):
         await interaction.defer()
