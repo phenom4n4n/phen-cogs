@@ -24,6 +24,16 @@ SOFTWARE.
 
 from typing import Optional
 
+__all__ = (
+    "TagError",
+    "MissingTagPermissions",
+    "RequireCheckFailure",
+    "WhitelistCheckFailure",
+    "BlacklistCheckFailure",
+    "TagFeedbackError",
+    "TagAliasError",
+)
+
 
 class TagError(Exception):
     """Base exception class."""

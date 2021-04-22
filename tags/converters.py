@@ -25,8 +25,8 @@ SOFTWARE.
 from discord.utils import escape_mentions
 from redbot.core import commands
 
-from .objects import Tag
 from .errors import MissingTagPermissions
+from .objects import Tag
 
 
 class TagSearcher:

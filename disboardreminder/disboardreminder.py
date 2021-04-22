@@ -27,13 +27,12 @@ import asyncio
 import logging
 from collections import defaultdict
 from datetime import datetime
-from typing import Optional, Coroutine
+from typing import Coroutine, Optional
 
 import discord
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils import AsyncIter
-
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
 

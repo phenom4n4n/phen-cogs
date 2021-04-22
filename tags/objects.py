@@ -22,13 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Optional, List
+from typing import List, Optional
 
 import discord
-from redbot.core import commands, Config
+from redbot.core import Config, commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import humanize_number, pagify, humanize_list, inline
-from TagScriptEngine import Interpreter, IntAdapter
+from redbot.core.utils.chat_formatting import (humanize_list, humanize_number,
+                                               inline, pagify)
+from TagScriptEngine import IntAdapter, Interpreter
 
 from .errors import *
 

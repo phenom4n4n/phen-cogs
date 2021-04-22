@@ -23,9 +23,9 @@ SOFTWARE.
 """
 
 from .delete import DeleteBlock
-from .silent import SilentBlock
 from .react import ReactBlock, ReactUBlock
 from .redirect import RedirectBlock
+from .silent import SilentBlock
 
 __all__ = (
     "DeleteBlock",

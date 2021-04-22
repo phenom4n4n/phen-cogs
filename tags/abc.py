@@ -22,12 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from redbot.core.utils import get_end_user_data_statement
+from abc import ABC
 
-from .disboardreminder import DisboardReminder
+import discord
+from redbot.core import Config, commands
+from redbot.core.bot import Red
 
-__red_end_user_data_statement__ = get_end_user_data_statement(__file__)
+
+class MixinMeta(ABC):
+    """
+    Base class for well behaved type hint detection with composite class.
+    Basically, to keep developers sane when not all attributes are defined in each mixin.
+
+    Strategy borrowed from redbot.cogs.mutes.abc
+    """
+
+    config: Config
+    bot: Red
+
+    emoji_converter: commands.EmojiConverter
+
+    def __init__(self, *_args):
+        super().__init__()
 
 
-def setup(bot):
-    bot.add_cog(DisboardReminder(bot))
+class CompositeMetaClass(type(commands.Cog), type(ABC)):
+    """
+    This allows the metaclass used for proper type detection to
+    coexist with discord.py's metaclass
+    """

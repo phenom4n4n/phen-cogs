@@ -22,30 +22,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Optional, Set, Dict, List
+import asyncio
+import time
+from typing import Dict, List, Optional, Set
 from urllib.parse import quote_plus
 
+import bs4
 import discord
+import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.commands import Requires, PrivilegeLevel
 from redbot.core.bot import Red
+from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.chat_formatting import humanize_list, pagify, inline
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate, MessagePredicate
-import TagScriptEngine as tse
-import bs4
+from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
+from redbot.core.utils.menus import (DEFAULT_CONTROLS, menu,
+                                     start_adding_reactions)
+from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
-from .converters import (
-    TagConverter,
-    TagName,
-    TagScriptConverter,
-    GlobalTagConverter,
-    GuildTagConverter,
-)
+from .abc import MixinMeta
+from .converters import (GlobalTagConverter, GuildTagConverter, TagConverter,
+                         TagName, TagScriptConverter)
+from .errors import TagFeedbackError
 from .objects import Tag
-from .errors import *
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
@@ -53,7 +52,7 @@ TAG_GLOBAL_LIMIT = 250
 DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
 
 
-class Commands:
+class Commands(MixinMeta):
     @staticmethod
     def generate_tag_list(tags: Set[Tag]) -> Dict[str, List[str]]:
         aliases = []
@@ -320,7 +319,7 @@ class Commands:
                 f"`{name}`: {adapter}" for name, adapter in output.variables.items()
             )
 
-            e.add_field(name="Variables", value=vars, inline=False)
+            e.add_field(name="Variables", value=variables, inline=False)
 
         await ctx.send(embed=e)
 
@@ -425,10 +424,10 @@ class Commands:
         if not alias_cog:
             return await ctx.send("Alias cog must be loaded to migrate data.")
 
-        query = await ctx.send(f"Are you sure you want to migrate alias data to tags? (Y/n)")
+        await ctx.send(f"Are you sure you want to migrate alias data to tags? (Y/n)")
         pred = MessagePredicate.yes_or_no(ctx)
         try:
-            response = await self.bot.wait_for("message", check=pred, timeout=30)
+            await self.bot.wait_for("message", check=pred, timeout=30)
         except asyncio.TimeoutError:
             return await ctx.send("Query timed out, not migrating alias to tags.")
 
@@ -439,7 +438,7 @@ class Commands:
         migrated_guild_alias = 0
         all_guild_data: dict = await alias_cog.config.all_guilds()
 
-        async for guild_id, guild_data in AsyncIter(all_guild_data.items(), steps=100):
+        async for guild_data in AsyncIter(all_guild_data.values(), steps=100):
             if not guild_data["entries"]:
                 continue
             migrated_guilds += 1

@@ -22,13 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import re
-from typing import Union, Optional, List, Tuple
 import asyncio
+import re
+from typing import List, Optional, Tuple, Union
 
 import discord
 from redbot.core import Config, checks, commands
-from redbot.core.commands import Converter, BadArgument, MessageNotFound, ChannelNotFound
+from redbot.core.commands import (BadArgument, ChannelNotFound, Converter,
+                                  MessageNotFound)
 
 link_regex = re.compile(
     r"https?:\/\/(?:(?:ptb|canary)\.)?discord(?:app)?\.com"
