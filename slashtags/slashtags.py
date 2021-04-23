@@ -40,7 +40,6 @@ from redbot.core.utils.menus import (DEFAULT_CONTROLS, menu,
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import CompositeMetaClass
-from .blocks import HideBlock
 from .commands import Commands
 from .http import SlashHTTP
 from .models import (Button, Component, InteractionButton, InteractionCommand,
@@ -60,7 +59,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.2.0"
+    __version__ = "0.2.1"
     __author__ = ["PhenoM4n4n"]
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -89,36 +88,8 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
-        tse_blocks = [
-            tse.MathBlock(),
-            tse.RandomBlock(),
-            tse.RangeBlock(),
-            tse.AnyBlock(),
-            tse.IfBlock(),
-            tse.AllBlock(),
-            tse.BreakBlock(),
-            tse.StrfBlock(),
-            tse.StopBlock(),
-            tse.AssignmentBlock(),
-            tse.FiftyFiftyBlock(),
-            tse.LooseVariableGetterBlock(),
-            tse.SubstringBlock(),
-            tse.EmbedBlock(),
-            tse.ReplaceBlock(),
-            tse.PythonBlock(),
-            tse.RequireBlock(),
-            tse.BlacklistBlock(),
-            tse.URLEncodeBlock(),
-            tse.CommandBlock(),
-        ]
-        slash_blocks = [HideBlock()]
-        self.engine = tse.Interpreter(tse_blocks + slash_blocks)
-        self.role_converter = commands.RoleConverter()
-        self.channel_converter = commands.TextChannelConverter()
-        self.member_converter = commands.MemberConverter()
-        self.emoji_converter = commands.EmojiConverter()
-
         self.command_cache = {}
+        self.button_cache = {}
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache = {}
 
@@ -217,7 +188,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     async def handle_slash_button(self, data: dict):
         button = InteractionButton(cog=self, data=data)
-        await button.send(f"Congrats for pressing button {button.custom_id}!")
+        self.bot.dispatch("button_interaction", button)
 
     async def handle_slash_interaction(self, data: dict):
         interaction = InteractionCommand(data=data, cog=self)
@@ -238,6 +209,11 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             ctx = SlashContext.from_interaction(interaction)
             self.bot.dispatch("command_error", ctx, commands.CommandInvokeError(e))
 
+    @commands.Cog.listener()
+    async def on_button_interaction(self, button: InteractionButton):
+        cached_button = self.button_cache.get(button.custom_id)
+        await button.send(f"Congrats for pressing button {cached_button.label if cached_button else button.custom_id}!")
+
     @commands.is_owner()
     @commands.command()
     async def buttontest(
@@ -249,6 +225,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         )
         data = {"content": "Here's your button."}
         button = Button(style=style, label=label, custom_id=ctx.message.id)
+        self.button_cache[button.custom_id] = button
         components = Component(components=[button])
         data["components"] = [components.to_dict()]
         await self.bot._connection.http.request(r, json=data)

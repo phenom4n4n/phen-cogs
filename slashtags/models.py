@@ -80,7 +80,7 @@ class Component:
         self.components = components
         self.style = style
         self.label = label
-        self.custom_id = custom_id
+        self.custom_id = str(custom_id) if custom_id else None
         self.url = url
 
     def __repr__(self):

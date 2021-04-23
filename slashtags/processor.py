@@ -8,6 +8,7 @@ import TagScriptEngine as tse
 from redbot.core import commands
 
 from .abc import MixinMeta
+from .blocks import HideBlock
 from .errors import (BlacklistCheckFailure, MissingTagPermissions,
                      RequireCheckFailure, WhitelistCheckFailure)
 from .models import InteractionCommand, SlashOptionType
@@ -29,6 +30,38 @@ class Processor(MixinMeta):
         SlashOptionType.CHANNEL: tse.ChannelAdapter,
         SlashOptionType.ROLE: tse.SafeObjectAdapter,
     }
+
+    def __init__(self):
+        tse_blocks = [
+            tse.MathBlock(),
+            tse.RandomBlock(),
+            tse.RangeBlock(),
+            tse.AnyBlock(),
+            tse.IfBlock(),
+            tse.AllBlock(),
+            tse.BreakBlock(),
+            tse.StrfBlock(),
+            tse.StopBlock(),
+            tse.AssignmentBlock(),
+            tse.FiftyFiftyBlock(),
+            tse.LooseVariableGetterBlock(),
+            tse.SubstringBlock(),
+            tse.EmbedBlock(),
+            tse.ReplaceBlock(),
+            tse.PythonBlock(),
+            tse.RequireBlock(),
+            tse.BlacklistBlock(),
+            tse.URLEncodeBlock(),
+            tse.CommandBlock(),
+        ]
+        slash_blocks = [HideBlock()]
+        self.engine = tse.Interpreter(tse_blocks + slash_blocks)
+
+        self.role_converter = commands.RoleConverter()
+        self.channel_converter = commands.TextChannelConverter()
+        self.member_converter = commands.MemberConverter()
+        self.emoji_converter = commands.EmojiConverter()
+        super().__init__()
 
     @staticmethod
     async def delete_quietly(message: discord.Message):
