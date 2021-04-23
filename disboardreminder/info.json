@@ -1,10 +1,10 @@
 {
-  "author" : ["PhenoM4n4n", "aikaterna"],
-  "install_msg" : "Thank you for installing DisboardReminder. This requires the ForceMention cog to be installed and loaded from **this** repo.\n`[p]cog install Phen-Cogs forcemention`",
+  "author" : ["PhenoM4n4n"],
+  "install_msg" : "Thank you for installing DisboardReminder.",
   "name" : "DisboardReminder",
   "short" : "Set a reminder to bump on Disboard.",
   "description" : "Set a reminder to bump on Disboard.",
-	"requirements": ["unidecode", "rapidfuzz"],
+	"requirements": ["unidecode", "rapidfuzz", "git+https://github.com/phenom4n4n/TagScript.git"],
   "tags" : ["Disboard", "Reminder"],
-  "end_user_data_statement": "This cog stores the number of times a member has bumped."
+  "end_user_data_statement": "This cog does not persistently store any data or metadata about users."
 }
