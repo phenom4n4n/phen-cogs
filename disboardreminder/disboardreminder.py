@@ -230,7 +230,7 @@ class DisboardReminder(commands.Cog):
 
         **Examples:**
         > `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`
-        > `[p]bprm ty {embed(description):{member(mention)}, thank you for bumping! Make sure to vote for **{server}** on [our voting page](https://disboard.org/server/{guild(id)}).}
+        > `[p]bprm ty {embed(description):{member(mention)}, thank you for bumping! Make sure to vote for **{server}** on [our voting page](https://disboard.org/server/{guild(id)}).}`
         """
         if message:
             await self.config.guild(ctx.guild).tyMessage.set(message)
