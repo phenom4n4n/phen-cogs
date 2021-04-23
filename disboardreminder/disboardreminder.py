@@ -469,7 +469,7 @@ class DisboardReminder(commands.Cog):
                     pass
 
     def process_tagscript(self, content: str, *, seed_variables: dict = {}):
-        output = self.engine.process(content, seed_variables)
+        output = self.tagscript_engine.process(content, seed_variables)
         kwargs = {}
         if output.body:
             kwargs["content"] = output.body[:2000]
