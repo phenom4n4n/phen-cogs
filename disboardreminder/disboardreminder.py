@@ -27,19 +27,22 @@ import asyncio
 import logging
 from collections import defaultdict
 from datetime import datetime
+import re
 from typing import Coroutine, Optional
 
 import discord
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils import AsyncIter
-
-log = logging.getLogger("red.phenom4n4n.disboardreminder")
+import TagScriptEngine as tse
 
 from .converters import FuzzyRole, StrictRole
 
+log = logging.getLogger("red.phenom4n4n.disboardreminder")
+
 DISBOARD_BOT_ID = 302050872383242240
 LOCK_REASON = "DisboardReminder auto-lock"
+MENTION_RE = re.compile(r"<@!?(\d{15,20})>")
 
 
 class DisboardReminder(commands.Cog):
@@ -65,7 +68,7 @@ class DisboardReminder(commands.Cog):
             "channel": None,
             "role": None,
             "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
-            "tyMessage": "{member} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild.id}>.",
+            "tyMessage": "{member(mention)} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild(id)}>.",
             "nextBump": None,
             "lock": False,
             "clean": False,
@@ -77,6 +80,9 @@ class DisboardReminder(commands.Cog):
         self.bump_tasks = defaultdict(dict)
         # self.cache = defaultdict(lambda _: self.default_guild_cache.copy())
         bot.add_dev_env_value("bprm", lambda _: self)
+
+        blocks = [tse.LooseVariableGetterBlock(), tse.AssignmentBlock(), tse.IfBlock(), tse.EmbedBlock()]
+        self.tagscript_engine = tse.Interpreter(blocks)
 
     def cog_unload(self):
         self.bot.remove_dev_env_value("bprm")
@@ -139,12 +145,12 @@ class DisboardReminder(commands.Cog):
             return
 
         if remaining <= 0:
-            task_name = f"bump_remind-{guild.id}-{end_time}"
+            task_name = f"bump_remind:{guild.id}-{end_time}"
             if task_name in self.bump_tasks[guild.id]:
                 return
             task = self.create_task(self.bump_remind(guild), name=task_name)
         else:
-            task_name = f"bump_timer-{guild.id}-{end_time}"
+            task_name = f"bump_timer:{guild.id}-{end_time}"
             if task_name in self.bump_tasks[guild.id]:
                 return
             task = self.create_task(self.bump_timer(guild, end_time), name=task_name)
@@ -207,11 +213,19 @@ class DisboardReminder(commands.Cog):
         """
         Change the message used for 'Thank You' messages. Providing no message will reset to the default message.
 
-        Variables:
-        `{member}` - Mentions the user who bumped
-        `{guild}` - This server
+        The thank you message supports TagScript blocks which can customize the message and even add an embed!
+        [View the TagScript documentation here.](https://phen-cogs.readthedocs.io/en/latest/index.html)
 
-        Usage: `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`
+        Variables:
+        `{member}` - [The user who bumped](https://phen-cogs.readthedocs.io/en/latest/default_variables.html#author-block)
+        `{server}` - [This server](https://phen-cogs.readthedocs.io/en/latest/default_variables.html#server-block)
+
+        Blocks:
+        `embed` - [Embed to be sent in the thank you message](https://phen-cogs.readthedocs.io/en/latest/parsing_blocks.html#embed-block)
+
+        **Examples:**
+        > `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`
+        > `[p]bprm ty {embed(description):{member(mention)}, thank you for bumping! Make sure to vote for **{server}** on [our voting page](https://disboard.org/server/{guild(id)}).}
         """
         if message:
             await self.config.guild(ctx.guild).tyMessage.set(message)
@@ -362,8 +376,9 @@ class DisboardReminder(commands.Cog):
                 message = f"{role.mention}: {message}"
                 allowed_mentions = discord.AllowedMentions(roles=[role])
 
+        kwargs = self.process_tagscript(message)
         try:
-            await channel.send(message, allowed_mentions=allowed_mentions)
+            await channel.send(allowed_mentions=allowed_mentions, **kwargs)
         except discord.Forbidden:
             await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
@@ -398,19 +413,22 @@ class DisboardReminder(commands.Cog):
         next_bump = message.created_at.timestamp() + 7200
         await self.config.guild(guild).nextBump.set(next_bump)
 
-        # TODO replace bump author matching with regex
-        words = embed.description.split(",")
-        member_mention = words[0]
-        member_id = int(member_mention.strip("<@!").rstrip(">"))
+        match = MENTION_RE.search(embed.description)
+        if match:
+            member_id = int(match.group(1))
+            if not guild.chunked:
+                await guild.chunk()
+            user = guild.get_member(member_id) or await self.bot.get_or_fetch(member_id)
+            member_adapter = tse.MemberAdapter(user)
+        else:
+            member_adapter = tse.StringAdapter("Unknown User")
         tymessage = data["tyMessage"]
 
         if my_perms.send_messages:
-            # TODO use tse
-            await bump_channel.send(
-                tymessage.replace("{member}", member_mention)
-                .replace("{guild}", guild.name)
-                .replace("{guild.id}", str(guild.id))
-            )
+            guild_adapter = tse.GuildAdapter(guild)
+            seed = {"member": member_adapter, "guild": guild_adapter, "server": guild_adapter}
+            kwargs = self.process_tagscript(tymessage, seed_variables=seed)
+            await bump_channel.send(**kwargs)
         else:
             await self.config.guild(guild).channel.clear()
 
@@ -444,3 +462,12 @@ class DisboardReminder(commands.Cog):
                     await message.delete()
                 except (discord.Forbidden, discord.NotFound):
                     pass
+
+    def process_tagscript(self, content: str, *, seed_variables: dict = {}):
+        output = self.engine.process(content, seed_variables)
+        kwargs = {}
+        if output.body:
+            kwargs["content"] = output.body[:2000]
+        if embed := output.actions.get("embed"):
+            kwargs["embed"] = embed
+        return kwargs
