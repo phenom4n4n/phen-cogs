@@ -25,16 +25,16 @@ SOFTWARE.
 # Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import asyncio
 import logging
+import re
 from collections import defaultdict
 from datetime import datetime
-import re
 from typing import Coroutine, Optional
 
 import discord
+import TagScriptEngine as tse
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils import AsyncIter
-import TagScriptEngine as tse
 
 from .converters import FuzzyRole, StrictRole
 
@@ -81,7 +81,12 @@ class DisboardReminder(commands.Cog):
         # self.cache = defaultdict(lambda _: self.default_guild_cache.copy())
         bot.add_dev_env_value("bprm", lambda _: self)
 
-        blocks = [tse.LooseVariableGetterBlock(), tse.AssignmentBlock(), tse.IfBlock(), tse.EmbedBlock()]
+        blocks = [
+            tse.LooseVariableGetterBlock(),
+            tse.AssignmentBlock(),
+            tse.IfBlock(),
+            tse.EmbedBlock(),
+        ]
         self.tagscript_engine = tse.Interpreter(blocks)
 
     def cog_unload(self):
