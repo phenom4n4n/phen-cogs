@@ -43,8 +43,9 @@ from .abc import CompositeMetaClass
 from .blocks import HideBlock
 from .commands import Commands
 from .http import SlashHTTP
-from .models import InteractionResponse, InteractionCommand, InteractionButton, SlashOptionType, Component, Button
-from .objects import (SlashCommand, FakeMessage, SlashContext, SlashOption,
+from .models import (Button, Component, InteractionButton, InteractionCommand,
+                     InteractionResponse, SlashOptionType)
+from .objects import (FakeMessage, SlashCommand, SlashContext, SlashOption,
                       SlashTag)
 from .processor import Processor
 from .utils import dev_check
@@ -239,9 +240,13 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     @commands.is_owner()
     @commands.command()
-    async def buttontest(self, ctx: commands.Context, style: Optional[int] = 1, label: str = "Button!"):
+    async def buttontest(
+        self, ctx: commands.Context, style: Optional[int] = 1, label: str = "Button!"
+    ):
         """Test buttons."""
-        r = discord.http.Route("POST", "/channels/{channel_id}/messages", channel_id=ctx.channel.id)
+        r = discord.http.Route(
+            "POST", "/channels/{channel_id}/messages", channel_id=ctx.channel.id
+        )
         data = {"content": "Here's your button."}
         button = Button(style=style, label=label, custom_id=ctx.message.id)
         components = Component(components=[button])

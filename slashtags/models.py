@@ -91,7 +91,7 @@ class Component:
         data = {"type": self.type}
         if self.type == 1:
             data["components"] = [c.to_dict() for c in self.components]
-        else: # elif type == 2:
+        else:  # elif type == 2:
             data["label"] = self.label
             data["style"] = self.style
             data["custom_id"] = self.custom_id
@@ -107,7 +107,9 @@ class Component:
         label = data.get("label")
         custom_id = data.get("custom_id")
         url = data.get("url")
-        return cls(type, components=components, style=style, label=label, custom_id=custom_id, url=url)
+        return cls(
+            type, components=components, style=style, label=label, custom_id=custom_id, url=url
+        )
 
 
 class Button(Component):
@@ -281,6 +283,7 @@ class InteractionResponse:
         if self.sent is False:
             self.sent = True
         return data
+
 
 class InteractionButton(InteractionResponse):
     def __init__(self, *, cog, data: dict):

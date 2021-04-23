@@ -427,4 +427,3 @@ class SlashContext(commands.Context):
 
     async def tick(self):
         await self.interaction.send("✅", hidden=True)
-

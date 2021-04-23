@@ -14,7 +14,7 @@ from .errors import (BlacklistCheckFailure, MissingTagPermissions,
                      RequireCheckFailure, WhitelistCheckFailure)
 from .http import SlashHTTP
 from .models import SlashOptionType
-from .objects import (SlashCommand, FakeMessage, SlashContext, SlashOption,
+from .objects import (FakeMessage, SlashCommand, SlashContext, SlashOption,
                       SlashTag)
 from .utils import dev_check
 
