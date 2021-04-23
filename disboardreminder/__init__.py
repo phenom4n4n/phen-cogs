@@ -22,10 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from redbot.core.utils import get_end_user_data_statement
+
 from .disboardreminder import DisboardReminder
 
-__red_end_user_data_statement__ = "This cog stores the number of times a member has bumped."
+__red_end_user_data_statement__ = get_end_user_data_statement(__file__)
 
 
-def setup(bot):
-    bot.add_cog(DisboardReminder(bot))
+async def setup(bot):
+    cog = DisboardReminder(bot)
+    await cog.initialize()
+    bot.add_cog(cog)
