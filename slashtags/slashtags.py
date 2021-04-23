@@ -59,7 +59,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.2.1"
+    __version__ = "0.2.2"
     __author__ = ["PhenoM4n4n"]
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -215,7 +215,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         await button.send(f"Congrats for pressing button {cached_button.label if cached_button else button.custom_id}!")
 
     @commands.is_owner()
-    @commands.command()
+    @commands.command(hidden=True)
     async def buttontest(
         self, ctx: commands.Context, style: Optional[int] = 1, label: str = "Button!"
     ):
