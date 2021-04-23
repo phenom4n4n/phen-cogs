@@ -57,12 +57,62 @@ class ResponseOption:
         self.value = value
 
     def __repr__(self):
-        return "<ResponseOption type={0.type!r} name={0.name!r} value={0.value!r}>".format(self)
+        return f"<ResponseOption type={self.type!r} name={self.name!r} value={self.value!r}>"
 
     @classmethod
     def from_dict(cls, data: dict):
         type = SlashOptionType(data.get("type", 3))
         return cls(type=type, name=data["name"], value=data["value"])
+
+
+class Component:
+    def __init__(
+        self,
+        type: int = 1,
+        *,
+        components: List["Component"] = [],
+        style: str = None,
+        label: str = None,
+        custom_id: int = None,
+        url: str = None,
+    ):
+        self.type = type
+        self.components = components
+        self.style = style
+        self.label = label
+        self.custom_id = custom_id
+        self.url = url
+
+    def __repr__(self):
+        kwargs = " ".join(f"{key}={value}" for key, value in self.__dict__.items() if value)
+        return f"<{type(self).__name__} {kwargs}>"
+
+    def to_dict(self):
+        data = {"type": self.type}
+        if self.type == 1:
+            data["components"] = [c.to_dict() for c in self.components]
+        else: # elif type == 2:
+            data["label"] = self.label
+            data["style"] = self.style
+            data["custom_id"] = self.custom_id
+            if self.url:
+                data["url"] = self.url
+        return data
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        type = data.pop["type"]
+        components = [cls.from_dict(c) for c in data.get("components", [])]
+        style = data.get("style")
+        label = data.get("label")
+        custom_id = data.get("custom_id")
+        url = data.get("url")
+        return cls(type, components=components, style=style, label=label, custom_id=custom_id, url=url)
+
+
+class Button(Component):
+    def __init__(self, **kwargs):
+        super().__init__(2, **kwargs)
 
 
 class InteractionMessage(discord.Message):
@@ -116,14 +166,18 @@ class InteractionMessage(discord.Message):
 
 
 class UnknownCommand:
-    name = "unknown slash command"
-    qualified_name = name
     cog = None
 
-    def __str__(self):
-        return self.name
+    def __init__(self, *, id: int = None):
+        self.id = id
 
-    def __bool__(self):
+    def __repr__(self) -> str:
+        return f"UnknownCommand(id={self.id})"
+
+    name = __repr__
+    qualified_name = __repr__
+
+    def __bool__(self) -> bool:
         return False
 
 
@@ -140,6 +194,7 @@ class InteractionResponse:
 
         self.guild_id = guild_id = discord.utils._get_as_snowflake(data, "guild_id")
         self.channel_id = discord.utils._get_as_snowflake(data, "channel_id")
+        self.application_id = discord.utils._get_as_snowflake(data, "application_id")
 
         if guild_id:
             member_data = data["member"]
@@ -150,19 +205,11 @@ class InteractionResponse:
             self.author_id = int(member_data["id"])
             self.author = discord.User(data=member_data, state=self._state)
 
+        self.interaction_data = data["data"]
         self.sent = False
-        self.interaction_data = interaction_data = data["data"]
-        self.command_name = interaction_data["name"]
-        self.command_id = int(interaction_data["id"])
-        self.options: List[ResponseOption] = []
-        self._parse_options(
-            interaction_data.get("options", []), interaction_data.get("resolved", {})
-        )
 
     def __repr__(self):
-        return "<Interaction id={0.id} command={0.command!r} channel={0.channel!r} author={0.author!r}>".format(
-            self
-        )
+        return f"<{type(self).__name__} id={self.id} command={self.command!r} channel={self.channel!r} author={self.author!r}>"
 
     @property
     def guild(self) -> discord.Guild:
@@ -176,9 +223,88 @@ class InteractionResponse:
     def created_at(self):
         return discord.utils.snowflake_time(self.id)
 
+    async def send(
+        self,
+        content: str = None,
+        *,
+        embed: discord.Embed = None,
+        embeds: List[discord.Embed] = [],
+        tts: bool = False,
+        allowed_mentions: discord.AllowedMentions = None,
+        hidden: bool = False,
+        delete_after: int = None,
+    ):
+        flags = 64 if hidden else None
+        initial = not self.sent
+        data = await self.http.send_message(
+            self._token,
+            self.id,
+            type=4,
+            initial_response=initial,
+            content=content,
+            embed=embed,
+            embeds=embeds,
+            allowed_mentions=allowed_mentions,
+            tts=tts,
+            flags=flags,
+        )
+        if self.sent is False:
+            self.sent = True
+        # TODO custom message object with token/auth info to support edit/delete responses
+        if data:
+            try:
+                message = InteractionMessage(
+                    self,
+                    data=data,
+                    channel=self.channel,
+                    state=self._state,
+                )
+            except Exception as e:
+                log.exception("Failed to create message object for data:\n%r" % data, exc_info=e)
+            else:
+                if delete_after is not None:
+                    await message.delete(delay=delete_after)
+                return message
+
+    reply = send
+
+    async def defer(self, *, hidden: bool = False):
+        flags = 64 if hidden else None
+        initial = not self.sent
+        data = await self.http.send_message(
+            self._token,
+            self.id,
+            type=5,
+            initial_response=initial,
+            flags=flags,
+        )
+        if self.sent is False:
+            self.sent = True
+        return data
+
+class InteractionButton(InteractionResponse):
+    def __init__(self, *, cog, data: dict):
+        super().__init__(cog=cog, data=data)
+        self.custom_id = self.interaction_data["custom_id"]
+        self.component_type = self.interaction_data["component_type"]
+
+
+class InteractionCommand(InteractionResponse):
+    def __init__(self, *, cog, data: dict):
+        super().__init__(cog=cog, data=data)
+        self.command_name = self.interaction_data["name"]
+        self.command_id = int(self.interaction_data["id"])
+        self.options: List[ResponseOption] = []
+        self._parse_options(
+            self.interaction_data.get("options", []), self.interaction_data.get("resolved", {})
+        )
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__} id={self.id} command={self.command!r} channel={self.channel!r} author={self.author!r}>"
+
     @property
     def command(self):
-        return self.cog.get_command(self.command_id) or UnknownCommand()
+        return self.cog.get_command(self.command_id) or UnknownCommand(id=self.command_id)
 
     @property
     def jump_url(self):
@@ -198,7 +324,7 @@ class InteractionResponse:
                     option = handler(o, option, resolved)
                 except Exception as error:
                     log.exception(
-                        "Failed to handle option data for option:\n%s" % o, exc_info=error
+                        "Failed to handle option data for option:\n%r" % o, exc_info=error
                     )
             self.options.append(option)
 
@@ -253,62 +379,3 @@ class InteractionResponse:
                 self.guild._add_role(role)
             option.set_value(role)
         return option
-
-    async def send(
-        self,
-        content: str = None,
-        *,
-        embed: discord.Embed = None,
-        embeds: List[discord.Embed] = [],
-        tts: bool = False,
-        allowed_mentions: discord.AllowedMentions = None,
-        hidden: bool = False,
-        delete_after: int = None,
-    ):
-        flags = 64 if hidden else None
-        initial = not self.sent
-        data = await self.http.send_message(
-            self._token,
-            self.id,
-            type=4,
-            initial_response=initial,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            allowed_mentions=allowed_mentions,
-            tts=tts,
-            flags=flags,
-        )
-        if self.sent is False:
-            self.sent = True
-        # TODO custom message object with token/auth info to support edit/delete responses
-        if data:
-            try:
-                message = InteractionMessage(
-                    self,
-                    data=data,
-                    channel=self.channel,
-                    state=self._state,
-                )
-            except Exception as e:
-                log.exception("Failed to create message object for data:\n%s" % data, exc_info=e)
-            else:
-                if delete_after is not None:
-                    await message.delete(delay=delete_after)
-                return message
-
-    reply = send
-
-    async def defer(self, *, hidden: bool = False):
-        flags = 64 if hidden else None
-        initial = not self.sent
-        data = await self.http.send_message(
-            self._token,
-            self.id,
-            type=5,
-            initial_response=initial,
-            flags=flags,
-        )
-        if self.sent is False:
-            self.sent = True
-        return data

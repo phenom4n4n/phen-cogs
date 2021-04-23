@@ -95,7 +95,7 @@ class SlashOption:
         )
 
 
-class CommandModel:
+class SlashCommand:
     def __init__(
         self,
         cog,
@@ -121,7 +121,7 @@ class CommandModel:
         return self.name
 
     def __repr__(self) -> str:
-        return "<CommandModel id={0.id} name={0.name!r} description={0.description!r} guild_id={0.guild_id!r}>".format(
+        return "<SlashCommand id={0.id} name={0.name!r} description={0.description!r} guild_id={0.guild_id!r}>".format(
             self
         )
 
@@ -228,7 +228,7 @@ class SlashTag:
         author_id: int = None,
         uses: int = 0,
         real: bool = True,
-        command: CommandModel,
+        command: SlashCommand,
     ):
         self.cog = cog
         self.http: SlashHTTP = cog.http
@@ -310,7 +310,7 @@ class SlashTag:
             author_id=data["author_id"],
             uses=data.get("uses", 0),
             real=real_tag,
-            command=CommandModel.from_dict(cog, data["command"]),
+            command=SlashCommand.from_dict(cog, data["command"]),
         )
 
     def to_dict(self):
@@ -427,3 +427,4 @@ class SlashContext(commands.Context):
 
     async def tick(self):
         await self.interaction.send("✅", hidden=True)
+

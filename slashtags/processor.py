@@ -10,7 +10,7 @@ from redbot.core import commands
 from .abc import MixinMeta
 from .errors import (BlacklistCheckFailure, MissingTagPermissions,
                      RequireCheckFailure, WhitelistCheckFailure)
-from .models import InteractionResponse, SlashOptionType
+from .models import InteractionCommand, SlashOptionType
 from .objects import FakeMessage, SlashContext, SlashTag
 from .utils import dev_check
 
@@ -44,7 +44,7 @@ class Processor(MixinMeta):
 
     async def process_tag(
         self,
-        interaction: InteractionResponse,
+        interaction: InteractionCommand,
         tag: SlashTag,
         *,
         seed_variables: dict = {},
@@ -116,7 +116,7 @@ class Processor(MixinMeta):
 
     async def process_commands(
         self,
-        interaction: InteractionResponse,
+        interaction: InteractionCommand,
         messages: List[discord.Message],
         silent: bool,
         overrides: dict,
@@ -132,7 +132,7 @@ class Processor(MixinMeta):
 
     async def process_command(
         self,
-        interaction: InteractionResponse,
+        interaction: InteractionCommand,
         command_message: discord.Message,
         silent: bool,
         overrides: dict,
@@ -218,7 +218,7 @@ class Processor(MixinMeta):
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
 
-    async def slash_eval(self, interaction: InteractionResponse):
+    async def slash_eval(self, interaction: InteractionCommand):
         await interaction.defer()
         if not await self.bot.is_owner(interaction.author):
             return await interaction.send("Only bot owners may eval.", hidden=True)

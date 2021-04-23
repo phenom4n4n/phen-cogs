@@ -13,8 +13,8 @@ from .converters import SLASH_NAME, TagConverter, TagName, TagScriptConverter
 from .errors import (BlacklistCheckFailure, MissingTagPermissions,
                      RequireCheckFailure, WhitelistCheckFailure)
 from .http import SlashHTTP
-from .models import InteractionResponse, SlashOptionType
-from .objects import (CommandModel, FakeMessage, SlashContext, SlashOption,
+from .models import SlashOptionType
+from .objects import (SlashCommand, FakeMessage, SlashContext, SlashOption,
                       SlashTag)
 from .utils import dev_check
 
@@ -66,7 +66,7 @@ class Commands(MixinMeta):
             if pred.result is True:
                 await self.get_options(ctx, options)
 
-        command = CommandModel(
+        command = SlashCommand(
             self, name=tag_name, description=description, guild_id=ctx.guild.id, options=options
         )
         try:
@@ -349,7 +349,7 @@ class Commands(MixinMeta):
         """Add a slash eval command for debugging."""
         if self.eval_command:
             return await ctx.send("An eval command is already registered.")
-        slasheval = CommandModel(
+        slasheval = SlashCommand(
             self,
             name="eval",
             description="SlashTags debugging eval command.",

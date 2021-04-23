@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Coroutine, Dict
+from typing import Coroutine, Dict, Optional
 
 import discord
 import TagScriptEngine as tse
@@ -43,8 +43,8 @@ from .abc import CompositeMetaClass
 from .blocks import HideBlock
 from .commands import Commands
 from .http import SlashHTTP
-from .models import InteractionResponse, SlashOptionType
-from .objects import (CommandModel, FakeMessage, SlashContext, SlashOption,
+from .models import InteractionResponse, InteractionCommand, InteractionButton, SlashOptionType, Component, Button
+from .objects import (SlashCommand, FakeMessage, SlashContext, SlashOption,
                       SlashTag)
 from .processor import Processor
 from .utils import dev_check
@@ -199,33 +199,34 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             if tag.name == tag_name:
                 return tag
 
-    def get_command(self, command_id: int) -> CommandModel:
+    def get_command(self, command_id: int) -> SlashCommand:
         return self.command_cache.get(command_id)
 
     @commands.Cog.listener()
     async def on_interaction_create(self, data: dict):
-        log.debug("Interaction data received:\n%s" % data)
+        log.debug("Interaction data received:\n%r" % data)
         handlers = {2: self.handle_slash_interaction, 3: self.handle_slash_button}
         handler = handlers.get(data["type"], self.handle_slash_interaction)
         try:
             await handler(data)
         except Exception as e:
             log.exception(
-                "An exception occured while handling an interaction:\n%s" % data, exc_info=e
+                "An exception occured while handling an interaction:\n%r" % data, exc_info=e
             )
 
-    async def handle_slash_button(self, button):
-        ...
+    async def handle_slash_button(self, data: dict):
+        button = InteractionButton(cog=self, data=data)
+        await button.send(f"Congrats for pressing button {button.custom_id}!")
 
     async def handle_slash_interaction(self, data: dict):
-        interaction = InteractionResponse(data=data, cog=self)
+        interaction = InteractionCommand(data=data, cog=self)
         self.bot.dispatch("slash_interaction", interaction)
 
     @commands.Cog.listener()
-    async def on_slash_interaction(self, interaction: InteractionResponse):
+    async def on_slash_interaction(self, interaction: InteractionCommand):
         try:
             command = interaction.command
-            if isinstance(command, CommandModel):
+            if isinstance(command, SlashCommand):
                 tag = self.get_tag(interaction.guild, command.id)
                 await self.process_tag(interaction, tag)
             elif interaction.command_id == self.eval_command:
@@ -235,3 +236,14 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         except Exception as e:
             ctx = SlashContext.from_interaction(interaction)
             self.bot.dispatch("command_error", ctx, commands.CommandInvokeError(e))
+
+    @commands.is_owner()
+    @commands.command()
+    async def buttontest(self, ctx: commands.Context, style: Optional[int] = 1, label: str = "Button!"):
+        """Test buttons."""
+        r = discord.http.Route("POST", "/channels/{channel_id}/messages", channel_id=ctx.channel.id)
+        data = {"content": "Here's your button."}
+        button = Button(style=style, label=label, custom_id=ctx.message.id)
+        components = Component(components=[button])
+        data["components"] = [components.to_dict()]
+        await self.bot._connection.http.request(r, json=data)
