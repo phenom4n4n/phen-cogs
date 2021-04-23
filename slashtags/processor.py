@@ -8,9 +8,10 @@ import TagScriptEngine as tse
 from redbot.core import commands
 
 from .abc import MixinMeta
+from .blocks import HideBlock
 from .errors import (BlacklistCheckFailure, MissingTagPermissions,
                      RequireCheckFailure, WhitelistCheckFailure)
-from .models import InteractionResponse, SlashOptionType
+from .models import InteractionCommand, SlashOptionType
 from .objects import FakeMessage, SlashContext, SlashTag
 from .utils import dev_check
 
@@ -30,6 +31,38 @@ class Processor(MixinMeta):
         SlashOptionType.ROLE: tse.SafeObjectAdapter,
     }
 
+    def __init__(self):
+        tse_blocks = [
+            tse.MathBlock(),
+            tse.RandomBlock(),
+            tse.RangeBlock(),
+            tse.AnyBlock(),
+            tse.IfBlock(),
+            tse.AllBlock(),
+            tse.BreakBlock(),
+            tse.StrfBlock(),
+            tse.StopBlock(),
+            tse.AssignmentBlock(),
+            tse.FiftyFiftyBlock(),
+            tse.LooseVariableGetterBlock(),
+            tse.SubstringBlock(),
+            tse.EmbedBlock(),
+            tse.ReplaceBlock(),
+            tse.PythonBlock(),
+            tse.RequireBlock(),
+            tse.BlacklistBlock(),
+            tse.URLEncodeBlock(),
+            tse.CommandBlock(),
+        ]
+        slash_blocks = [HideBlock()]
+        self.engine = tse.Interpreter(tse_blocks + slash_blocks)
+
+        self.role_converter = commands.RoleConverter()
+        self.channel_converter = commands.TextChannelConverter()
+        self.member_converter = commands.MemberConverter()
+        self.emoji_converter = commands.EmojiConverter()
+        super().__init__()
+
     @staticmethod
     async def delete_quietly(message: discord.Message):
         try:
@@ -44,7 +77,7 @@ class Processor(MixinMeta):
 
     async def process_tag(
         self,
-        interaction: InteractionResponse,
+        interaction: InteractionCommand,
         tag: SlashTag,
         *,
         seed_variables: dict = {},
@@ -116,7 +149,7 @@ class Processor(MixinMeta):
 
     async def process_commands(
         self,
-        interaction: InteractionResponse,
+        interaction: InteractionCommand,
         messages: List[discord.Message],
         silent: bool,
         overrides: dict,
@@ -132,7 +165,7 @@ class Processor(MixinMeta):
 
     async def process_command(
         self,
-        interaction: InteractionResponse,
+        interaction: InteractionCommand,
         command_message: discord.Message,
         silent: bool,
         overrides: dict,
@@ -218,7 +251,7 @@ class Processor(MixinMeta):
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
 
-    async def slash_eval(self, interaction: InteractionResponse):
+    async def slash_eval(self, interaction: InteractionCommand):
         await interaction.defer()
         if not await self.bot.is_owner(interaction.author):
             return await interaction.send("Only bot owners may eval.", hidden=True)

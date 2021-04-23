@@ -182,7 +182,7 @@ class SlashHTTP:
             application_id=self.application_id,
         )
 
-        log.debug("sending response, initial = %s: %s" % (initial_response, send_data))
+        log.debug("sending response, initial = %r: %r" % (initial_response, send_data))
         return self.request(route, json=send_data)
 
     def edit_message(

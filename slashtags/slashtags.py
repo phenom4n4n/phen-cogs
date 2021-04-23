@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Coroutine, Dict
+from typing import Coroutine, Dict, Optional
 
 import discord
 import TagScriptEngine as tse
@@ -40,11 +40,11 @@ from redbot.core.utils.menus import (DEFAULT_CONTROLS, menu,
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import CompositeMetaClass
-from .blocks import HideBlock
 from .commands import Commands
 from .http import SlashHTTP
-from .models import InteractionResponse, SlashOptionType
-from .objects import (CommandModel, FakeMessage, SlashContext, SlashOption,
+from .models import (Button, Component, InteractionButton, InteractionCommand,
+                     InteractionResponse, SlashOptionType)
+from .objects import (FakeMessage, SlashCommand, SlashContext, SlashOption,
                       SlashTag)
 from .processor import Processor
 from .utils import dev_check
@@ -59,7 +59,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.2.0"
+    __version__ = "0.2.2"
     __author__ = ["PhenoM4n4n"]
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -88,36 +88,8 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
-        tse_blocks = [
-            tse.MathBlock(),
-            tse.RandomBlock(),
-            tse.RangeBlock(),
-            tse.AnyBlock(),
-            tse.IfBlock(),
-            tse.AllBlock(),
-            tse.BreakBlock(),
-            tse.StrfBlock(),
-            tse.StopBlock(),
-            tse.AssignmentBlock(),
-            tse.FiftyFiftyBlock(),
-            tse.LooseVariableGetterBlock(),
-            tse.SubstringBlock(),
-            tse.EmbedBlock(),
-            tse.ReplaceBlock(),
-            tse.PythonBlock(),
-            tse.RequireBlock(),
-            tse.BlacklistBlock(),
-            tse.URLEncodeBlock(),
-            tse.CommandBlock(),
-        ]
-        slash_blocks = [HideBlock()]
-        self.engine = tse.Interpreter(tse_blocks + slash_blocks)
-        self.role_converter = commands.RoleConverter()
-        self.channel_converter = commands.TextChannelConverter()
-        self.member_converter = commands.MemberConverter()
-        self.emoji_converter = commands.EmojiConverter()
-
         self.command_cache = {}
+        self.button_cache = {}
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache = {}
 
@@ -199,33 +171,34 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             if tag.name == tag_name:
                 return tag
 
-    def get_command(self, command_id: int) -> CommandModel:
+    def get_command(self, command_id: int) -> SlashCommand:
         return self.command_cache.get(command_id)
 
     @commands.Cog.listener()
     async def on_interaction_create(self, data: dict):
-        log.debug("Interaction data received:\n%s" % data)
+        log.debug("Interaction data received:\n%r" % data)
         handlers = {2: self.handle_slash_interaction, 3: self.handle_slash_button}
         handler = handlers.get(data["type"], self.handle_slash_interaction)
         try:
             await handler(data)
         except Exception as e:
             log.exception(
-                "An exception occured while handling an interaction:\n%s" % data, exc_info=e
+                "An exception occured while handling an interaction:\n%r" % data, exc_info=e
             )
 
-    async def handle_slash_button(self, button):
-        ...
+    async def handle_slash_button(self, data: dict):
+        button = InteractionButton(cog=self, data=data)
+        self.bot.dispatch("button_interaction", button)
 
     async def handle_slash_interaction(self, data: dict):
-        interaction = InteractionResponse(data=data, cog=self)
+        interaction = InteractionCommand(data=data, cog=self)
         self.bot.dispatch("slash_interaction", interaction)
 
     @commands.Cog.listener()
-    async def on_slash_interaction(self, interaction: InteractionResponse):
+    async def on_slash_interaction(self, interaction: InteractionCommand):
         try:
             command = interaction.command
-            if isinstance(command, CommandModel):
+            if isinstance(command, SlashCommand):
                 tag = self.get_tag(interaction.guild, command.id)
                 await self.process_tag(interaction, tag)
             elif interaction.command_id == self.eval_command:
@@ -235,3 +208,26 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         except Exception as e:
             ctx = SlashContext.from_interaction(interaction)
             self.bot.dispatch("command_error", ctx, commands.CommandInvokeError(e))
+
+    @commands.Cog.listener()
+    async def on_button_interaction(self, button: InteractionButton):
+        cached_button = self.button_cache.get(button.custom_id)
+        await button.send(
+            f"Congrats for pressing button {cached_button.label if cached_button else button.custom_id}!"
+        )
+
+    @commands.is_owner()
+    @commands.command(hidden=True)
+    async def buttontest(
+        self, ctx: commands.Context, style: Optional[int] = 1, label: str = "Button!"
+    ):
+        """Test buttons."""
+        r = discord.http.Route(
+            "POST", "/channels/{channel_id}/messages", channel_id=ctx.channel.id
+        )
+        data = {"content": "Here's your button."}
+        button = Button(style=style, label=label, custom_id=ctx.message.id)
+        self.button_cache[button.custom_id] = button
+        components = Component(components=[button])
+        data["components"] = [components.to_dict()]
+        await self.bot._connection.http.request(r, json=data)
