@@ -354,7 +354,9 @@ class Commands(MixinMeta):
             self,
             name="eval",
             description="SlashTags debugging eval command. Only bot owners can use this.",
-            options=[SlashOption(name="body", description="Code body to evaluate.", required=True)],
+            options=[
+                SlashOption(name="body", description="Code body to evaluate.", required=True)
+            ],
         )
         await slasheval.register()
         await self.config.eval_command.set(slasheval.id)

@@ -1,8 +1,8 @@
 import asyncio
+import logging
 from copy import copy
 from functools import partial
 from typing import List, Optional
-import logging
 
 import discord
 import TagScriptEngine as tse
