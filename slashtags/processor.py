@@ -2,6 +2,7 @@ import asyncio
 from copy import copy
 from functools import partial
 from typing import List, Optional
+import logging
 
 import discord
 import TagScriptEngine as tse
@@ -19,6 +20,8 @@ empty_adapter = tse.StringAdapter("")
 
 PL = commands.PrivilegeLevel
 RS = commands.Requires
+
+log = logging.getLogger("red.phenom4n4n.slashtags.processor")
 
 
 class Processor(MixinMeta):
@@ -146,6 +149,11 @@ class Processor(MixinMeta):
 
         if to_gather:
             await asyncio.gather(*to_gather)
+
+        log.debug(interaction.completed)
+        if not interaction.completed:
+            await interaction.send("Slash Tag completed.", hidden=True)
+        log.debug("wrapped up")
 
     async def process_commands(
         self,

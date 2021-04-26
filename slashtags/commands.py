@@ -18,11 +18,6 @@ from .objects import (FakeMessage, SlashCommand, SlashContext, SlashOption,
                       SlashTag)
 from .utils import dev_check
 
-option = SlashOption(name="args", description="Arguments for the tag.", required=True)
-optional_member = SlashOption(
-    name="member", description="Server member", option_type=SlashOptionType.USER, required=False
-)
-
 
 class Commands(MixinMeta):
     @commands.guild_only()
@@ -278,6 +273,16 @@ class Commands(MixinMeta):
                 allowed_mentions=discord.AllowedMentions.none(),
             )
 
+    @staticmethod
+    def format_tagscript(tag: SlashTag, limit: int = 60) -> str:
+        prefix = f"`{tag.name}` - "
+        limit -= len(prefix)
+        tagscript = tag.tagscript
+        if len(tagscript) > limit - 3:
+            tagscript = tagscript[:limit] + "..."
+        tagscript = tagscript.replace("\n", " ")
+        return f"{prefix}{discord.utils.escape_markdown(tagscript)}"
+
     @slashtag.command(name="list")
     async def slashtag_list(self, ctx: commands.Context):
         """View stored slash tags."""
@@ -287,11 +292,7 @@ class Commands(MixinMeta):
         description = []
 
         for tag in tags.values():
-            tagscript = tag.tagscript
-            if len(tagscript) > 23:
-                tagscript = tagscript[:20] + "..."
-            tagscript = tagscript.replace("\n", " ")
-            description.append(f"`{tag.name}` - {discord.utils.escape_markdown(tagscript)}")
+            description.append(self.format_tagscript(tag))
         description = "\n".join(description)
 
         e = discord.Embed(color=await ctx.embed_color())
@@ -352,8 +353,8 @@ class Commands(MixinMeta):
         slasheval = SlashCommand(
             self,
             name="eval",
-            description="SlashTags debugging eval command.",
-            options=[option, optional_member],
+            description="SlashTags debugging eval command. Only bot owners can use this.",
+            options=[SlashOption(name="body", description="Code body to evaluate.", required=True)],
         )
         await slasheval.register()
         await self.config.eval_command.set(slasheval.id)
