@@ -8,11 +8,11 @@ from redbot.core import commands
 from redbot.core.utils.menus import start_adding_reactions
 
 from .abc import MixinMeta
+from .blocks import (DeleteBlock, ReactBlock, ReactUBlock, RedirectBlock,
+                     SilentBlock)
 from .errors import (BlacklistCheckFailure, RequireCheckFailure,
                      WhitelistCheckFailure)
 from .objects import SilentContext, Tag
-from .blocks import (DeleteBlock, ReactBlock, ReactUBlock, RedirectBlock,
-                     SilentBlock)
 
 
 class Processor(MixinMeta):

@@ -29,11 +29,11 @@ from typing import Optional, Set
 
 import aiohttp
 import discord
-from TagScriptEngine import __version__ as tse_version
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
+from TagScriptEngine import __version__ as tse_version
 
 from .abc import CompositeMetaClass
 from .commands import Commands
