@@ -136,7 +136,9 @@ class Commands(MixinMeta):
         await self.delete_quietly(message)
         return message.content
 
-    async def get_option(self, ctx: commands.Context, *, added_required: bool = False) -> SlashOption:
+    async def get_option(
+        self, ctx: commands.Context, *, added_required: bool = False
+    ) -> SlashOption:
         name_desc = (
             "What should the argument name be?\n"
             "Slash argument names may not exceed 32 characters and can only contain characters "
@@ -171,10 +173,17 @@ class Commands(MixinMeta):
 
         if not added_required:
             pred = MessagePredicate.yes_or_no(ctx)
-            await self.send_and_query_response(ctx, "Is this argument required? (Y/n)\n*Keep in mind that if you choose to make this argument optional, all following arguments must also be optional.", pred)
+            await self.send_and_query_response(
+                ctx,
+                "Is this argument required? (Y/n)\n*Keep in mind that if you choose to make this argument optional, all following arguments must also be optional.",
+                pred,
+            )
             required = pred.result
         else:
-            await ctx.send("This argument was automatically made optional as the previous one was.", delete_after=15)
+            await ctx.send(
+                "This argument was automatically made optional as the previous one was.",
+                delete_after=15,
+            )
             required = False
 
         return SlashOption(
