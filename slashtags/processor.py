@@ -150,10 +150,8 @@ class Processor(MixinMeta):
         if to_gather:
             await asyncio.gather(*to_gather)
 
-        log.debug(interaction.completed)
         if not interaction.completed:
             await interaction.send("Slash Tag completed.", hidden=True)
-        log.debug("wrapped up")
 
     async def process_commands(
         self,

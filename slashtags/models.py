@@ -252,11 +252,12 @@ class InteractionResponse:
             tts=tts,
             flags=flags,
         )
+
         if not self.sent:
             self.sent = True
-        if self.deferred and not self.completed:
+        if not self.completed:
             self.completed = True
-        # TODO custom message object with token/auth info to support edit/delete responses
+
         if data:
             try:
                 message = InteractionMessage(
