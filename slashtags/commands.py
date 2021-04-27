@@ -136,7 +136,9 @@ class Commands(MixinMeta):
         await self.delete_quietly(message)
         return message.content
 
-    async def get_option(self, ctx: commands.Context, *, added_required: bool = False) -> SlashOption:
+    async def get_option(
+        self, ctx: commands.Context, *, added_required: bool = False
+    ) -> SlashOption:
         name_desc = (
             "What should the argument name be?\n"
             "Slash argument names may not exceed 32 characters and can only contain characters "
