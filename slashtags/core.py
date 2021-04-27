@@ -125,19 +125,15 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.eval_command = data["eval_command"]
         if app_id := data["application_id"]:
             self.application_id = app_id
-        else:
-            if self.bot.user is not None:
-                await self.set_app_id()
 
     async def initialize_task(self):
         await self.cache_tags()
         if self.application_id is None:
-            if self.bot.user is None:
-                await self.bot.wait_until_ready()
             await self.set_app_id()
 
     async def set_app_id(self):
-        app_id = self.bot.user.id
+        await self.bot.wait_until_ready()
+        app_id = (await self.bot.application_info()).id
         await self.config.application_id.set(app_id)
         self.application_id = app_id
 
