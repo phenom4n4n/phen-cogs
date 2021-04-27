@@ -86,6 +86,7 @@ class Processor(MixinMeta):
         seed_variables: dict = {},
         **kwargs,
     ) -> str:
+        log.debug("processing tag %s | options: %r" % (tag, interaction.options))
         for option in interaction.options:
             seed_variables[option.name] = self.get_adapter(option.type)(option.value)
         for original_option in interaction.command.options:

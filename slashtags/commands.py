@@ -122,7 +122,7 @@ class Commands(MixinMeta):
         query: str,
         pred: MessagePredicate = None,
         *,
-        timeout: int = 30,
+        timeout: int = 60,
     ) -> str:
         if pred is None:
             pred = MessagePredicate.same_context(ctx)
