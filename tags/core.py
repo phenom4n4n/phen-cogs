@@ -132,9 +132,11 @@ class Tags(
 
         super().__init__()
         bot.add_dev_env_value("tags", lambda ctx: self)
+        bot.add_dev_env_value("tse", lambda ctx: tse)
 
     def cog_unload(self):
         self.bot.remove_dev_env_value("tags")
+        self.bot.remove_dev_env_value("tse")
         if self.cache_task:
             self.cache_task.cancel()
         asyncio.create_task(self.session.close())
