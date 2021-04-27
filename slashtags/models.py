@@ -209,6 +209,8 @@ class InteractionResponse:
 
         self.interaction_data = data["data"]
         self.sent = False
+        self.deferred = False
+        self.completed = False
 
     def __repr__(self):
         return f"<{type(self).__name__} id={self.id} command={self.command!r} channel={self.channel!r} author={self.author!r}>"
@@ -250,8 +252,10 @@ class InteractionResponse:
             tts=tts,
             flags=flags,
         )
-        if self.sent is False:
+        if not self.sent:
             self.sent = True
+        if self.deferred and not self.completed:
+            self.completed = True
         # TODO custom message object with token/auth info to support edit/delete responses
         if data:
             try:
@@ -280,8 +284,9 @@ class InteractionResponse:
             initial_response=initial,
             flags=flags,
         )
-        if self.sent is False:
+        if not self.sent:
             self.sent = True
+        self.deferred = True
         return data
 
 
