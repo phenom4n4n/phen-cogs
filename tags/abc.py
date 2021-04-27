@@ -40,10 +40,11 @@ class MixinMeta(ABC):
     config: Config
     bot: Red
 
-    emoji_converter: commands.EmojiConverter
-
     def __init__(self, *_args):
         super().__init__()
+
+    def cog_unload(self):
+        super().cog_unload()
 
 
 class CompositeMetaClass(type(commands.Cog), type(ABC)):

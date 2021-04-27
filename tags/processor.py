@@ -11,9 +11,56 @@ from .abc import MixinMeta
 from .errors import (BlacklistCheckFailure, RequireCheckFailure,
                      WhitelistCheckFailure)
 from .objects import SilentContext, Tag
+from .blocks import (DeleteBlock, ReactBlock, ReactUBlock, RedirectBlock,
+                     SilentBlock)
 
 
 class Processor(MixinMeta):
+    def __init__(self):
+        tse_blocks = [
+            tse.MathBlock(),
+            tse.RandomBlock(),
+            tse.RangeBlock(),
+            tse.AnyBlock(),
+            tse.IfBlock(),
+            tse.AllBlock(),
+            tse.BreakBlock(),
+            tse.StrfBlock(),
+            tse.StopBlock(),
+            tse.AssignmentBlock(),
+            tse.FiftyFiftyBlock(),
+            tse.ShortCutRedirectBlock("args"),
+            tse.LooseVariableGetterBlock(),
+            tse.SubstringBlock(),
+            tse.EmbedBlock(),
+            tse.ReplaceBlock(),
+            tse.PythonBlock(),
+            tse.URLEncodeBlock(),
+            tse.RequireBlock(),
+            tse.BlacklistBlock(),
+            tse.CommandBlock(),
+            tse.OverrideBlock(),
+        ]
+        tag_blocks = [
+            DeleteBlock(),
+            SilentBlock(),
+            ReactBlock(),
+            RedirectBlock(),
+            ReactUBlock(),
+        ]
+        self.engine = tse.Interpreter(tse_blocks + tag_blocks)
+        self.role_converter = commands.RoleConverter()
+        self.channel_converter = commands.TextChannelConverter()
+        self.member_converter = commands.MemberConverter()
+        self.emoji_converter = commands.EmojiConverter()
+
+        self.bot.add_dev_env_value("tse", lambda ctx: tse)
+        super().__init__()
+
+    def cog_unload(self):
+        self.bot.remove_dev_env_value("tse")
+        super().cog_unload()
+
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception):
         if not isinstance(error, commands.CommandNotFound):

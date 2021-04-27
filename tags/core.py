@@ -29,22 +29,16 @@ from typing import Optional, Set
 
 import aiohttp
 import discord
-import TagScriptEngine as tse
+from TagScriptEngine import __version__ as tse_version
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
-                                     start_adding_reactions)
-from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import CompositeMetaClass
-from .blocks import (DeleteBlock, ReactBlock, ReactUBlock, RedirectBlock,
-                     SilentBlock)
 from .commands import Commands
 from .errors import MissingTagPermissions, TagFeedbackError
-from .objects import SilentContext, Tag
+from .objects import Tag
 from .processor import Processor
 
 log = logging.getLogger("red.phenom4n4n.tags")
@@ -62,7 +56,7 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.2.1"
+    __version__ = "2.2.2"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -70,7 +64,7 @@ class Tags(
         text = [
             f"{pre_processed}{n}",
             f"Cog Version: **{self.__version__}**",
-            f"TagScriptEngine Version: **{tse.__version__}**",
+            f"TagScriptEngine Version: **{tse_version}**",
         ]
         return "\n".join(text)
 
@@ -86,43 +80,6 @@ class Tags(
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
-        tse_blocks = [
-            tse.MathBlock(),
-            tse.RandomBlock(),
-            tse.RangeBlock(),
-            tse.AnyBlock(),
-            tse.IfBlock(),
-            tse.AllBlock(),
-            tse.BreakBlock(),
-            tse.StrfBlock(),
-            tse.StopBlock(),
-            tse.AssignmentBlock(),
-            tse.FiftyFiftyBlock(),
-            tse.ShortCutRedirectBlock("args"),
-            tse.LooseVariableGetterBlock(),
-            tse.SubstringBlock(),
-            tse.EmbedBlock(),
-            tse.ReplaceBlock(),
-            tse.PythonBlock(),
-            tse.URLEncodeBlock(),
-            tse.RequireBlock(),
-            tse.BlacklistBlock(),
-            tse.CommandBlock(),
-            tse.OverrideBlock(),
-        ]
-        tag_blocks = [
-            DeleteBlock(),
-            SilentBlock(),
-            ReactBlock(),
-            RedirectBlock(),
-            ReactUBlock(),
-        ]
-        self.engine = tse.Interpreter(tse_blocks + tag_blocks)
-        self.role_converter = commands.RoleConverter()
-        self.channel_converter = commands.TextChannelConverter()
-        self.member_converter = commands.MemberConverter()
-        self.emoji_converter = commands.EmojiConverter()
-
         self.guild_tag_cache = defaultdict(dict)
         self.global_tag_cache = {}
         self.cache_task = asyncio.create_task(self.cache_tags())
@@ -130,13 +87,18 @@ class Tags(
         self.session = aiohttp.ClientSession()
         self.docs: list = []
 
-        super().__init__()
         bot.add_dev_env_value("tags", lambda ctx: self)
-        bot.add_dev_env_value("tse", lambda ctx: tse)
+        super().__init__()
 
     def cog_unload(self):
+        try:
+            self.__unload()
+        except Exception as e:
+            log.exception("An error occurred during cog unload.", exc_info=e)
+
+    def __unload(self):
+        super().cog_unload()
         self.bot.remove_dev_env_value("tags")
-        self.bot.remove_dev_env_value("tse")
         if self.cache_task:
             self.cache_task.cancel()
         asyncio.create_task(self.session.close())
