@@ -16,8 +16,6 @@ from .models import InteractionCommand, SlashOptionType
 from .objects import FakeMessage, SlashContext, SlashTag
 from .utils import dev_check
 
-empty_adapter = tse.StringAdapter("")
-
 PL = commands.PrivilegeLevel
 RS = commands.Requires
 
@@ -33,6 +31,7 @@ class Processor(MixinMeta):
         SlashOptionType.CHANNEL: tse.ChannelAdapter,
         SlashOptionType.ROLE: tse.SafeObjectAdapter,
     }
+    EMPTY_ADAPTER = tse.StringAdapter("")
 
     def __init__(self):
         tse_blocks = [
@@ -86,12 +85,14 @@ class Processor(MixinMeta):
         seed_variables: dict = {},
         **kwargs,
     ) -> str:
+        seed_variables = seed_variables.copy()
         log.debug("processing tag %s | options: %r" % (tag, interaction.options))
         for option in interaction.options:
             seed_variables[option.name] = self.get_adapter(option.type)(option.value)
         for original_option in interaction.command.options:
             if original_option.name not in seed_variables:
-                seed_variables[original_option.name] = empty_adapter
+                log.debug("optional option %s not found, using empty adapter" % original_option)
+                seed_variables[original_option.name] = self.EMPTY_ADAPTER
 
         guild = interaction.guild
         author = interaction.author
@@ -118,7 +119,6 @@ class Processor(MixinMeta):
         hide = actions.get("hide", False)
         destination = interaction
         ctx = interaction
-        # SlashContext.from_interaction ?
 
         if actions:
             try:
@@ -126,7 +126,7 @@ class Processor(MixinMeta):
             except RequireCheckFailure as error:
                 response = error.response
                 if response is not None and response.strip():
-                    await ctx.send(response[:2000], hidden=True)  # used hide?
+                    await ctx.send(response[:2000], hidden=True)
                 return
 
         if commands := actions.get("commands"):
@@ -135,7 +135,6 @@ class Processor(MixinMeta):
                 message = FakeMessage.from_interaction(interaction, prefix + command)
                 command_messages.append(message)
 
-        # this is going to become an asynchronous swamp
         if content or embed is not None:
             await self.send_tag_response(destination, content, embed=embed, hidden=hide)
         else:
