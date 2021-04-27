@@ -125,8 +125,10 @@ class Processor(MixinMeta):
                 await self.validate_checks(ctx, actions)
             except RequireCheckFailure as error:
                 response = error.response
-                if response is not None and response.strip():
+                if response is not None and (response := response.strip()):
                     await ctx.send(response[:2000], hidden=True)
+                else:
+                    await ctx.send("You aren't allowed to use this tag.", hidden=True)
                 return
 
         if commands := actions.get("commands"):
