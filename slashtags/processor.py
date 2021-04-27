@@ -258,9 +258,9 @@ class Processor(MixinMeta):
         return objects[0] if objects else None
 
     async def slash_eval(self, interaction: InteractionCommand):
-        await interaction.defer()
         if not await self.bot.is_owner(interaction.author):
             return await interaction.send("Only bot owners may eval.", hidden=True)
+        await interaction.defer()
         ctx = SlashContext.from_interaction(interaction)
         dev = dev_check(self)
         await dev._eval(ctx, body=interaction.options[0].value)
