@@ -89,9 +89,12 @@ class Commands(MixinMeta):
     async def get_options(
         self, ctx: commands.Context, options: List[SlashOption]
     ) -> List[SlashOption]:
+        added_required = False
         for i in range(1, 11):
             try:
-                option = await self.get_option(ctx)
+                option = await self.get_option(ctx, added_required=added_required)
+                if not option.required:
+                    added_required = True
             except asyncio.TimeoutError:
                 await ctx.send("Adding this argument timed out.", delete_after=15)
                 break
@@ -133,7 +136,7 @@ class Commands(MixinMeta):
         await self.delete_quietly(message)
         return message.content
 
-    async def get_option(self, ctx: commands.Context) -> SlashOption:
+    async def get_option(self, ctx: commands.Context, *, added_required: bool = False) -> SlashOption:
         name_desc = (
             "What should the argument name be?\n"
             "Slash argument names may not exceed 32 characters and can only contain characters "
@@ -166,9 +169,13 @@ class Commands(MixinMeta):
         )
         option_type = SlashOptionType[option_type.upper()]
 
-        pred = MessagePredicate.yes_or_no(ctx)
-        await self.send_and_query_response(ctx, "Is this argument required? (Y/n)", pred)
-        required = pred.result
+        if not added_required:
+            pred = MessagePredicate.yes_or_no(ctx)
+            await self.send_and_query_response(ctx, "Is this argument required? (Y/n)\n*Keep in mind that if you choose to make this argument optional, all following arguments must also be optional.", pred)
+            required = pred.result
+        else:
+            await ctx.send("This argument was automatically made optional as the previous one was.", delete_after=15)
+            required = False
 
         return SlashOption(
             name=title, description=description, option_type=option_type, required=required
