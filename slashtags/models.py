@@ -23,9 +23,9 @@ SOFTWARE.
 """
 
 import asyncio
+import functools
 import logging
 from enum import IntEnum
-import functools
 from typing import Dict, List
 
 import discord
@@ -214,7 +214,9 @@ class InteractionResponse:
         self.completed = False
 
     def __repr__(self):
-        return f"<{type(self).__name__} id={self.id} channel={self.channel!r} author={self.author!r}>"
+        return (
+            f"<{type(self).__name__} id={self.id} channel={self.channel!r} author={self.author!r}>"
+        )
 
     @property
     def guild(self) -> discord.Guild:
