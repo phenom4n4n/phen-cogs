@@ -443,7 +443,7 @@ class Webhook(commands.Cog):
         if me and not channel.permissions_for(me).manage_webhooks:
             raise discord.Forbidden(
                 FakeResponse(),
-                f"I need permissions to `manage_webhooks` in #{channel.name}.",
+                f"I need permissions to `manage_webhooks` in #{channel}.",
             )
         chan_hooks = await channel.webhooks()
         webhook_list = [w for w in chan_hooks if w.type == discord.WebhookType.incoming]
