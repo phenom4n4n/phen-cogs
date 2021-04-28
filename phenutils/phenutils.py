@@ -24,8 +24,9 @@ SOFTWARE.
 
 import asyncio
 import time
-import typing
+from typing import Optional
 from copy import copy
+import re
 
 import discord
 from discord.utils import sleep_until
@@ -34,7 +35,7 @@ from redbot.core.bot import Red
 from redbot.core.commands.converter import TimedeltaConverter
 from redbot.core.config import Config
 
-RequestType = typing.Literal["discord_deleted_user", "owner", "user", "user_strict"]
+SLEEP_FLAG = re.compile(r"(?:--|—)sleep (\d+)$")
 
 
 class PhenUtils(commands.Cog):
@@ -50,26 +51,36 @@ class PhenUtils(commands.Cog):
             force_registration=True,
         )
 
-    async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
+    async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
         return
 
     @commands.is_owner()
     @commands.command()
-    async def do(self, ctx, times: int, sequential: typing.Optional[bool] = True, *, command):
-        """Repeats a command a specified number of times."""
+    async def do(self, ctx, times: int, sequential: Optional[bool] = True, *, command: str):
+        """
+        Repeats a command a specified number of times.
+        
+        `--sleep <int>` is an optional flag specifying how much time to wait between command invocations.
+        """
+        if match := SLEEP_FLAG.search(command): # too lazy to use argparse
+            sleep = int(match.group(1))
+            command = command[:-len(match.group(0))]
+        else:
+            sleep = 1
+
         new_message = copy(ctx.message)
         new_message.content = ctx.prefix + command.strip()
         if sequential:
             for _ in range(times):
                 await self.bot.process_commands(new_message)
-                await asyncio.sleep(1)
+                await asyncio.sleep(sleep)
         else:
             todo = [self.bot.process_commands(new_message) for _ in range(times)]
             await asyncio.gather(*todo)
 
     @commands.is_owner()
     @commands.command()
-    async def execute(self, ctx, sequential: typing.Optional[bool] = False, *, commands):
+    async def execute(self, ctx, sequential: Optional[bool] = False, *, commands):
         """Execute multiple commands at once. Split them using |."""
         commands = commands.split("|")
         if sequential:
@@ -144,8 +155,6 @@ class PhenUtils(commands.Cog):
 
         You may reply to a message to reinvoke it or pass a message ID/link.
         """
-        if not ctx.guild.chunked:
-            await ctx.guild.chunk()
         if not message:
             if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
                 message = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(
@@ -154,3 +163,8 @@ class PhenUtils(commands.Cog):
             else:
                 raise commands.BadArgument
         await self.bot.process_commands(message)
+
+    @reinvoke.before_invoke
+    async def reinvoke_before_invoke(self, ctx: commands.Context):
+        if not ctx.guild.chunked:
+            await ctx.guild.chunk()
