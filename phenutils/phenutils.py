@@ -27,6 +27,7 @@ import time
 from typing import Optional
 from copy import copy
 import re
+import logging
 
 import discord
 from discord.utils import sleep_until
@@ -168,3 +169,15 @@ class PhenUtils(commands.Cog):
     async def reinvoke_before_invoke(self, ctx: commands.Context):
         if not ctx.guild.chunked:
             await ctx.guild.chunk()
+
+    @commands.is_owner()
+    @commands.command()
+    async def loglevel(self, ctx: commands.Context, level: str.upper):
+        """Set the log output level."""
+        log = logging.getLogger("red")
+        try:
+            log.setLevel(level)
+        except ValueError as exc:
+            await ctx.send(exc)
+        else:
+            await ctx.send(f"Logging has been set to {level}.")
