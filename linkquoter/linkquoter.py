@@ -23,9 +23,8 @@ SOFTWARE.
 """
 
 import asyncio
-import re
-from typing import List, Optional, Tuple, Union
 import logging
+from typing import List, Optional, Tuple, Union
 
 import discord
 from redbot.core import Config, checks, commands
@@ -34,6 +33,7 @@ from .converters import LinkToMessage
 
 log = logging.getLogger("red.phenom4n4n.linkquoter")
 COOLDOWN = (3, 10, commands.BucketType.channel)
+
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
     cog = ctx.bot.get_cog("Webhook")

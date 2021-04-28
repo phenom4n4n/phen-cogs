@@ -23,11 +23,10 @@ SOFTWARE.
 """
 
 import asyncio
+import logging
 import re
 import time
 from copy import copy
-import re
-import logging
 from typing import Optional
 
 import discord

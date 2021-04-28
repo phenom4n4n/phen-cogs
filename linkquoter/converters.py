@@ -49,7 +49,9 @@ class LinkToMessage(commands.Converter):
             raise BadArgument("I can only quote messages from servers.")
         guild = message.guild
         if message.channel.nsfw and not ctx.channel.nsfw:
-            raise commands.BadArgument("Messages from NSFW channels cannot be quoted in non-NSFW channels.")
+            raise commands.BadArgument(
+                "Messages from NSFW channels cannot be quoted in non-NSFW channels."
+            )
 
         cog = ctx.bot.get_cog("LinkQuoter")
         data = await cog.config.guild(ctx.guild).all()
@@ -69,5 +71,7 @@ class LinkToMessage(commands.Converter):
         if member:
             author_perms = message.channel.permissions_for(member)
             if not (author_perms.read_message_history and author_perms.read_messages):
-                raise commands.BadArgument(f"You don't have permission to read messages in that channel.")
+                raise commands.BadArgument(
+                    f"You don't have permission to read messages in that channel."
+                )
         return message
