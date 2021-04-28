@@ -25,6 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from enum import IntEnum
+import functools
 from typing import Dict, List
 
 import discord
@@ -213,7 +214,7 @@ class InteractionResponse:
         self.completed = False
 
     def __repr__(self):
-        return f"<{type(self).__name__} id={self.id} command={self.command!r} channel={self.channel!r} author={self.author!r}>"
+        return f"<{type(self).__name__} id={self.id} channel={self.channel!r} author={self.author!r}>"
 
     @property
     def guild(self) -> discord.Guild:
@@ -310,6 +311,13 @@ class InteractionCommand(InteractionResponse):
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} id={self.id} command={self.command!r} channel={self.channel!r} author={self.author!r}>"
+
+    @functools.cached_property
+    def content(self):
+        items = [f"/{self.command_name}"]
+        for option in self.options:
+            items.append(f"`{option.name}: {option.value}`")
+        return " ".join(items)
 
     @property
     def command(self):
