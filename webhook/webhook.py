@@ -452,7 +452,7 @@ class Webhook(commands.Cog):
         else:
             if len(chan_hooks) == 10:
                 # await chan_hooks[-1].delete()
-                return # can't delete follower type webhooks
+                return  # can't delete follower type webhooks
             creation_reason = (
                 f"Webhook creation requested by {author} ({author.id})" if author else ""
             )
