@@ -46,7 +46,7 @@ class LinkToMessage(commands.Converter):
         self, ctx: commands.Context, message: discord.Message
     ) -> discord.Message:
         if not message.guild:
-            raise BadArgument("I can only quote messages from servers.")
+            raise commands.BadArgument("I can only quote messages from servers.")
         guild = message.guild
         if message.channel.nsfw and not ctx.channel.nsfw:
             raise commands.BadArgument("Messages from NSFW channels cannot be quoted in non-NSFW channels.")
