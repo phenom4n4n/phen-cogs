@@ -88,7 +88,13 @@ class Processor(MixinMeta):
         seed_variables = seed_variables.copy()
         log.debug("processing tag %s | options: %r" % (tag, interaction.options))
         for option in interaction.options:
-            seed_variables[option.name] = self.get_adapter(option.type)(option.value)
+            adapter = self.get_adapter(option.type)
+            try:
+                seed_variables[option.name] = adapter(option.value)
+            except Exception as exc:
+                log.exception("Failed to initialize adapter %r for option %r:" % (adapter, option), exc_info=exc)
+                seed_variables[option.name] = tse.StringAdapter(option.value)
+
         for original_option in interaction.command.options:
             if original_option.name not in seed_variables:
                 log.debug("optional option %s not found, using empty adapter" % original_option)
