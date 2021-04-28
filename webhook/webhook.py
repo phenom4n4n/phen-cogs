@@ -44,7 +44,7 @@ class Webhook(commands.Cog):
 
     __author__ = "PhenoM4n4n"
 
-    __version__ = "1.2.0"
+    __version__ = "1.2.1"
 
     def __init__(self, bot):
         self.bot = bot
