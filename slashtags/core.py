@@ -56,7 +56,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.2.8"
+    __version__ = "0.2.9"
     __author__ = ["PhenoM4n4n"]
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -190,6 +190,13 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     @commands.Cog.listener()
     async def on_slash_interaction(self, interaction: InteractionCommand):
         try:
+            await self.invoke_and_catch(interaction)
+        except commands.CommandInvokeError as e:
+            ctx = SlashContext.from_interaction(interaction)
+            self.bot.dispatch("command_error", ctx, e)
+
+    async def invoke_and_catch(self, interaction: InteractionCommand):
+        try:
             command = interaction.command
             if isinstance(command, SlashCommand):
                 tag = self.get_tag(interaction.guild, command.id)
@@ -199,8 +206,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             else:
                 log.debug("Unknown interaction created:\n%r" % interaction)
         except Exception as e:
-            ctx = SlashContext.from_interaction(interaction)
-            self.bot.dispatch("command_error", ctx, commands.CommandInvokeError(e))
+            raise commands.CommandInvokeError(e) from e
 
     @commands.Cog.listener()
     async def on_button_interaction(self, button: InteractionButton):
