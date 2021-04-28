@@ -317,7 +317,7 @@ class InteractionCommand(InteractionResponse):
         )
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__} id={self.id} command={self.command!r} channel={self.channel!r} author={self.author!r}>"
+        return f"<{type(self).__name__} id={self.id} command={self.command!r} options={self.options!r} channel={self.channel!r} author={self.author!r}>"
 
     @functools.cached_property
     def content(self):
