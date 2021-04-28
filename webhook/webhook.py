@@ -450,13 +450,14 @@ class Webhook(commands.Cog):
         if webhook_list:
             webhook = webhook_list[0]
         else:
+            if len(chan_hooks) == 10:
+                # await chan_hooks[-1].delete()
+                return # can't delete follower type webhooks
             creation_reason = (
                 f"Webhook creation requested by {author} ({author.id})" if author else ""
             )
             if reason:
                 creation_reason += f" Reason: {reason}"
-            if len(chan_hooks) == 10:
-                await chan_hooks[-1].delete()
             webhook = await channel.create_webhook(
                 name=f"{me.name} Webhook",
                 reason=creation_reason,
@@ -482,13 +483,13 @@ class Webhook(commands.Cog):
         """
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
-        tries = 0
-        while tries < 5:
+        for _ in range(5):
             webhook = await self.get_webhook(
                 channel=channel, me=me, author=author, reason=reason, ctx=ctx
             )
+            if not webhook:
+                return
             try:
                 return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
             except (discord.InvalidArgument, discord.NotFound):
-                tries += 1
                 del self.channel_cache[channel.id]
