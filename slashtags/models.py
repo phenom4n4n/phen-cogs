@@ -177,8 +177,13 @@ class UnknownCommand:
     def __repr__(self) -> str:
         return f"UnknownCommand(id={self.id})"
 
-    name = __repr__
-    qualified_name = __repr__
+    @property
+    def name(self):
+        return self.__repr__()
+
+    @property
+    def qualified_name(self):
+        return self.__repr__()
 
     def __bool__(self) -> bool:
         return False
