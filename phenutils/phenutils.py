@@ -23,10 +23,10 @@ SOFTWARE.
 """
 
 import asyncio
-import time
-from typing import Optional
-from copy import copy
 import re
+import time
+from copy import copy
+from typing import Optional
 
 import discord
 from discord.utils import sleep_until
@@ -59,12 +59,12 @@ class PhenUtils(commands.Cog):
     async def do(self, ctx, times: int, sequential: Optional[bool] = True, *, command: str):
         """
         Repeats a command a specified number of times.
-        
+
         `--sleep <int>` is an optional flag specifying how much time to wait between command invocations.
         """
-        if match := SLEEP_FLAG.search(command): # too lazy to use argparse
+        if match := SLEEP_FLAG.search(command):  # too lazy to use argparse
             sleep = int(match.group(1))
-            command = command[:-len(match.group(0))]
+            command = command[: -len(match.group(0))]
         else:
             sleep = 1
 
