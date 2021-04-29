@@ -84,10 +84,8 @@ class Commands(MixinMeta):
             author_id=ctx.author.id,
             command=command,
         )
-        self.guild_tag_cache[ctx.guild.id][command.id] = tag
         self.command_cache[tag.command.id] = tag.command
-        await tag.update_config()
-        await ctx.send(f"Slash tag `{tag}` added with {len(command.options)} options.")
+        await ctx.send(await tag.initialize())
 
     async def get_options(
         self, ctx: commands.Context, options: List[SlashOption]
@@ -203,94 +201,40 @@ class Commands(MixinMeta):
         self, ctx: commands.Context, tag: TagConverter, *, tagscript: TagScriptConverter
     ):
         """Edit a slash tag's TagScript."""
-        old_tagscript = tag.tagscript
-        tag.tagscript = tagscript
-        await tag.update_config()
-        await ctx.send(
-            f"Slash tag `{tag}`'s tagscript has been edited from {len(old_tagscript)} to {len(tagscript)} characters."
-        )
+        await ctx.send(tag.edit_tagscript(tagscript))
 
     @slashtag_edit.command(name="name")
     async def slashtag_edit_name(self, ctx: commands.Context, tag: TagConverter, name: TagName):
         """Edit a slash tag's name."""
-        old_name = tag.name
-        await tag.command.edit(name=name)
-        await tag.update_config()
-        await ctx.send(f"Renamed `{old_name}` to `{name}`.")
+        await ctx.send(tag.edit_name(name))
 
     @slashtag_edit.command(name="description")
     async def slashtag_edit_description(
         self, ctx: commands.Context, tag: TagConverter, *, description: str
     ):
         """Edit a slash tag's description."""
-        await tag.command.edit(description=description)
-        await tag.update_config()
-        await ctx.send(f"Edited `{tag}`'s description.")
+        await ctx.send(await tag.edit_description(description))
 
     @slashtag_edit.command(name="arguments")
     async def slashtag_edit_arguments(self, ctx: commands.Context, tag: TagConverter):
         """Edit a slash tag's arguments."""
-        old_options = tag.command.options
-        options = await self.get_options(ctx, [])
-        await tag.command.edit(options=options)
-        await tag.update_config()
-        await ctx.send(
-            f"Slash tag `{tag}`'s arguments have been edited from {len(old_options)} to {len(options)} arguments."
-        )
+        await tag.edit_options(ctx)
 
     @commands.mod_or_permissions(manage_guild=True)
     @slashtag.command(name="remove", aliases=["delete", "-"])
     async def slashtag_remove(self, ctx: commands.Context, tag: TagConverter):
         """Delete a slash tag."""
-        await tag.delete()
-        await ctx.send(f"Slash tag `{tag}` deleted.")
-        del tag
+        await ctx.send(await tag.delete())
 
     @slashtag.command(name="info")
     async def slashtag_info(self, ctx: commands.Context, tag: TagConverter):
         """Get info about a slash tag that is stored on this server."""
-        desc = [
-            f"Author: {tag.author.mention if tag.author else tag.author_id}",
-            f"Uses: {tag.uses}",
-            f"Length: {len(tag)}",
-        ]
-        e = discord.Embed(
-            color=await ctx.embed_color(),
-            title=f"SlashTag `{tag}` Info",
-            description="\n".join(desc),
-        )
-        c = tag.command
-        command_info = [
-            f"ID: `{c.id}`",
-            f"Name: {c.name}",
-            f"Description: {c.description}",
-        ]
-        e.add_field(name="Command", value="\n".join(command_info), inline=False)
-
-        option_info = []
-        for o in c.options:
-            option_desc = [
-                f"**{o.name}**",
-                f"Description: {o.description}",
-                f"Type: {o.type.name.title()}",
-                f"Required: {o.required}",
-            ]
-            option_info.append("\n".join(option_desc))
-        if option_info:
-            e.add_field(name="Options", value="\n".join(option_info), inline=False)
-
-        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
-        await ctx.send(embed=e)
+        await tag.send_info(ctx)
 
     @slashtag.command(name="raw")
     async def slashtag_raw(self, ctx: commands.Context, tag: TagConverter):
         """Get a slash tag's raw content."""
-        tagscript = discord.utils.escape_markdown(tag.tagscript)
-        for page in pagify(tagscript):
-            await ctx.send(
-                page,
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
+        await tag.send_raw_tagscript(ctx)
 
     @staticmethod
     def format_tagscript(tag: SlashTag, limit: int = 60) -> str:
@@ -308,10 +252,8 @@ class Commands(MixinMeta):
         tags = self.guild_tag_cache[ctx.guild.id]
         if not tags:
             return await ctx.send("There are no slash tags on this server.")
-        description = []
+        description = [self.format_tagscript(tag) for tag in tags.values()]
 
-        for tag in tags.values():
-            description.append(self.format_tagscript(tag))
         description = "\n".join(description)
 
         e = discord.Embed(color=await ctx.embed_color())
