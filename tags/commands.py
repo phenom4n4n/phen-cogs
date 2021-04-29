@@ -316,10 +316,10 @@ class Commands(MixinMeta):
             e.add_field(name="Actions", value=actions, inline=False)
         if output.variables:
             variables = "\n".join(
-                f"`{name}`: {adapter}" for name, adapter in output.variables.items()
+                f"`{name}`: {type(adapter).__name__}" for name, adapter in output.variables.items()
             )
-
-            e.add_field(name="Variables", value=variables, inline=False)
+            for page in pagify(variables, page_length=1024):
+                e.add_field(name="Variables", value=page, inline=False)
 
         await ctx.send(embed=e)
 
