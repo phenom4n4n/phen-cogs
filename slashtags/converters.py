@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import re
+from typing import TYPE_CHECKING
 
 from discord.utils import escape_mentions
 from redbot.core import commands
@@ -79,3 +80,7 @@ class TagScriptConverter(commands.Converter):
         except MissingTagPermissions as e:
             raise commands.BadArgument(str(e))
         return argument
+
+if TYPE_CHECKING:
+    TagConverter = SlashTag
+    TagScriptConverter = str
