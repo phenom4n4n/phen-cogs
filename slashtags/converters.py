@@ -81,6 +81,7 @@ class TagScriptConverter(commands.Converter):
             raise commands.BadArgument(str(e))
         return argument
 
+
 if TYPE_CHECKING:
     TagConverter = SlashTag
     TagScriptConverter = str

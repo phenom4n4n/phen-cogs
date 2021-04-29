@@ -427,7 +427,7 @@ class SlashTag:
         old_name = self.name
         await self.edit(name=name)
         return f"Renamed `{old_name}` to `{name}`."
-    
+
     async def edit_description(self, description: str) -> str:
         await self.edit(description=description)
         return f"Edited {self.name_prefix.lower()} `{self}`'s description."
