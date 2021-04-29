@@ -92,7 +92,10 @@ class Processor(MixinMeta):
             try:
                 seed_variables[option.name] = adapter(option.value)
             except Exception as exc:
-                log.exception("Failed to initialize adapter %r for option %r:" % (adapter, option), exc_info=exc)
+                log.exception(
+                    "Failed to initialize adapter %r for option %r:" % (adapter, option),
+                    exc_info=exc,
+                )
                 seed_variables[option.name] = tse.StringAdapter(option.value)
 
         for original_option in interaction.command.options:
