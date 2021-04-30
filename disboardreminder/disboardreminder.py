@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-# Bump restart logic taken from https://github.com/Redjumpman/Jumper-Plugins/tree/V3/raffle
 import asyncio
 import logging
 import re
@@ -50,7 +49,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.3.0"
+    __version__ = "1.3.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -423,7 +422,7 @@ class DisboardReminder(commands.Cog):
             member_id = int(match.group(1))
             if not guild.chunked:
                 await guild.chunk()
-            user = guild.get_member(member_id) or await self.bot.get_or_fetch(member_id)
+            user = guild.get_member(member_id) or await self.bot.get_or_fetch_user(member_id)
             member_adapter = tse.MemberAdapter(user)
         else:
             member_adapter = tse.StringAdapter("Unknown User")
