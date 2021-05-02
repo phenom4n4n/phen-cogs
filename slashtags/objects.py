@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import List, Optional, Union
 import logging
+from typing import List, Optional, Union
 
 import discord
 from redbot.core import Config, commands
@@ -43,6 +43,7 @@ __all__ = (
     "FakeMessage",
     "SlashContext",
 )
+
 
 class SlashOptionChoice:
     def __init__(self, name: str, value: Union[str, int]):
@@ -353,6 +354,7 @@ class SlashTag:
                 del self.cog.global_tag_cache[self.id]
         except KeyError:
             pass
+
 
 def maybe_set_attr(cls, name, attr):
     if not hasattr(cls, name):
