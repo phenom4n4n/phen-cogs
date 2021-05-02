@@ -149,7 +149,7 @@ class Processor(MixinMeta):
         if content or embed is not None:
             await self.send_tag_response(destination, content, embed=embed, hidden=hide)
         else:
-            await interaction.defer()
+            await interaction.defer(hidden=True)
 
         if command_messages:
             silent = actions.get("silent", False)
