@@ -47,6 +47,7 @@ __all__ = (
     "InteractionCommand",
 )
 
+
 class SlashOptionType(IntEnum):
     SUB_COMMAND = 1
     SUB_COMMAND_GROUP = 2
