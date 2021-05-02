@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 from typing import List, Optional, Union
+import logging
 
 import discord
 from redbot.core import Config, commands
@@ -32,6 +33,16 @@ from TagScriptEngine import IntAdapter, Interpreter, StringAdapter
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
 
+log = logging.getLogger("red.phenom4n4n.slashtags.objects")
+
+__all__ = (
+    "SlashOptionChoice",
+    "SlashOption",
+    "SlashCommand",
+    "SlashTag",
+    "FakeMessage",
+    "SlashContext",
+)
 
 class SlashOptionChoice:
     def __init__(self, name: str, value: Union[str, int]):
@@ -343,17 +354,31 @@ class SlashTag:
         except KeyError:
             pass
 
-
-def implement_partial_methods(cls):
-    msg = discord.Message
-    for name in discord.Message.__slots__:
-        func = getattr(msg, name)
-        setattr(cls, name, func)
-    return cls
+def maybe_set_attr(cls, name, attr):
+    if not hasattr(cls, name):
+        setattr(cls, name, attr)
 
 
-@implement_partial_methods
+def implement_methods(parent):
+    def wrapper(cls):
+        log.debug("implementing %r methods on %r" % (parent, cls))
+
+        for name in getattr(parent, "__slots__", []):
+            func = getattr(parent, name)
+            maybe_set_attr(cls, name, func)
+
+        for name, attr in getattr(parent, "__dict__", {}).items():
+            maybe_set_attr(cls, name, attr)
+
+        return cls
+
+    return wrapper
+
+
+@implement_methods(discord.Message)
 class FakeMessage(discord.Message):
+    log.debug("FakeMessage defined")
+
     REIMPLEMENTS = {
         "reactions": [],
         "mentions": [],
@@ -361,6 +386,7 @@ class FakeMessage(discord.Message):
         "stickers": [],
         "embeds": [],
         "flags": discord.MessageFlags._from_value(0),
+        "_edited_timestamp": None,
     }
 
     def __init__(
@@ -375,18 +401,13 @@ class FakeMessage(discord.Message):
         self._state = state
         self.id = id
         self.channel = channel
-        self.guild = channel.guild
+        self._cs_guild = channel.guild
 
         self.content = content
         self.author = author
 
-        for name, value in self.REIMPLEMENTS.items():
-            if not hasattr(self, name):
-                setattr(self, name, value)
-
-        for item in self.__slots__:
-            if not hasattr(self, item):
-                setattr(self, item, None)
+        for name, attr in self.REIMPLEMENTS.items():
+            maybe_set_attr(self, name, attr)
 
     @classmethod
     def from_interaction(cls, interaction, content: str):
