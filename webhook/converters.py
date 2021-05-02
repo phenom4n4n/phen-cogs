@@ -12,4 +12,4 @@ class WebhookLinkConverter(Converter):
         try:
             return cog.get_webhook_from_link(argument)
         except WebhookNotMatched as e:
-            raise BadArgument(e) from e
+            raise BadArgument(str(e)) from e
