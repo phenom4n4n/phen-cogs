@@ -176,11 +176,9 @@ class Tags(
         if isinstance(exc, commands.CommandInvokeError):
             error = exc.original
             if isinstance(error, TagFeedbackError):
-                try:
-                    await ctx.reply(error)
-                except discord.HTTPException:
-                    await ctx.send(error)
+                ref = ctx.message.to_reference(fail_if_not_exists=False)
+                await ctx.send(error, reference=ref)
             else:
-                await self.bot.on_command_error(ctx, exc, unhandled_by_cog=True)
+                self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)
         else:
-            await self.bot.on_command_error(ctx, exc, unhandled_by_cog=True)
+            self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)

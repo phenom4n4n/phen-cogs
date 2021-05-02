@@ -62,7 +62,9 @@ class Processor(MixinMeta):
         super().cog_unload()
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error: Exception):
+    async def on_command_error(
+        self, ctx: commands.Context, error: commands.CommandError, unhandled_by_cog=False
+    ):
         if not isinstance(error, commands.CommandNotFound):
             return
         message: discord.Message = ctx.message

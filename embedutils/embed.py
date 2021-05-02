@@ -763,11 +763,9 @@ class EmbedUtils(commands.Cog):
             if isinstance(error, EmbedConversionError):
                 await StringToEmbed.embed_convert_error(error.ctx, error.error_type, error.error)
             elif isinstance(error, EmbedUtilsException):
-                try:
-                    await ctx.reply(error)
-                except discord.HTTPException:
-                    await ctx.send(error)
+                ref = ctx.message.to_reference(fail_if_not_exists=False)
+                await ctx.send(error, reference=ref)
             else:
-                await self.bot.on_command_error(ctx, exc, unhandled_by_cog=True)
+                self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)
         else:
-            await self.bot.on_command_error(ctx, exc, unhandled_by_cog=True)
+            self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)
