@@ -116,7 +116,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     async def cog_before_invoke(self, ctx: commands.Context) -> bool:
         if not self.bot.get_cog("SlashInjector"):
             raise commands.UserFeedbackCheckFailure(
-                "This cog requires `slashinjector` by Kowlin/Sentinal to be loaded to parse slash command responses (<https://github.com/Kowlin/Sentinel>)."
+                "This cog requires `slashinjector` by Kowlin/Sentinel to be loaded to parse slash command responses (<https://github.com/Kowlin/Sentinel>)."
             )
         return True
 
