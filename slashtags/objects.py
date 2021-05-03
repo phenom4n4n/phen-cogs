@@ -398,12 +398,13 @@ class FakeMessage(discord.Message):
         channel: discord.TextChannel,
         author: discord.Member,
         id: int,
+        interaction: InteractionResponse = None,
         state,
     ):
         self._state = state
         self.id = id
         self.channel = channel
-        self._cs_guild = channel.guild
+        self.interaction = interaction
 
         self.content = content
         self.author = author
@@ -412,14 +413,29 @@ class FakeMessage(discord.Message):
             maybe_set_attr(self, name, attr)
 
     @classmethod
-    def from_interaction(cls, interaction, content: str):
+    def from_interaction(cls, interaction: InteractionResponse, content: str):
         return cls(
             content,
             state=interaction._state,
             id=interaction.id,
             channel=interaction.channel,
             author=interaction.author,
+            interaction=interaction,
         )
+
+    def to_reference(self, *args, **kwargs):
+        # return None to prevent reply since interaction responses already reply (visually)
+        # additionally, replying to an interaction response raises 
+        # message_reference: Unknown message
+        return
+
+    def reply(self, content: str = None, **kwargs):
+        try:
+            del kwargs["reference"] # this shouldn't be passed when replying but it might be
+        except KeyError:
+            pass
+        destination = self.interaction if self.interaction else self.channel
+        return destination.send(content, **kwargs)
 
 
 class SlashContext(commands.Context):

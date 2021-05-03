@@ -257,6 +257,8 @@ class InteractionResponse:
         allowed_mentions: discord.AllowedMentions = None,
         hidden: bool = False,
         delete_after: int = None,
+        reference = None, # this parameter and the one below are unused
+        mention_author = None, # they exist to prevent replies from erroring
     ):
         flags = 64 if hidden else None
         initial = not self.sent
