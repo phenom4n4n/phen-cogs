@@ -110,7 +110,7 @@ class Prefix(commands.Cog):
     async def gen_prefixes(self, ctx: commands.Context):
         prefixes = []
         for p in await self.bot.get_valid_prefixes(ctx.guild):
-            if bot._cli_flags.mentionable and self.mention_re.match(p):
+            if self.bot._cli_flags.mentionable and self.mention_re.match(p):
                 p.replace("!", "")
                 if p in prefixes:
                     continue
