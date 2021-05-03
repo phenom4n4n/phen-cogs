@@ -425,13 +425,13 @@ class FakeMessage(discord.Message):
 
     def to_reference(self, *args, **kwargs):
         # return None to prevent reply since interaction responses already reply (visually)
-        # additionally, replying to an interaction response raises 
+        # additionally, replying to an interaction response raises
         # message_reference: Unknown message
         return
 
     def reply(self, content: str = None, **kwargs):
         try:
-            del kwargs["reference"] # this shouldn't be passed when replying but it might be
+            del kwargs["reference"]  # this shouldn't be passed when replying but it might be
         except KeyError:
             pass
         destination = self.interaction if self.interaction else self.channel
