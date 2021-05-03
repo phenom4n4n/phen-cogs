@@ -38,6 +38,12 @@ class Prefix(commands.Cog):
     async def red_delete_data_for_user(self, **kwargs):
         return
 
+    @property
+    def mention_re(self):
+        if not self.MENTION_RE:
+            self.MENTION_RE = re.compile(rf"<@!?{self.bot.user.id}>")
+        return self.MENTION_RE
+
     @checks.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     @commands.group()
@@ -62,13 +68,12 @@ class Prefix(commands.Cog):
     async def add_prefix(self, ctx, *, prefix: str):
         """Add a prefix for this server."""
 
-        if not self.MENTION_RE:
-            self.MENTION_RE = re.compile(rf"<@!?{self.bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix in prefixes:
             return await ctx.send("That is already a prefix.")
+
         if self.bot._cli_flags.mentionable:
-            prefixes = [p for p in prefixes if not re.match(self.MENTION_RE, p)]
+            prefixes = [p for p in prefixes if not self.mention_re.match(p)]
         prefixes.append(prefix)
         await ctx.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.gen_prefixes(ctx)
@@ -79,15 +84,14 @@ class Prefix(commands.Cog):
     async def remove_prefix(self, ctx, *, prefix: str):
         """Remove a prefix for this server."""
 
-        if not self.MENTION_RE:
-            self.MENTION_RE = re.compile(rf"<@!?{self.bot.user.id}>")
         prefixes = await self.bot.get_valid_prefixes(ctx.guild)
         if prefix not in prefixes:
             return await ctx.send("That is not a valid prefix.")
         if len(prefixes) == 1:
             return await ctx.send("If you removed that prefix, you would have none left.")
+    
         if self.bot._cli_flags.mentionable:
-            prefixes = [p for p in prefixes if not re.match(self.MENTION_RE, p)]
+            prefixes = [p for p in prefixes if not self.mention_re.match(p)]
         index = prefixes.index(prefix)
         prefixes.pop(index)
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
@@ -104,7 +108,14 @@ class Prefix(commands.Cog):
         await ctx.send(f"Reset this server's prefixes.", embed=embed)
 
     async def gen_prefixes(self, ctx: commands.Context):
-        prefixes = await self.bot.get_valid_prefixes(ctx.guild)
+        prefixes = []
+        for p in await self.bot.get_valid_prefixes(ctx.guild):
+            if bot._cli_flags.mentionable and self.mention_re.match(p)
+                p.replace("!", "")
+                if p in prefixes:
+                    continue
+            prefixes.append(p)
+
         prefix_list = "\n".join(f"{index}. {prefix}" for index, prefix in enumerate(prefixes, 1))
 
         color = await ctx.embed_color()
