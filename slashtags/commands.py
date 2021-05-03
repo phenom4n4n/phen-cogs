@@ -10,15 +10,12 @@ from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import MixinMeta
 from .converters import SLASH_NAME, TagConverter, TagName, TagScriptConverter
-from .errors import (
-    BlacklistCheckFailure,
-    MissingTagPermissions,
-    RequireCheckFailure,
-    WhitelistCheckFailure,
-)
+from .errors import (BlacklistCheckFailure, MissingTagPermissions,
+                     RequireCheckFailure, WhitelistCheckFailure)
 from .http import SlashHTTP
 from .models import SlashOptionType
-from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, SlashTag
+from .objects import (FakeMessage, SlashCommand, SlashContext, SlashOption,
+                      SlashTag)
 from .utils import dev_check
 
 

@@ -89,7 +89,7 @@ class Prefix(commands.Cog):
             return await ctx.send("That is not a valid prefix.")
         if len(prefixes) == 1:
             return await ctx.send("If you removed that prefix, you would have none left.")
-    
+
         if self.bot._cli_flags.mentionable:
             prefixes = [p for p in prefixes if not self.mention_re.match(p)]
         index = prefixes.index(prefix)
