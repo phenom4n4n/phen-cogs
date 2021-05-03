@@ -448,19 +448,21 @@ class Baron(commands.Cog):
 
     @baron_view.command(name="ownedby")
     async def baron_view_ownedby(
-        self, 
-        ctx: commands.Context, 
-        user: discord.User, 
-        page_length: Optional[int] = 500
+        self, ctx: commands.Context, user: discord.User, page_length: Optional[int] = 500
     ):
         """View servers owned by a user."""
         bot_guilds = self.bot.guilds
         guilds = [g async for g in AsyncIter(bot_guilds, steps=100) if g.owner_id == user.id]
         if not guilds:
             return await ctx.send(f"**{user}** does not own any servers I am in.")
-        
-        owned_ratio = len(guilds)/len(bot_guilds)
-        await self.view_guilds(ctx, guilds, f"Servers owned by {user}", footer=f"{user} owns {round(owned_ratio * 100, 8)}% of the bot's servers")
+
+        owned_ratio = len(guilds) / len(bot_guilds)
+        await self.view_guilds(
+            ctx,
+            guilds,
+            f"Servers owned by {user}",
+            footer=f"{user} owns {round(owned_ratio * 100, 8)}% of the bot's servers",
+        )
 
     @baron.group(name="leave")
     async def baron_leave(self, ctx: commands.Context):
