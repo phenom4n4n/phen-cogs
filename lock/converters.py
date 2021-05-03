@@ -25,7 +25,8 @@ SOFTWARE.
 from typing import Optional, Union
 
 import discord
-from discord.ext.commands.converter import Converter, RoleConverter, TextChannelConverter
+from discord.ext.commands.converter import (Converter, RoleConverter,
+                                            TextChannelConverter)
 from rapidfuzz import process
 from redbot.core import commands
 from redbot.core.commands import BadArgument

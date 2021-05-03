@@ -27,14 +27,8 @@ from typing import List, Tuple, Union
 import discord
 from rapidfuzz import process
 from redbot.core import commands
-from redbot.core.commands import (
-    BadArgument,
-    Converter,
-    EmojiConverter,
-    IDConverter,
-    MemberConverter,
-    RoleConverter,
-)
+from redbot.core.commands import (BadArgument, Converter, EmojiConverter,
+                                  IDConverter, MemberConverter, RoleConverter)
 from redbot.core.utils.chat_formatting import inline
 from unidecode import unidecode
 
