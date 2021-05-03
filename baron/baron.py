@@ -58,7 +58,7 @@ class Baron(commands.Cog):
     Tools for managing guild joins and leaves.
     """
 
-    __version__ = "1.2.1"
+    __version__ = "1.2.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -324,10 +324,11 @@ class Baron(commands.Cog):
         pages = list(pagify("\n\n".join(desc), ["\n\n"], page_length=page_length))
         embeds = []
         base_embed = discord.Embed(color=color, title=title)
+        bot_guilds = self.bot.guilds
         for index, page in enumerate(pages, 1):
             e = base_embed.copy()
             e.description = page
-            footer_text = f"{index}/{len(pages)} | {len(guilds)}"
+            footer_text = f"{index}/{len(pages)} | {len(guilds)}/{len(bot_guilds)} servers"
             if footer:
                 footer_text += f" | {footer}"
             e.set_footer(text=footer_text)
@@ -444,6 +445,22 @@ class Baron(commands.Cog):
         await self.view_guilds(
             ctx, guilds, "Unchunked Servers", page_length, insert_function=insert_function
         )
+
+    @baron_view.command(name="ownedby")
+    async def baron_view_ownedby(
+        self, 
+        ctx: commands.Context, 
+        user: discord.User, 
+        page_length: Optional[int] = 500
+    ):
+        """View servers owned by a user."""
+        bot_guilds = self.bot.guilds
+        guilds = [g async for g in AsyncIter(bot_guilds, steps=100) if g.owner_id == user.id]
+        if not guilds:
+            return await ctx.send(f"**{user}** does not own any servers I am in.")
+        
+        owned_ratio = len(guilds)/len(bot_guilds)
+        await self.view_guilds(ctx, guilds, f"Servers owned by {user}", footer=f"{user} owns {round(owned_ratio * 100, 8)}% of the bot's servers")
 
     @baron.group(name="leave")
     async def baron_leave(self, ctx: commands.Context):
