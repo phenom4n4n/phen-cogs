@@ -39,10 +39,15 @@ from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 from .abc import CompositeMetaClass
 from .commands import Commands
 from .http import SlashHTTP
-from .models import (Button, Component, InteractionButton, InteractionCommand,
-                     InteractionResponse, SlashOptionType)
-from .objects import (FakeMessage, SlashCommand, SlashContext, SlashOption,
-                      SlashTag)
+from .models import (
+    Button,
+    Component,
+    InteractionButton,
+    InteractionCommand,
+    InteractionResponse,
+    SlashOptionType,
+)
+from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, SlashTag
 from .processor import Processor
 from .utils import dev_check
 
