@@ -30,13 +30,11 @@ import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
-from redbot.core.utils.menus import (DEFAULT_CONTROLS, close_menu, menu,
-                                     start_adding_reactions)
+from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import MixinMeta
-from .converters import (EmojiRole, ObjectConverter, RealEmojiConverter,
-                         StrictRole)
+from .converters import EmojiRole, ObjectConverter, RealEmojiConverter, StrictRole
 from .utils import delete_quietly, my_role_heirarchy
 
 log = logging.getLogger("red.phenom4n4n.roleutils.reactroles")

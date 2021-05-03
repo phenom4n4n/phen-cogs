@@ -36,13 +36,17 @@ from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
-from redbot.core.utils.menus import (DEFAULT_CONTROLS, menu,
-                                     start_adding_reactions)
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import MixinMeta
-from .converters import (GlobalTagConverter, GuildTagConverter, TagConverter,
-                         TagName, TagScriptConverter)
+from .converters import (
+    GlobalTagConverter,
+    GuildTagConverter,
+    TagConverter,
+    TagName,
+    TagScriptConverter,
+)
 from .errors import TagFeedbackError
 from .objects import Tag
 

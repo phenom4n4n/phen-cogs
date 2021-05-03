@@ -27,8 +27,7 @@ from typing import List, Optional
 import discord
 from redbot.core import Config, commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import (humanize_list, humanize_number,
-                                               inline, pagify)
+from redbot.core.utils.chat_formatting import humanize_list, humanize_number, inline, pagify
 from TagScriptEngine import IntAdapter, Interpreter
 
 from .errors import *
