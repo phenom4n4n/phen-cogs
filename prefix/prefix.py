@@ -111,7 +111,7 @@ class Prefix(commands.Cog):
         prefixes = []
         for p in await self.bot.get_valid_prefixes(ctx.guild):
             if self.bot._cli_flags.mentionable and self.mention_re.match(p):
-                p.replace("!", "")
+                p = p.replace("!", "")
                 if p in prefixes:
                     continue
             prefixes.append(p)
