@@ -5,8 +5,13 @@ from typing import Dict, List, Optional, Union
 import discord
 import yaml
 from redbot.core import commands
-from redbot.core.commands import (BadArgument, CheckFailure, Converter,
-                                  MessageConverter, TextChannelConverter)
+from redbot.core.commands import (
+    BadArgument,
+    CheckFailure,
+    Converter,
+    MessageConverter,
+    TextChannelConverter,
+)
 from redbot.core.utils import menus
 
 
