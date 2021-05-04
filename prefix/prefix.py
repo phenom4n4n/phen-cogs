@@ -21,8 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import List
 import re
+from typing import List
 
 import discord
 from redbot.core import Config, commands
@@ -54,7 +54,7 @@ class Prefix(commands.Cog):
     async def prefix(self, ctx: commands.Context):
         """
         Manage server prefixes.
-        
+
         Running this command without subcommands will show this server's prefixes.
 
         **Example:**
@@ -68,7 +68,7 @@ class Prefix(commands.Cog):
     async def prefix_set(self, ctx: commands.Context, *prefixes: str):
         """
         Set the prefixes for this server.
-        
+
         Multiple prefixes can be set at once.
         To add a prefix with spaces, use quotes.
         This will overwrite any current prefixes.
@@ -87,7 +87,7 @@ class Prefix(commands.Cog):
     async def prefix_add(self, ctx: commands.Context, prefix: str):
         """
         Add a prefix to this server's prefix list.
-        
+
         Use quotes to add a prefix with spaces.
 
         **Examples:**
@@ -97,7 +97,7 @@ class Prefix(commands.Cog):
         prefixes = await self.get_prefixes(ctx.guild)
         if prefix in prefixes:
             return await ctx.send("That is already a prefix.")
-    
+
         prefixes.append(prefix)
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.prefix_embed(ctx)
@@ -108,7 +108,7 @@ class Prefix(commands.Cog):
     async def prefix_remove(self, ctx: commands.Context, prefix: str):
         """
         Remove a prefix from this server's prefix list.
-        
+
         Use quotes to remove a prefix with spaces.
 
         **Examples:**
@@ -135,7 +135,7 @@ class Prefix(commands.Cog):
         This cannot be undone.
 
         **Example:**
-        `[p]prefix clear`        
+        `[p]prefix clear`
         """
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=[])
         embed = await self.prefix_embed(ctx)
