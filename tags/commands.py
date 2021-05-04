@@ -23,11 +23,11 @@ SOFTWARE.
 """
 
 import asyncio
+import re
 import time
+import types
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
-import re
-import types
 
 import bs4
 import discord
@@ -55,6 +55,7 @@ TAG_RE = re.compile(r"(?i)(\[p\])?\btag'?s?\b")
 
 DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
 
+
 def _sub(match: re.Match) -> str:
     if match.group(1):
         return "[p]tag global"
@@ -66,6 +67,7 @@ def _sub(match: re.Match) -> str:
         repl = repl.title()
     return repl
 
+
 def copy_doc(original: Union[commands.Command, types.FunctionType]):
     def decorator(overriden: Union[commands.Command, types.FunctionType]):
         doc = original.help if isinstance(original, commands.Command) else original.__doc__
@@ -76,8 +78,10 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
         else:
             overriden.__doc__ = doc
         return overriden
+
     return decorator
-    
+
+
 class Commands(MixinMeta):
     @staticmethod
     def generate_tag_list(tags: Set[Tag]) -> Dict[str, List[str]]:
@@ -127,9 +131,9 @@ class Commands(MixinMeta):
     async def tags(self, ctx: commands.Context):
         """
         View all tags and aliases.
-        
+
         This command will show global tags if run in DMs.
-        
+
         **Example:**
         `[p]tags`
         """
@@ -236,13 +240,13 @@ class Commands(MixinMeta):
     @tag.command(name="alias")
     async def tag_alias(self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName):
         """
-        Add an alias for a tag.
+                Add an alias for a tag.
 
-        Adding an alias to the tag will make the tag invokable using the alias or the tag name.
-        In the example below, running `[p]donation` will invoke the `donate` tag.
-​
-        **Example:**
-        `[p]tag alias donate donation`
+                Adding an alias to the tag will make the tag invokable using the alias or the tag name.
+                In the example below, running `[p]donation` will invoke the `donate` tag.
+        ​
+                **Example:**
+                `[p]tag alias donate donation`
         """
         await ctx.send(await tag.add_alias(alias))
 
@@ -269,7 +273,7 @@ class Commands(MixinMeta):
     ):
         """
         Edit a tag's TagScript.
-        
+
         The passed tagscript will replace the tag's current tagscript.
         View the [TagScript docs](https://phen-cogs.readthedocs.io/en/latest/blocks.html) to find information on how to write valid tagscript.
 
@@ -300,7 +304,7 @@ class Commands(MixinMeta):
         If a tag on this server has the same name as a global tag, it will show the server tag.
 
         **Example:**
-        `[p]tag info notsupport`        
+        `[p]tag info notsupport`
         """
         await tag.send_info(ctx)
 
@@ -308,7 +312,7 @@ class Commands(MixinMeta):
     async def tag_raw(self, ctx: commands.Context, tag: GuildTagConverter):
         """
         Get a tag's raw content.
-        
+
         The sent TagScript will be escaped from Discord style formatting characters.
 
         **Example:**
@@ -320,7 +324,7 @@ class Commands(MixinMeta):
     async def tag_list(self, ctx: commands.Context):
         """
         View all stored tags on this server.
-        
+
         To view info on a specific tag, use `[p]tag info`.
 
         **Example:**
@@ -396,7 +400,7 @@ class Commands(MixinMeta):
     async def tag_run(self, ctx: commands.Context, *, tagscript: str):
         """
         Execute TagScript without storing.
-        
+
         The variables and actions fields display debugging information.
 
         **Example:**
@@ -433,7 +437,7 @@ class Commands(MixinMeta):
     async def tag_process(self, ctx: commands.Context, *, tagscript: str):
         """
         Process a temporary Tag without storing.
-        
+
         This differs from `[p]tag run` as it creates a fake tag and properly handles actions for all blocks.
         The `{args}` block is not supported.
 
@@ -531,7 +535,7 @@ class Commands(MixinMeta):
     async def migratealias(self, ctx: commands.Context):
         """
         Migrate alias global and guild configs to tags.
-        
+
         This converts all aliases created with the Alias cog into tags with command blocks.
         This action cannot be undone.
 
