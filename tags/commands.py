@@ -24,8 +24,10 @@ SOFTWARE.
 
 import asyncio
 import time
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
+import re
+import types
 
 import bs4
 import discord
@@ -49,9 +51,33 @@ from .objects import Tag
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
 
+TAG_RE = re.compile(r"(?i)(\[p\])?\btag'?s?\b")
+
 DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
 
+def _sub(match: re.Match) -> str:
+    if match.group(1):
+        return "[p]tag global"
 
+    repl = "global "
+    name = match.group(0)
+    repl += name
+    if name.istitle():
+        repl = repl.title()
+    return repl
+
+def copy_doc(original: Union[commands.Command, types.FunctionType]):
+    def decorator(overriden: Union[commands.Command, types.FunctionType]):
+        doc = original.help if isinstance(original, commands.Command) else original.__doc__
+        doc = TAG_RE.sub(_sub, doc)
+
+        if isinstance(overriden, commands.Command):
+            overriden.help = doc
+        else:
+            overriden.__doc__ = doc
+        return overriden
+    return decorator
+    
 class Commands(MixinMeta):
     @staticmethod
     def generate_tag_list(tags: Set[Tag]) -> Dict[str, List[str]]:
@@ -81,6 +107,10 @@ class Commands(MixinMeta):
         Manually invoke a tag with its name and arguments.
 
         Restricting this command with permissions in servers will restrict all members from invoking tags.
+
+        **Examples:**
+        `[p]invoketag searchitem trophy`
+        `[p]invoketag donate`
         """
         response = response or True
         try:
@@ -95,7 +125,14 @@ class Commands(MixinMeta):
     @commands.bot_has_permissions(embed_links=True)
     @commands.command()
     async def tags(self, ctx: commands.Context):
-        """View all tags and aliases in a server, or all global tags if this command is run in DMs."""
+        """
+        View all tags and aliases.
+        
+        This command will show global tags if run in DMs.
+        
+        **Example:**
+        `[p]tags`
+        """
         guild = ctx.guild
         path = self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
         if not path:
@@ -124,7 +161,8 @@ class Commands(MixinMeta):
         """
         Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/) has documentation on how to use TagScript blocks.
+        These commands use TagScriptEngine.
+        Read the [TagScript documentation](https://phen-cogs.readthedocs.io/en/latest/) to learn how to use TagScript blocks.
         """
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -140,6 +178,10 @@ class Commands(MixinMeta):
         Add a tag with TagScript.
 
         [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
+
+        **Example:**
+        `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
+        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.`
         """
         await self.create_tag(ctx, tag_name, tagscript)
 
@@ -193,7 +235,15 @@ class Commands(MixinMeta):
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="alias")
     async def tag_alias(self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName):
-        """Add an alias for a tag."""
+        """
+        Add an alias for a tag.
+
+        Adding an alias to the tag will make the tag invokable using the alias or the tag name.
+        In the example below, running `[p]donation` will invoke the `donate` tag.
+​
+        **Example:**
+        `[p]tag alias donate donation`
+        """
         await ctx.send(await tag.add_alias(alias))
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -201,7 +251,15 @@ class Commands(MixinMeta):
     async def tag_unalias(
         self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName(allow_named_tags=True)
     ):
-        """Remove an alias for a tag."""
+        """
+        Remove an alias for a tag.
+
+        ​The tag will still be able to be used under its original name.
+        You can delete the original tag with the `[p]tag remove` command.
+
+        **Example:**
+        `tag unalias donate donation`
+        """
         await ctx.send(await tag.remove_alias(alias))
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -209,28 +267,65 @@ class Commands(MixinMeta):
     async def tag_edit(
         self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
     ):
-        """Edit a tag with TagScript."""
+        """
+        Edit a tag's TagScript.
+        
+        The passed tagscript will replace the tag's current tagscript.
+        View the [TagScript docs](https://phen-cogs.readthedocs.io/en/latest/blocks.html) to find information on how to write valid tagscript.
+
+        **Example:**
+        `[p]tag edit rickroll Never gonna give you up!`
+        """
         await ctx.send(await tag.edit_tagscript(tagscript))
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command(name="remove", aliases=["delete", "-"])
     async def tag_remove(self, ctx: commands.Context, tag: GuildTagConverter):
-        """Delete a tag."""
+        """
+        Permanently delete a tag.
+
+        If you want to remove a tag's alias, use `[p]tag unalias`.
+
+        **Example:**
+        `[p]tag remove RickRoll`
+        """
         await ctx.send(await tag.delete())
 
     @tag.command(name="info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
-        """Get info about a global or server tag."""
+        """
+        Show information about a tag.
+
+        You can view meta information for a tag on this server or a global tag.
+        If a tag on this server has the same name as a global tag, it will show the server tag.
+
+        **Example:**
+        `[p]tag info notsupport`        
+        """
         await tag.send_info(ctx)
 
     @tag.command(name="raw")
     async def tag_raw(self, ctx: commands.Context, tag: GuildTagConverter):
-        """Get a tag's raw content."""
+        """
+        Get a tag's raw content.
+        
+        The sent TagScript will be escaped from Discord style formatting characters.
+
+        **Example:**
+        `[p]tag raw noping`
+        """
         await tag.send_raw_tagscript(ctx)
 
     @tag.command(name="list")
     async def tag_list(self, ctx: commands.Context):
-        """View stored tags."""
+        """
+        View all stored tags on this server.
+        
+        To view info on a specific tag, use `[p]tag info`.
+
+        **Example:**
+        `[p]tag list`
+        """
         tags = self.get_unique_tags(ctx.guild)
         if not tags:
             return await ctx.send("There are no stored tags on this server.")
@@ -268,9 +363,12 @@ class Commands(MixinMeta):
     @tag.command(name="docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
         """
-        Search the Tag documentation for a block.
+        Search the TagScript documentation for a block.
 
         https://phen-cogs.readthedocs.io/en/latest/
+
+        **Example:**
+        `[p]tag docs embed`
         """
         await ctx.trigger_typing()
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
@@ -296,7 +394,14 @@ class Commands(MixinMeta):
     @commands.is_owner()
     @tag.command(name="run", aliases=["execute"])
     async def tag_run(self, ctx: commands.Context, *, tagscript: str):
-        """Execute TagScript without storing."""
+        """
+        Execute TagScript without storing.
+        
+        The variables and actions fields display debugging information.
+
+        **Example:**
+        `[p]tag run {#:yes,no}`
+        """
         start = time.monotonic()
         seed = self.get_seed_from_context(ctx)
         output = self.engine.process(tagscript, seed_variables=seed)
@@ -326,7 +431,15 @@ class Commands(MixinMeta):
     @commands.is_owner()
     @tag.command(name="process")
     async def tag_process(self, ctx: commands.Context, *, tagscript: str):
-        """Process TagScript without storing."""
+        """
+        Process a temporary Tag without storing.
+        
+        This differs from `[p]tag run` as it creates a fake tag and properly handles actions for all blocks.
+        The `{args}` block is not supported.
+
+        **Example:**
+        `[p]tag run {require(Admin):You must be admin to use this tag.} Congrats on being an admin!`
+        """
         tag = Tag(
             self,
             "processed_tag",
@@ -339,10 +452,12 @@ class Commands(MixinMeta):
 
     @commands.is_owner()
     @tag.group(name="global")
+    @copy_doc(tag)
     async def tag_global(self, ctx: commands.Context):
-        """Manage global tags."""
+        pass
 
     @tag_global.command(name="add", aliases=["create", "+"])
+    @copy_doc(tag_add)
     async def tag_global_add(
         self,
         ctx: commands.Context,
@@ -350,28 +465,24 @@ class Commands(MixinMeta):
         *,
         tagscript: TagScriptConverter,
     ):
-        """
-        Add a global tag with TagScript.
-
-        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
-        """
         await self.create_tag(ctx, tag_name, tagscript, global_tag=True)
 
     @tag_global.command(name="alias")
+    @copy_doc(tag_alias)
     async def tag_global_alias(
         self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName
     ):
-        """Add an alias for a global tag."""
         await ctx.send(await tag.add_alias(alias))
 
     @tag_global.command(name="unalias")
+    @copy_doc(tag_unalias)
     async def tag_global_unalias(
         self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName(allow_named_tags=True)
     ):
-        """Remove an alias for a global tag."""
         await ctx.send(await tag.remove_alias(alias))
 
     @tag_global.command(name="edit", aliases=["e"])
+    @copy_doc(tag_edit)
     async def tag_global_edit(
         self,
         ctx: commands.Context,
@@ -379,22 +490,21 @@ class Commands(MixinMeta):
         *,
         tagscript: TagScriptConverter,
     ):
-        """Edit a global tag with TagScript."""
         await ctx.send(await tag.edit_tagscript(tagscript))
 
     @tag_global.command(name="remove", aliases=["delete", "-"])
+    @copy_doc(tag_remove)
     async def tag_global_remove(self, ctx: commands.Context, tag: GlobalTagConverter):
-        """Delete a global tag."""
         await ctx.send(await tag.delete())
 
     @tag_global.command(name="raw")
+    @copy_doc(tag_raw)
     async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
-        """Get a tag's raw content."""
         await tag.send_raw_tagscript(ctx)
 
     @tag_global.command(name="list")
+    @copy_doc(tag_list)
     async def tag_global_list(self, ctx: commands.Context):
-        """View stored tags."""
         tags = self.get_unique_tags()
         if not tags:
             return await ctx.send("There are no global tags.")
@@ -419,7 +529,15 @@ class Commands(MixinMeta):
     @commands.is_owner()
     @commands.command()
     async def migratealias(self, ctx: commands.Context):
-        """Migrate alias global and guild configs to tags."""
+        """
+        Migrate alias global and guild configs to tags.
+        
+        This converts all aliases created with the Alias cog into tags with command blocks.
+        This action cannot be undone.
+
+        **Example:**
+        `[p]migratealias`
+        """
         alias_cog = self.bot.get_cog("Alias")
         if not alias_cog:
             return await ctx.send("Alias cog must be loaded to migrate data.")

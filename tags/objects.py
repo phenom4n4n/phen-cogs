@@ -54,7 +54,7 @@ class Tag:
         self.config: Config = cog.config
         self.bot: Red = cog.bot
         self.name: str = name
-        self.aliases = aliases
+        self._aliases = aliases
         self.tagscript: str = tagscript
 
         self.guild_id = guild_id
@@ -73,7 +73,7 @@ class Tag:
         return hash(self.name)
 
     def __repr__(self) -> str:
-        return f"<Tag name={self.name!r} length={len(self)} aliases={self.aliases!r}>"
+        return f"<Tag name={self.name!r} guild_id={self.guild_id} length={len(self)} aliases={self.aliases!r}>"
 
     @property
     def cache_path(self) -> dict:
@@ -87,17 +87,19 @@ class Tag:
 
     @property
     def guild(self) -> Optional[discord.Guild]:
-        if self.guild_id:
-            if guild := self.bot.get_guild(self.guild_id):
-                return guild
+        return self.bot.get_guild(self.guild_id)
 
     @property
     def author(self) -> Optional[discord.User]:
         return self.bot.get_user(self.author_id)
 
     @property
-    def name_prefix(self):
+    def name_prefix(self) -> str:
         return "Tag" if self.guild_id else "Global tag"
+
+    @property
+    def aliases(self) -> List[str]:
+        return self._aliases.copy()
 
     def run(
         self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs
@@ -168,18 +170,19 @@ class Tag:
             raise TagAliasError(
                 f"This {self.name_prefix.lower()} already has the maximum of {ALIAS_LIMIT} aliases."
             )
+        elif alias in self.aliases:
+            raise TagAliasError(f"`{alias}` is already an alias for `{self}`.")
 
-        self.aliases.append(alias)
+        self._aliases.append(alias)
         self.cache_path[alias] = self
         await self.update_config()
-        return f"{alias} has been added as an alias to {self.name_prefix.lower()} `{self}`."
+        return f"`{alias}` has been added as an alias to {self.name_prefix.lower()} `{self}`."
 
     async def remove_alias(self, alias: str) -> str:
-        try:
-            self.aliases.remove(alias)
-        except ValueError as exc:
-            raise TagAliasError(f"`{alias}` is not a valid alias for `{self}`.") from exc
+        if alias not in self.aliases:
+            raise TagAliasError(f"`{alias}` is not a valid alias for `{self}`.")
 
+        self._aliases.remove(alias)
         del self.cache_path[alias]
         await self.update_config()
         return f"Alias `{alias}` removed from {self.name_prefix.lower()} `{self}`."
