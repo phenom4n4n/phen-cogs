@@ -74,9 +74,9 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
         doc = TAG_RE.sub(_sub, doc)
 
         if isinstance(overriden, commands.Command):
-            overriden.help = doc
-        else:
             overriden._help_override = doc
+        else:
+            overriden.__doc__ = doc
         return overriden
 
     return decorator
