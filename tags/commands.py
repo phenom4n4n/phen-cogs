@@ -76,7 +76,7 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
         if isinstance(overriden, commands.Command):
             overriden.help = doc
         else:
-            overriden.__doc__ = doc
+            overriden._help_override = doc
         return overriden
 
     return decorator
@@ -240,13 +240,13 @@ class Commands(MixinMeta):
     @tag.command(name="alias")
     async def tag_alias(self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName):
         """
-                Add an alias for a tag.
+        Add an alias for a tag.
 
-                Adding an alias to the tag will make the tag invokable using the alias or the tag name.
-                In the example below, running `[p]donation` will invoke the `donate` tag.
-        ​
-                **Example:**
-                `[p]tag alias donate donation`
+        Adding an alias to the tag will make the tag invokable using the alias or the tag name.
+        In the example below, running `[p]donation` will invoke the `donate` tag.
+​
+        **Example:**
+        `[p]tag alias donate donation`
         """
         await ctx.send(await tag.add_alias(alias))
 
@@ -420,7 +420,8 @@ class Commands(MixinMeta):
             title="TagScriptEngine",
             description=f"Executed in **{round((end - start) * 1000, 3)}** ms",
         )
-        e.add_field(name="Input", value=tagscript, inline=False)
+        for page in pagify(tagscript, page_length=1024):
+            e.add_field(name="Input", value=page, inline=False)
         if actions:
             e.add_field(name="Actions", value=actions, inline=False)
         if output.variables:
