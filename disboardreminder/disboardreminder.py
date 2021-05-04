@@ -49,7 +49,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.3.1"
+    __version__ = "1.3.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -148,16 +148,16 @@ class DisboardReminder(commands.Cog):
         if remaining > 60:
             return
 
-        if remaining <= 0:
-            task_name = f"bump_remind:{guild.id}-{end_time}"
-            if task_name in self.bump_tasks[guild.id]:
-                return
-            task = self.create_task(self.bump_remind(guild), name=task_name)
-        else:
-            task_name = f"bump_timer:{guild.id}-{end_time}"
-            if task_name in self.bump_tasks[guild.id]:
-                return
-            task = self.create_task(self.bump_timer(guild, end_time), name=task_name)
+        # if remaining <= 0:
+        #    task_name = f"bump_remind:{guild.id}-{end_time}"
+        #    if task_name in self.bump_tasks[guild.id]:
+        #        return
+        #    task = self.create_task(self.bump_remind(guild), name=task_name)
+        # else:
+        task_name = f"bump_timer:{guild.id}-{end_time}"
+        if task_name in self.bump_tasks[guild.id]:
+            return
+        task = self.create_task(self.bump_timer(guild, end_time), name=task_name)
 
         self.bump_tasks[guild.id][task_name] = task
         await asyncio.sleep(0.2)
