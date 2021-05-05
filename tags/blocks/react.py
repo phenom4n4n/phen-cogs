@@ -24,7 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 
-from TagScriptEngine import Block, Interpreter
+from TagScriptEngine import Block, Context
 
 
 class ReactBlock(Block):
@@ -45,11 +45,11 @@ class ReactBlock(Block):
         {react(<:kappa:754146174843355146>)}
     """
 
-    def will_accept(self, ctx: Interpreter.Context) -> bool:
+    def will_accept(self, ctx: Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec == "react"
 
-    def process(self, ctx: Interpreter.Context) -> Optional[str]:
+    def process(self, ctx: Context) -> Optional[str]:
         if not ctx.verb.parameter:
             return None
         ctx.response.actions["react"] = [arg.strip() for arg in ctx.verb.parameter.split(",")[:5]]
@@ -73,11 +73,11 @@ class ReactUBlock(Block):
         {react(<:kappa:754146174843355146>)}
     """
 
-    def will_accept(self, ctx: Interpreter.Context) -> bool:
+    def will_accept(self, ctx: Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec == "reactu"
 
-    def process(self, ctx: Interpreter.Context) -> Optional[str]:
+    def process(self, ctx: Context) -> Optional[str]:
         if not ctx.verb.parameter:
             return None
         ctx.response.actions["reactu"] = [arg.strip() for arg in ctx.verb.parameter.split(",")[:5]]

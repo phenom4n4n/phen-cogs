@@ -28,7 +28,7 @@ import discord
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import humanize_list, humanize_number, inline, pagify
-from TagScriptEngine import IntAdapter, Interpreter
+import TagScriptEngine as tse
 
 from .errors import *
 
@@ -101,10 +101,10 @@ class Tag:
         return self._aliases.copy()
 
     def run(
-        self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs
-    ) -> Interpreter.Response:
+        self, interpreter: tse.Interpreter, seed_variables: dict = {}, **kwargs
+    ) -> tse.Response:
         self.uses += 1
-        seed_variables.update(uses=IntAdapter(self.uses))
+        seed_variables.update(uses=tse.IntAdapter(self.uses))
         return interpreter.process(self.tagscript, seed_variables, **kwargs)
 
     async def update_config(self):

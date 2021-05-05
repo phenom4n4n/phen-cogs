@@ -24,7 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 
-from TagScriptEngine import Block, Interpreter, helper_parse_if
+from TagScriptEngine import Block, Context, helper_parse_if
 
 
 class HideBlock(Block):
@@ -46,11 +46,11 @@ class HideBlock(Block):
         {hide({args(1)}==hide)}
     """
 
-    def will_accept(self, ctx: Interpreter.Context) -> bool:
+    def will_accept(self, ctx: Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec in ("hide", "hidden")
 
-    def process(self, ctx: Interpreter.Context) -> Optional[str]:
+    def process(self, ctx: Context) -> Optional[str]:
         if "hide" in ctx.response.actions.keys():
             return None
         if ctx.verb.parameter is None:

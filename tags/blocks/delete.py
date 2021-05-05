@@ -24,7 +24,7 @@ SOFTWARE.
 
 from typing import Optional
 
-from TagScriptEngine import Block, Interpreter, helper_parse_if
+from TagScriptEngine import Block, Context, helper_parse_if
 
 
 class DeleteBlock(Block):
@@ -43,11 +43,11 @@ class DeleteBlock(Block):
         {delete({args(1)}==delete)}
     """
 
-    def will_accept(self, ctx: Interpreter.Context) -> bool:
+    def will_accept(self, ctx: Context) -> bool:
         dec = ctx.verb.declaration.lower()
         return dec == "delete"
 
-    def process(self, ctx: Interpreter.Context) -> Optional[str]:
+    def process(self, ctx: Context) -> Optional[str]:
         if "delete" in ctx.response.actions.keys():
             return None
         if ctx.verb.parameter is None:

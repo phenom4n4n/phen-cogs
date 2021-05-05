@@ -28,7 +28,7 @@ from typing import List, Optional, Union
 import discord
 from redbot.core import Config, commands
 from redbot.core.bot import Red
-from TagScriptEngine import IntAdapter, Interpreter, StringAdapter
+import TagScriptEngine as tse
 
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
@@ -291,10 +291,10 @@ class SlashTag:
         return self.bot.get_user(self.author_id)
 
     def run(
-        self, interpreter: Interpreter, seed_variables: dict = {}, **kwargs
-    ) -> Interpreter.Response:
+        self, interpreter: tse.Interpreter, seed_variables: dict = {}, **kwargs
+    ) -> tse.Response:
         self.uses += 1
-        seed_variables.update(uses=IntAdapter(self.uses))
+        seed_variables.update(uses=tse.IntAdapter(self.uses))
         return interpreter.process(self.tagscript, seed_variables, **kwargs)
 
     async def update_config(self):

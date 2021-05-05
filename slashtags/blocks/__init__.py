@@ -1,3 +1,3 @@
 from .hidden import HideBlock
 
-__all__ = "HideBlock"
+__all__ = ("HideBlock",)
