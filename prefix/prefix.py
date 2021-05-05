@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import re
-from typing import List
+from typing import List, Optional
 
 import discord
 from redbot.core import Config, commands
@@ -30,6 +30,13 @@ from redbot.core import Config, commands
 
 class Prefix(commands.Cog):
     """Prefix management."""
+
+    __version__ = "1.0.0"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
     def __init__(self, bot):
         self.bot = bot
@@ -48,6 +55,20 @@ class Prefix(commands.Cog):
             self.MENTION_RE = re.compile(rf"^<@!?{self.bot.user.id}>$")
         return self.MENTION_RE
 
+    @staticmethod
+    async def reply(ctx: commands.Context, content: str = None, **kwargs) -> Optional[discord.Message]:
+        ref = ctx.message.to_reference(fail_if_not_exists=False)
+        kwargs["reference"] = ref
+        kwargs["mention_author"] = False
+        return await ctx.send(content, **kwargs)
+
+    def format_command(self, ctx: commands.Context, command: str):
+        command = self.bot.get_command(command)
+        command_name = ctx.clean_prefix + command.qualified_name
+        if command.signature:
+            command_name += f" {command.signature}"
+        return f"`{command_name}`"
+
     @commands.bot_has_permissions(embed_links=True)
     @commands.guild_only()
     @commands.group(invoke_without_command=True)
@@ -61,7 +82,8 @@ class Prefix(commands.Cog):
         `[p]prefix`
         """
         embed = await self.prefix_embed(ctx)
-        await ctx.send(embed=embed)
+        embed.set_footer(text=f"add a prefix with {self.format_command(ctx, 'prefix add')}")
+        await self.reply(ctx, embed=embed)
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="set", aliases=["="], require_var_positional=True)
@@ -80,7 +102,8 @@ class Prefix(commands.Cog):
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.prefix_embed(ctx)
         es = "es" if len(prefixes) > 1 else ""
-        await ctx.send(f"Prefix{es} set.", embed=embed)
+        embed.set_footer(text=f"reset the prefix{es} with {self.format_command(ctx, 'prefix reset')}")
+        await self.reply(ctx, f"Prefix{es} set.", embed=embed)
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="add", aliases=["+"])
@@ -96,12 +119,13 @@ class Prefix(commands.Cog):
         """
         prefixes = await self.get_prefixes(ctx.guild)
         if prefix in prefixes:
-            return await ctx.send("That is already a prefix.")
+            return await self.reply(ctx, "That is already a prefix.")
 
         prefixes.append(prefix)
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.prefix_embed(ctx)
-        await ctx.send("Prefix added.", embed=embed)
+        embed.set_footer(text=f"remove a prefix with {self.format_command(ctx, 'prefix remove')}")
+        await self.reply(ctx, "Prefix added.", embed=embed)
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="remove", aliases=["-"])
@@ -117,14 +141,15 @@ class Prefix(commands.Cog):
         """
         prefixes = await self.get_prefixes(ctx.guild)
         if prefix not in prefixes:
-            return await ctx.send("That is not a valid prefix.")
+            await self.reply(ctx, "That is not a valid prefix.")
         if len(prefixes) == 1:
-            return await ctx.send("If you removed that prefix, you would have none left.")
+            await self.reply(ctx, "If you removed that prefix, you would have none left.")
 
         prefixes.remove(prefix)
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.prefix_embed(ctx)
-        await ctx.send("Prefix removed.", embed=embed)
+        embed.set_footer(text=f"add a prefix with {self.format_command(ctx, 'prefix add')}")
+        await self.reply(ctx, "Prefix removed.", embed=embed)
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="clear", aliases=["reset"])
@@ -139,7 +164,8 @@ class Prefix(commands.Cog):
         """
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=[])
         embed = await self.prefix_embed(ctx)
-        await ctx.send(f"Reset this server's prefixes.", embed=embed)
+        embed.set_footer(text=f"set the prefixes with {self.format_command(ctx, 'prefix set')}")
+        await self.reply(ctx, f"Reset this server's prefixes.", embed=embed)
 
     async def get_prefixes(self, guild: discord.Guild) -> List[str]:
         prefixes = await self.bot.get_valid_prefixes(guild)
@@ -157,6 +183,6 @@ class Prefix(commands.Cog):
             prefixes.append(p)
 
         prefix_list = "\n".join(f"{index}. {prefix}" for index, prefix in enumerate(prefixes, 1))
-
+        es = "es" if len(prefixes) > 1 else ""
         color = await ctx.embed_color()
-        return discord.Embed(color=color, title="Prefixes:", description=prefix_list)
+        return discord.Embed(color=color, title=f"Prefix{es}:", description=prefix_list)
