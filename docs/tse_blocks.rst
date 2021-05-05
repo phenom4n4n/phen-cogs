@@ -21,8 +21,6 @@ Random Block
 
 .. autoclass:: TagScriptEngine.RandomBlock
 
-.. _MathBlock:
-
 ^^^^^^^^^^
 Math Block
 ^^^^^^^^^^
@@ -38,8 +36,6 @@ Range Block
 --------------
 Control Blocks
 --------------
-
-.. _IfBlock:
 
 ^^^^^^^^
 If Block

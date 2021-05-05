@@ -13,8 +13,6 @@ Meta Variables
 
 Meta variables reference meta attributes about the tag invocation.
 
-.. _ArgsBlock:
-
 ^^^^^^^^^^
 Args Block
 ^^^^^^^^^^
@@ -70,8 +68,6 @@ Discord Object Variables
 ------------------------
 
 These blocks reference Discord objects from the tag invocation context.
-
-.. _AuthorBlock:
 
 ^^^^^^^^^^^^
 Author Block

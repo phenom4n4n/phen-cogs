@@ -67,8 +67,6 @@ Utility Blocks
 The following utility blocks extend the power of tags that interface 
 with bot commands.
 
-.. _CommandBlock:
-
 ^^^^^^^^^^^^^
 Command Block
 ^^^^^^^^^^^^^

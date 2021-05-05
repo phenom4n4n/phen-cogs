@@ -53,12 +53,12 @@ Below is an example tag that returns info related to the tag author. ::
     Creation Date: **{author(created_at)}**
     Bot: **{author(bot)}**
 
-The ``args`` block can be useful for customizing tags and works well with the :ref:`CommandBlock`.
+The ``args`` block can be useful for customizing tags and works well with the :ref:`Command Block`.
 Simple echo command that validates if args were provided::
 
     [p]tag add echo {if({args}==):You must provide text to echo.|{args}}
 
-Here's a tag that uses the default variable blocks as well as the :ref:`IfBlock`::
+Here's a tag that uses the default variable blocks as well as the :ref:`If Block`::
 
     [p]tag add startertag Hi, this is an example of a tag.
     This tag will now invoke a ping command.
