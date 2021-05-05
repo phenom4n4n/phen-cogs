@@ -25,10 +25,10 @@ SOFTWARE.
 from typing import List, Optional
 
 import discord
+import TagScriptEngine as tse
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import humanize_list, humanize_number, inline, pagify
-import TagScriptEngine as tse
 
 from .errors import *
 

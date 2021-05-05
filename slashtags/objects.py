@@ -26,9 +26,9 @@ import logging
 from typing import List, Optional, Union
 
 import discord
+import TagScriptEngine as tse
 from redbot.core import Config, commands
 from redbot.core.bot import Red
-import TagScriptEngine as tse
 
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
