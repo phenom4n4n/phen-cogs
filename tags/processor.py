@@ -175,7 +175,7 @@ class Processor(MixinMeta):
 
         if target := actions.get("target"):
             if target == "dm":
-                destination = await ctx.author.create_dm()
+                destination = ctx.author
             elif target == "reply":
                 replying = True
             else:
@@ -192,12 +192,10 @@ class Processor(MixinMeta):
         kwargs["embed"] = embed
 
         if replying:
-            try:
-                return await ctx.reply(content, **kwargs)
-            except discord.HTTPException:
-                return await self.send_quietly(destination, content, **kwargs)
-        else:
-            return await self.send_quietly(destination, content, **kwargs)
+            ref = ctx.message.to_reference(fail_if_not_exists=False)
+            kwargs["reference"] = ref
+
+        return await self.send_quietly(destination, content, **kwargs)
 
     async def process_commands(
         self, messages: List[discord.Message], silent: bool, overrides: dict

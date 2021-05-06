@@ -59,6 +59,7 @@ class Processor(MixinMeta):
             tse.BlacklistBlock(),
             tse.URLEncodeBlock(),
             tse.CommandBlock(),
+            tse.RedirectBlock(),
         ]
         slash_blocks = [HideBlock()]
         self.engine = tse.Interpreter(tse_blocks + slash_blocks)
@@ -81,16 +82,8 @@ class Processor(MixinMeta):
     ) -> tse.Adapter:
         return self.OPTION_ADAPTERS.get(option_type, default)
 
-    async def process_tag(
-        self,
-        interaction: InteractionCommand,
-        tag: SlashTag,
-        *,
-        seed_variables: dict = {},
-        **kwargs,
-    ) -> str:
+    def handle_seed_variables(self, interaction: InteractionCommand, seed_variables: dict) -> dict:
         seed_variables = seed_variables.copy()
-        log.debug("processing tag %s | options: %r" % (tag, interaction.options))
         for option in interaction.options:
             adapter = self.get_adapter(option.type)
             try:
@@ -106,6 +99,18 @@ class Processor(MixinMeta):
             if original_option.name not in seed_variables:
                 log.debug("optional option %s not found, using empty adapter" % original_option)
                 seed_variables[original_option.name] = self.EMPTY_ADAPTER
+        return seed_variables
+
+    async def process_tag(
+        self,
+        interaction: InteractionCommand,
+        tag: SlashTag,
+        *,
+        seed_variables: dict = {},
+        **kwargs,
+    ) -> str:
+        log.debug("processing tag %s | options: %r" % (tag, interaction.options))
+        seed_variables = self.handle_seed_variables(interaction, seed_variables)
 
         guild = interaction.guild
         author = interaction.author
@@ -127,46 +132,56 @@ class Processor(MixinMeta):
         to_gather = []
         content = output.body[:2000] if output.body else None
         actions = output.actions
+
         embed = actions.get("embed")
-        command_messages = []
-        hide = actions.get("hide", False)
-        destination = interaction
-        ctx = interaction
+        hidden = actions.get("hide", False)
 
-        if actions:
-            try:
-                await self.validate_checks(ctx, actions)
-            except RequireCheckFailure as error:
-                response = error.response
-                if response is not None and (response := response.strip()):
-                    await ctx.send(response[:2000], hidden=True)
-                else:
-                    await ctx.send("You aren't allowed to use this tag.", hidden=True)
-                return
+        try:
+            await self.handle_requires(interaction, actions)
+        except RequireCheckFailure:
+            return
 
-        if commands := actions.get("commands"):
-            prefix = (await self.bot.get_valid_prefixes(interaction.guild))[0]
-            for command in commands:
-                message = FakeMessage.from_interaction(interaction, prefix + command)
-                command_messages.append(message)
-
-        if content or embed is not None:
-            await self.send_tag_response(destination, content, embed=embed, hidden=hide)
+        if content or embed:
+            await self.send_tag_response(interaction, actions, content, hidden=hidden, embed=embed)
         else:
-            await interaction.defer()
-
-        if command_messages:
-            silent = actions.get("silent", False)
-            overrides = actions.get("overrides")
-            to_gather.append(
-                self.process_commands(interaction, command_messages, silent, overrides)
-            )
+            await interaction.defer(hidden=hidden)
+        
+        if command_task := self.handle_commands(interaction, actions):
+            to_gather.append(command_task)
 
         if to_gather:
             await asyncio.gather(*to_gather)
 
         if not interaction.completed:
             await interaction.send("Slash Tag completed.", hidden=True)
+
+    async def handle_requires(self, interaction: InteractionCommand, actions: dict):
+        try:
+            await self.validate_checks(interaction, actions)
+        except RequireCheckFailure as error:
+            response = error.response
+            if response is not None and (response := response.strip()):
+                await interaction.send(response[:2000], hidden=True)
+            else:
+                await interaction.send("You aren't allowed to use this tag.", hidden=True)
+            raise
+
+    async def handle_commands(self, interaction: InteractionCommand, actions: dict) -> Optional[asyncio.Task]:
+        commands = actions.get("commands")
+        if not commands:
+            return
+
+        command_messages = []
+        prefix = (await self.bot.get_valid_prefixes(interaction.guild))[0]
+        for command in commands:
+            message = FakeMessage.from_interaction(interaction, prefix + command)
+            command_messages.append(message)
+
+        silent = actions.get("silent", False)
+        overrides = actions.get("overrides")
+        return self.create_task(
+            self.process_commands(interaction, command_messages, silent, overrides)
+        )
 
     async def process_commands(
         self,
@@ -218,14 +233,38 @@ class Processor(MixinMeta):
 
     async def send_tag_response(
         self,
-        destination: discord.abc.Messageable,
+        interaction: InteractionCommand,
+        actions: dict,
         content: str = None,
+        *,
+        embed: discord.Embed = None,
         **kwargs,
     ) -> Optional[discord.Message]:
+        destination = interaction
+
+        if target := actions.get("target"):
+            if target == "dm":
+                destination = interaction.author
+                del kwargs["hidden"]
+            elif target == "reply":
+                pass
+            else:
+                try:
+                    chan = await self.channel_converter.convert(interaction, target)
+                except commands.BadArgument:
+                    pass
+                else:
+                    if chan.permissions_for(interaction.me).send_messages:
+                        destination = chan
+                        del kwargs["hidden"]
+
+        if not (content or embed is not None):
+            return
+
         try:
-            return await destination.send(content, **kwargs)
-        except discord.HTTPException:
-            pass
+            return await destination.send(content, embed=embed, **kwargs)
+        except discord.HTTPException as exc:
+            log.exception(f"Error sending to destination:{destination!r} for interaction:{interaction!r}\nkwargs:{kwargs!r}", exc_info=exc)
 
     async def validate_checks(self, ctx: commands.Context, actions: dict):
         to_gather = []

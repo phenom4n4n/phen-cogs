@@ -417,3 +417,13 @@ class InteractionCommand(InteractionResponse):
                 self.guild._add_role(role)
             option.set_value(role)
         return option
+
+    def to_reference(self, *args, **kwargs):
+        # return None to prevent reply since interaction responses already reply (visually)
+        # additionally, replying to an interaction response raises
+        # message_reference: Unknown message
+        return
+
+    @property
+    def me(self):
+        return self.guild.me if self.guild else self.bot.user
