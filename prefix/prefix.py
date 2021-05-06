@@ -56,7 +56,9 @@ class Prefix(commands.Cog):
         return self.MENTION_RE
 
     @staticmethod
-    async def reply(ctx: commands.Context, content: str = None, **kwargs) -> Optional[discord.Message]:
+    async def reply(
+        ctx: commands.Context, content: str = None, **kwargs
+    ) -> Optional[discord.Message]:
         ref = ctx.message.to_reference(fail_if_not_exists=False)
         kwargs["reference"] = ref
         kwargs["mention_author"] = False
@@ -102,7 +104,9 @@ class Prefix(commands.Cog):
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
         embed = await self.prefix_embed(ctx)
         es = "es" if len(prefixes) > 1 else ""
-        embed.set_footer(text=f"reset the prefix{es} with {self.format_command(ctx, 'prefix reset')}")
+        embed.set_footer(
+            text=f"reset the prefix{es} with {self.format_command(ctx, 'prefix reset')}"
+        )
         await self.reply(ctx, f"Prefix{es} set.", embed=embed)
 
     @commands.admin_or_permissions(manage_guild=True)
@@ -141,9 +145,9 @@ class Prefix(commands.Cog):
         """
         prefixes = await self.get_prefixes(ctx.guild)
         if prefix not in prefixes:
-            await self.reply(ctx, "That is not a valid prefix.")
+            return await self.reply(ctx, "That is not a valid prefix.")
         if len(prefixes) == 1:
-            await self.reply(ctx, "If you removed that prefix, you would have none left.")
+            return await self.reply(ctx, "If you removed that prefix, you would have none left.")
 
         prefixes.remove(prefix)
         await self.bot.set_prefixes(guild=ctx.guild, prefixes=prefixes)
