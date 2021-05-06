@@ -52,7 +52,7 @@ class Prefix(commands.Cog):
     @property
     def mention_re(self) -> re.Pattern:
         if not self.MENTION_RE:
-            self.MENTION_RE = re.compile(rf"^<@!?{self.bot.user.id}>$")
+            self.MENTION_RE = re.compile(rf"^<@!?{self.bot.user.id}> $")
         return self.MENTION_RE
 
     @staticmethod
