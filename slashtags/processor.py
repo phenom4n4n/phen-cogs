@@ -145,7 +145,7 @@ class Processor(MixinMeta):
             await self.send_tag_response(interaction, actions, content, hidden=hidden, embed=embed)
         else:
             await interaction.defer(hidden=hidden)
-        
+
         if command_task := self.handle_commands(interaction, actions):
             to_gather.append(command_task)
 
@@ -166,7 +166,9 @@ class Processor(MixinMeta):
                 await interaction.send("You aren't allowed to use this tag.", hidden=True)
             raise
 
-    async def handle_commands(self, interaction: InteractionCommand, actions: dict) -> Optional[asyncio.Task]:
+    async def handle_commands(
+        self, interaction: InteractionCommand, actions: dict
+    ) -> Optional[asyncio.Task]:
         commands = actions.get("commands")
         if not commands:
             return
@@ -264,7 +266,10 @@ class Processor(MixinMeta):
         try:
             return await destination.send(content, embed=embed, **kwargs)
         except discord.HTTPException as exc:
-            log.exception(f"Error sending to destination:{destination!r} for interaction:{interaction!r}\nkwargs:{kwargs!r}", exc_info=exc)
+            log.exception(
+                f"Error sending to destination:{destination!r} for interaction:{interaction!r}\nkwargs:{kwargs!r}",
+                exc_info=exc,
+            )
 
     async def validate_checks(self, ctx: commands.Context, actions: dict):
         to_gather = []
