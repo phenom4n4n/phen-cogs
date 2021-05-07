@@ -193,8 +193,9 @@ class Aki(commands.Cog):
         """
         await ctx.trigger_typing()
         aki = Akinator()
+        child_mode = not ctx.channel.nsfw
         try:
-            await aki.start_game(language=language.replace(" ", "_"))
+            await aki.start_game(language=language.replace(" ", "_"), child_mode=child_mode)
         except akinator.InvalidLanguageError:
             await ctx.send(
                 "Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>"
