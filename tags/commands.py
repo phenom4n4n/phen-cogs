@@ -606,7 +606,7 @@ class Commands(MixinMeta):
         return tagscript
 
     def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
-        author_id = custom_command["author"]["id"]
+        author_id = custom_command.get("author", {"id": None})["id"]
         response = custom_command["response"]
         if isinstance(response, str):
             tagscript = self.parse_cc_text(response)
