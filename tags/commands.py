@@ -660,7 +660,7 @@ class Commands(MixinMeta):
             migrated_guilds += 1
             for name, command in guild_data["commands"].items():
                 if not command:
-                    continue # some keys in custom commands config are None instead of being deleted
+                    continue  # some keys in custom commands config are None instead of being deleted
                 try:
                     tag = self.convert_customcommand(guild_id, name, command)
                 except Exception as exc:
