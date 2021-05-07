@@ -597,11 +597,7 @@ class Commands(MixinMeta):
             )
             await global_tag.initialize()
             migrated_global_alias += 1
-        await ctx.send(
-            f"Migrated {migrated_global_alias} global aliases to tags. "
-            "Migration completed, unload the alias cog to prevent command "
-            f"duplication with `{ctx.clean_prefix}unload alias`."
-        )
+        await ctx.send(f"Migrated {migrated_global_alias} global aliases to tags.")
 
     def parse_cc_text(self, content: str) -> str:
         # TODO tse.build_node_tree to find converters

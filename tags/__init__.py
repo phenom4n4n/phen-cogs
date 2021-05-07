@@ -38,6 +38,7 @@ def setup(bot: Red) -> None:
     cog = bot.get_cog("CustomCommands")
     if cog:
         raise CogLoadError(
-            "This cog conflicts with CustomCommands and cannot be loaded with both at the same time."
+            "This cog conflicts with CustomCommands and both cannot be loaded at the same time. "
+            "After unloading `customcom`, you can migrate custom commands to tags with `[p]migratecustomcom`."
         )
     bot.add_cog(Tags(bot))
