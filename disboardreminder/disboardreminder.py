@@ -443,7 +443,9 @@ class DisboardReminder(commands.Cog):
             if not kwargs:
                 # in case user inputted tagscript returns nothing
                 await self.config.guild(guild).tyMessage.clear()
-                kwargs = self.process_tagscript(self.default_guild["tyMessage"], seed_variables=seed)
+                kwargs = self.process_tagscript(
+                    self.default_guild["tyMessage"], seed_variables=seed
+                )
 
             await bump_channel.send(**kwargs)
         else:
