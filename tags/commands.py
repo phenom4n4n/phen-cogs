@@ -570,6 +570,7 @@ class Commands(MixinMeta):
             None, 8927348724, cog_name="Alias"  # core cog doesn't use force_registration=True smh
         )  # Red can't change these values without breaking data
         # so while this is sus it is technically safe to use
+        alias_config.register_global(entries=[])
         all_guild_data: dict = await alias_config.all_guilds()
 
         async for guild_data in AsyncIter(all_guild_data.values(), steps=100):
@@ -577,7 +578,7 @@ class Commands(MixinMeta):
                 continue
             migrated_guilds += 1
             for alias in guild_data["entries"]:
-                tagscript = "{c:" + alias["command"] + " {args}}"
+                tagscript = "{c:%s {args}}" % alias["command"]
                 tag = Tag(
                     self,
                     alias["name"],
@@ -595,7 +596,7 @@ class Commands(MixinMeta):
 
         migrated_global_alias = 0
         async for entry in AsyncIter(await alias_config.entries(), steps=50):
-            tagscript = "{c:" + entry["command"] + " {args}}"
+            tagscript = "{c:%s {args}}" % entry["command"]
             global_tag = Tag(
                 self,
                 entry["name"],
@@ -622,11 +623,11 @@ class Commands(MixinMeta):
             indices = []
             for index, response_text in enumerate(response, 1):
                 script = self.parse_cc_text(response_text)
-                tag_lines.append("{=(choice_" + str(index) + "):" + script + "}")
+                tag_lines.append("{=(choice.%s):%s}" % (index, script))
                 indices.append(index)
-            random_block = "{#:" + ",".join(str(i) for i in indices) + "}"
-            tag_lines.append("{=(chosen):" + random_block + "}")
-            tag_lines.append("{choice_{chosen}}")
+            random_block = "{#:%s}" % ",".join(str(i) for i in indices)
+            tag_lines.append("{=(chosen):%s}" % random_block)
+            tag_lines.append("{choice.{chosen}}")
             tagscript = "\n".join(tag_lines)
         return Tag(self, name, tagscript, guild_id=guild_id, author_id=author_id)
 
