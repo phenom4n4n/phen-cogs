@@ -43,6 +43,7 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactio
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import MixinMeta
+from .blocks import ContextVariableBlock, ConverterBlock
 from .converters import (
     GlobalTagConverter,
     GuildTagConverter,
@@ -90,6 +91,10 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
 
 
 class Commands(MixinMeta):
+    def __init__(self):
+        self.custom_command_engine = tse.Interpreter([ContextVariableBlock(), ConverterBlock()])
+        super().__init__()
+
     @staticmethod
     def generate_tag_list(tags: Set[Tag]) -> Dict[str, List[str]]:
         aliases = []
@@ -603,9 +608,8 @@ class Commands(MixinMeta):
         await ctx.send(f"Migrated {migrated_global_alias} global aliases to tags.")
 
     def parse_cc_text(self, content: str) -> str:
-        # TODO tse.build_node_tree to find converters
-        # converter converters to {args(index)}
-        tagscript = content
+        output = self.custom_command_engine.process(content)
+        tagscript = output.body
         return tagscript
 
     def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
@@ -670,7 +674,8 @@ class Commands(MixinMeta):
                         exc_info=exc,
                     )
                     return await ctx.send(
-                        f"An exception occured while converting custom command `{name}` from server {guild_id}. Check your logs for more details"
+                        f"An exception occured while converting custom command `{name}` from "
+                        f"server {guild_id}. Check your logs for more details and report this to the cog author."
                     )
                 await tag.initialize()
                 migrated_ccs += 1

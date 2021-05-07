@@ -136,7 +136,7 @@ class Processor(MixinMeta):
 
             if actions.get("commands"):
                 for command in actions["commands"]:
-                    if command.startswith("tag") or command == "invoketag":
+                    if command == "invoketag":
                         await ctx.send("Tag looping isn't allowed.")
                         return
                     new = copy(ctx.message)
