@@ -22,23 +22,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import json
-from pathlib import Path
+import re
 
-from redbot.core.bot import Red
-from redbot.core.errors import CogLoadError
+from TagScriptEngine import Block, Context
 
-from .core import Tags
-
-with open(Path(__file__).parent / "info.json") as fp:
-    __red_end_user_data_statement__ = json.load(fp)["end_user_data_statement"]
+CONVERTER_RE = re.compile(r"(?i)(\d{1,2})(?:\.[a-z]+)?(?::[a-z]+)?")
 
 
-def setup(bot: Red) -> None:
-    cog = bot.get_cog("CustomCommands")
-    if cog:
-        raise CogLoadError(
-            "This cog conflicts with CustomCommands and both cannot be loaded at the same time. "
-            "After unloading `customcom`, you can migrate custom commands to tags with `[p]migratecustomcom`."
-        )
-    bot.add_cog(Tags(bot))
+class ContextVariableBlock(Block):
+    def will_accept(self, ctx: Context) -> bool:
+        dec = ctx.verb.declaration.lower().split(".", 1)[0]
+        return dec in ("author", "channel", "server", "guild")
+
+    def process(self, ctx: Context) -> str:
+        dec = ctx.verb.declaration.lower().split(".", 1)
+        parameter = f"({dec[1]})" if len(dec) == 2 else ""
+        return "{%s%s}" % (dec[0], parameter)
+
+
+class ConverterBlock(Block):
+    def will_accept(self, ctx: Context) -> bool:
+        return bool(CONVERTER_RE.match(ctx.verb.declaration))
+
+    def process(self, ctx: Context) -> str:
+        match = CONVERTER_RE.match(ctx.verb.declaration)
+        num = match.group(1)
+        return "{args(%s)}" % num

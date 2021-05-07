@@ -171,6 +171,8 @@ class Tag:
             )
         elif alias in self.aliases:
             raise TagAliasError(f"`{alias}` is already an alias for `{self}`.")
+        elif aliased_tag := self.cache_path.get(alias):
+            raise TagAliasError(f"`{alias}` is already an alias for `{aliased_tag}`.")
 
         self._aliases.append(alias)
         self.cache_path[alias] = self

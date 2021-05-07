@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from .customcom import ContextVariableBlock, ConverterBlock
 from .delete import DeleteBlock
 from .react import ReactBlock, ReactUBlock
 from .silent import SilentBlock
@@ -31,4 +32,6 @@ __all__ = (
     "SilentBlock",
     "ReactBlock",
     "ReactUBlock",
+    "ContextVariableBlock",
+    "ConverterBlock",
 )
