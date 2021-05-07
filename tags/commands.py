@@ -23,12 +23,12 @@ SOFTWARE.
 """
 
 import asyncio
+import logging
 import re
 import time
 import types
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
-import logging
 
 import bs4
 import discord
@@ -61,6 +61,7 @@ TAG_RE = re.compile(r"(?i)(\[p\])?\btag'?s?\b")
 DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
 
 log = logging.getLogger("red.phenom4n4n.tags.commands")
+
 
 def _sub(match: re.Match) -> str:
     if match.group(1):
@@ -661,8 +662,14 @@ class Commands(MixinMeta):
                 try:
                     tag = self.convert_customcommand(guild_id, name, command)
                 except Exception as exc:
-                    log.exception("An exception occured while converting custom command %s (%r) from guild %s" % (name, command, guild_id), exc_info=exc)
-                    return await ctx.send(f"An exception occured while converting custom command `{name}` from server {guild_id}. Check your logs for more details")
+                    log.exception(
+                        "An exception occured while converting custom command %s (%r) from guild %s"
+                        % (name, command, guild_id),
+                        exc_info=exc,
+                    )
+                    return await ctx.send(
+                        f"An exception occured while converting custom command `{name}` from server {guild_id}. Check your logs for more details"
+                    )
                 await tag.initialize()
                 migrated_ccs += 1
         await ctx.send(
