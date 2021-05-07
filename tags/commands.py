@@ -539,7 +539,7 @@ class Commands(MixinMeta):
     @commands.command()
     async def migratealias(self, ctx: commands.Context):
         """
-        Migrate alias global and guild configs to tags.
+        Migrate the Alias cog's global and server aliases into tags.
 
         This converts all aliases created with the Alias cog into tags with command blocks.
         This action cannot be undone.
@@ -547,23 +547,22 @@ class Commands(MixinMeta):
         **Example:**
         `[p]migratealias`
         """
-        alias_cog = self.bot.get_cog("Alias")
-        if not alias_cog:
-            return await ctx.send("Alias cog must be loaded to migrate data.")
-
-        await ctx.send(f"Are you sure you want to migrate alias data to tags? (Y/n)")
+        await ctx.send(f"Are you sure you want to migrate Alias data to tags? (Y/n)")
         pred = MessagePredicate.yes_or_no(ctx)
         try:
             await self.bot.wait_for("message", check=pred, timeout=30)
         except asyncio.TimeoutError:
             return await ctx.send("Query timed out, not migrating alias to tags.")
-
         if pred.result is False:
             return await ctx.send("Migration cancelled.")
 
         migrated_guilds = 0
         migrated_guild_alias = 0
-        all_guild_data: dict = await alias_cog.config.all_guilds()
+        alias_config = Config.get_conf(
+            None, 8927348724, cog_name="Alias" # core cog doesn't use force_registration=True smh
+        ) # Red can't change these values without breaking data 
+        # so while this is sus it is technically safe to use
+        all_guild_data: dict = await alias_config.all_guilds()
 
         async for guild_data in AsyncIter(all_guild_data.values(), steps=100):
             if not guild_data["entries"]:
@@ -587,7 +586,7 @@ class Commands(MixinMeta):
         )
 
         migrated_global_alias = 0
-        async for entry in AsyncIter(await alias_cog.config.entries(), steps=50):
+        async for entry in AsyncIter(await alias_config.entries(), steps=50):
             tagscript = "{c:" + entry["command"] + " {args}}"
             global_tag = Tag(
                 self,
@@ -602,4 +601,68 @@ class Commands(MixinMeta):
             f"Migrated {migrated_global_alias} global aliases to tags. "
             "Migration completed, unload the alias cog to prevent command "
             f"duplication with `{ctx.clean_prefix}unload alias`."
+        )
+
+    def parse_cc_text(self, content: str) -> str:
+        # TODO tse.build_node_tree to find converters
+        # converter converters to {args(index)}
+        tagscript = content
+        return tagscript
+
+    def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
+        author_id = custom_command["author"]["id"]
+        response = custom_command["response"]
+        if isinstance(response, str):
+            tagscript = self.parse_cc_text(response)
+        else:
+            tag_lines = []
+            indices = []
+            for index, response_text in enumerate(response, 1):
+                script = self.parse_cc_text(response_text)
+                tag_lines.append("{=(choice_" + str(index) + "):" + script + "}")
+                indices.append(index)
+            random_block = "{#:" + ",".join(str(i) for i in indices) + "}"
+            tag_lines.append("{=(chosen):" + random_block + "}")
+            tag_lines.append("{choice_{chosen}}")
+            tagscript = "\n".join(tag_lines)
+        return Tag(self, name, tagscript, guild_id=guild_id, author_id=author_id)
+
+    @commands.is_owner()
+    @commands.command(aliases=["migratecustomcommands"])
+    async def migratecustomcom(self, ctx: commands.Context):
+        """
+        Migrate the CustomCommand cog's server commands into tags.
+
+        This converts all custom commands created into tags with the command text as TagScript.
+        Randomized commands are converted into random blocks.
+        Commands with converters are converted into indexed args blocks.
+        This action cannot be undone.
+
+        **Example:**
+        `[p]migratealias`
+        """
+        await ctx.send(f"Are you sure you want to migrate CustomCommands data to tags? (Y/n)")
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            await self.bot.wait_for("message", check=pred, timeout=30)
+        except asyncio.TimeoutError:
+            return await ctx.send("Query timed out, not migrating CustomCommands to tags.")
+        if pred.result is False:
+            return await ctx.send("Migration cancelled.")
+        
+        cc_config = Config.get_conf(None, 414589031223512, cog_name="CustomCommands")
+        migrated_guilds = 0
+        migrated_ccs = 0
+        all_guild_data: dict = await cc_config.all_guilds()
+
+        async for guild_id, guild_data in AsyncIter(all_guild_data.items(), steps=100):
+            if not guild_data["commands"]:
+                continue
+            migrated_guilds += 1
+            for name, command in guild_data["commands"].items():
+                tag = self.convert_customcommand(guild_id, name, command)
+                await tag.initialize()
+                migrated_ccs += 1
+        await ctx.send(
+            f"Migrated {migrated_ccs} custom commands from {migrated_guilds} servers to tags."
         )
