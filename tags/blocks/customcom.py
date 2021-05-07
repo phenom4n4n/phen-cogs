@@ -22,12 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Optional
 import re
 
 from TagScriptEngine import Block, Context
 
 CONVERTER_RE = re.compile(r"(?i)(\d{1,2})(?:\.[a-z]+)?(?::[a-z]+)?")
+
 
 class ContextVariableBlock(Block):
     def will_accept(self, ctx: Context) -> bool:
@@ -38,6 +38,7 @@ class ContextVariableBlock(Block):
         dec = ctx.verb.declaration.lower().split(".", 1)
         parameter = f"({dec[1]})" if len(dec) == 2 else ""
         return "{%s%s}" % (dec[0], parameter)
+
 
 class ConverterBlock(Block):
     def will_accept(self, ctx: Context) -> bool:
