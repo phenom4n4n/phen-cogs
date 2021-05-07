@@ -559,8 +559,8 @@ class Commands(MixinMeta):
         migrated_guilds = 0
         migrated_guild_alias = 0
         alias_config = Config.get_conf(
-            None, 8927348724, cog_name="Alias" # core cog doesn't use force_registration=True smh
-        ) # Red can't change these values without breaking data 
+            None, 8927348724, cog_name="Alias"  # core cog doesn't use force_registration=True smh
+        )  # Red can't change these values without breaking data
         # so while this is sus it is technically safe to use
         all_guild_data: dict = await alias_config.all_guilds()
 
@@ -645,7 +645,7 @@ class Commands(MixinMeta):
             return await ctx.send("Query timed out, not migrating CustomCommands to tags.")
         if pred.result is False:
             return await ctx.send("Migration cancelled.")
-        
+
         cc_config = Config.get_conf(None, 414589031223512, cog_name="CustomCommands")
         migrated_guilds = 0
         migrated_ccs = 0
