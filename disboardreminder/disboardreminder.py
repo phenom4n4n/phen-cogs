@@ -49,7 +49,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.3.2"
+    __version__ = "1.3.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -58,21 +58,22 @@ class DisboardReminder(commands.Cog):
 
     default_guild_cache = {"channel": None, "tasks": {}}
 
+    default_guild = {
+        "channel": None,
+        "role": None,
+        "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
+        "tyMessage": "{member(mention)} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild(id)}>.",
+        "nextBump": None,
+        "lock": False,
+        "clean": False,
+    }
+
     def __init__(self, bot: Red):
         self.bot = bot
         self.config = Config.get_conf(
             self, identifier=9765573181940385953309, force_registration=True
         )
-        default_guild = {
-            "channel": None,
-            "role": None,
-            "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
-            "tyMessage": "{member(mention)} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild(id)}>.",
-            "nextBump": None,
-            "lock": False,
-            "clean": False,
-        }
-        self.config.register_guild(**default_guild)
+        self.config.register_guild(**self.default_guild)
 
         self.channel_cache = {}
         self.bump_loop = self.create_task(self.bump_check_loop())
@@ -381,8 +382,14 @@ class DisboardReminder(commands.Cog):
                 allowed_mentions = discord.AllowedMentions(roles=[role])
 
         kwargs = self.process_tagscript(message)
+        if not kwargs:
+            # in case user inputted tagscript returns nothing
+            await self.config.guild(guild).message.clear()
+            kwargs = self.process_tagscript(self.default_guild["message"])
+        kwargs["allowed_mentions"] = allowed_mentions
+
         try:
-            await channel.send(allowed_mentions=allowed_mentions, **kwargs)
+            await channel.send(**kwargs)
         except discord.Forbidden:
             await self.config.guild(guild).channel.clear()
         await self.config.guild(guild).nextBump.clear()
@@ -432,6 +439,12 @@ class DisboardReminder(commands.Cog):
             guild_adapter = tse.GuildAdapter(guild)
             seed = {"member": member_adapter, "guild": guild_adapter, "server": guild_adapter}
             kwargs = self.process_tagscript(tymessage, seed_variables=seed)
+
+            if not kwargs:
+                # in case user inputted tagscript returns nothing
+                await self.config.guild(guild).tyMessage.clear()
+                kwargs = self.process_tagscript(self.default_guild["tyMessage"], seed_variables=seed)
+
             await bump_channel.send(**kwargs)
         else:
             await self.config.guild(guild).channel.clear()
