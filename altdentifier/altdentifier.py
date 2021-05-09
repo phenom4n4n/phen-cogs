@@ -34,7 +34,10 @@ from .converters import ActionConverter, LevelConverter, StrictRole
 
 
 class APIError(Exception):
-    pass
+    def __init__(self, response: aiohttp.ClientResponse, message: str, *args):
+        self.response = response
+        self.message = message
+        super().__init__(f"({response.status}) {message}", *args)
 
 
 class AltDentifier(commands.Cog):
@@ -42,7 +45,7 @@ class AltDentifier(commands.Cog):
     Check new users with AltDentifier API
     """
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -199,11 +202,11 @@ class AltDentifier(commands.Cog):
             f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor"
         ) as response:
             if response.status != 200:
-                raise APIError
+                raise APIError(response, f"invalid status")
             try:
                 response = await response.json()
-            except aiohttp.client_exceptions.ContentTypeError:
-                raise APIError
+            except aiohttp.client_exceptions.ContentTypeError as error:
+                raise APIError(response, await response.text(), error) from error
         return response["trustfactor"], response["formatted_trustfactor"]
 
     def pick_color(self, trustfactor: int):
@@ -308,7 +311,8 @@ class AltDentifier(commands.Cog):
             return
         try:
             trust = await self.alt_request(member)
-        except APIError:
+        except APIError as exc:
+            log.exception(f"Failed to request data for {member!r}", exc_info = exc)
             e = self.fail_embed(member)
             try:
                 await channel.send(embed=e)
