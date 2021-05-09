@@ -312,7 +312,7 @@ class AltDentifier(commands.Cog):
         try:
             trust = await self.alt_request(member)
         except APIError as exc:
-            log.exception(f"Failed to request data for {member!r}", exc_info = exc)
+            log.exception(f"Failed to request data for {member!r}", exc_info=exc)
             e = self.fail_embed(member)
             try:
                 await channel.send(embed=e)
