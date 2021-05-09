@@ -23,8 +23,8 @@ SOFTWARE.
 """
 
 import asyncio
-import typing
 import logging
+import typing
 
 import aiohttp
 import discord
@@ -34,6 +34,7 @@ from redbot.core.utils.chat_formatting import box, humanize_list
 from .converters import ActionConverter, LevelConverter, StrictRole
 
 log = logging.getLogger("red.phenom4n4n.altdentifier")
+
 
 class APIError(Exception):
     def __init__(self, response: aiohttp.ClientResponse, message: str, *args):
