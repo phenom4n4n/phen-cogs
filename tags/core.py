@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Optional, Set
+from typing import Optional, Set, Coroutine
 
 import aiohttp
 import discord
@@ -39,6 +39,7 @@ from .abc import CompositeMetaClass
 from .commands import Commands
 from .errors import MissingTagPermissions, TagFeedbackError
 from .objects import Tag
+from .owner import OwnerCommands
 from .processor import Processor
 
 log = logging.getLogger("red.phenom4n4n.tags")
@@ -46,6 +47,7 @@ log = logging.getLogger("red.phenom4n4n.tags")
 
 class Tags(
     Commands,
+    OwnerCommands,
     Processor,
     commands.Cog,
     metaclass=CompositeMetaClass,
@@ -56,7 +58,7 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.2.7"
+    __version__ = "2.3.0"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -76,13 +78,14 @@ class Tags(
             force_registration=True,
         )
         default_guild = {"tags": {}}
-        default_global = {"tags": {}}
+        default_global = {"tags": {}, "blocks": {}}
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
         self.guild_tag_cache = defaultdict(dict)
         self.global_tag_cache = {}
-        self.cache_task = asyncio.create_task(self.cache_tags())
+        self.initialize_task = None
+        # self.initialize_task = self.create_task(self.initialize())
 
         self.session = aiohttp.ClientSession()
         self.docs: list = []
@@ -99,8 +102,8 @@ class Tags(
     def __unload(self):
         super().cog_unload()
         self.bot.remove_dev_env_value("tags")
-        if self.cache_task:
-            self.cache_task.cancel()
+        if self.initialize_task:
+            self.initialize_task.cancel()
         asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
@@ -115,15 +118,30 @@ class Tags(
                         async with self.config.guild(guild).tags() as t:
                             del t[name]
 
-    async def cache_tags(self):
-        guilds_data = await self.config.all_guilds()
-        async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
-            await self.cache_guild(guild_id, guild_data)
+    def task_done_callback(self, task: asyncio.Task):
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception as error:
+            log.exception(f"Task failed.", exc_info=error)
+
+    def create_task(self, coroutine: Coroutine, *, name: str = None):
+        task = asyncio.create_task(coroutine, name=name)
+        task.add_done_callback(self.task_done_callback)
+        return task
+
+    async def initialize(self):
+        await self.initialize_interpreter()
 
         global_tags = await self.config.tags()
         async for global_tag_name, global_tag_data in AsyncIter(global_tags.items(), steps=50):
             tag = Tag.from_dict(self, global_tag_name, global_tag_data)
             tag.add_to_cache()
+
+        guilds_data = await self.config.all_guilds()
+        async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
+            await self.cache_guild(guild_id, guild_data)
 
         log.debug("Built tag cache.")
 

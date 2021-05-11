@@ -15,6 +15,19 @@ from .objects import SilentContext, Tag
 
 class Processor(MixinMeta):
     def __init__(self):
+        self.role_converter = commands.RoleConverter()
+        self.channel_converter = commands.TextChannelConverter()
+        self.member_converter = commands.MemberConverter()
+        self.emoji_converter = commands.EmojiConverter()
+
+        self.bot.add_dev_env_value("tse", lambda ctx: tse)
+        super().__init__()
+
+    def cog_unload(self):
+        self.bot.remove_dev_env_value("tse")
+        super().cog_unload()
+
+    async def initialize_interpreter(self):
         tse_blocks = [
             tse.MathBlock(),
             tse.RandomBlock(),
@@ -47,17 +60,8 @@ class Processor(MixinMeta):
             ReactUBlock(),
         ]
         self.engine = tse.Interpreter(tse_blocks + tag_blocks)
-        self.role_converter = commands.RoleConverter()
-        self.channel_converter = commands.TextChannelConverter()
-        self.member_converter = commands.MemberConverter()
-        self.emoji_converter = commands.EmojiConverter()
-
-        self.bot.add_dev_env_value("tse", lambda ctx: tse)
-        super().__init__()
-
-    def cog_unload(self):
-        self.bot.remove_dev_env_value("tse")
-        super().cog_unload()
+        for block in await self.compile_blocks():
+            self.engine.blocks.append(block())
 
     @commands.Cog.listener()
     async def on_command_error(
