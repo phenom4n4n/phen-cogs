@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import asyncio
 from typing import List
 import textwrap
 import traceback
@@ -28,7 +29,7 @@ import inspect
 import logging
 
 import TagScriptEngine as tse
-from redbot.core import commands
+from redbot.core import commands, Config
 from redbot.core.dev_commands import Dev
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.predicates import MessagePredicate
