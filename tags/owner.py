@@ -161,8 +161,7 @@ class OwnerCommands(MixinMeta):
 
     def parse_cc_text(self, content: str) -> str:
         output = self.custom_command_engine.process(content)
-        tagscript = output.body
-        return tagscript
+        return output.body
 
     def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
         author_id = custom_command.get("author", {"id": None})["id"]
