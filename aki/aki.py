@@ -120,9 +120,9 @@ class AkiMenu(menus.Menu):
 
     def get_nsfw_embed(self):
         embed = discord.Embed(
-            color=self.color, 
-            title="I guessed it, but this result is inappropriate.", 
-            description="Try again in a NSFW channel."
+            color=self.color,
+            title="I guessed it, but this result is inappropriate.",
+            description="Try again in a NSFW channel.",
         )
         return embed
 
