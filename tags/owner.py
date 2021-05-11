@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import asyncio
-from typing import List
 import inspect
 import logging
 import textwrap
@@ -30,7 +29,7 @@ import traceback
 from typing import List
 
 import TagScriptEngine as tse
-from redbot.core import commands, Config
+from redbot.core import Config, commands
 from redbot.core.dev_commands import Dev
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.predicates import MessagePredicate
