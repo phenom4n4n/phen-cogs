@@ -21,11 +21,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import List
-import textwrap
-import traceback
 import inspect
 import logging
+import textwrap
+import traceback
+from typing import List
 
 import TagScriptEngine as tse
 from redbot.core import commands
@@ -38,6 +38,7 @@ from .errors import BlockCompileError
 from .objects import Tag
 
 log = logging.getLogger("red.phenom4n4n.owner")
+
 
 class OwnerCommands(MixinMeta):
     async def compile_blocks(self) -> List[tse.Block]:
@@ -70,10 +71,12 @@ class OwnerCommands(MixinMeta):
         """Manage Tags cog settings."""
 
     @tagsettings.command("addblock")
-    async def tagsettings_addblock(self, ctx: commands.Context, name: str, *, code: Dev.cleanup_code):
+    async def tagsettings_addblock(
+        self, ctx: commands.Context, name: str, *, code: Dev.cleanup_code
+    ):
         """
         Add a custom block to the TagScript interpreter.
-        
+
         The passed code must return a block class that inherits from `TagScriptEngine.Block`.
         """
         try:
