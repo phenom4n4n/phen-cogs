@@ -40,6 +40,7 @@ class TagName(commands.Converter):
     async def convert(self, ctx: commands.Converter, argument: str) -> str:
         if len(argument) > 32:
             raise commands.BadArgument("Slash tag names may not exceed 32 characters.")
+        argument = argument.lower()
         match = SLASH_NAME.match(argument)
         if not match:
             raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
