@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Optional, Set, Coroutine
+from typing import Coroutine, Optional, Set
 
 import aiohttp
 import discord
