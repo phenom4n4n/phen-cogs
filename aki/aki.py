@@ -34,6 +34,8 @@ from redbot.vendored.discord.ext import menus
 
 log = logging.getLogger("red.phenom4n4n.aki")
 
+NSFW_WORDS = ["porn", "sex"]
+
 
 class AkiMenu(menus.Menu):
     def __init__(self, game: Akinator, color: discord.Color):
@@ -107,15 +109,38 @@ class AkiMenu(menus.Menu):
             e.set_footer(text=f"{round(self.aki.progression, 2)}% guessed")
         return e
 
-    async def win(self):
-        winner = await self.aki.win()
+    def get_winner_embed(self, winner: dict) -> discord.Embed:
         win_embed = discord.Embed(
             color=self.color,
             title=f"I'm {round(float(winner['proba']) * 100)}% sure it's {winner['name']}!",
             description=winner["description"],
         )
         win_embed.set_image(url=winner["absolute_picture_path"])
-        await self.edit_or_send(embed=win_embed)
+        return win_embed
+
+    def get_nsfw_embed(self):
+        embed = discord.Embed(
+            color=self.color, 
+            title="I guessed it, but this result is inappropriate.", 
+            description="Try again in a NSFW channel."
+        )
+        return embed
+
+    def text_is_nsfw(self, text: str) -> bool:
+        text = text.lower()
+        for word in NSFW_WORDS:
+            if word in text:
+                return True
+        return False
+
+    async def win(self):
+        winner = await self.aki.win()
+        description = winner["description"]
+        if not self.message.channel.nsfw and self.text_is_nsfw(description):
+            embed = self.get_nsfw_embed()
+        else:
+            embed = self.get_winner_embed(winner)
+        await self.edit_or_send(embed=embed)
         self.stop()
         # TODO allow for continuation of game
 
@@ -171,12 +196,19 @@ class Aki(commands.Cog):
             force_registration=True,
         )
 
+    __version__ = "1.0.0"
+
+    def format_help_for_context(self, ctx):
+        pre_processed = super().format_help_for_context(ctx)
+        n = "\n" if "\n\n" not in pre_processed else ""
+        return f"{pre_processed}{n}\nCog Version: {self.__version__}"
+
     async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
         return
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
-    @commands.command()
+    @commands.command(aliases=["akinator"])
     async def aki(self, ctx: commands.Context, *, language: str.lower = "en"):
         """
         Start a game of Akinator!
@@ -203,5 +235,6 @@ class Aki(commands.Cog):
         except Exception:
             await ctx.send("I encountered an error while connecting to the Akinator servers.")
         else:
-            menu = AkiMenu(aki, await ctx.embed_color())
+            aki_color = discord.Color(0xE8BC90)
+            menu = AkiMenu(aki, aki_color)
             await menu.start(ctx)
