@@ -1,8 +1,8 @@
 import asyncio
-from copy import copy
-from typing import List, Dict, Union
-import types
 import re
+import types
+from copy import copy
+from typing import Dict, List, Union
 
 import discord
 from redbot.core import commands
@@ -11,7 +11,14 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import MixinMeta
-from .converters import SLASH_NAME, TagConverter, TagName, TagScriptConverter, GlobalTagConverter, GuildTagConverter
+from .converters import (
+    SLASH_NAME,
+    GlobalTagConverter,
+    GuildTagConverter,
+    TagConverter,
+    TagName,
+    TagScriptConverter,
+)
 from .errors import (
     BlacklistCheckFailure,
     MissingTagPermissions,
@@ -24,6 +31,7 @@ from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, Slash
 from .utils import dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
+
 
 def _sub(match: re.Match) -> str:
     if match.group(1):
@@ -64,7 +72,11 @@ class Commands(MixinMeta):
     @commands.mod_or_permissions(manage_guild=True)
     @slashtag.command("add", aliases=["create", "+"])
     async def slashtag_add(
-        self, ctx: commands.Context, tag_name: TagName(check_global=False), *, tagscript: TagScriptConverter
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(check_global=False),
+        *,
+        tagscript: TagScriptConverter,
     ):
         """
         Add a slash tag with TagScript.
@@ -73,7 +85,9 @@ class Commands(MixinMeta):
         """
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False)
 
-    async def create_slash_tag(self, ctx: commands.Context, tag_name: str, tagscript: str, *, is_global: bool = False):
+    async def create_slash_tag(
+        self, ctx: commands.Context, tag_name: str, tagscript: str, *, is_global: bool = False
+    ):
         options: List[SlashOption] = []
         guild_id = None if is_global else ctx.guild.id
         try:
@@ -236,7 +250,9 @@ class Commands(MixinMeta):
         await ctx.send(tag.edit_tagscript(tagscript))
 
     @slashtag_edit.command("name")
-    async def slashtag_edit_name(self, ctx: commands.Context, tag: GuildTagConverter, name: TagName(check_global=False)):
+    async def slashtag_edit_name(
+        self, ctx: commands.Context, tag: GuildTagConverter, name: TagName(check_global=False)
+    ):
         """Edit a slash tag's name."""
         await ctx.send(tag.edit_name(name))
 
@@ -279,10 +295,10 @@ class Commands(MixinMeta):
         return f"{prefix}{discord.utils.escape_markdown(tagscript)}"
 
     async def view_slash_tags(
-        self, 
-        ctx: commands.Context, 
-        tags: Dict[int, SlashTag], 
-        *, 
+        self,
+        ctx: commands.Context,
+        tags: Dict[int, SlashTag],
+        *,
         is_global: bool,
     ):
         description = [self.format_tagscript(tag) for tag in tags.values()]
@@ -390,7 +406,11 @@ class Commands(MixinMeta):
     @slashtag_global.command("add")
     @copy_doc(slashtag_add)
     async def slashtag_global_add(
-        self, ctx: commands.Context, tag_name: TagName(global_priority=True), *, tagscript: TagScriptConverter
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(global_priority=True),
+        *,
+        tagscript: TagScriptConverter,
     ):
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True)
 
@@ -408,7 +428,9 @@ class Commands(MixinMeta):
 
     @slashtag_global_edit.command("name")
     @copy_doc(slashtag_edit_name)
-    async def slashtag_global_edit_name(self, ctx: commands.Context, tag: GlobalTagConverter, name: TagName(global_priority=True)):
+    async def slashtag_global_edit_name(
+        self, ctx: commands.Context, tag: GlobalTagConverter, name: TagName(global_priority=True)
+    ):
         await ctx.send(tag.edit_name(name))
 
     @slashtag_global_edit.command("description")

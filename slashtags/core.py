@@ -25,8 +25,8 @@ SOFTWARE.
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Coroutine, Dict, Optional
 from functools import partial
+from typing import Coroutine, Dict, Optional
 
 import discord
 import TagScriptEngine as tse
@@ -159,7 +159,10 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             tag.add_to_cache()
             cached += 1
 
-        log.debug("completed caching slash tags, %s guild slash tags cached, %s global slash tags cached" % (guild_cached, cached))
+        log.debug(
+            "completed caching slash tags, %s guild slash tags cached, %s global slash tags cached"
+            % (guild_cached, cached)
+        )
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
         output = self.engine.process(tagscript)
@@ -170,10 +173,10 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         return True
 
     def get_tag(
-        self, 
-        guild: Optional[discord.Guild], 
-        tag_id: int, 
-        *, 
+        self,
+        guild: Optional[discord.Guild],
+        tag_id: int,
+        *,
         check_global: bool = True,
         global_priority: bool = False,
     ) -> Optional[SlashTag]:
@@ -187,10 +190,10 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         return tag
 
     def get_tag_by_name(
-        self, 
-        guild: Optional[discord.Guild], 
+        self,
+        guild: Optional[discord.Guild],
         tag_name: str,
-        *, 
+        *,
         check_global: bool = True,
         global_priority: bool = False,
     ) -> Optional[SlashTag]:

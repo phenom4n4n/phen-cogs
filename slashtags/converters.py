@@ -57,9 +57,7 @@ class TagName(TagSearcher, commands.Converter):
         name = match.group(1)
         if self.check_command:
             if self.get_tag(ctx, name):
-                raise commands.BadArgument(
-                    f"A slash tag named `{name}` is already registered."
-                )
+                raise commands.BadArgument(f"A slash tag named `{name}` is already registered.")
         return name
 
 
