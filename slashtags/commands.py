@@ -27,7 +27,14 @@ from .errors import (
 )
 from .http import SlashHTTP
 from .models import SlashOptionType
-from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, SlashTag, SlashOptionChoice
+from .objects import (
+    FakeMessage,
+    SlashCommand,
+    SlashContext,
+    SlashOption,
+    SlashOptionChoice,
+    SlashTag,
+)
 from .utils import dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
@@ -251,7 +258,11 @@ class Commands(MixinMeta):
             required = False
 
         return SlashOption(
-            name=title, description=description, option_type=option_type, required=required, choices=choices
+            name=title,
+            description=description,
+            option_type=option_type,
+            required=required,
+            choices=choices,
         )
 
     @commands.mod_or_permissions(manage_guild=True)
