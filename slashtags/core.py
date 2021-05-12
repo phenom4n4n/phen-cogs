@@ -26,6 +26,7 @@ import asyncio
 import logging
 from collections import defaultdict
 from typing import Coroutine, Dict, Optional
+from functools import partial
 
 import discord
 import TagScriptEngine as tse
@@ -86,7 +87,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             force_registration=True,
         )
         default_guild = {"tags": {}}
-        default_global = {"application_id": None, "eval_command": None}
+        default_global = {"application_id": None, "eval_command": None, "tags": {}}
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
@@ -143,15 +144,22 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.application_id = app_id
 
     async def cache_tags(self):
-        cached = 0
+        guild_cached = 0
         guilds_data = await self.config.all_guilds()
         async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
-            async for tag_name, tag_data in AsyncIter(guild_data["tags"].items(), steps=50):
+            for tag_data in guild_data["tags"].values():
                 tag = SlashTag.from_dict(self, tag_data, guild_id=guild_id)
-                self.guild_tag_cache[guild_id][tag.id] = tag
-                self.command_cache[tag.command.id] = tag.command
-                cached += 1
-        log.debug(f"slash tags cached: {cached}")
+                tag.add_to_cache()
+                guild_cached += 1
+
+        cached = 0
+        all_data = await self.config.all()
+        for global_tag_data in all_data["tags"].values():
+            tag = SlashTag.from_dict(self, global_tag_data)
+            tag.add_to_cache()
+            cached += 1
+
+        log.debug("completed caching slash tags, %s guild slash tags cached, %s global slash tags cached" % (guild_cached, cached))
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
         output = self.engine.process(tagscript)
@@ -161,13 +169,40 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         # TODO block validation
         return True
 
-    def get_tag(self, guild: discord.Guild, tag_id: int) -> SlashTag:
-        return self.guild_tag_cache[guild.id].get(tag_id)
+    def get_tag(
+        self, 
+        guild: Optional[discord.Guild], 
+        tag_id: int, 
+        *, 
+        check_global: bool = True,
+        global_priority: bool = False,
+    ) -> Optional[SlashTag]:
+        tag = None
+        if global_priority and check_global:
+            return self.global_tag_cache.get(tag_id)
+        if guild is not None:
+            tag = self.guild_tag_cache[guild.id].get(tag_id)
+        if tag is None and check_global:
+            tag = self.global_tag_cache.get(tag_id)
+        return tag
 
-    def get_tag_by_name(self, guild: discord.Guild, tag_name: str) -> SlashTag:
-        for tag in self.guild_tag_cache[guild.id].values():
-            if tag.name == tag_name:
-                return tag
+    def get_tag_by_name(
+        self, 
+        guild: Optional[discord.Guild], 
+        tag_name: str,
+        *, 
+        check_global: bool = True,
+        global_priority: bool = False,
+    ) -> Optional[SlashTag]:
+        tag = None
+        get = partial(discord.utils.get, name=tag_name)
+        if global_priority and check_global:
+            return get(self.global_tag_cache.values())
+        if guild is not None:
+            tag = get(self.guild_tag_cache[guild.id].values())
+        if tag is None and check_global:
+            tag = get(self.global_tag_cache.values())
+        return tag
 
     def get_command(self, command_id: int) -> SlashCommand:
         return self.command_cache.get(command_id)

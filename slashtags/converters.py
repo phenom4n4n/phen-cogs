@@ -34,9 +34,19 @@ from .objects import SlashTag
 SLASH_NAME = re.compile(r"^{?([\w-]{1,32})}?$")
 
 
-class TagName(commands.Converter):
-    def __init__(self, *, check_command: bool = True):
+class TagSearcher:
+    def __init__(self, **search_kwargs):
+        self.search_kwargs = search_kwargs
+
+    def get_tag(self, ctx: commands.Context, argument: str):
+        cog = ctx.bot.get_cog("SlashTags")
+        return cog.get_tag_by_name(ctx.guild, argument, **self.search_kwargs)
+
+
+class TagName(TagSearcher, commands.Converter):
+    def __init__(self, *, check_command: bool = True, **search_kwargs):
         self.check_command = check_command
+        super().__init__(**search_kwargs)
 
     async def convert(self, ctx: commands.Converter, argument: str) -> str:
         if len(argument) > 32:
@@ -47,30 +57,24 @@ class TagName(commands.Converter):
             raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
         name = match.group(1)
         if self.check_command:
-            cog = ctx.bot.get_cog("SlashTags")
-            for tag in cog.guild_tag_cache[ctx.guild.id].values():
-                if tag.name == name:
-                    raise commands.BadArgument(
-                        f"A slash tag named `{name}` is already registered."
-                    )
+            if self.get_tag(ctx, name):
+                raise commands.BadArgument(
+                    f"A slash tag named `{name}` is already registered."
+                )
         return name
 
 
-class TagConverter(commands.Converter):
-    def __init__(self, *, check_global: bool = False, global_priority: bool = False):
-        self.check_global = check_global
-        self.global_priority = global_priority
-
+class TagConverter(TagSearcher, commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> SlashTag:
         cog = ctx.bot.get_cog("SlashTags")
-        tag = cog.get_tag_by_name(
-            ctx.guild,
-            argument,
-        )
-        if tag:
-            return tag
-        else:
+        tag = self.get_tag(ctx, argument)
+        if not tag:
             raise commands.BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
+        return tag
+
+
+GlobalTagConverter = TagConverter(check_global=True, global_priority=True)
+GuildTagConverter = TagConverter(check_global=False, global_priority=False)
 
 
 class TagScriptConverter(commands.Converter):
