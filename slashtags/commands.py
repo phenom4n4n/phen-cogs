@@ -353,51 +353,6 @@ class Commands(MixinMeta):
         await ctx.send("Tags deleted.")
 
     @commands.is_owner()
-    @slashtag.command("appid")
-    async def slashtag_appid(self, ctx: commands.Context, id: int = None):
-        """
-        Manually set the application ID for [botname] slash commands if it differs from the bot user ID.
-
-        This only applies to legacy bots. If you don't know what this means, you don't need to worry about it.
-        """
-        app_id = id or self.bot.user.id
-        await self.config.application_id.set(app_id)
-        self.application_id = app_id
-        await ctx.send(f"Application ID set to `{id}`.")
-
-    @commands.check(dev_check)
-    @commands.is_owner()
-    @slashtag.command("addeval")
-    async def slashtag_addeval(self, ctx: commands.Context):
-        """Add a slash eval command for debugging."""
-        if self.eval_command:
-            return await ctx.send("An eval command is already registered.")
-        slasheval = SlashCommand(
-            self,
-            name="eval",
-            description="SlashTags debugging eval command. Only bot owners can use this.",
-            options=[
-                SlashOption(name="body", description="Code body to evaluate.", required=True)
-            ],
-        )
-        await slasheval.register()
-        await self.config.eval_command.set(slasheval.id)
-        self.eval_command = slasheval.id
-        await ctx.send("`/eval` has been registered.")
-
-    @commands.check(dev_check)
-    @commands.is_owner()
-    @slashtag.command("rmeval")
-    async def slashtag_rmeval(self, ctx: commands.Context):
-        """Remove the slash eval commands."""
-        if not self.eval_command:
-            return await ctx.send("The eval command hasn't been registered.")
-        await self.http.remove_slash_command(self.eval_command)
-        await self.config.eval_command.clear()
-        self.eval_command = None
-        await ctx.send("`/eval` has been deleted.")
-
-    @commands.is_owner()
     @slashtag.group("global")
     @copy_doc(slashtag)
     async def slashtag_global(self, ctx: commands.Context):
@@ -462,3 +417,61 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send("There are no global slash tags.")
         await self.view_slash_tags(ctx, tags, is_global=True)
+
+    @commands.is_owner()
+    @commands.group(aliases=["slashset"])
+    async def slashtagset(self, ctx: commands.Context):
+        """Manage SlashTags settings."""
+
+    @slashtagset.command("settings")
+    async def slashtagset_settings(self, ctx: commands.Context):
+        """View SlashTags settings."""
+        eval_command = f"✅ (**{self.eval_command}**)" if self.eval_command else "❎"
+        description = [
+            f"Application ID: **{self.application_id}**",
+            f"Eval command: {eval_command}"
+        ]
+        embed = discord.Embed(color=0xC9C9C9, title="SlashTags Settings", description="\n".join(description))
+        await ctx.send(embed=embed)
+
+    @slashtagset.command("appid")
+    async def slashtagset_appid(self, ctx: commands.Context, id: int = None):
+        """
+        Manually set the application ID for [botname] slash commands if it differs from the bot user ID.
+
+        This only applies to legacy bots. If you don't know what this means, you don't need to worry about it.
+        """
+        app_id = id or self.bot.user.id
+        await self.config.application_id.set(app_id)
+        self.application_id = app_id
+        await ctx.send(f"Application ID set to `{id}`.")
+
+    @commands.check(dev_check)
+    @slashtagset.command("addeval")
+    async def slashtagset_addeval(self, ctx: commands.Context):
+        """Add a slash eval command for debugging."""
+        if self.eval_command:
+            return await ctx.send("An eval command is already registered.")
+        slasheval = SlashCommand(
+            self,
+            name="eval",
+            description="SlashTags debugging eval command. Only bot owners can use this.",
+            options=[
+                SlashOption(name="body", description="Code body to evaluate.", required=True)
+            ],
+        )
+        await slasheval.register()
+        await self.config.eval_command.set(slasheval.id)
+        self.eval_command = slasheval.id
+        await ctx.send("`/eval` has been registered.")
+
+    @commands.check(dev_check)
+    @slashtagset.command("rmeval")
+    async def slashtagset_rmeval(self, ctx: commands.Context):
+        """Remove the slash eval command."""
+        if not self.eval_command:
+            return await ctx.send("The eval command hasn't been registered.")
+        await self.http.remove_slash_command(self.eval_command)
+        await self.config.eval_command.clear()
+        self.eval_command = None
+        await ctx.send("`/eval` has been deleted.")
