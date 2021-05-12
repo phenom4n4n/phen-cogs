@@ -429,9 +429,11 @@ class Commands(MixinMeta):
         eval_command = f"✅ (**{self.eval_command}**)" if self.eval_command else "❎"
         description = [
             f"Application ID: **{self.application_id}**",
-            f"Eval command: {eval_command}"
+            f"Eval command: {eval_command}",
         ]
-        embed = discord.Embed(color=0xC9C9C9, title="SlashTags Settings", description="\n".join(description))
+        embed = discord.Embed(
+            color=0xC9C9C9, title="SlashTags Settings", description="\n".join(description)
+        )
         await ctx.send(embed=embed)
 
     @slashtagset.command("appid")
