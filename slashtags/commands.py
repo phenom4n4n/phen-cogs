@@ -27,10 +27,12 @@ from .errors import (
 )
 from .http import SlashHTTP
 from .models import SlashOptionType
-from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, SlashTag
+from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, SlashTag, SlashOptionChoice
 from .utils import dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
+
+CHOICE_LIST_RE = re.compile(r".{1,100}:.{1,100}")
 
 
 def _sub(match: re.Match) -> str:
@@ -183,6 +185,16 @@ class Commands(MixinMeta):
         await self.delete_quietly(message)
         return message.content
 
+    async def get_choices(self, ctx: commands.Context) -> List[SlashOptionChoice]:
+        query = (
+            "Send the list of choice names and values you would like to add as choices to "
+            "the tag. Choice names and values should be seperated by `:`, and each choice "
+            "should be seperated by `|`. Example:\n`dog:Doggo|cat:Catto`"
+        )
+        response = await self.send_and_query_response(ctx, query)
+        for choice_text in response.split("|"):
+            ...
+
     async def get_option(
         self, ctx: commands.Context, *, added_required: bool = False
     ) -> SlashOption:
@@ -205,6 +217,7 @@ class Commands(MixinMeta):
             for name in SlashOptionType.__members__.keys()
             if not name.startswith("SUB")
         ]
+        valid_option_types.append("choices")
 
         option_query = [
             "What should the argument type be?",
@@ -216,6 +229,10 @@ class Commands(MixinMeta):
             "\n".join(option_query),
             MessagePredicate.lower_contained_in(valid_option_types, ctx),
         )
+        if option_type == "choices":
+            choices = await self.get_choices(ctx)
+        else:
+            choices = []
         option_type = SlashOptionType[option_type.upper()]
 
         if not added_required:
@@ -234,7 +251,7 @@ class Commands(MixinMeta):
             required = False
 
         return SlashOption(
-            name=title, description=description, option_type=option_type, required=required
+            name=title, description=description, option_type=option_type, required=required, choices=choices
         )
 
     @commands.mod_or_permissions(manage_guild=True)
