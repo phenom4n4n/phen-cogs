@@ -223,6 +223,9 @@ class SlashCommand:
         else:
             await self.http.remove_slash_command(self.id)
 
+    def add_to_cache(self):
+        self.cog.command_cache[self.id] = self
+
     def remove_from_cache(self):
         try:
             del self.cog.command_cache[self.id]
@@ -360,6 +363,7 @@ class SlashTag:
         return f"{self.name_prefix} `{self}` deleted."
 
     def remove_from_cache(self):
+        self.command.remove_from_cache()
         try:
             del self.cache_path[self.id]
         except KeyError:
@@ -367,6 +371,7 @@ class SlashTag:
 
     def add_to_cache(self):
         self.cache_path[self.id] = self
+        self.command.add_to_cache()
 
     async def edit(self, **kwargs):
         await self.command.edit(**kwargs)
