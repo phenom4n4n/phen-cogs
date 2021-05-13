@@ -146,7 +146,7 @@ class Processor(MixinMeta):
         else:
             await interaction.defer(hidden=hidden)
 
-        if command_task := self.handle_commands(interaction, actions):
+        if command_task := await self.handle_commands(interaction, actions):
             to_gather.append(command_task)
 
         if to_gather:
