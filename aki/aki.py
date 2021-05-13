@@ -37,6 +37,10 @@ log = logging.getLogger("red.phenom4n4n.aki")
 NSFW_WORDS = ["porn", "sex"]
 
 
+def channel_is_nsfw(channel) -> bool:
+    return getattr(channel, "nsfw", False)
+
+
 class AkiMenu(menus.Menu):
     def __init__(self, game: Akinator, color: discord.Color):
         self.aki = game
@@ -136,7 +140,7 @@ class AkiMenu(menus.Menu):
     async def win(self):
         winner = await self.aki.win()
         description = winner["description"]
-        if not self.message.channel.nsfw and self.text_is_nsfw(description):
+        if not channel_is_nsfw(self.message.channel) and self.text_is_nsfw(description):
             embed = self.get_nsfw_embed()
         else:
             embed = self.get_winner_embed(winner)
@@ -196,7 +200,7 @@ class Aki(commands.Cog):
             force_registration=True,
         )
 
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -225,7 +229,7 @@ class Aki(commands.Cog):
         """
         await ctx.trigger_typing()
         aki = Akinator()
-        child_mode = not ctx.channel.nsfw
+        child_mode = not channel_is_nsfw(ctx.channel)
         try:
             await aki.start_game(language=language.replace(" ", "_"), child_mode=child_mode)
         except akinator.InvalidLanguageError:
