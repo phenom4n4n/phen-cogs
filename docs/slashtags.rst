@@ -3,19 +3,14 @@ SlashTags
 =========
 
 Slash Tags allow you to create custom `Discord Slash Commands <https://blog.discord.com/slash-commands-are-here-8db0a385d9e6>`_
-which harness the power of the TagScriptEngine.
+which harness the power of the TagScriptEngine. If you haven't already, 
+it's recommended you also read the :doc:`blocks` page for a general understanding 
+of TagScript blocks.
 
-Block Syntax
+------------
+Tag Creation
 ------------
 
-``{block(parameter):payload}``
-
-``[arg]`` = Optional
-
-``<arg>`` = Required
-
-Usage
------
 .. note:: ``[p]`` is your prefix.
 
 Add a tag using the following command::
@@ -51,30 +46,3 @@ These are:
 *   ``server``
 
 You can see attributes available using these blocks in :doc:`default_variables`.
-
-Below is an example tag that returns info related to the tag author. ::
-
-    [p]tag add authorinfo Username: **{author}**
-    ID: **{author(id)}**
-    Creation Date: **{author(created_at)}**
-    Bot: **{author(bot)}**
-
-The ``args`` block can be useful for customizing tags and works well with the :ref:`CommandBlock`.
-Simple echo command that validates if args were provided::
-
-    [p]tag add echo {if({args}==):You must provide text to echo.|{args}}
-
-Here's a tag that uses the default variable blocks as well as the :ref:`IfBlock`::
-
-    [p]tag add startertag Hi, this is an example of a tag.
-    This tag will now invoke a ping command.
-    {c:ping}
-    {delete({args(0)}==delete)}
-    {embed({
-        "title":"The server this was invoked on was {server}.",
-        "description":"{if({args}==):You did not provide any arguments for this tag|The arguments provided were: `{args}`}",
-        "thumbnail":{"url":"{guild(icon)}"},
-        "author":{"name":"{author} invoked this tag.","icon_url":"{author(avatar)}"},
-        "color":2105893,
-        "footer":{"icon_url":"{author(avatar)}","text":"{target} is the target of this tag."}
-    })}
