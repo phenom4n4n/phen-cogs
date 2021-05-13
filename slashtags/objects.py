@@ -455,12 +455,14 @@ class SlashTag:
         await ctx.send(
             f"{self.name_prefix} `{self}`'s arguments have been edited from {len(old_options)} to {len(options)} arguments."
         )
-    
+
     async def edit_single_option(self, ctx: commands.Context, name: str):
         options = self.command.options
         option = discord.utils.get(options, name=name)
         if not option:
-            await ctx.send(f'{self.name_prefix} `{self}` doesn\'t have an argument named "{name}".')
+            await ctx.send(
+                f'{self.name_prefix} `{self}` doesn\'t have an argument named "{name}".'
+            )
             return
         added_required = not options[-1].required if len(options) > 2 else False
         try:

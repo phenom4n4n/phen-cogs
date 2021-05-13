@@ -34,7 +34,7 @@ from .objects import (
     SlashOptionChoice,
     SlashTag,
 )
-from .utils import dev_check, ARGUMENT_NAME_DESCRIPTION
+from .utils import ARGUMENT_NAME_DESCRIPTION, dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
 
@@ -321,7 +321,9 @@ class Commands(MixinMeta):
         await tag.edit_options(ctx)
 
     @slashtag_edit.command("argument", aliases=["option"])
-    async def slashtag_edit_argument(self, ctx: commands.Context, tag: GuildTagConverter, argument: str):
+    async def slashtag_edit_argument(
+        self, ctx: commands.Context, tag: GuildTagConverter, argument: str
+    ):
         """Edit a single slash tag's argument by name."""
         await tag.edit_single_option(ctx, argument)
 
@@ -461,7 +463,9 @@ class Commands(MixinMeta):
 
     @slashtag_global_edit.command("argument", aliases=["option"])
     @copy_doc(slashtag_edit_argument)
-    async def slashtag_global_edit_argument(self, ctx: commands.Context, tag: GuildTagConverter, argument: str):
+    async def slashtag_global_edit_argument(
+        self, ctx: commands.Context, tag: GuildTagConverter, argument: str
+    ):
         """Edit a single slash tag's argument by name."""
         await tag.edit_single_option(ctx, argument)
 
