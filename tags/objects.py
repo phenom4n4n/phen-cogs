@@ -53,7 +53,7 @@ class Tag:
         self.config: Config = cog.config
         self.bot: Red = cog.bot
         self.name: str = name
-        self._aliases = aliases
+        self._aliases = aliases.copy()
         self.tagscript: str = tagscript
 
         self.guild_id = guild_id
@@ -127,7 +127,10 @@ class Tag:
         path = self.cache_path
         del path[self.name]
         for alias in self.aliases:
-            del path[alias]
+            try:
+                del path[alias]
+            except KeyError:
+                pass
 
     @classmethod
     def from_dict(

@@ -90,7 +90,7 @@ class Component:
         url: str = None,
     ):
         self.type = type
-        self.components = components
+        self.components = components.copy()
         self.style = style
         self.label = label
         self.custom_id = str(custom_id) if custom_id else None

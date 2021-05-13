@@ -75,8 +75,8 @@ class SlashOption:
         self.name = name
         self.description = description
         self.required = required
-        self.choices = choices
-        self.options = options
+        self.choices = choices.copy()
+        self.options = options.copy()
 
     def to_dict(self):
         data = {
@@ -117,7 +117,7 @@ class SlashCommand:
         name: str,
         description: str,
         guild_id: int = None,
-        options: List[SlashOption] = list,
+        options: List[SlashOption] = [],
     ):
         self.cog = cog
         self.http = cog.http
@@ -127,7 +127,7 @@ class SlashCommand:
         self.name = name
         self.description = description
         self.guild_id = guild_id
-        self.options = options
+        self.options = options.copy()
 
     def __str__(self) -> str:
         return self.name
@@ -235,7 +235,6 @@ class SlashTag:
         cog: commands.Cog,
         tagscript: str,
         *,
-        options: list = [],
         guild_id: int = None,
         author_id: int = None,
         uses: int = 0,
