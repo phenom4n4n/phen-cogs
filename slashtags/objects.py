@@ -445,30 +445,6 @@ class SlashTag:
         )
 
 
-    async def edit_tagscript(self, tagscript: str) -> str:
-        old_tagscript = self.tagscript
-        self.tagscript = tagscript
-        await self.update_config()
-        return f"{self.name_prefix} `{self}`'s tagscript has been edited from {len(old_tagscript)} to {len(tagscript)} characters."
-
-    async def edit_name(self, name: str) -> str:
-        old_name = self.name
-        await self.edit(name=name)
-        return f"Renamed `{old_name}` to `{name}`."
-
-    async def edit_description(self, description: str) -> str:
-        await self.edit(description=description)
-        return f"Edited {self.name_prefix.lower()} `{self}`'s description."
-
-    async def edit_options(self, ctx: commands.Context) -> str:
-        old_options = self.command.options
-        options = await self.cog.get_options(ctx, [])
-        await self.edit(options=options)
-        await ctx.send(
-            f"{self.name_prefix} `{self}`'s arguments have been edited from {len(old_options)} to {len(options)} arguments."
-        )
-
-
 def maybe_set_attr(cls, name, attr):
     if not hasattr(cls, name):
         setattr(cls, name, attr)
