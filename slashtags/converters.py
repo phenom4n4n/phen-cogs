@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import re
 from typing import TYPE_CHECKING
 
 from discord.utils import escape_mentions
@@ -30,8 +29,7 @@ from redbot.core import commands
 
 from .errors import MissingTagPermissions
 from .objects import SlashTag
-
-SLASH_NAME = re.compile(r"^{?([\w-]{1,32})}?$")
+from .utils import SLASH_NAME
 
 
 class TagSearcher:

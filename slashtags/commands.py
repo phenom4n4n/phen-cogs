@@ -12,7 +12,6 @@ from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import MixinMeta
 from .converters import (
-    SLASH_NAME,
     GlobalTagConverter,
     GuildTagConverter,
     TagConverter,
@@ -35,11 +34,13 @@ from .objects import (
     SlashOptionChoice,
     SlashTag,
 )
-from .utils import dev_check
+from .utils import dev_check, ARGUMENT_NAME_DESCRIPTION
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
 
 CHOICE_RE = re.compile(r".{1,100}:.{1,100}")
+
+CHOICE_LIMIT = 25
 
 
 def _sub(match: re.Match) -> str:
@@ -201,33 +202,42 @@ class Commands(MixinMeta):
         response = await self.send_and_query_response(ctx, query)
         choices = []
         for index, choice_text in enumerate(response.split("|"), 1):
+            if ":" not in choice_text:
+                await ctx.send(
+                    f"Failed to parse `{choice_text}` to a choice as its name and value "
+                    "weren't seperated by a `:`.",
+                    delete_after=15,
+                )
+                continue
             if not CHOICE_RE.match(choice_text):
                 await ctx.send(
-                    f"Failed to convert choice #{index} to a choice as it was not seperated "
-                    "by a `:` or its name/value exceeded the 100 character limit.",
+                    f"Failed to parse `{choice_text}` to a choice as "
+                    "its name or value exceeded the 100 character limit.",
                     delete_after=15,
                 )
                 continue
             choice = SlashOptionChoice(*choice_text.split(":", 1))
             choices.append(choice)
+            if len(choices) >= CHOICE_LIMIT:
+                await ctx.send(f"Reached max choices ({CHOICE_LIMIT}).")
+                break
         return choices
 
     async def get_option(
         self, ctx: commands.Context, *, added_required: bool = False
     ) -> SlashOption:
-        name_desc = (
-            "What should the argument name be?\n"
-            "Slash argument names may not exceed 32 characters and can only contain characters "
-            "that are alphanumeric or '_' or '-'."
-        )
-        name_pred = MessagePredicate.regex(SLASH_NAME, ctx)
-        await self.send_and_query_response(ctx, name_desc, name_pred)
-        title = name_pred.result.group(1)
-        description = await self.send_and_query_response(
-            ctx,
-            "What should the argument description be? (maximum 100 characters)",
-            MessagePredicate.length_less(101, ctx),
-        )
+        name_desc = [
+            "What should the argument name be and description be?",
+            "The argument name and description should be split by a `:`.",
+            "Example: `member:A member of this server.`\n",
+            "*Slash argument names may not exceed 32 characters and can only contain characters "
+            "that are alphanumeric or '_' or '-'.",
+            "The argument description must be less than or equal to 100 characters.*",
+        ]
+        name_pred = MessagePredicate.regex(ARGUMENT_NAME_DESCRIPTION, ctx)
+        await self.send_and_query_response(ctx, "\n".join(name_desc), name_pred)
+        match = name_pred.result
+        name, description = match.group(1), match.group(2)
 
         valid_option_types = [
             name.lower()
@@ -248,6 +258,7 @@ class Commands(MixinMeta):
         )
         if option_type == "choices":
             choices = await self.get_choices(ctx)
+            option_type = "STRING"
         else:
             choices = []
         option_type = SlashOptionType[option_type.upper()]
@@ -268,7 +279,7 @@ class Commands(MixinMeta):
             required = False
 
         return SlashOption(
-            name=title,
+            name=name,
             description=description,
             option_type=option_type,
             required=required,
@@ -276,16 +287,19 @@ class Commands(MixinMeta):
         )
 
     @commands.mod_or_permissions(manage_guild=True)
-    @slashtag.group("edit", aliases=["e"])
-    async def slashtag_edit(self, ctx: commands.Context):
+    @slashtag.group("edit", aliases=["e"], invoke_without_command=True)
+    async def slashtag_edit(
+        self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
+    ):
         """Edit a slash tag."""
+        await ctx.send(await tag.edit_tagscript(tagscript))
 
     @slashtag_edit.command("tagscript")
     async def slashtag_edit_tagscript(
         self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
     ):
         """Edit a slash tag's TagScript."""
-        await ctx.send(tag.edit_tagscript(tagscript))
+        await self.slashtag_edit(tag, tagscript=tagscript)
 
     @slashtag_edit.command("name")
     async def slashtag_edit_name(
@@ -301,10 +315,15 @@ class Commands(MixinMeta):
         """Edit a slash tag's description."""
         await ctx.send(await tag.edit_description(description))
 
-    @slashtag_edit.command("arguments")
+    @slashtag_edit.command("arguments", aliases=["options"])
     async def slashtag_edit_arguments(self, ctx: commands.Context, tag: GuildTagConverter):
         """Edit a slash tag's arguments."""
         await tag.edit_options(ctx)
+
+    @slashtag_edit.command("argument", aliases=["option"])
+    async def slashtag_edit_argument(self, ctx: commands.Context, tag: GuildTagConverter, argument: str):
+        """Edit a single slash tag's argument by name."""
+        await tag.edit_single_option(ctx, argument)
 
     @commands.mod_or_permissions(manage_guild=True)
     @slashtag.command("remove", aliases=["delete", "-"])
@@ -407,17 +426,19 @@ class Commands(MixinMeta):
     ):
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True)
 
-    @slashtag_global.group("edit", aliases=["e"])
+    @slashtag_global.group("edit", aliases=["e"], invoke_without_command=True)
     @copy_doc(slashtag_edit)
-    async def slashtag_global_edit(self, ctx: commands.Context):
-        pass
+    async def slashtag_global_edit(
+        self, ctx: commands.Context, tag: GlobalTagConverter, *, tagscript: TagScriptConverter
+    ):
+        await ctx.send(await tag.edit_tagscript(tagscript))
 
     @slashtag_global_edit.command("tagscript")
     @copy_doc(slashtag_edit_tagscript)
     async def slashtag_global_edit_tagscript(
         self, ctx: commands.Context, tag: GlobalTagConverter, *, tagscript: TagScriptConverter
     ):
-        await ctx.send(tag.edit_tagscript(tagscript))
+        await self.slashtag_global_edit(tag, tagscript=tagscript)
 
     @slashtag_global_edit.command("name")
     @copy_doc(slashtag_edit_name)
@@ -433,10 +454,16 @@ class Commands(MixinMeta):
     ):
         await ctx.send(await tag.edit_description(description))
 
-    @slashtag_global_edit.command("arguments")
+    @slashtag_global_edit.command("arguments", aliases=["options"])
     @copy_doc(slashtag_edit_arguments)
     async def slashtag_global_edit_arguments(self, ctx: commands.Context, tag: GlobalTagConverter):
         await tag.edit_options(ctx)
+
+    @slashtag_global_edit.command("argument", aliases=["option"])
+    @copy_doc(slashtag_edit_argument)
+    async def slashtag_global_edit_argument(self, ctx: commands.Context, tag: GuildTagConverter, argument: str):
+        """Edit a single slash tag's argument by name."""
+        await tag.edit_single_option(ctx, argument)
 
     @slashtag_global.command("remove", aliases=["delete", "-"])
     @copy_doc(slashtag_remove)
