@@ -44,6 +44,7 @@ Welcome to Phen-Cogs's documentation!
    :caption: SlashTags Documentation
 
    slashtags
+   slash_arguments
 
 Indices and tables
 ==================
