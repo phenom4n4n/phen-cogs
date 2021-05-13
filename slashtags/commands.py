@@ -32,7 +32,7 @@ from .utils import dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
 
-CHOICE_LIST_RE = re.compile(r".{1,100}:.{1,100}")
+CHOICE_RE = re.compile(r".{1,100}:.{1,100}")
 
 
 def _sub(match: re.Match) -> str:
@@ -192,8 +192,18 @@ class Commands(MixinMeta):
             "should be seperated by `|`. Example:\n`dog:Doggo|cat:Catto`"
         )
         response = await self.send_and_query_response(ctx, query)
-        for choice_text in response.split("|"):
-            ...
+        choices = []
+        for index, choice_text in enumerate(response.split("|"), 1):
+            if not CHOICE_RE.match(choice_text):
+                await ctx.send(
+                    f"Failed to convert choice #{index} to a choice as it was not seperated "
+                    "by a `:` or its name/value exceeded the 100 character limit.",
+                    delete_after=15,
+                )
+                continue
+            choice = SlashOptionChoice(*choice_text.split(":", 1))
+            choices.append(choice)
+        return choices
 
     async def get_option(
         self, ctx: commands.Context, *, added_required: bool = False

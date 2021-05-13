@@ -62,7 +62,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.3.4"
+    __version__ = "0.4.0"
     __author__ = ["PhenoM4n4n"]
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -91,10 +91,10 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
-        self.command_cache = {}
+        self.command_cache: Dict[int, SlashCommand] = {}
         self.button_cache = {}
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
-        self.global_tag_cache = {}
+        self.global_tag_cache: Dict[int, SlashTag] = {}
 
         self.load_task = self.create_task(self.initialize_task())
         bot.add_dev_env_value("st", lambda ctx: self)
