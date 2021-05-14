@@ -3,3 +3,4 @@ sphinx_rtd_theme
 Red-DiscordBot
 git+https://github.com/phenom4n4n/TagScript.git
 beautifulsoup4
+recommonmark

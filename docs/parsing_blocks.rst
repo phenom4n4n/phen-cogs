@@ -40,7 +40,7 @@ Embed Block
 Redirect Block
 ^^^^^^^^^^^^^^
 
-.. autoclass:: tags.blocks.RedirectBlock
+.. autoclass:: TagScriptEngine.RedirectBlock
 
 ^^^^^^^^^^^^
 Delete Block

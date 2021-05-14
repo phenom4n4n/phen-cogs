@@ -35,7 +35,7 @@ The bot will then respond with the tag's tagscript::
     Hello world!
 
 ^^^^^^^^^^^^^^^^^
-Default Variables
+Context Variables
 ^^^^^^^^^^^^^^^^^
 
 Tags come with built-in variable blocks you can access for more information about the invocation context.
