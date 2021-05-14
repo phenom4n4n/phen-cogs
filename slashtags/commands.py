@@ -76,7 +76,7 @@ class Commands(MixinMeta):
         """
         Slash Tag management with TagScript.
 
-        These commands use TagScriptEngine. 
+        These commands use TagScriptEngine.
         [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks.
         """
 
@@ -320,7 +320,7 @@ class Commands(MixinMeta):
     async def slashtag_edit_arguments(self, ctx: commands.Context, tag: GuildTagConverter):
         """
         Edit a slash tag's arguments.
-        
+
         See [this documentation page](https://phen-cogs.readthedocs.io/en/latest/slash_arguments.html) for more information on slash tag arguments.
         """
         await tag.edit_options(ctx)
