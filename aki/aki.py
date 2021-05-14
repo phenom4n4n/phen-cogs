@@ -161,7 +161,7 @@ class AkiMenu(menus.Menu):
         if timed_out:
             await self.edit_or_send(content="Akinator game timed out.", embed=None)
 
-    async def cancel(self, *, message: str = "Akinator game cancelled."):
+    async def cancel(self, message: str = "Akinator game cancelled."):
         await self.edit_or_send(content=message, embed=None)
         self.stop()
 
