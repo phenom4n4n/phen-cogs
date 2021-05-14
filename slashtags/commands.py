@@ -76,7 +76,8 @@ class Commands(MixinMeta):
         """
         Slash Tag management with TagScript.
 
-        These commands use TagScriptEngine. [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks.
+        These commands use TagScriptEngine. 
+        [This site](https://phen-cogs.readthedocs.io/en/latest/index.html) has documentation on how to use TagScript blocks.
         """
 
     @commands.mod_or_permissions(manage_guild=True)
@@ -91,7 +92,7 @@ class Commands(MixinMeta):
         """
         Add a slash tag with TagScript.
 
-        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
+        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
         """
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False)
 
@@ -317,7 +318,11 @@ class Commands(MixinMeta):
 
     @slashtag_edit.command("arguments", aliases=["options"])
     async def slashtag_edit_arguments(self, ctx: commands.Context, tag: GuildTagConverter):
-        """Edit a slash tag's arguments."""
+        """
+        Edit a slash tag's arguments.
+        
+        See [this documentation page](https://phen-cogs.readthedocs.io/en/latest/slash_arguments.html) for more information on slash tag arguments.
+        """
         await tag.edit_options(ctx)
 
     @slashtag_edit.command("argument", aliases=["option"])
@@ -345,7 +350,7 @@ class Commands(MixinMeta):
 
     @staticmethod
     def format_tagscript(tag: SlashTag, limit: int = 60) -> str:
-        prefix = f"`{tag.name}` - "
+        prefix = f"`/{tag.name}` - "
         limit -= len(prefix)
         tagscript = tag.tagscript
         if len(tagscript) > limit - 3:
