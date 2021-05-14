@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import asyncio
 import logging
 from typing import List, Optional, Union
 
@@ -29,6 +30,7 @@ import discord
 import TagScriptEngine as tse
 from redbot.core import Config, commands
 from redbot.core.bot import Red
+from redbot.core.utils.chat_formatting import pagify
 
 from .http import SlashHTTP
 from .models import InteractionResponse, SlashOptionType
@@ -47,8 +49,8 @@ __all__ = (
 
 class SlashOptionChoice:
     def __init__(self, name: str, value: Union[str, int]):
-        self.name: name
-        self.value: value
+        self.name = name
+        self.value = value
 
     def to_dict(self):
         return {"name": self.name, "value": self.value}
@@ -77,6 +79,18 @@ class SlashOption:
         self.required = required
         self.choices = choices.copy()
         self.options = options.copy()
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        values = ["name", "type", "required"]
+        if self.choices:
+            values.append("choices")
+        if self.options:
+            values.append("options")
+        inner = " ".join(f"{value}={getattr(self, value)!r}" for value in values)
+        return f"<SlashOption {inner}>"
 
     def to_dict(self):
         data = {
@@ -222,6 +236,9 @@ class SlashCommand:
         else:
             await self.http.remove_slash_command(self.id)
 
+    def add_to_cache(self):
+        self.cog.command_cache[self.id] = self
+
     def remove_from_cache(self):
         try:
             del self.cog.command_cache[self.id]
@@ -270,6 +287,20 @@ class SlashTag:
         )
 
     @property
+    def cache_path(self) -> dict:
+        return (
+            self.cog.guild_tag_cache[self.guild_id] if self.guild_id else self.cog.global_tag_cache
+        )
+
+    @property
+    def config_path(self):
+        return self.config.guild_from_id(self.guild_id) if self.guild_id else self.config
+
+    @property
+    def name_prefix(self):
+        return "Slash tag" if self.guild_id else "Global slash tag"
+
+    @property
     def name(self):
         return self.command.name
 
@@ -298,12 +329,13 @@ class SlashTag:
 
     async def update_config(self):
         if self._real_tag:
-            if self.guild_id:
-                async with self.config.guild_from_id(self.guild_id).tags() as t:
-                    t[str(self.id)] = self.to_dict()
-            else:
-                async with self.config.tags() as t:
-                    t[str(self.id)] = self.to_dict()
+            async with self.config_path.tags() as t:
+                t[str(self.id)] = self.to_dict()
+
+    async def initialize(self) -> str:
+        self.add_to_cache()
+        await self.update_config()
+        return f"{self.name_prefix} `{self}` added with {len(self.command.options)} arguments."
 
     @classmethod
     def from_dict(
@@ -332,27 +364,118 @@ class SlashTag:
             "command": self.command.to_dict(),
         }
 
-    async def delete(self):
+    async def delete(self) -> str:
         try:
             await self.command.delete()
         except discord.NotFound:
             pass
-        if self.guild_id:
-            async with self.config.guild_from_id(self.guild_id).tags() as t:
-                del t[str(self.id)]
-        else:
-            async with self.config.tags() as t:
-                del t[str(self.id)]
+        async with self.config_path.tags() as t:
+            del t[str(self.id)]
         self.remove_from_cache()
+        return f"{self.name_prefix} `{self}` deleted."
 
     def remove_from_cache(self):
+        self.command.remove_from_cache()
         try:
-            if self.guild_id:
-                del self.cog.guild_tag_cache[self.guild_id][self.id]
-            else:
-                del self.cog.global_tag_cache[self.id]
+            del self.cache_path[self.id]
         except KeyError:
             pass
+
+    def add_to_cache(self):
+        self.cache_path[self.id] = self
+        self.command.add_to_cache()
+
+    async def edit(self, **kwargs):
+        await self.command.edit(**kwargs)
+        await self.update_config()
+
+    async def get_info(self, ctx: commands.Context) -> discord.Embed:
+        desc = [
+            f"Author: {self.author.mention if self.author else self.author_id}",
+            f"Uses: {self.uses}",
+            f"Length: {len(self)}",
+        ]
+        e = discord.Embed(
+            color=await ctx.embed_color(),
+            title=f"{self.name_prefix} `{self}` Info",
+            description="\n".join(desc),
+        )
+        c = self.command
+        command_info = [
+            f"ID: `{c.id}`",
+            f"Name: {c.name}",
+            f"Description: {c.description}",
+        ]
+        e.add_field(name="Command", value="\n".join(command_info), inline=False)
+
+        option_info = []
+        for o in c.options:
+            option_desc = [
+                f"**{o.name}**",
+                f"Description: {o.description}",
+                f"Type: {o.type.name.title()}",
+                f"Required: {o.required}",
+            ]
+            option_info.append("\n".join(option_desc))
+        if option_info:
+            e.add_field(name="Options", value="\n".join(option_info), inline=False)
+
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        return e
+
+    async def send_info(self, ctx: commands.Context) -> discord.Message:
+        return await ctx.send(embed=await self.get_info(ctx))
+
+    async def send_raw_tagscript(self, ctx: commands.Context):
+        tagscript = discord.utils.escape_markdown(self.tagscript)
+        for page in pagify(tagscript):
+            await ctx.send(
+                page,
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+
+    async def edit_tagscript(self, tagscript: str) -> str:
+        old_tagscript = self.tagscript
+        self.tagscript = tagscript
+        await self.update_config()
+        return f"{self.name_prefix} `{self}`'s tagscript has been edited from {len(old_tagscript)} to {len(tagscript)} characters."
+
+    async def edit_name(self, name: str) -> str:
+        old_name = self.name
+        await self.edit(name=name)
+        return f"Renamed `{old_name}` to `{name}`."
+
+    async def edit_description(self, description: str) -> str:
+        await self.edit(description=description)
+        return f"Edited {self.name_prefix.lower()} `{self}`'s description."
+
+    async def edit_options(self, ctx: commands.Context):
+        old_options = self.command.options
+        options = await self.cog.get_options(ctx, [])
+        await self.edit(options=options)
+        await ctx.send(
+            f"{self.name_prefix} `{self}`'s arguments have been edited from {len(old_options)} to {len(options)} arguments."
+        )
+
+    async def edit_single_option(self, ctx: commands.Context, name: str):
+        options = self.command.options
+        option = discord.utils.get(options, name=name)
+        if not option:
+            await ctx.send(
+                f'{self.name_prefix} `{self}` doesn\'t have an argument named "{name}".'
+            )
+            return
+        added_required = not options[-1].required if len(options) > 2 else False
+        try:
+            new_option = await self.cog.get_option(ctx, added_required=added_required)
+        except asyncio.TimeoutError:
+            await ctx.send("Adding this argument timed out.", delete_after=15)
+            return
+        index = options.index(option)
+        options.pop(index)
+        options.insert(index, new_option)
+        await self.command.edit(options=options)
+        await ctx.send(f"Edited {self.name_prefix.lower()} `{self}`'s `{new_option}` argument.")
 
 
 def maybe_set_attr(cls, name, attr):
@@ -378,8 +501,6 @@ def implement_methods(parent):
 
 @implement_methods(discord.Message)
 class FakeMessage(discord.Message):
-    log.debug("FakeMessage defined")
-
     REIMPLEMENTS = {
         "reactions": [],
         "mentions": [],

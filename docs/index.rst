@@ -39,6 +39,13 @@ Welcome to Phen-Cogs's documentation!
    default_variables
    parsing_blocks
 
+.. toctree::
+   :maxdepth: 2
+   :caption: SlashTags Documentation
+
+   slashtags
+   slash_arguments
+
 Indices and tables
 ==================
 
