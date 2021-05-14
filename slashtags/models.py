@@ -261,7 +261,10 @@ class InteractionResponse:
 
     @property
     def channel(self) -> discord.TextChannel:
-        return self.bot.get_channel(self.channel_id)
+        if self.guild_id:
+            return self.guild.get_channel(self.channel_id)
+        else:
+            return self.bot.get_channel(self.channel_id)
 
     @property
     def created_at(self):
@@ -367,7 +370,7 @@ class InteractionCommand(InteractionResponse):
     @property
     def jump_url(self):
         guild_id = getattr(self.guild, "id", "@me")
-        return f"https://discord.com/channels/{guild_id}/{self.channel.id}/{self.id}"
+        return f"https://discord.com/channels/{guild_id}/{self.channel_id}/{self.id}"
 
     def _parse_options(self, options: List[dict], resolved: Dict[str, Dict[str, dict]]):
         for o in options:
