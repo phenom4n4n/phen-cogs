@@ -68,6 +68,7 @@ class SlashOptionType(IntEnum):
     | Choices | Offers a list of choices for the user to pick. Each option has a name and underlying value which is returned as string argument when accessed. | ``{choice}``         | :doc:`StringAdapter <tse:adapter>`         |
     +---------+------------------------------------------------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
     """
+
     SUB_COMMAND = 1
     SUB_COMMAND_GROUP = 2
     STRING = 3
