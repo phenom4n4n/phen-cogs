@@ -161,8 +161,8 @@ class AkiMenu(menus.Menu):
         if timed_out:
             await self.edit_or_send(content="Akinator game timed out.", embed=None)
 
-    async def cancel(self):
-        await self.edit_or_send(content="Akinator game cancelled.", embed=None)
+    async def cancel(self, *, message: str = "Akinator game cancelled."):
+        await self.edit_or_send(content=message, embed=None)
         self.stop()
 
     async def edit_or_send(self, **kwargs):
@@ -178,6 +178,8 @@ class AkiMenu(menus.Menu):
             await self.aki.answer(message)
         except akinator.AkiNoQuestions:
             await self.win()
+        except akinator.AkiTimedOut:
+            await self.cancel("The connection to the Akinator servers was lost.")
         except Exception as error:
             log.exception(
                 f"Encountered an exception while answering with {message} during Akinator session",
@@ -200,7 +202,7 @@ class Aki(commands.Cog):
             force_registration=True,
         )
 
-    __version__ = "1.0.1"
+    __version__ = "1.0.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
