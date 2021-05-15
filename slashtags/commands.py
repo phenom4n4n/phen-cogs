@@ -300,7 +300,7 @@ class Commands(MixinMeta):
         self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
     ):
         """Edit a slash tag's TagScript."""
-        await self.slashtag_edit(tag, tagscript=tagscript)
+        await self.slashtag_edit(ctx, tag, tagscript=tagscript)
 
     @slashtag_edit.command("name")
     async def slashtag_edit_name(
@@ -445,7 +445,7 @@ class Commands(MixinMeta):
     async def slashtag_global_edit_tagscript(
         self, ctx: commands.Context, tag: GlobalTagConverter, *, tagscript: TagScriptConverter
     ):
-        await self.slashtag_global_edit(tag, tagscript=tagscript)
+        await self.slashtag_global_edit(ctx, tag, tagscript=tagscript)
 
     @slashtag_global_edit.command("name")
     @copy_doc(slashtag_edit_name)
