@@ -4,7 +4,7 @@
   "name" : "DisboardReminder",
   "short" : "Set a reminder to bump on Disboard.",
   "description" : "Set a reminder to bump on Disboard.",
-	"requirements": ["unidecode", "rapidfuzz", "git+https://github.com/phenom4n4n/TagScript.git"],
+	"requirements": ["unidecode", "rapidfuzz", "git+https://github.com/phenom4n4n/TagScript.git", "pyparsing"],
   "tags" : ["Disboard", "Reminder"],
   "end_user_data_statement": "This cog does not persistently store any data or metadata about users."
 }
