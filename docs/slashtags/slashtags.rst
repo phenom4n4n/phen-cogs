@@ -3,8 +3,8 @@ SlashTags
 =========
 
 Slash Tags allow you to create custom `Discord Slash Commands <https://blog.discord.com/slash-commands-are-here-8db0a385d9e6>`_
-which harness the power of the TagScriptEngine. If you haven't already, 
-it's recommended you also read the :doc:`../tags/blocks` page for a general understanding 
+which harness the power of the TagScriptEngine. If you haven't already,
+it's recommended you also read the :doc:`../tags/blocks` page for a general understanding
 of TagScript blocks.
 
 ------------

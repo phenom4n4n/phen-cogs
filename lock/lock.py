@@ -199,7 +199,6 @@ class Lock(commands.Cog):
                     succeeded.append(inline(role.name))
                 except:
                     failed.append(inline(role.name))
-        msg = ""
         if succeeded:
             await ctx.send(f"The server has locked for {humanize_list(succeeded)}.")
         if cancelled:
@@ -442,7 +441,7 @@ class Lock(commands.Cog):
     ):
         base_perms = dict(iter(discord.PermissionOverwrite()))
         old_perms = copy(permissions)
-        user_perms = ctx.channel.permissions_for(ctx.author)
+        ctx.channel.permissions_for(ctx.author)
         invalid_perms = []
         valid_perms = []
         not_allowed: List[str] = []
