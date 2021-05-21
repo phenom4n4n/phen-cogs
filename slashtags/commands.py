@@ -18,12 +18,6 @@ from .converters import (
     TagName,
     TagScriptConverter,
 )
-from .errors import (
-    BlacklistCheckFailure,
-    MissingTagPermissions,
-    RequireCheckFailure,
-    WhitelistCheckFailure,
-)
 from .models import SlashOptionType
 from .objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
 from .utils import ARGUMENT_NAME_DESCRIPTION, dev_check

@@ -10,9 +10,7 @@ from redbot.core import commands
 
 from .abc import MixinMeta
 from .blocks import HideBlock
-from .errors import (
-    RequireCheckFailure,
-)
+from .errors import RequireCheckFailure
 from .models import InteractionCommand, SlashOptionType
 from .objects import FakeMessage, SlashContext, SlashTag
 from .utils import dev_check

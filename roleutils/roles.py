@@ -29,10 +29,7 @@ from typing import Optional
 
 import discord
 from redbot.core import commands
-from redbot.core.utils.chat_formatting import (
-    pagify,
-    text_to_file,
-)
+from redbot.core.utils.chat_formatting import pagify, text_to_file
 from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta

@@ -39,12 +39,7 @@ from redbot.core.utils.chat_formatting import humanize_list
 from .abc import CompositeMetaClass
 from .commands import Commands
 from .http import SlashHTTP
-from .models import (
-    Button,
-    Component,
-    InteractionButton,
-    InteractionCommand,
-)
+from .models import Button, Component, InteractionButton, InteractionCommand
 from .objects import SlashCommand, SlashContext, SlashTag
 from .processor import Processor
 
