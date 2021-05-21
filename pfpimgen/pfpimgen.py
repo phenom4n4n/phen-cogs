@@ -28,7 +28,7 @@ from io import BytesIO
 from typing import Literal, Optional
 
 import discord
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont
 from redbot.core import checks, commands
 from redbot.core.bot import Red
 from redbot.core.config import Config

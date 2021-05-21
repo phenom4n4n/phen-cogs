@@ -18,18 +18,9 @@ from .converters import (
     TagName,
     TagScriptConverter,
 )
-from .errors import (
-    BlacklistCheckFailure,
-    MissingTagPermissions,
-    RequireCheckFailure,
-    WhitelistCheckFailure,
-)
-from .http import SlashHTTP
 from .models import SlashOptionType
 from .objects import (
-    FakeMessage,
     SlashCommand,
-    SlashContext,
     SlashOption,
     SlashOptionChoice,
     SlashTag,

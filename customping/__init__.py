@@ -22,6 +22,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from .customping import setup
 
 __red_end_user_data_statement__ = "This cog does not store any End User Data."

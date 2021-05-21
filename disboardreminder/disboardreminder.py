@@ -35,7 +35,7 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils import AsyncIter
 
-from .converters import FuzzyRole, StrictRole
+from .converters import FuzzyRole
 
 log = logging.getLogger("red.phenom4n4n.disboardreminder")
 

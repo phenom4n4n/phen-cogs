@@ -28,8 +28,6 @@ from pathlib import Path
 from redbot.core.bot import Red
 
 from .core import SlashTags
-from .models import *
-from .objects import *
 
 with open(Path(__file__).parent / "info.json") as fp:
     __red_end_user_data_statement__ = json.load(fp)["end_user_data_statement"]

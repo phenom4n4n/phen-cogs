@@ -25,7 +25,7 @@ SOFTWARE.
 import discord
 from rapidfuzz import process
 from redbot.core import commands
-from redbot.core.commands import BadArgument, Converter, MemberConverter
+from redbot.core.commands import BadArgument, MemberConverter
 from redbot.core.utils.chat_formatting import inline
 from unidecode import unidecode
 

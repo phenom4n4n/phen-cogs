@@ -29,7 +29,6 @@ from enum import IntEnum
 from typing import Dict, List
 
 import discord
-from redbot.core.bot import Red
 
 from .http import SlashHTTP
 

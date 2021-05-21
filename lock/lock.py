@@ -29,7 +29,7 @@ import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
-from redbot.core.utils.chat_formatting import box, humanize_list, inline
+from redbot.core.utils.chat_formatting import humanize_list, inline
 from redbot.core.utils.mod import get_audit_reason
 
 from .converters import ChannelToggle, FuzzyRole, LockableChannel
