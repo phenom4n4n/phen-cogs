@@ -97,11 +97,11 @@ class Tags(
             log.exception("An error occurred during cog unload.", exc_info=e)
 
     def __unload(self):
-        super().cog_unload()
         self.bot.remove_dev_env_value("tags")
         if self.cache_task:
             self.cache_task.cancel()
         asyncio.create_task(self.session.close())
+        super().cog_unload()
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         if requester not in ("discord_deleted_user", "user"):
