@@ -26,7 +26,6 @@ import logging
 from typing import List
 
 import discord
-from redbot.core.bot import Red
 
 log = logging.getLogger("red.phenom4n4n.slashtags.http")
 

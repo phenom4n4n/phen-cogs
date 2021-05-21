@@ -25,8 +25,8 @@ SOFTWARE.
 import time
 
 import discord
-from redbot.core import checks, commands
-from TagScriptEngine import Interpreter, adapter, block
+from redbot.core import commands
+from TagScriptEngine import Interpreter, block
 
 
 class Calculator(commands.Cog):

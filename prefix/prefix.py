@@ -25,7 +25,7 @@ import re
 from typing import List, Optional
 
 import discord
-from redbot.core import Config, commands
+from redbot.core import commands
 
 
 class Prefix(commands.Cog):

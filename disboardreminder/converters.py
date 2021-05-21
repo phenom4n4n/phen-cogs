@@ -12,7 +12,6 @@ from redbot.core.commands import (
     MemberConverter,
     RoleConverter,
 )
-from redbot.core.utils.chat_formatting import inline
 from unidecode import unidecode
 
 

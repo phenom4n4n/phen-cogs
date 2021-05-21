@@ -24,7 +24,6 @@ from .errors import (
     RequireCheckFailure,
     WhitelistCheckFailure,
 )
-from .http import SlashHTTP
 from .models import SlashOptionType
 from .objects import (
     FakeMessage,

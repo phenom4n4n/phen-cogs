@@ -29,14 +29,13 @@ from typing import Optional
 
 import discord
 from redbot.core import commands
-from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import (
     humanize_list,
     humanize_timedelta,
     pagify,
     text_to_file,
 )
-from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
+from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole, TargeterArgs, TouchableMember

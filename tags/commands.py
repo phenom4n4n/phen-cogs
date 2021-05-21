@@ -34,8 +34,6 @@ import bs4
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.bot import Red
-from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
