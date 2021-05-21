@@ -28,3 +28,9 @@ repos:
     rev: '5.8.0'
     hooks:
       - id: isort
+
+-   repo: https://github.com/humitos/mirrors-autoflake.git
+    rev: v1.1
+    hooks:
+        - id: autoflake
+          args: ['--recursive', '--in-place', '--remove-all-unused-imports']
