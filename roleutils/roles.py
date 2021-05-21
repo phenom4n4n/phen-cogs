@@ -30,8 +30,6 @@ from typing import Optional
 import discord
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import (
-    humanize_list,
-    humanize_timedelta,
     pagify,
     text_to_file,
 )
@@ -43,7 +41,6 @@ from .utils import (
     can_run_command,
     guild_roughly_chunked,
     humanize_roles,
-    is_allowed_by_hierarchy,
     is_allowed_by_role_hierarchy,
 )
 

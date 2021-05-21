@@ -44,8 +44,6 @@ from .models import (
     Component,
     InteractionButton,
     InteractionCommand,
-    InteractionResponse,
-    SlashOptionType,
 )
 from .objects import SlashCommand, SlashContext, SlashTag
 from .processor import Processor
