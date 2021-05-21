@@ -27,7 +27,6 @@ from discord.ext.commands.converter import Converter, RoleConverter
 from rapidfuzz import process
 from redbot.core import commands
 from redbot.core.commands import BadArgument
-from redbot.core.utils.chat_formatting import inline
 from unidecode import unidecode
 
 

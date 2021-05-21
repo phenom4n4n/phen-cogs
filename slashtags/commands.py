@@ -18,22 +18,8 @@ from .converters import (
     TagName,
     TagScriptConverter,
 )
-from .errors import (
-    BlacklistCheckFailure,
-    MissingTagPermissions,
-    RequireCheckFailure,
-    WhitelistCheckFailure,
-)
-from .http import SlashHTTP
 from .models import SlashOptionType
-from .objects import (
-    FakeMessage,
-    SlashCommand,
-    SlashContext,
-    SlashOption,
-    SlashOptionChoice,
-    SlashTag,
-)
+from .objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
 from .utils import ARGUMENT_NAME_DESCRIPTION, dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")

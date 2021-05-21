@@ -27,12 +27,10 @@ import logging
 from abc import ABC
 from typing import Literal
 
-import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 
-from .autorole import AutoRole
 from .reactroles import ReactRoles
 from .roles import Roles
 

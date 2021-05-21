@@ -24,8 +24,7 @@ SOFTWARE.
 
 from abc import ABC, abstractmethod
 
-import discord
-from redbot.core import Config, commands
+from redbot.core import Config
 from redbot.core.bot import Red
 
 

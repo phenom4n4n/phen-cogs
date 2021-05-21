@@ -1,8 +1,7 @@
-from discord import AsyncWebhookAdapter, Webhook
+from discord import Webhook
 from redbot.core.commands import BadArgument, Context, Converter
 
 from .errors import WebhookNotMatched
-from .utils import WEBHOOK_RE
 
 
 class WebhookLinkConverter(Converter):

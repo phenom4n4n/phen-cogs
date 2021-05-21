@@ -42,7 +42,7 @@ from redbot.core.utils.chat_formatting import (
     humanize_timedelta,
     pagify,
 )
-from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]

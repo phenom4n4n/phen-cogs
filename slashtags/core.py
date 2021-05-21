@@ -35,22 +35,13 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list
-from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import CompositeMetaClass
 from .commands import Commands
 from .http import SlashHTTP
-from .models import (
-    Button,
-    Component,
-    InteractionButton,
-    InteractionCommand,
-    InteractionResponse,
-    SlashOptionType,
-)
-from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, SlashTag
+from .models import Button, Component, InteractionButton, InteractionCommand
+from .objects import SlashCommand, SlashContext, SlashTag
 from .processor import Processor
-from .utils import dev_check
 
 log = logging.getLogger("red.phenom4n4n.slashtags")
 
