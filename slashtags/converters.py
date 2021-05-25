@@ -54,18 +54,16 @@ class TagName(TagSearcher, commands.Converter):
         if not match:
             raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
         name = match.group(1)
-        if self.check_command:
-            if self.get_tag(ctx, name):
-                raise commands.BadArgument(f"A slash tag named `{name}` is already registered.")
+        if self.check_command and self.get_tag(ctx, name):
+            raise commands.BadArgument(f"A slash tag named `{name}` is already registered.")
         return name
 
 
 class TagConverter(TagSearcher, commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> SlashTag:
-        cog = ctx.bot.get_cog("SlashTags")
         tag = self.get_tag(ctx, argument)
         if not tag:
-            raise commands.BadArgument(f'Tag "{escape_mentions(argument)}" not found.')
+            raise commands.BadArgument(f'Slash tag "{escape_mentions(argument)}" not found.')
         return tag
 
 
