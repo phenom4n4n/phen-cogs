@@ -222,11 +222,11 @@ class DisboardReminder(commands.Cog):
         [View the TagScript documentation here.](https://phen-cogs.readthedocs.io/en/latest/index.html)
 
         Variables:
-        `{member}` - [The user who bumped](https://phen-cogs.readthedocs.io/en/latest/default_variables.html#author-block)
-        `{server}` - [This server](https://phen-cogs.readthedocs.io/en/latest/default_variables.html#server-block)
+        `{member}` - [The user who bumped](https://phen-cogs.readthedocs.io/en/latest/tags/default_variables.html#author-block)
+        `{server}` - [This server](https://phen-cogs.readthedocs.io/en/latest/tags/default_variables.html#server-block)
 
         Blocks:
-        `embed` - [Embed to be sent in the thank you message](https://phen-cogs.readthedocs.io/en/latest/parsing_blocks.html#embed-block)
+        `embed` - [Embed to be sent in the thank you message](https://phen-cogs.readthedocs.io/en/latest/tags/parsing_blocks.html#embed-block)
 
         **Examples:**
         > `[p]bprm ty Thanks {member} for bumping! You earned 10 brownie points from phen!`
