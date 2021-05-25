@@ -81,6 +81,8 @@ class SlashOptionType(IntEnum):
 
 # {'options': [{'value': 'args', 'type': 3, 'name': 'args'}]
 class ResponseOption:
+    __slots__ = ("type", "name", "value")
+
     def __init__(self, *, type: SlashOptionType, name: str, value: str):
         self.type = type
         self.name = name
@@ -99,6 +101,8 @@ class ResponseOption:
 
 
 class Component:
+    __all__ = ("type", "components", "style", "label", "custom_id", "url")
+
     def __init__(
         self,
         type: int = 1,
@@ -201,6 +205,7 @@ class InteractionMessage(discord.Message):
 
 
 class UnknownCommand:
+    __slots__ = ("id",)
     cog = None
 
     def __init__(self, *, id: int = None):
@@ -222,6 +227,26 @@ class UnknownCommand:
 
 
 class InteractionResponse:
+    __slots__ = (
+        "cog",
+        "bot",
+        "http",
+        "_state",
+        "id",
+        "version",
+        "_token",
+        "_original_data",
+        "guild_id",
+        "channel_id",
+        "application_id",
+        "author_id",
+        "author",
+        "interaction_data",
+        "sent",
+        "deferred",
+        "completed",
+    )
+
     def __init__(self, *, cog, data: dict):
         self.cog = cog
         self.bot = cog.bot
@@ -337,6 +362,8 @@ class InteractionResponse:
 
 
 class InteractionButton(InteractionResponse):
+    __slots__ = ("custom_id", "component_type")
+
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
         self.custom_id = self.interaction_data["custom_id"]
@@ -344,6 +371,8 @@ class InteractionButton(InteractionResponse):
 
 
 class InteractionCommand(InteractionResponse):
+    __slots__ = ("command_name", "command_id", "options")
+
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
         self.command_name = self.interaction_data["name"]
