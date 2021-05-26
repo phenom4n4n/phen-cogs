@@ -246,7 +246,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     async def on_button_interaction(self, button: InteractionButton):
         cached_button = self.button_cache.get(button.custom_id)
         await button.send(
-            f"Congrats for pressing button {cached_button.label if cached_button else button.custom_id}!"
+            f"{button.author.mention} pressed **{cached_button.label if cached_button else button.custom_id}**!"
         )
 
     @commands.is_owner()
