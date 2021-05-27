@@ -28,14 +28,15 @@ from pathlib import Path
 from redbot.core.bot import Red
 
 from .core import SlashTags
-from .models import *  # noqa
+from .http import *  # noqa
 from .objects import *  # noqa
+from .testing.button_menus import *  # noqa
 
 with open(Path(__file__).parent / "info.json") as fp:
     __red_end_user_data_statement__ = json.load(fp)["end_user_data_statement"]
 
 
-async def setup(bot: Red) -> None:
+async def setup(bot: Red):
     cog = SlashTags(bot)
     await cog.pre_load()
     bot.add_cog(cog)

@@ -23,14 +23,13 @@ SOFTWARE.
 """
 
 import asyncio
-import functools
 import logging
 from enum import IntEnum
-from typing import Dict, List
+from typing import Any, Dict, Iterator, List, Tuple, Union
 
 import discord
 
-from .http import SlashHTTP
+from .httpclient import SlashHTTP
 
 log = logging.getLogger("red.phenom4n4n.slashtags.models")
 
@@ -101,17 +100,19 @@ class ResponseOption:
 
 
 class Component:
-    __all__ = ("type", "components", "style", "label", "custom_id", "url")
+    __slots__ = ("type", "components", "style", "label", "custom_id", "url", "emoji", "disabled")
 
     def __init__(
         self,
         type: int = 1,
         *,
         components: List["Component"] = [],
-        style: str = None,
+        style: int = None,
         label: str = None,
         custom_id: int = None,
         url: str = None,
+        emoji: Union[discord.PartialEmoji, str] = None,
+        disabled: bool = False,
     ):
         self.type = type
         self.components = components.copy()
@@ -119,9 +120,15 @@ class Component:
         self.label = label
         self.custom_id = str(custom_id) if custom_id else None
         self.url = url
+        self.emoji = emoji
+        if emoji and isinstance(emoji, str):
+            self.emoji = discord.PartialEmoji(name=emoji)
+        self.disabled = disabled
 
     def __repr__(self):
-        kwargs = " ".join(f"{key}={value}" for key, value in self.__dict__.items() if value)
+        kwargs = " ".join(
+            f"{k}={v!r}" for k, v in self.get_slotted_items() if v and not k.startswith("_")
+        )
         return f"<{type(self).__name__} {kwargs}>"
 
     def to_dict(self):
@@ -129,11 +136,17 @@ class Component:
         if self.type == 1:
             data["components"] = [c.to_dict() for c in self.components]
         else:  # elif type == 2:
-            data["label"] = self.label
             data["style"] = self.style
-            data["custom_id"] = self.custom_id
+            if self.label:
+                data["label"] = self.label
+            if self.custom_id:
+                data["custom_id"] = self.custom_id
             if self.url:
                 data["url"] = self.url
+            if self.emoji:
+                data["emoji"] = self.emoji.to_dict()
+            if self.disabled:
+                data["disabled"] = self.disabled
         return data
 
     @classmethod
@@ -147,6 +160,10 @@ class Component:
         return cls(
             type, components=components, style=style, label=label, custom_id=custom_id, url=url
         )
+
+    def get_slotted_items(self) -> Iterator[Tuple[str, Any]]:
+        for slot in self.__slots__:
+            yield slot, getattr(self, slot)
 
 
 class Button(Component):
@@ -369,9 +386,42 @@ class InteractionButton(InteractionResponse):
         self.custom_id = self.interaction_data["custom_id"]
         self.component_type = self.interaction_data["component_type"]
 
+    async def update(
+        self,
+        content: str = None,
+        *,
+        embed: discord.Embed = None,
+        embeds: List[discord.Embed] = [],
+        tts: bool = False,
+        allowed_mentions: discord.AllowedMentions = None,
+        hidden: bool = False,
+        delete_after: int = None,
+        components: List[Component] = None,
+    ):
+        flags = 64 if hidden else None
+        initial = not self.sent
+        data = await self.http.send_message(
+            self._token,
+            self.id,
+            type=7,
+            initial_response=initial,
+            content=content,
+            embed=embed,
+            embeds=embeds,
+            allowed_mentions=allowed_mentions,
+            tts=tts,
+            flags=flags,
+            components=components,
+        )
+
+        if not self.sent:
+            self.sent = True
+        if not self.completed:
+            self.completed = True
+
 
 class InteractionCommand(InteractionResponse):
-    __slots__ = ("command_name", "command_id", "options")
+    __slots__ = ("command_name", "command_id", "options", "_cs_content")
 
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
@@ -385,7 +435,7 @@ class InteractionCommand(InteractionResponse):
     def __repr__(self) -> str:
         return f"<{type(self).__name__} id={self.id} command={self.command!r} options={self.options!r} channel={self.channel!r} author={self.author!r}>"
 
-    @functools.cached_property
+    @discord.utils.cached_slot_property("_cs_content")
     def content(self):
         items = [f"/{self.command_name}"]
         for option in self.options:

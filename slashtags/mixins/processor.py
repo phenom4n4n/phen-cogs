@@ -8,12 +8,12 @@ import discord
 import TagScriptEngine as tse
 from redbot.core import commands
 
-from .abc import MixinMeta
-from .blocks import HideBlock
-from .errors import RequireCheckFailure
-from .models import InteractionCommand, SlashOptionType
-from .objects import FakeMessage, SlashContext, SlashTag
-from .utils import dev_check
+from ..abc import MixinMeta
+from ..blocks import HideBlock
+from ..errors import RequireCheckFailure
+from ..http import InteractionCommand, SlashOptionType
+from ..objects import FakeMessage, SlashContext, SlashTag
+from ..utils import dev_check
 
 PL = commands.PrivilegeLevel
 RS = commands.Requires

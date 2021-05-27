@@ -140,6 +140,7 @@ class SlashHTTP:
         tts: bool = False,
         allowed_mentions: discord.AllowedMentions = None,
         flags: int = None,
+        components: list = None,
     ):
         payload = {"type": type}
 
@@ -156,13 +157,20 @@ class SlashHTTP:
         if embeds:
             data["embeds"] = [e.to_dict() for e in embeds]
         if allowed_mentions:
-            data["allowed_mentions"] = allowed_mentions.to_dict()
+            data[
+                "allowed_mentions"
+            ] = (
+                allowed_mentions.to_dict()
+            )  # its 1:30 am but i should check later whether this is necessary
         if flags:
             data["flags"] = flags
         if embeds:
             data["embeds"] = [e.to_dict() for e in embeds]
         if flags:
             data["flags"] = flags
+        if components is not None:
+            data["components"] = [c.to_dict() for c in components]
+
         if data:
             data["allowed_mentions"] = allowed_mentions.to_dict()
             payload["data"] = data

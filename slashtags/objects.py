@@ -32,8 +32,7 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
 
-from .http import SlashHTTP
-from .models import InteractionResponse, SlashOptionType
+from .http import InteractionResponse, SlashHTTP, SlashOptionType
 
 log = logging.getLogger("red.phenom4n4n.slashtags.objects")
 
