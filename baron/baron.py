@@ -26,7 +26,7 @@ import asyncio
 import functools
 import time
 from io import BytesIO
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Tuple
 
 import discord
 from matplotlib import pyplot as plt
@@ -61,7 +61,7 @@ class Baron(commands.Cog):
     Tools for managing guild joins and leaves.
     """
 
-    __version__ = "1.2.2"
+    __version__ = "1.2.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -491,8 +491,8 @@ class Baron(commands.Cog):
         """Leave servers with the given bot to member ratio."""
         if rate not in range(1, 100):
             raise commands.BadArgument
-        guilds = (await self.get_bot_farms(rate / 100))[0]
-        if not guilds[0]:
+        guilds, _ = await self.get_bot_farms(rate / 100)
+        if not guilds:
             await ctx.send(f"There are no servers with a bot ratio higher or equal than {rate}%.")
             return
         await self.leave_guilds(
@@ -634,7 +634,7 @@ class Baron(commands.Cog):
             await self.baron_log("mass_leave", guilds=unwl_guilds, author=ctx.author)
         await ctx.send(f"Done. I left {len(unwl_guilds)} servers.")
 
-    async def get_bot_farms(self, rate: float):
+    async def get_bot_farms(self, rate: float) -> Tuple[List[discord.Guild], int]:
         bot_farms = []
         ok_guilds = 0
         async for guild in AsyncIter(self.bot.guilds, steps=100):
