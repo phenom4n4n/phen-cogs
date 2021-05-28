@@ -83,12 +83,22 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
             kwargs["components"] = self._get_components()
         await button.update(**kwargs)
 
-    async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel):
+    async def send_initial_message(
+        self,
+        ctx: commands.Context,
+        channel: discord.TextChannel,
+        *,
+        reply: bool = False,
+        mention_author: bool = False,
+    ):
         page = await self._source.get_page(0)
         kwargs = await self._get_kwargs_from_page(page)
         if not self.custom_id:
             self.custom_id = str(ctx.message.id)
-        return await self.send(channel, **kwargs)
+        if reply:
+            kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=True)
+            kwargs["mention_author"] = mention_author
+        return await self._send(ctx, **kwargs)
 
     def _get_components(self) -> List[Component]:
         components = []
@@ -104,16 +114,27 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
             components.append(Component(components=buttons))
         return components
 
-    async def send(
-        self, channel: discord.TextChannel, content: str = None, *, embed: discord.Embed = None
+    async def _send(
+        self,
+        ctx: commands.Context,
+        content: str = None,
+        *,
+        embed: discord.Embed = None,
+        reference: discord.MessageReference = None,
+        mention_author: bool = False,
     ) -> discord.Message:
         components = self._get_components()
-
+        channel = ctx.channel
         data = {"components": [c.to_dict() for c in components]}
         if content:
             data["content"] = content
         if embed:
             data["embed"] = embed.to_dict()
+        if reference:
+            data["message_reference"] = reference.to_dict()
+        allowed_mentions = channel._state.allowed_mentions.to_dict()
+        allowed_mentions["replied_user"] = mention_author
+        data["allowed_mentions"] = allowed_mentions
 
         log.debug("sending data %r" % data)
         r = discord.http.Route("POST", "/channels/{channel_id}/messages", channel_id=channel.id)
