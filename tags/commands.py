@@ -88,6 +88,14 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
     return decorator
 
 
+def get_menu():
+    try:
+        from slashtags import menu as _menu
+    except ImportError:
+        _menu = menu
+    return _menu
+
+
 class Commands(MixinMeta):
     def __init__(self):
         self.custom_command_engine = tse.Interpreter([ContextVariableBlock(), ConverterBlock()])
@@ -167,7 +175,7 @@ class Commands(MixinMeta):
             e.description = page
             e.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(e)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.guild_only()
     @commands.group(aliases=["customcom", "cc", "alias"])
@@ -359,7 +367,7 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     async def doc_fetch(self):
         # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
@@ -400,7 +408,7 @@ class Commands(MixinMeta):
                 embed = e.copy()
                 embed.description = page
                 embeds.append(embed)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
+            await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
         else:
             e.url = DOCS_URL
             await ctx.send(embed=e)
@@ -539,7 +547,7 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.is_owner()
     @commands.command()

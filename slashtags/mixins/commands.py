@@ -7,7 +7,8 @@ from typing import Dict, List, Union
 import discord
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
+
+# from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 from redbot.core.utils.predicates import MessagePredicate
 
 from ..abc import MixinMeta
@@ -20,6 +21,7 @@ from ..converters import (
 )
 from ..http import SlashOptionType
 from ..objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
+from ..testing.button_menus import menu as button_menu
 from ..utils import ARGUMENT_NAME_DESCRIPTION, dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
@@ -369,7 +371,8 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {len(tags)} {slash_tags}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        # await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await button_menu(ctx, embeds)
 
     @slashtag.command("list")
     async def slashtag_list(self, ctx: commands.Context):

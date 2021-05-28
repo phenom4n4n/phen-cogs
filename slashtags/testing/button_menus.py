@@ -303,14 +303,20 @@ class ButtonMenu(BaseButtonMenu, inherit_buttons=False):
 
     @menus.button(CLOSE_EMOJI)
     async def stop_pages(self, button: InteractionButton):
-        if self.clear_reactions_after:
-            await self.close_buttons(button)
+        await self.message.delete()
+        # if self.clear_reactions_after:
+        #    await self.close_buttons(button)
         self.stop()
 
 
 async def menu(
-    ctx: commands.Context, pages: List[Union[str, discord.Embed]], *, timeout: int = 60
+    ctx: commands.Context,
+    pages: List[Union[str, discord.Embed]],
+    controls: dict = None,
+    *,
+    timeout: int = 60,
 ):
+    # eat controls arg if passed
     source = PageSource(pages)
     button_menu = ButtonMenu(source, timeout=timeout, clear_reactions_after=True)
     await button_menu.start(ctx)
