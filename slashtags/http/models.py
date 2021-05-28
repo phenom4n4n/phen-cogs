@@ -35,6 +35,7 @@ log = logging.getLogger("red.phenom4n4n.slashtags.models")
 
 __all__ = (
     "SlashOptionType",
+    "ButtonStyle",
     "ResponseOption",
     "Component",
     "Button",
@@ -78,6 +79,14 @@ class SlashOptionType(IntEnum):
     ROLE = 8
 
 
+class ButtonStyle(IntEnum):
+    blurple = 1
+    grey = 2
+    green = 3
+    red = 4
+    link = 5
+
+
 # {'options': [{'value': 'args', 'type': 3, 'name': 'args'}]
 class ResponseOption:
     __slots__ = ("type", "name", "value")
@@ -107,7 +116,7 @@ class Component:
         type: int = 1,
         *,
         components: List["Component"] = [],
-        style: int = None,
+        style: ButtonStyle = None,
         label: str = None,
         custom_id: int = None,
         url: str = None,
@@ -136,7 +145,7 @@ class Component:
         if self.type == 1:
             data["components"] = [c.to_dict() for c in self.components]
         else:  # elif type == 2:
-            data["style"] = self.style
+            data["style"] = self.style.value
             if self.label:
                 data["label"] = self.label
             if self.custom_id:
@@ -153,7 +162,7 @@ class Component:
     def from_dict(cls, data: dict):
         type = data.pop["type"]
         components = [cls.from_dict(c) for c in data.get("components", [])]
-        style = data.get("style")
+        style = ButtonStyle(data.get("style"), 1)
         label = data.get("label")
         custom_id = data.get("custom_id")
         url = data.get("url")

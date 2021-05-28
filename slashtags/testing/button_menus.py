@@ -6,25 +6,17 @@ import discord
 from redbot.core import commands
 from redbot.vendored.discord.ext import menus
 
-from ..http import Button, Component, InteractionButton
+from ..http import Button, ButtonStyle, Component, InteractionButton
 
-__all__ = ("PageSource", "ButtonMenu", "menu")
+__all__ = ("PageSource", "ButtonMenu", "BaseButtonMenu", "menu")
 
 log = logging.getLogger("red.phenom4n4n.slashtags.testing.button_menus")
 
+REWIND_ARROW = "⏪"
 LEFT_ARROW = "⬅️"
 CLOSE_EMOJI = "❌"
 RIGHT_ARROW = "➡️"
-
-LEFT = "-left"
-CLOSE = "close"
-RIGHT = "right"
-
-id_emojis = {"-left": LEFT_ARROW, "close": CLOSE_EMOJI, "right": RIGHT_ARROW}
-
-
-def _get_emoji(custom_id: str):
-    return discord.PartialEmoji(name=id_emojis[custom_id[-5:]])
+FORWARD_ARROW = "⏩"
 
 
 class PageSource(menus.ListPageSource):
@@ -38,29 +30,24 @@ class PageSource(menus.ListPageSource):
         return page
 
 
-class ButtonMenu(menus.MenuPages, inherit_buttons=False):
+class MenuButton(menus.Button):
+    __slots__ = ("style",)
+
+    def __init__(self, emoji, action, *, style: ButtonStyle = ButtonStyle.blurple, **kwargs):
+        super().__init__(emoji, action, **kwargs)
+        self.style = style
+
+
+class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
     def __init__(self, source: menus.PageSource, *, custom_id: str = None, **kwargs):
-        kwargs["clear_reactions_after"] = False
+        # kwargs["clear_reactions_after"] = False
         super().__init__(source, **kwargs)
         self.custom_id = custom_id
+        self._buttons_closed = True
 
     @property
     def __tasks(self):
         return self._Menu__tasks
-
-    @menus.button(LEFT_ARROW)
-    async def go_to_previous_page(self, button: InteractionButton):
-        await self.show_checked_page(self.current_page - 1, button)
-
-    @menus.button(CLOSE_EMOJI)
-    async def stop_pages(self, button: InteractionButton):
-        await self.close_buttons(button)
-        self.stop()
-
-    @menus.button(RIGHT_ARROW)
-    async def go_to_next_page(self, button: InteractionButton):
-        """go to the next page"""
-        await self.show_checked_page(self.current_page + 1, button)
 
     async def show_checked_page(self, page_number: int, button: InteractionButton):
         max_pages = self._source.get_max_pages()
@@ -85,17 +72,25 @@ class ButtonMenu(menus.MenuPages, inherit_buttons=False):
     async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel):
         page = await self._source.get_page(0)
         kwargs = await self._get_kwargs_from_page(page)
-        self.custom_id = str(ctx.message.id)
+        if not self.custom_id:
+            self.custom_id = str(ctx.message.id)
         return await self.send(channel, **kwargs)
+
+    def _get_components(self) -> List[Button]:
+        return [
+            Button(
+                style=ButtonStyle.grey,
+                custom_id=f"{self.custom_id}-{emoji}",
+                emoji=emoji,
+            )
+            for emoji in self.buttons
+        ]
 
     async def send(
         self, channel: discord.TextChannel, content: str = None, *, embed: discord.Embed = None
     ) -> discord.Message:
-        r = discord.http.Route("POST", "/channels/{channel_id}/messages", channel_id=channel.id)
-        left_button = Button(style=1, custom_id=f"{self.custom_id}-{LEFT}", emoji=LEFT_ARROW)
-        close_button = Button(style=4, custom_id=f"{self.custom_id}-{CLOSE}", emoji=CLOSE_EMOJI)
-        right_button = Button(style=1, custom_id=f"{self.custom_id}-{RIGHT}", emoji=RIGHT_ARROW)
-        components = Component(components=[left_button, close_button, right_button])
+        buttons = self._get_components()
+        components = Component(components=buttons)
 
         data = {"components": [components.to_dict()]}
         if content:
@@ -104,22 +99,37 @@ class ButtonMenu(menus.MenuPages, inherit_buttons=False):
             data["embed"] = embed.to_dict()
 
         log.debug("sending data %r" % data)
+        r = discord.http.Route("POST", "/channels/{channel_id}/messages", channel_id=channel.id)
         response = await self.bot._connection.http.request(r, json=data)
+        self._buttons_closed = False
         return channel._state.create_message(channel=channel, data=response)
 
-    def reaction_check(self, button: InteractionButton):
+    def reaction_check(self, button: InteractionButton) -> bool:
         raw_message = button._original_data["message"]
         if int(raw_message["id"]) != self.message.id:
             return False
         if button.author_id not in {self.bot.owner_id, self._author_id, *self.bot.owner_ids}:
+            asyncio.create_task(button.send("You cannot use this menu.", hidden=True))
             return False
-
         return button.custom_id.startswith(self.custom_id)
 
-    async def close_buttons(self, button: InteractionButton):
-        page = await self._source.get_page(self.current_page)
-        kwargs = await self._get_kwargs_from_page(page)
-        await button.update(**kwargs, components=[])
+    async def close_buttons(self, button: InteractionButton = None):
+        if self._buttons_closed:
+            return
+        if button:
+            page = await self._source.get_page(self.current_page)
+            kwargs = await self._get_kwargs_from_page(page)
+            await button.update(**kwargs, components=[])
+        else:
+            route = discord.http.Route(
+                "PATCH",
+                "/channels/{channel_id}/messages/{message_id}",
+                channel_id=self.message.channel.id,
+                message_id=self.message.id,
+            )
+            data = {"components": []}
+            await self.bot._connection.http.request(route, json=data)
+        self._buttons_closed = True
 
     async def start(self, ctx, *, channel=None, wait=False):
         # Clear the buttons cache and re-compute if possible.
@@ -150,10 +160,6 @@ class ButtonMenu(menus.MenuPages, inherit_buttons=False):
 
             self._running = True
             self.__tasks.append(bot.loop.create_task(self._internal_loop()))
-
-            async def add_reactions_task():
-                for emoji in self.buttons:
-                    await msg.add_reaction(emoji)
 
             # self.__tasks.append(bot.loop.create_task(add_reactions_task()))
 
@@ -223,19 +229,17 @@ class ButtonMenu(menus.MenuPages, inherit_buttons=False):
                     return await self.message.delete()
 
                 if self.clear_reactions_after:
-                    if self._can_remove_reactions:
-                        return await self.message.clear_reactions()
+                    return await self.close_buttons()
 
-                    for button_emoji in self.buttons:
-                        try:
-                            await self.message.remove_reaction(button_emoji, self.__me)
-                        except discord.HTTPException:
-                            continue
             except Exception:
                 pass
 
-    async def update(self, payload):
-        button = self.buttons[_get_emoji(payload.custom_id)]
+    def _get_emoji(self, button: InteractionButton):
+        emoji_string = button.custom_id[len(self.custom_id) + 1 :]
+        return menus._cast_emoji(emoji_string)
+
+    async def update(self, payload: InteractionButton):
+        button = self.buttons[self._get_emoji(payload)]
         if not self._running:
             return
 
@@ -246,16 +250,67 @@ class ButtonMenu(menus.MenuPages, inherit_buttons=False):
                         await button(self, payload)
             else:
                 await button(self, payload)
-        except Exception:
-            # TODO: logging?
-            import traceback
+        except Exception as error:
+            log.exception(
+                f"An error occured while updating {type(self).__name__} menu.", exc_info=error
+            )
 
-            traceback.print_exc()
+
+class ButtonMenu(BaseButtonMenu, inherit_buttons=False):
+    def _skip_single_arrows(self):
+        max_pages = self._source.get_max_pages()
+        if max_pages is None:
+            return True
+        return max_pages == 1
+
+    def _skip_double_triangle_buttons(self):
+        max_pages = self._source.get_max_pages()
+        if max_pages is None:
+            return True
+        return max_pages <= 2
+
+    @menus.button(
+        LEFT_ARROW,
+        position=menus.First(1),
+        skip_if=_skip_single_arrows,
+    )
+    async def go_to_previous_page(self, button: InteractionButton):
+        await self.show_checked_page(self.current_page - 1, button)
+
+    @menus.button(
+        RIGHT_ARROW,
+        position=menus.Last(0),
+        skip_if=_skip_single_arrows,
+    )
+    async def go_to_next_page(self, button: InteractionButton):
+        await self.show_checked_page(self.current_page + 1, button)
+
+    @menus.button(
+        REWIND_ARROW,
+        position=menus.First(0),
+        skip_if=_skip_double_triangle_buttons,
+    )
+    async def go_to_first_page(self, button: InteractionButton):
+        await self.show_checked_page(0, button)
+
+    @menus.button(
+        FORWARD_ARROW,
+        position=menus.Last(1),
+        skip_if=_skip_double_triangle_buttons,
+    )
+    async def go_to_last_page(self, button: InteractionButton):
+        await self.show_checked_page(self._source.get_max_pages() - 1, button)
+
+    @menus.button(CLOSE_EMOJI)
+    async def stop_pages(self, button: InteractionButton):
+        if self.clear_reactions_after:
+            await self.close_buttons(button)
+        self.stop()
 
 
 async def menu(
     ctx: commands.Context, pages: List[Union[str, discord.Embed]], *, timeout: int = 60
 ):
     source = PageSource(pages)
-    button_menu = ButtonMenu(source, timeout=timeout)
+    button_menu = ButtonMenu(source, timeout=timeout, clear_reactions_after=True)
     await button_menu.start(ctx)
