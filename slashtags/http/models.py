@@ -349,7 +349,7 @@ class InteractionResponse:
             flags=flags,
         )
 
-        if not self.sent:
+        if initial:
             self.sent = True
         if not self.completed:
             self.completed = True
@@ -388,12 +388,16 @@ class InteractionResponse:
 
 
 class InteractionButton(InteractionResponse):
-    __slots__ = ("custom_id", "component_type")
+    __slots__ = ("custom_id", "component_type", "message")
 
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
-        self.custom_id = self.interaction_data["custom_id"]
-        self.component_type = self.interaction_data["component_type"]
+        interaction_data = self.interaction_data
+        self.custom_id = interaction_data["custom_id"]
+        self.component_type = interaction_data["component_type"]
+        self.message = discord.Message(
+            channel=self.channel, data=data["message"], state=self._state
+        )
 
     async def update(
         self,
@@ -409,19 +413,30 @@ class InteractionButton(InteractionResponse):
     ):
         flags = 64 if hidden else None
         initial = not self.sent
-        data = await self.http.send_message(
-            self._token,
-            self.id,
-            type=7,
-            initial_response=initial,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            allowed_mentions=allowed_mentions,
-            tts=tts,
-            flags=flags,
-            components=components,
-        )
+        if initial:
+            data = await self.http.send_message(
+                self._token,
+                self.id,
+                type=7,
+                initial_response=initial,
+                content=content,
+                embed=embed,
+                embeds=embeds,
+                allowed_mentions=allowed_mentions,
+                tts=tts,
+                flags=flags,
+                components=components,
+            )
+        else:
+            data = await self.http.edit_message(
+                self._token,
+                content=content,
+                embed=embed,
+                embeds=embeds,
+                allowed_mentions=allowed_mentions,
+                components=components,
+                original=True,
+            )
 
         if not self.sent:
             self.sent = True

@@ -19,6 +19,15 @@ RIGHT_ARROW = "➡️"
 FORWARD_ARROW = "⏩"
 
 
+def chunks(l, n):
+    """
+    Yield successive n-sized chunks from l.
+    from https://github.com/flaree/flare-cogs/blob/bf629ec6d8c28519bf08256b2f5132a216d1671e/commandstats/commandstats.py#L17
+    """
+    for i in range(0, len(l), n):
+        yield l[i : i + n]
+
+
 class PageSource(menus.ListPageSource):
     def __init__(self, pages: list):
         super().__init__(pages, per_page=1)
@@ -44,6 +53,7 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
         super().__init__(source, **kwargs)
         self.custom_id = custom_id
         self._buttons_closed = True
+        self._components = []
 
     @property
     def __tasks(self):
@@ -63,10 +73,14 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
             # An error happened that can be handled, so ignore it.
             pass
 
-    async def show_page(self, page_number: int, button: InteractionButton):
+    async def show_page(
+        self, page_number: int, button: InteractionButton, *, recalculate_components: bool = True
+    ):
         page = await self._source.get_page(page_number)
         self.current_page = page_number
         kwargs = await self._get_kwargs_from_page(page)
+        if recalculate_components:
+            kwargs["components"] = self._get_components()
         await button.update(**kwargs)
 
     async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -76,23 +90,26 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
             self.custom_id = str(ctx.message.id)
         return await self.send(channel, **kwargs)
 
-    def _get_components(self) -> List[Button]:
-        return [
-            Button(
-                style=ButtonStyle.grey,
-                custom_id=f"{self.custom_id}-{emoji}",
-                emoji=emoji,
-            )
-            for emoji in self.buttons
-        ]
+    def _get_components(self) -> List[Component]:
+        components = []
+        for emojis in chunks(list(self.buttons.keys()), 5):
+            buttons = [
+                Button(
+                    style=ButtonStyle.grey,
+                    custom_id=f"{self.custom_id}-{emoji}",
+                    emoji=emoji,
+                )
+                for emoji in emojis
+            ]
+            components.append(Component(components=buttons))
+        return components
 
     async def send(
         self, channel: discord.TextChannel, content: str = None, *, embed: discord.Embed = None
     ) -> discord.Message:
-        buttons = self._get_components()
-        components = Component(components=buttons)
+        components = self._get_components()
 
-        data = {"components": [components.to_dict()]}
+        data = {"components": [c.to_dict() for c in components]}
         if content:
             data["content"] = content
         if embed:
@@ -113,6 +130,24 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
             return False
         return button.custom_id.startswith(self.custom_id)
 
+    async def _edit_button_components(
+        self, button: InteractionButton, components: List[Component]
+    ):
+        page = await self._source.get_page(self.current_page)
+        kwargs = await self._get_kwargs_from_page(page)
+        kwargs["components"] = components
+        await button.update(**kwargs)
+
+    async def _edit_message_components(self, components: List[Component]):
+        route = discord.http.Route(
+            "PATCH",
+            "/channels/{channel_id}/messages/{message_id}",
+            channel_id=self.message.channel.id,
+            message_id=self.message.id,
+        )
+        data = {"components": [c.to_dict() for c in components]}
+        await self.bot._connection.http.request(route, json=data)
+
     async def close_buttons(self, button: InteractionButton = None):
         if self._buttons_closed:
             return
@@ -121,15 +156,40 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
             kwargs = await self._get_kwargs_from_page(page)
             await button.update(**kwargs, components=[])
         else:
-            route = discord.http.Route(
-                "PATCH",
-                "/channels/{channel_id}/messages/{message_id}",
-                channel_id=self.message.channel.id,
-                message_id=self.message.id,
-            )
-            data = {"components": []}
-            await self.bot._connection.http.request(route, json=data)
+            await self._edit_message_components([])
         self._buttons_closed = True
+
+    async def change_source(self, source: menus.PageSource, button: InteractionButton):
+        if not isinstance(source, menus.PageSource):
+            raise TypeError("Expected {0!r} not {1.__class__!r}.".format(PageSource, source))
+
+        self._source = source
+        self.current_page = 0
+        if self.message is not None:
+            await source._prepare_once()
+            await self.show_page(0, button)
+
+    def add_button(self, button, *, react=False, interaction: InteractionButton = None):
+        self._buttons[button.emoji] = button
+
+        if react:
+            if self.__tasks:
+
+                async def wrapped():
+                    # Add the component
+                    self.buttons[button.emoji] = button
+                    components = self._get_components()
+                    if interaction:
+                        await self._edit_button_components(interaction, components)
+                    else:
+                        await self._edit_message_components(components)
+
+                return wrapped()
+
+            async def dummy():
+                raise menus.MenuError("Menu has not been started yet")
+
+            return dummy()
 
     async def start(self, ctx, *, channel=None, wait=False):
         # Clear the buttons cache and re-compute if possible.
@@ -240,6 +300,8 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
 
     async def update(self, payload: InteractionButton):
         button = self.buttons[self._get_emoji(payload)]
+        if not button:
+            return
         if not self._running:
             return
 

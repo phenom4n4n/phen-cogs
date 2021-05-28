@@ -195,16 +195,20 @@ class SlashHTTP:
     def edit_message(
         self,
         token: str,
-        message_id: int,
+        message_id: int = None,
         *,
         content: str = None,
         embed: discord.Embed = None,
         embeds: List[discord.Embed] = None,
         allowed_mentions: discord.AllowedMentions = None,
+        original: bool = False,
+        components: list = None,
     ):
+        url = "/webhooks/{application_id}/{token}/messages/"
+        url += "@original" if original else "{message_id}"
         route = Route(
             "PATCH",
-            "/webhooks/{application_id}/{token}/messages/{message_id}",
+            url,
             application_id=self.application_id,
             token=token,
             message_id=message_id,
@@ -217,6 +221,9 @@ class SlashHTTP:
         payload = {"content": content}
         if embeds:
             payload["embeds"] = [e.to_dict() for e in embeds]
+        if components is not None:
+            payload["components"] = [c.to_dict() for c in components]
+
         payload["allowed_mentions"] = allowed_mentions.to_dict()
 
         return self.request(route, json=payload)
