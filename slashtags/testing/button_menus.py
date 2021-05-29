@@ -96,7 +96,7 @@ class BaseButtonMenu(menus.MenuPages, inherit_buttons=False):
         if not self.custom_id:
             self.custom_id = str(ctx.message.id)
         if reply:
-            kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=True)
+            kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
             kwargs["mention_author"] = mention_author
         return await self._send(ctx, **kwargs)
 
