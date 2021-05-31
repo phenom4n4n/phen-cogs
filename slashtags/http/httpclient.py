@@ -142,7 +142,7 @@ class SlashHTTP:
         flags: int = None,
         components: list = None,
     ):
-        payload = {"type": type}
+        payload = {"type": type.value}
 
         if embed is not None:
             embeds = [embed]
