@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Optional, Set
+from typing import List, Optional
 
 import aiohttp
 import discord
@@ -149,9 +149,9 @@ class Tags(
             tag = self.global_tag_cache.get(tag_name)
         return tag
 
-    def get_unique_tags(self, guild: Optional[discord.Guild] = None) -> Set[Tag]:
+    def get_unique_tags(self, guild: Optional[discord.Guild] = None) -> List[Tag]:
         path = self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
-        return set(path.values())
+        return sorted(set(path.values()), key=lambda t: t.name)
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
         output = self.engine.process(tagscript)

@@ -353,7 +353,9 @@ class Commands(MixinMeta):
         *,
         is_global: bool,
     ):
-        description = [self.format_tagscript(tag) for tag in tags.values()]
+        description = [
+            self.format_tagscript(tag) for tag in sorted(tags.values(), key=lambda t: t.name)
+        ]
         description = "\n".join(description)
 
         e = discord.Embed(color=await ctx.embed_color())

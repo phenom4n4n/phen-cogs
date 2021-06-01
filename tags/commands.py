@@ -203,7 +203,7 @@ class Commands(MixinMeta):
 
         **Example:**
         `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
-        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.`
+        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.}`
         """
         await self.create_tag(ctx, tag_name, tagscript)
 
