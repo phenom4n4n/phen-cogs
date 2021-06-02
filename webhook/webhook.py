@@ -425,6 +425,9 @@ class Webhook(commands.Cog):
                 pass
             raise InvalidWebhook("You need to provide a valid webhook link.") from exc
 
+    async def webhook_check(self, webhook: discord.Webhook) -> bool:
+        return webhook.token
+
     async def get_webhook(
         self,
         *,
@@ -448,7 +451,7 @@ class Webhook(commands.Cog):
                 f"I need permissions to `manage_webhooks` in #{channel}.",
             )
         chan_hooks = await channel.webhooks()
-        webhook_list = [w for w in chan_hooks if w.type == discord.WebhookType.incoming]
+        webhook_list = [w for w in chan_hooks if await self.webhook_check(w)]
         if webhook_list:
             webhook = webhook_list[0]
         else:
