@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import re
 import types
 from copy import copy
@@ -29,6 +30,8 @@ TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
 CHOICE_RE = re.compile(r".{1,100}:.{1,100}")
 
 CHOICE_LIMIT = 25
+
+log = logging.getLogger("red.phenom4n4n.slashtags.commands")
 
 
 def _sub(match: re.Match) -> str:
@@ -114,7 +117,10 @@ class Commands(MixinMeta):
         )
         try:
             await command.register()
-        except discord.Forbidden:
+        except discord.Forbidden as error:
+            log.error(
+                f"Failed to create command {command!r} on guild {ctx.guild!r}", exc_info=error
+            )
             text = (
                 "Looks like I don't have permission to add Slash Commands here. Reinvite me "
                 "with this invite link and try again: <https://discordapp.com/oauth2/authorize"

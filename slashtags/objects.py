@@ -161,9 +161,9 @@ class SlashCommand:
         return self.name
 
     def __repr__(self) -> str:
-        return "<SlashCommand id={0.id} name={0.name!r} description={0.description!r} guild_id={0.guild_id!r}>".format(
-            self
-        )
+        members = ("id", "name", "description", "options", "guild_id")
+        attrs = " ".join(f"{member}={getattr(self, member)!r}" for member in members)
+        return f"<SlashCommand {attrs}>"
 
     @property
     def qualified_name(self) -> str:
