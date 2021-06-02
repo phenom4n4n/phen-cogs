@@ -264,6 +264,7 @@ class InteractionResponse:
         "_original_data",
         "guild_id",
         "channel_id",
+        "_channel",
         "application_id",
         "author_id",
         "author",
@@ -285,6 +286,7 @@ class InteractionResponse:
 
         self.guild_id = guild_id = discord.utils._get_as_snowflake(data, "guild_id")
         self.channel_id = discord.utils._get_as_snowflake(data, "channel_id")
+        self._channel = None
         self.application_id = discord.utils._get_as_snowflake(data, "application_id")
 
         if guild_id:
@@ -312,10 +314,24 @@ class InteractionResponse:
 
     @property
     def channel(self) -> discord.TextChannel:
-        if self.guild_id:
-            return self.guild.get_channel(self.channel_id)
+        if channel := self._channel:
+            return channel
+        elif self.guild_id:
+            if guild_channel := self.guild.get_channel(self.channel_id):
+                self._channel = channel
+                return guild_channel
+        elif dm_channel := self.bot.get_channel(self.channel_id):
+            self._channel = dm_channel
+            return dm_channel
+
+    async def get_channel(self) -> Union[discord.TextChannel, discord.DMChannel]:
+        if channel := self.channel:
+            return channel
+        if not self.guild_id:
+            self._channel = await self.author.create_dm()
         else:
-            return self.bot.get_channel(self.channel_id)
+            self._channel = await self.bot.fetch_channel(self.channel_id)
+        return self._channel
 
     @property
     def created_at(self):
