@@ -109,7 +109,7 @@ class Processor(MixinMeta):
 
         guild = interaction.guild
         author = interaction.author
-        channel = interaction.channel
+        channel = await interaction.get_channel()
 
         tag_author = tse.MemberAdapter(author)
         tag_channel = tse.ChannelAdapter(channel)
