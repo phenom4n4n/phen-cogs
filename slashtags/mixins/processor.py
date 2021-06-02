@@ -110,6 +110,8 @@ class Processor(MixinMeta):
         guild = interaction.guild
         author = interaction.author
         channel = interaction.channel
+        if not guild and not channel:
+            channel = await author.create_dm()
 
         tag_author = tse.MemberAdapter(author)
         tag_channel = tse.ChannelAdapter(channel)
