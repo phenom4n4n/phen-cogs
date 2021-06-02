@@ -466,6 +466,8 @@ class Webhook(commands.Cog):
                 reason=creation_reason,
                 avatar=await me.avatar_url.read(),
             )
+        if not webhook.token:
+            raise RuntimeError(f"returned webhook {webhook} has no token")
         self.channel_cache[channel.id] = webhook
         return webhook
 
