@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import asyncio
+import logging
 from typing import Dict, Optional, Union
 
 import aiohttp
@@ -36,6 +37,8 @@ from .converters import WebhookLinkConverter
 from .errors import InvalidWebhook, WebhookNotMatched
 from .session import Session
 from .utils import USER_MENTIONS, WEBHOOK_RE, FakeResponse, _monkeypatch_send
+
+log = logging.getLogger("red.phenom4n4n.webhook")
 
 
 class Webhook(commands.Cog):
@@ -450,7 +453,8 @@ class Webhook(commands.Cog):
             webhook = webhook_list[0]
         else:
             if len(chan_hooks) == 10:
-                # await chan_hooks[-1].delete()
+                # delete_hook = chan_hooks[-1]
+                # await delete_hook.delete()
                 return  # can't delete follower type webhooks
             creation_reason = (
                 f"Webhook creation requested by {author} ({author.id})" if author else ""
@@ -482,13 +486,21 @@ class Webhook(commands.Cog):
         """
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
-        for _ in range(5):
+        for index in range(5):
             webhook = await self.get_webhook(
                 channel=channel, me=me, author=author, reason=reason, ctx=ctx
             )
             if not webhook:
+                log.debug("webhook not found for %r", channel)
                 return
             try:
                 return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
             except (discord.InvalidArgument, discord.NotFound):
                 del self.channel_cache[channel.id]
+                if index >= 5:
+                    log.debug(
+                        "reached max retries when sending webhook %r type=%r",
+                        webhook,
+                        webhook.type,
+                    )
+                    raise
