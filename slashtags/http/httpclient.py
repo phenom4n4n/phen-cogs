@@ -218,7 +218,9 @@ class SlashHTTP:
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
 
-        payload = {"content": str(content)}
+        payload = {}
+        if content:
+            payload["content"] = str(content)
         if embeds:
             payload["embeds"] = [e.to_dict() for e in embeds]
         if components is not None:

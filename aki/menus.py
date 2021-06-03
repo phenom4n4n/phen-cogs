@@ -213,6 +213,10 @@ def get_menu(*, buttons: bool):
             )
 
     class AkiButtonMenu(AkiButtonMixin, AkiMenu):
+        async def update(self, button):
+            await button.defer_update()
+            await super().update(button)
+
         async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel):
             self.custom_id = str(ctx.message.id)
             return await self._send(ctx, embed=self.current_question_embed())
