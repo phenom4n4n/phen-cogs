@@ -85,12 +85,21 @@ class Connect4Game:
 
     PIECES = "\N{medium white circle}" "\N{large red circle}" "\N{large blue circle}"
 
-    __slots__ = ("player1", "player2", "players", "board", "turn_count", "_whomst_forfeited")
+    __slots__ = (
+        "player1",
+        "player2",
+        "players",
+        "board",
+        "turn_count",
+        "_whomst_forfeited",
+        "player_ids",
+    )
 
     def __init__(self, player1: discord.Member, player2: discord.Member):
         self.player1 = player1
         self.player2 = player2
         self.players = (player1, player2)
+        self.player_ids = {p.id for p in self.players}
 
         self.board = Board(7, 6)
         self.turn_count = 0

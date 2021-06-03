@@ -142,6 +142,11 @@ def get_menu():
             raw_message = button._original_data["message"]
             if int(raw_message["id"]) != self.message.id:
                 return False
+            if button.author_id not in self.game.player_ids:
+                asyncio.create_task(
+                    button.send("You aren't playing this Connect 4 game!", hidden=True)
+                )
+                return False
             if button.author_id != self.game.current_player.id:
                 asyncio.create_task(button.send("It's not your turn!", hidden=True))
                 return False
