@@ -209,7 +209,7 @@ def get_menu(*, buttons: bool):
                 style=ButtonStyle(meta.style),
                 custom_id=f"{self.custom_id}-{emoji}",
                 label=meta.label,
-                emoji=emoji,
+                # emoji=emoji,
             )
 
     class AkiButtonMenu(AkiButtonMixin, AkiMenu):
