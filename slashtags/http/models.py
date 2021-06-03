@@ -36,6 +36,7 @@ log = logging.getLogger("red.phenom4n4n.slashtags.models")
 __all__ = (
     "SlashOptionType",
     "ButtonStyle",
+    "InteractionCallbackType",
     "ResponseOption",
     "Component",
     "Button",
@@ -85,6 +86,14 @@ class ButtonStyle(IntEnum):
     green = 3
     red = 4
     link = 5
+
+
+class InteractionCallbackType(IntEnum):
+    pong = 1
+    channel_message_with_source = 4
+    deferred_channel_message_with_source = 5
+    deferred_update_message = 6
+    update_message = 7
 
 
 # {'options': [{'value': 'args', 'type': 3, 'name': 'args'}]
@@ -355,7 +364,7 @@ class InteractionResponse:
         data = await self.http.send_message(
             self._token,
             self.id,
-            type=4,
+            type=InteractionCallbackType.channel_message_with_source,
             initial_response=initial,
             content=content,
             embed=embed,
@@ -393,7 +402,7 @@ class InteractionResponse:
         data = await self.http.send_message(
             self._token,
             self.id,
-            type=5,
+            type=InteractionCallbackType.deferred_channel_message_with_source,
             initial_response=initial,
             flags=flags,
         )
@@ -415,6 +424,21 @@ class InteractionButton(InteractionResponse):
             channel=self.channel, data=data["message"], state=self._state
         )
 
+    async def defer_update(self, *, hidden: bool = False):
+        flags = 64 if hidden else None
+        initial = not self.sent
+        data = await self.http.send_message(
+            self._token,
+            self.id,
+            type=InteractionCallbackType.deferred_update_message,
+            initial_response=initial,
+            flags=flags,
+        )
+        if not self.sent:
+            self.sent = True
+        self.deferred = True
+        return data
+
     async def update(
         self,
         content: str = None,
@@ -433,7 +457,7 @@ class InteractionButton(InteractionResponse):
             data = await self.http.send_message(
                 self._token,
                 self.id,
-                type=7,
+                type=InteractionCallbackType.update_message,
                 initial_response=initial,
                 content=content,
                 embed=embed,
@@ -443,6 +467,7 @@ class InteractionButton(InteractionResponse):
                 flags=flags,
                 components=components,
             )
+            self.sent = True
         else:
             data = await self.http.edit_message(
                 self._token,
@@ -454,8 +479,6 @@ class InteractionButton(InteractionResponse):
                 original=True,
             )
 
-        if not self.sent:
-            self.sent = True
         if not self.completed:
             self.completed = True
 
