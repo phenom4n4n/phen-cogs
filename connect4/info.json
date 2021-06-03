@@ -1,0 +1,21 @@
+{
+    "name": "Aki",
+    "short": "Play Connect 4 in Discord!",
+    "description": "Play Connect 4 in Discord!",
+    "end_user_data_statement": "This cog stores data on users' wins, losses, and draws per server while playing Connect 4.",
+    "install_msg": "Thanks for installing Connect 4! Credits go to Benjamin Mintz, the original author, and flare who ported it to Red.",
+    "author": [
+        "Benjamin Mintz",
+        "flare",
+        "PhenoM4n4n"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [
+        "fun"
+    ],
+    "min_bot_version": "3.3.10",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}

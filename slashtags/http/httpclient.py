@@ -151,7 +151,7 @@ class SlashHTTP:
 
         data = {}
         if content:
-            data["content"] = content
+            data["content"] = str(content)
         if tts:
             data["tts"] = True
         if embeds:
@@ -218,7 +218,7 @@ class SlashHTTP:
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
 
-        payload = {"content": content}
+        payload = {"content": str(content)}
         if embeds:
             payload["embeds"] = [e.to_dict() for e in embeds]
         if components is not None:

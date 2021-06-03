@@ -82,7 +82,7 @@ class ButtonMenuMixin:
         channel = ctx.channel
         data = {"components": [c.to_dict() for c in components]}
         if content:
-            data["content"] = content
+            data["content"] = str(content)
         if embed:
             data["embed"] = embed.to_dict()
         if reference:
