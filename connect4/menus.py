@@ -46,7 +46,7 @@ class Connect4Menu(menus.Menu):
             self.game.move(self.DIGITS.index(self.get_emoji_from_payload(payload)))
         except ValueError:
             pass  # the column may be full
-        await self.edit(payload, content=self.game)
+        await self.edit(payload, content=self.game, refresh_components=True)
         if self.game.whomst_won() != self.game.NO_WINNER:
             await self.end()
 
@@ -61,6 +61,7 @@ class Connect4Menu(menus.Menu):
     async def edit(
         self, payload: discord.RawReactionActionEvent, *, respond: bool = True, **kwargs
     ):
+        refresh_components = kwargs.pop("refresh_components", False)
         try:
             await self.message.edit(**kwargs)
         except discord.NotFound:
@@ -80,7 +81,7 @@ class Connect4Menu(menus.Menu):
             await self.ctx.send(content="Connect4 game timed out.")
         gameboard = str(self.game)
         if self.message.content != gameboard:
-            await self.edit(None, content=gameboard, respond=False)
+            await self.edit(None, content=gameboard, respond=False, components=[])
         await self.store_stats()
 
     @staticmethod
@@ -113,11 +114,18 @@ class Connect4Menu(menus.Menu):
 
 def get_menu():
     try:
-        from slashtags import ButtonMenuMixin
+        from slashtags import Button, ButtonMenuMixin, ButtonStyle
     except ImportError:
         return Connect4Menu
 
     class Connect4ButtonMenu(ButtonMenuMixin, Connect4Menu):
+        def _get_component_from_emoji(self, emoji: discord.PartialEmoji) -> Button:
+            if str(emoji) == self.CANCEL_GAME_EMOJI:
+                style = ButtonStyle.grey
+            else:
+                style = ButtonStyle.red if self.game.whomst_turn() == 1 else ButtonStyle.blurple
+            return Button(style=style, custom_id=f"{self.custom_id}-{emoji}", emoji=emoji)
+
         def get_emoji_from_payload(self, button):
             return str(self._get_emoji(button))
 
@@ -126,15 +134,25 @@ def get_menu():
             return await self._send(ctx, self.game)
 
         async def edit(self, button, *, respond: bool = True, **kwargs):
+            refresh_components = kwargs.pop("refresh_components", False)
+            if refresh_components:
+                kwargs["components"] = self._get_components()
+
             try:
                 if button:
                     await button.update(**kwargs)
                 else:
-                    await self.message.edit(**kwargs)
-            except discord.NotFound:
-                await self.cancel(
-                    "Connect4 game cancelled since the message was deleted." if respond else None
-                )
+                    try:
+                        if kwargs.pop("components", None) == []:
+                            await self._edit_message_components([], **kwargs)
+                        else:
+                            await self.message.edit(**kwargs)
+                    except discord.NotFound:
+                        await self.cancel(
+                            "Connect4 game cancelled since the message was deleted."
+                            if respond
+                            else None
+                        )
             except discord.Forbidden:
                 await self.cancel(None)
 

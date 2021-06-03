@@ -1,5 +1,5 @@
 {
-    "name": "Aki",
+    "name": "Connect4",
     "short": "Play Connect 4 in Discord!",
     "description": "Play Connect 4 in Discord!",
     "end_user_data_statement": "This cog stores data on users' wins, losses, and draws per server while playing Connect 4.",

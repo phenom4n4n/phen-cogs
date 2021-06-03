@@ -198,7 +198,7 @@ class Connect4Game:
     def whomst_turn_name(self):
         return self._get_player_name(self.whomst_turn())
 
-    def whomst_turn(self):
+    def whomst_turn(self) -> int:
         return self.turn_count % 2 + 1
 
     def _get_player_name(self, player_number):

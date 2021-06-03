@@ -232,7 +232,7 @@ class ButtonMenuMixin:
                 f"An error occured while updating {type(self).__name__} menu.", exc_info=error
             )
 
-    async def _edit_message_components(self, components: List[Component]):
+    async def _edit_message_components(self, components: List[Component], **kwargs):
         route = discord.http.Route(
             "PATCH",
             "/channels/{channel_id}/messages/{message_id}",
@@ -240,6 +240,10 @@ class ButtonMenuMixin:
             message_id=self.message.id,
         )
         data = {"components": [c.to_dict() for c in components]}
+        if content := kwargs.get("content"):
+            data["content"] = str(content)
+        if embed := kwargs.get("embed"):
+            data["embed"] = embed.to_dict()
         await self.bot._connection.http.request(route, json=data)
 
 
