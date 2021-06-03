@@ -232,6 +232,16 @@ class ButtonMenuMixin:
                 f"An error occured while updating {type(self).__name__} menu.", exc_info=error
             )
 
+    async def _edit_message_components(self, components: List[Component]):
+        route = discord.http.Route(
+            "PATCH",
+            "/channels/{channel_id}/messages/{message_id}",
+            channel_id=self.message.channel.id,
+            message_id=self.message.id,
+        )
+        data = {"components": [c.to_dict() for c in components]}
+        await self.bot._connection.http.request(route, json=data)
+
 
 class BaseButtonMenu(ButtonMenuMixin, menus.MenuPages, inherit_buttons=False):
     async def show_checked_page(self, page_number: int, button: InteractionButton):
@@ -282,16 +292,6 @@ class BaseButtonMenu(ButtonMenuMixin, menus.MenuPages, inherit_buttons=False):
         kwargs = await self._get_kwargs_from_page(page)
         kwargs["components"] = components
         await button.update(**kwargs)
-
-    async def _edit_message_components(self, components: List[Component]):
-        route = discord.http.Route(
-            "PATCH",
-            "/channels/{channel_id}/messages/{message_id}",
-            channel_id=self.message.channel.id,
-            message_id=self.message.id,
-        )
-        data = {"components": [c.to_dict() for c in components]}
-        await self.bot._connection.http.request(route, json=data)
 
     async def close_buttons(self, button: InteractionButton = None):
         if self._buttons_closed:

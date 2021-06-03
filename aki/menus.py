@@ -1,4 +1,5 @@
 import logging
+from collections import namedtuple
 
 import akinator
 import discord
@@ -9,6 +10,28 @@ from redbot.vendored.discord.ext import menus
 log = logging.getLogger("red.phenom4n4n.aki.menus")
 
 NSFW_WORDS = ["porn", "sex"]
+
+YES = "✅"
+NO = "❌"
+IDK = "❔"
+PROBABLY = "📉"
+PROBABLY_NOT = "📈"
+BACK = "🔙"
+WIN = "🏆"
+CANCEL = "🗑️"
+
+button_meta = namedtuple("ButtonMeta", "style label")
+
+EMOJI_BUTTONS = {
+    YES: button_meta(style=3, label="yes"),
+    NO: button_meta(style=4, label="no"),
+    IDK: button_meta(style=1, label="idk"),
+    PROBABLY: button_meta(style=1, label="probably"),
+    PROBABLY_NOT: button_meta(style=1, label="probably not"),
+    BACK: button_meta(style=2, label="back"),
+    WIN: button_meta(style=2, label="win"),
+    CANCEL: button_meta(style=2, label="cancel"),
+}
 
 
 def channel_is_nsfw(channel) -> bool:
@@ -26,42 +49,43 @@ class AkiMenu(menus.Menu):
     async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel):
         return await channel.send(embed=self.current_question_embed())
 
-    @menus.button("✅")
+    @menus.button(YES)
     async def yes(self, payload: discord.RawReactionActionEvent):
         self.num += 1
         await self.answer("yes", payload)
         await self.send_current_question(payload)
 
-    @menus.button("❎")
+    @menus.button(NO)
     async def no(self, payload: discord.RawReactionActionEvent):
         self.num += 1
         await self.answer("no", payload)
         await self.send_current_question(payload)
 
-    @menus.button("❔")
+    @menus.button(IDK)
     async def idk(self, payload: discord.RawReactionActionEvent):
         self.num += 1
         await self.answer("idk", payload)
         await self.send_current_question(payload)
 
-    @menus.button("📉")
+    @menus.button(PROBABLY)
     async def probably(self, payload: discord.RawReactionActionEvent):
         self.num += 1
         await self.answer("probably", payload)
         await self.send_current_question(payload)
 
-    @menus.button("📈")
+    @menus.button(PROBABLY_NOT)
     async def probably_not(self, payload: discord.RawReactionActionEvent):
         self.num += 1
         await self.answer("probably not", payload)
         await self.send_current_question(payload)
 
-    @menus.button("🔙")
+    @menus.button(BACK)
     async def back(self, payload: discord.RawReactionActionEvent):
         try:
             await self.aki.back()
         except akinator.CantGoBackAnyFurther:
-            await self.ctx.send(
+            await self.send(
+                payload,
                 "You can't go back on the first question, try a different option instead.",
                 delete_after=10,
             )
@@ -69,14 +93,17 @@ class AkiMenu(menus.Menu):
             self.num -= 1
             await self.send_current_question(payload)
 
-    @menus.button("🏆")
+    async def send(self, payload, content: str = None, **kwargs):
+        await self.ctx.send(content, **kwargs)
+
+    @menus.button(WIN)
     async def react_win(self, payload: discord.RawReactionActionEvent):
         await self.win(payload)
 
-    @menus.button("🗑️")
+    @menus.button(CANCEL)
     async def end(self, payload: discord.RawReactionActionEvent):
         await self.message.delete()
-        await self.stop()
+        self.stop()
 
     def current_question_embed(self):
         e = discord.Embed(
@@ -115,7 +142,7 @@ class AkiMenu(menus.Menu):
             embed = self.get_nsfw_embed()
         else:
             embed = self.get_winner_embed(winner)
-        await self.edit_or_send(payload, embed=embed)
+        await self.edit_or_send(payload, embed=embed, components=[])
         self.stop()
         # TODO allow for continuation of game
 
@@ -133,10 +160,12 @@ class AkiMenu(menus.Menu):
 
     async def finalize(self, timed_out: bool):
         if timed_out:
-            await self.edit_or_send(None, content="Akinator game timed out.", embed=None)
+            await self.edit_or_send(
+                None, content="Akinator game timed out.", embed=None, components=[]
+            )
 
     async def cancel(self, payload, message: str = "Akinator game cancelled."):
-        await self.edit_or_send(payload, content=message, embed=None)
+        await self.edit_or_send(payload, content=message, embed=None, components=[])
         self.stop()
 
     async def edit_or_send(self, payload, **kwargs):
@@ -169,12 +198,19 @@ def get_menu(*, buttons: bool):
     if not buttons:
         return AkiMenu
     try:
-        from slashtags import ButtonMenuMixin
+        from slashtags import Button, ButtonMenuMixin, ButtonStyle
     except ImportError:
         return AkiMenu
 
     class AkiButtonMixin(ButtonMenuMixin):
-        ...
+        def _get_component_from_emoji(self, emoji: discord.PartialEmoji) -> Button:
+            meta = EMOJI_BUTTONS[str(emoji)]
+            return Button(
+                style=ButtonStyle(meta.style),
+                custom_id=f"{self.custom_id}-{emoji}",
+                label=meta.label,
+                emoji=emoji,
+            )
 
     class AkiButtonMenu(AkiButtonMixin, AkiMenu):
         async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel):
@@ -184,11 +220,16 @@ def get_menu(*, buttons: bool):
         async def edit(self, button, **kwargs):
             await button.update(embed=self.current_question_embed())
 
+        async def send(self, button, content: str = None, **kwargs):
+            await button.send(content, **kwargs)
+
         async def edit_or_send(self, button, **kwargs):
             try:
                 if button:
                     await button.update(**kwargs)
                 else:
+                    if kwargs.pop("components", None) == []:
+                        await self._edit_message_components([])
                     await self.message.edit(**kwargs)
             except discord.NotFound:
                 await self.ctx.send(**kwargs)
