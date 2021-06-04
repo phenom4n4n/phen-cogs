@@ -8,7 +8,14 @@ from redbot.vendored.discord.ext import menus
 
 from ..http import Button, ButtonStyle, Component, InteractionButton
 
-__all__ = ("PageSource", "ButtonMenu", "BaseButtonMenu", "menu", "ButtonMenuMixin")
+__all__ = (
+    "PageSource",
+    "ButtonMenu",
+    "BaseButtonMenu",
+    "menu",
+    "ButtonMenuMixin",
+    "ButtonMenuPagesMixin",
+)
 
 log = logging.getLogger("red.phenom4n4n.slashtags.testing.button_menus")
 
@@ -247,7 +254,7 @@ class ButtonMenuMixin:
         await self.bot._connection.http.request(route, json=data)
 
 
-class BaseButtonMenu(ButtonMenuMixin, menus.MenuPages, inherit_buttons=False):
+class ButtonMenuPagesMixin(ButtonMenuMixin):
     async def show_checked_page(self, page_number: int, button: InteractionButton):
         max_pages = self._source.get_max_pages()
         try:
@@ -339,6 +346,10 @@ class BaseButtonMenu(ButtonMenuMixin, menus.MenuPages, inherit_buttons=False):
                 raise menus.MenuError("Menu has not been started yet")
 
             return dummy()
+
+
+class BaseButtonMenu(ButtonMenuPagesMixin, menus.MenuPages, inherit_buttons=False):
+    """exists for non-breakage purpose"""
 
 
 class ButtonMenu(BaseButtonMenu, inherit_buttons=False):
