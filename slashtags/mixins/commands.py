@@ -301,7 +301,7 @@ class Commands(MixinMeta):
         self, ctx: commands.Context, tag: GuildTagConverter, name: TagName(check_global=False)
     ):
         """Edit a slash tag's name."""
-        await ctx.send(tag.edit_name(name))
+        await ctx.send(await tag.edit_name(name))
 
     @slashtag_edit.command("description")
     async def slashtag_edit_description(
@@ -449,7 +449,7 @@ class Commands(MixinMeta):
     async def slashtag_global_edit_name(
         self, ctx: commands.Context, tag: GlobalTagConverter, name: TagName(global_priority=True)
     ):
-        await ctx.send(tag.edit_name(name))
+        await ctx.send(await tag.edit_name(name))
 
     @slashtag_global_edit.command("description")
     @copy_doc(slashtag_edit_description)
