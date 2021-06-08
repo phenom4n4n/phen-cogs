@@ -119,6 +119,10 @@ def get_menu():
         return Connect4Menu
 
     class Connect4ButtonMenu(ButtonMenuMixin, Connect4Menu):
+        async def update(self, button):
+            await button.defer_update()
+            await super().update(button)
+
         def _get_component_from_emoji(self, emoji: discord.PartialEmoji) -> Button:
             if str(emoji) == self.CANCEL_GAME_EMOJI:
                 style = ButtonStyle.grey
@@ -140,21 +144,25 @@ def get_menu():
 
             try:
                 if button:
-                    await button.update(**kwargs)
-                else:
                     try:
-                        if kwargs.pop("components", None) == []:
-                            await self._edit_message_components([], **kwargs)
-                        else:
-                            await self.message.edit(**kwargs)
+                        await button.update(**kwargs)
                     except discord.NotFound:
-                        await self.cancel(
-                            "Connect4 game cancelled since the message was deleted."
-                            if respond
-                            else None
-                        )
+                        await self.message_edit(button, respond=respond, **kwargs)
+                else:
+                    await self.message_edit(button, respond=respond, **kwargs)
             except discord.Forbidden:
                 await self.cancel(None)
+
+        async def message_edit(self, button, *, respond: bool = True, **kwargs):
+            try:
+                if kwargs.pop("components", None) == []:
+                    await self._edit_message_components([], **kwargs)
+                else:
+                    await self.message.edit(**kwargs)
+            except discord.NotFound:
+                await self.cancel(
+                    "Connect4 game cancelled since the message was deleted." if respond else None
+                )
 
         def reaction_check(self, button):
             raw_message = button._original_data["message"]
