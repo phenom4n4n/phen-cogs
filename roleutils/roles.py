@@ -195,15 +195,16 @@ class Roles(MixinMeta):
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("hoist")
     async def role_hoist(
-        self, ctx: commands.Context, role: StrictRole(check_integrated=False), hoisted: bool = None,
+        self,
+        ctx: commands.Context,
+        role: StrictRole(check_integrated=False),
+        hoisted: bool = None,
     ):
         """Toggle whether a role should appear seperate from other roles."""
         hoisted = hoisted if hoisted is not None else not role.hoist
         await role.edit(hoist=hoisted)
         now = "now" if hoisted else "no longer"
-        await ctx.send(
-            f"**{role}** is {now} hoisted.", embed=await self.get_info(role)
-        )
+        await ctx.send(f"**{role}** is {now} hoisted.", embed=await self.get_info(role))
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
