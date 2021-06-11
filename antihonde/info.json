@@ -1,0 +1,20 @@
+{
+    "name": "AntiHonde",
+    "short": "Automatically ban H0nde alts.",
+    "description": "Automatically ban H0nde alts.",
+    "end_user_data_statement": "This cog stores a list of every H0nde it bans.",
+    "install_msg": "Thanks for installing AntiHonde! Credits go Trusty for the base handling.",
+    "author": [
+        "PhenoM4n4n",
+        "TrustyJAID"
+    ],
+    "required_cogs": {},
+    "requirements": [],
+    "tags": [
+        "moderation"
+    ],
+    "min_bot_version": "3.3.10",
+    "hidden": false,
+    "disabled": false,
+    "type": "COG"
+}
