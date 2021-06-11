@@ -60,6 +60,8 @@ class AntiHonde(commands.Cog):
         Ban all "H0nde" alt accounts in this server.
         """
         guild: discord.Guild = ctx.author.guild
+        if not guild.chunked:
+            await guild.chunk()
         me = guild.me
         hondes = []
         for member in guild.members:
