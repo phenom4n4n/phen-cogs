@@ -27,11 +27,13 @@ from typing import List, Optional
 import discord
 from redbot.core import commands
 
+from .converters import PrefixConverter
+
 
 class Prefix(commands.Cog):
     """Prefix management."""
 
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -89,7 +91,7 @@ class Prefix(commands.Cog):
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="set", aliases=["="], require_var_positional=True)
-    async def prefix_set(self, ctx: commands.Context, *prefixes: str):
+    async def prefix_set(self, ctx: commands.Context, *prefixes: PrefixConverter):
         """
         Set the prefixes for this server.
 
@@ -111,7 +113,7 @@ class Prefix(commands.Cog):
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="add", aliases=["+"])
-    async def prefix_add(self, ctx: commands.Context, prefix: str):
+    async def prefix_add(self, ctx: commands.Context, prefix: PrefixConverter):
         """
         Add a prefix to this server's prefix list.
 
