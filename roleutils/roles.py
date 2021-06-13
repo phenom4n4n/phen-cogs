@@ -181,7 +181,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command("color")
+    @role.command("color", aliases=["colour"])
     async def role_color(
         self, ctx: commands.Context, role: StrictRole(check_integrated=False), color: discord.Color
     ):
