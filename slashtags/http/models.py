@@ -420,10 +420,16 @@ class InteractionButton(InteractionResponse):
         interaction_data = self.interaction_data
         self.custom_id = interaction_data["custom_id"]
         self.component_type = interaction_data["component_type"]
+
+        message = data["message"]
+        if reference := message.get("message_reference"):
+            if "channel_id" not in reference:
+                reference["channel_id"] = self.channel_id
+                # used if dislash is loaded since Message.reference creation
+                # pops channel_id from the message_reference dict
+
         try:
-            self.message = discord.Message(
-                channel=self.channel, data=data["message"], state=self._state
-            )
+            self.message = discord.Message(channel=self.channel, data=message, state=self._state)
         except Exception as exc:
             log.exception("An error occured while creating the message for %r", self, exc_info=exc)
             self.message = None
