@@ -253,6 +253,34 @@ class ButtonMenuMixin:
             data["embed"] = embed.to_dict()
         await self.bot._connection.http.request(route, json=data)
 
+    async def _edit_button_components(
+        self, button: InteractionButton, components: List[Component], **kwargs
+    ):
+        kwargs["components"] = components
+        await button.update(**kwargs)
+
+    def add_button(self, button, *, react=False, interaction: InteractionButton = None):
+        self._buttons[button.emoji] = button
+
+        if react:
+            if self.__tasks:
+
+                async def wrapped():
+                    # Add the component
+                    self.buttons[button.emoji] = button
+                    components = self._get_components()
+                    if interaction:
+                        await self._edit_button_components(interaction, components)
+                    else:
+                        await self._edit_message_components(components)
+
+                return wrapped()
+
+            async def dummy():
+                raise menus.MenuError("Menu has not been started yet")
+
+            return dummy()
+
 
 class ButtonMenuPagesMixin(ButtonMenuMixin):
     async def show_checked_page(self, page_number: int, button: InteractionButton):
@@ -297,12 +325,11 @@ class ButtonMenuPagesMixin(ButtonMenuMixin):
         return await self._send(ctx, **kwargs)
 
     async def _edit_button_components(
-        self, button: InteractionButton, components: List[Component]
+        self, button: InteractionButton, components: List[Component], **kwargs
     ):
         page = await self._source.get_page(self.current_page)
         kwargs = await self._get_kwargs_from_page(page)
-        kwargs["components"] = components
-        await button.update(**kwargs)
+        await super()._edit_button_components(button, components, **kwargs)
 
     async def close_buttons(self, button: InteractionButton = None):
         if self._buttons_closed:
@@ -324,28 +351,6 @@ class ButtonMenuPagesMixin(ButtonMenuMixin):
         if self.message is not None:
             await source._prepare_once()
             await self.show_page(0, button)
-
-    def add_button(self, button, *, react=False, interaction: InteractionButton = None):
-        self._buttons[button.emoji] = button
-
-        if react:
-            if self.__tasks:
-
-                async def wrapped():
-                    # Add the component
-                    self.buttons[button.emoji] = button
-                    components = self._get_components()
-                    if interaction:
-                        await self._edit_button_components(interaction, components)
-                    else:
-                        await self._edit_message_components(components)
-
-                return wrapped()
-
-            async def dummy():
-                raise menus.MenuError("Menu has not been started yet")
-
-            return dummy()
 
 
 class BaseButtonMenu(ButtonMenuPagesMixin, menus.MenuPages, inherit_buttons=False):
