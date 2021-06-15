@@ -127,6 +127,10 @@ class Commands(MixinMeta):
                 f"?client_id={self.bot.user.id}&scope=bot%20applications.commands>"
             )
             return await ctx.send(text)
+        except Exception as error:
+            log.error(f"Failed to create command {command!r} on guild {ctx.guild!r}")
+            # exc info unneeded since error handler should print it, however info on the command options is needed
+            raise
 
         tag = SlashTag(
             self,

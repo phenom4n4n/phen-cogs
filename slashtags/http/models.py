@@ -388,7 +388,7 @@ class InteractionResponse:
                     state=self._state,
                 )
             except Exception as e:
-                log.exception("Failed to create message object for data:\n%r" % data, exc_info=e)
+                log.exception("Failed to create message object for data:\n%r", data, exc_info=e)
             else:
                 if delete_after is not None:
                     await message.delete(delay=delete_after)
@@ -420,9 +420,19 @@ class InteractionButton(InteractionResponse):
         interaction_data = self.interaction_data
         self.custom_id = interaction_data["custom_id"]
         self.component_type = interaction_data["component_type"]
-        self.message = discord.Message(
-            channel=self.channel, data=data["message"], state=self._state
-        )
+
+        message = data["message"]
+        if reference := message.get("message_reference"):
+            if "channel_id" not in reference:
+                reference["channel_id"] = self.channel_id
+                # used if dislash is loaded since Message.reference creation
+                # pops channel_id from the message_reference dict
+
+        try:
+            self.message = discord.Message(channel=self.channel, data=message, state=self._state)
+        except Exception as exc:
+            log.exception("An error occured while creating the message for %r", self, exc_info=exc)
+            self.message = None
 
     async def defer_update(self, *, hidden: bool = False):
         flags = 64 if hidden else None
@@ -527,7 +537,7 @@ class InteractionCommand(InteractionResponse):
                     option = handler(o, option, resolved)
                 except Exception as error:
                     log.exception(
-                        "Failed to handle option data for option:\n%r" % o, exc_info=error
+                        "Failed to handle option data for option:\n%r", o, exc_info=error
                     )
             self.options.append(option)
 

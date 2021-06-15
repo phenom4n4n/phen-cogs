@@ -34,11 +34,17 @@ with open(Path(__file__).parent / "info.json") as fp:
     __red_end_user_data_statement__ = json.load(fp)["end_user_data_statement"]
 
 
+conflicting_cogs = (
+    ("Alias", "alias", "aliases"),
+    ("CustomCommands", "customcom", "custom commands"),
+)
+
+
 def setup(bot: Red) -> None:
-    cog = bot.get_cog("CustomCommands")
-    if cog:
-        raise CogLoadError(
-            "This cog conflicts with CustomCommands and both cannot be loaded at the same time. "
-            "After unloading `customcom`, you can migrate custom commands to tags with `[p]migratecustomcom`."
-        )
+    for cog_name, module_name, tag_name in conflicting_cogs:
+        if bot.get_cog(cog_name):
+            raise CogLoadError(
+                f"This cog conflicts with {cog_name} and both cannot be loaded at the same time. "
+                f"After unloading `{module_name}`, you can migrate {tag_name} to tags with `[p]migrate{module_name}`."
+            )
     bot.add_cog(Tags(bot))
