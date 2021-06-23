@@ -27,7 +27,7 @@ import logging
 import re
 from collections import defaultdict
 from datetime import datetime
-from typing import Coroutine, Optional
+from typing import Coroutine, DefaultDict, Dict, Optional
 
 import discord
 import TagScriptEngine as tse
@@ -49,7 +49,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.3.3"
+    __version__ = "1.3.4"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -76,10 +76,12 @@ class DisboardReminder(commands.Cog):
         self.config.register_guild(**self.default_guild)
 
         self.channel_cache = {}
-        self.bump_loop = self.create_task(self.bump_check_loop())
-        self.bump_tasks = defaultdict(dict)
+        self.bump_tasks: DefaultDict[int, Dict[str, asyncio.Task]] = defaultdict(dict)
         # self.cache = defaultdict(lambda _: self.default_guild_cache.copy())
-        bot.add_dev_env_value("bprm", lambda _: self)
+        try:
+            bot.add_dev_env_value("bprm", lambda _: self)
+        except RuntimeError:
+            pass
 
         blocks = [
             tse.LooseVariableGetterBlock(),
@@ -89,8 +91,22 @@ class DisboardReminder(commands.Cog):
         ]
         self.tagscript_engine = tse.Interpreter(blocks)
 
+        self.bump_loop = self.create_task(self.bump_check_loop())
+
     def cog_unload(self):
-        self.bot.remove_dev_env_value("bprm")
+        try:
+            self.__unload()
+        except Exception as error:
+            log.exception(
+                f"An error occurred while unloading the cog. Version: {self.__version__}",
+                exc_info=error,
+            )
+
+    def __unload(self):
+        try:
+            self.bot.remove_dev_env_value("bprm")
+        except KeyError:
+            pass
         if self.bump_loop:
             self.bump_loop.cancel()
         for tasks in self.bump_tasks.values():
