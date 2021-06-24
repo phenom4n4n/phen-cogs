@@ -89,7 +89,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache: Dict[int, SlashTag] = {}
 
-        self.load_task = self.create_task(self.initialize_task())
+        self.load_task = None  # self.create_task(self.initialize_task())
         bot.add_dev_env_value("st", lambda ctx: self)
 
         super().__init__()
@@ -118,7 +118,8 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.bot.remove_dev_env_value("st")
         if self.testing_enabled:
             self.remove_test_cog()
-        self.load_task.cancel()
+        if self.load_task:
+            self.load_task.cancel()
 
     async def cog_before_invoke(self, ctx: commands.Context) -> bool:
         if self.bot.get_cog("SlashInjector"):
@@ -143,9 +144,16 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         pass
 
     async def migrate_to_red_interactions(self):
+        migrated = 0
         guilds_data = await self.config.all_guilds()
-        async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
-            ...
+        async for guild_data in AsyncIter(guilds_data.values(), steps=100):
+            for tag_data in guild_data["tags"].values():
+                command = ri.SlashCommand.from_dict(self.state, tag_data["command"])
+                await command.save_config()
+                command.add_to_cache()
+                migrated += 1
+        await self.config.migrated_to_red_interactions.set(True)
+        log.info(f"Migrated {migrated} commands to Red-Interactions config!")
 
     async def cache_tags(self, global_data: dict = None):
         guild_cached = 0
