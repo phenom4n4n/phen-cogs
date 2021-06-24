@@ -24,7 +24,7 @@ SOFTWARE.
 
 import re
 from io import BytesIO
-from typing import Literal
+from typing import Tuple, Union
 
 import matplotlib
 
@@ -42,9 +42,8 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 
-RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
-
 ID_RE = re.compile(r"\d{15,21}")
+LIMIT = 10000
 
 
 class BanChart(commands.Cog):
@@ -60,31 +59,59 @@ class BanChart(commands.Cog):
             force_registration=True,
         )
 
-    async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
+    async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
         return
+
+    @staticmethod
+    async def get_ban_limit(ctx: commands.Context, limit: int) -> Tuple[int, list]:
+        await ctx.trigger_typing()
+        bans = await ctx.guild.bans()
+        ban_count = len(bans)
+        if not ban_count:
+            return await ctx.send("This server has no bans.")
+        limit = min(LIMIT, min(limit, ban_count))
+        await ctx.send(f"Gathering stats up to the last {limit} bans.")
+        return limit, bans
+
+    @staticmethod
+    def get_name(user: Union[discord.User, int]) -> str:
+        name = str(user)
+        if len(name) > 23:
+            name = name[:20] + "..."
+        return name.replace("$", "\\$")
+
+    async def get_chart_file(self, ctx: commands.Context, counter: Counter) -> discord.File:
+        task = functools.partial(
+            self.create_chart, counter, f"Ban Mods for the last {sum(counter.values())} bans"
+        )
+        task = self.bot.loop.run_in_executor(None, task)
+        try:
+            banchart = await asyncio.wait_for(task, timeout=60)
+        except asyncio.TimeoutError:
+            return await ctx.send(
+                "An error occurred while generating this image. Try again later."
+            )
+        return discord.File(banchart, "banchart.png")
 
     @commands.cooldown(1, 300, commands.BucketType.guild)
     @commands.max_concurrency(10, commands.BucketType.default)
     @commands.mod_or_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True, view_audit_log=True)
-    @commands.command()
-    async def banchart(self, ctx: commands.Context, limit: int = 10000):
-        """Display a chart of the moderators with the most bans.
+    @commands.group(invoke_without_command=True)
+    async def banchart(self, ctx: commands.Context, limit: int = LIMIT):
+        """
+        Display a chart of the moderators with the most bans.
 
-        This can take a while for servers with lots of bans."""
-        await ctx.trigger_typing()
-        ban_count = len(await ctx.guild.bans())
-        if not ban_count:
-            return await ctx.send("This server has no bans.")
-        limit = min(10000, min(limit, ban_count))
-        await ctx.send(f"Gathering stats for the last {limit} bans.")
+        This can take a while for servers with lots of bans.
+        """
+        limit, _ = await self.get_ban_limit(ctx, limit)
         async with ctx.typing():
             counter = Counter()
             async for entry in ctx.guild.audit_logs(
                 action=discord.AuditLogAction.ban, limit=limit
             ):
                 if entry.user.bot and entry.reason:
-                    match = re.search(ID_RE, entry.reason)
+                    match = ID_RE.search(entry.reason)
                     if match:
                         mod_id = int(match.group(0))
                         user = self.bot.get_user(mod_id) or mod_id
@@ -92,21 +119,25 @@ class BanChart(commands.Cog):
                         user = entry.user
                 else:
                     user = entry.user
-                name = str(user)
-                if len(name) > 23:
-                    name = name[:20] + "..."
-                counter[name.replace("$", "\\$")] += 1
-            task = functools.partial(
-                self.create_chart, counter, f"Ban Mods for the last {limit} bans"
-            )
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                banchart = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-        await ctx.send(file=discord.File(banchart, "banchart.png"))
+                counter[self.get_name(user)] += 1
+            chart_file = await self.get_chart_file(ctx, counter)
+        await ctx.send(file=chart_file)
+
+    @banchart.command("storedbans")
+    async def banchart_storedbans(self, ctx: commands.Context, limit: int = LIMIT):
+        """
+        Creates a ban chart using the server's bans rather than audit logs.
+        """
+        _, bans = await self.get_ban_limit(ctx, limit)
+        async with ctx.typing():
+            counter = Counter()
+            for ban in bans:
+                if ban.reason and (match := ID_RE.search(ban.reason)):
+                    mod_id = int(match.group(0))
+                    user = self.bot.get_user(mod_id) or mod_id
+                    counter[self.get_name(user)] += 1
+            chart_file = await self.get_chart_file(ctx, counter)
+        await ctx.send(file=chart_file)
 
     # original from https://github.com/aikaterna/aikaterna-cogs/
     def create_chart(self, data: Counter, title: str):
