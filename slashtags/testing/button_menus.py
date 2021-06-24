@@ -3,10 +3,9 @@ import logging
 from typing import List, Union
 
 import discord
+from red_interactions import Button, ButtonStyle, Component, InteractionButton
 from redbot.core import commands
 from redbot.vendored.discord.ext import menus
-
-from ..http import Button, ButtonStyle, Component, InteractionButton
 
 __all__ = (
     "PageSource",
@@ -157,7 +156,7 @@ class ButtonMenuMixin:
             while self._running:
                 tasks = [
                     asyncio.create_task(
-                        self.bot.wait_for("button_interaction", check=self.reaction_check)
+                        self.bot.wait_for("red_button_interaction", check=self.reaction_check)
                     ),
                 ]
                 done, pending = await asyncio.wait(

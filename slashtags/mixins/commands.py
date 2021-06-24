@@ -6,6 +6,7 @@ from copy import copy
 from typing import Dict, List, Union
 
 import discord
+from red_interactions import SlashCommand, SlashOption, SlashOptionChoice, SlashOptionType
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
 
@@ -20,8 +21,7 @@ from ..converters import (
     TagName,
     TagScriptConverter,
 )
-from ..http import SlashOptionType
-from ..objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
+from ..objects import SlashTag
 from ..testing.button_menus import menu as button_menu
 from ..utils import ARGUMENT_NAME_DESCRIPTION, dev_check
 

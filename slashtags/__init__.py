@@ -28,7 +28,6 @@ from pathlib import Path
 from redbot.core.bot import Red
 
 from .core import SlashTags
-from .http import *  # noqa
 from .objects import *  # noqa
 from .testing.button_menus import *  # noqa
 

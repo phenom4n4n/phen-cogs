@@ -24,250 +24,31 @@ SOFTWARE.
 
 import asyncio
 import logging
-from typing import List, Optional, Union
+from typing import Optional
 
 import discord
 import TagScriptEngine as tse
+from red_interactions import InteractionResponse, SlashCommand
 from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import pagify
 
-from .http import InteractionResponse, SlashHTTP, SlashOptionType
-
 log = logging.getLogger("red.phenom4n4n.slashtags.objects")
 
 __all__ = (
-    "SlashOptionChoice",
-    "SlashOption",
-    "SlashCommand",
     "SlashTag",
     "FakeMessage",
     "SlashContext",
 )
 
 
-class SlashOptionChoice:
-    __slots__ = ("name", "value")
-
-    def __init__(self, name: str, value: Union[str, int]):
-        self.name = name
-        self.value = value
-
-    def to_dict(self):
-        return {"name": self.name, "value": self.value}
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(data["name"], data["value"])
-
-
-class SlashOption:
-    __slots__ = ("type", "name", "description", "required", "choices", "options")
-
-    def __init__(
-        self,
-        *,
-        option_type: SlashOptionType = SlashOptionType.STRING,
-        name: str,
-        description: str,
-        required: bool = False,
-        choices: List[SlashOptionChoice] = [],
-        options: list = [],
-    ):
-        if not isinstance(option_type, SlashOptionType):
-            option_type = SlashOptionType(option_type)
-        self.type = option_type
-        self.name = name
-        self.description = description
-        self.required = required
-        self.choices = choices.copy()
-        self.options = options.copy()
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        values = ["name", "type", "required"]
-        if self.choices:
-            values.append("choices")
-        if self.options:
-            values.append("options")
-        inner = " ".join(f"{value}={getattr(self, value)!r}" for value in values)
-        return f"<SlashOption {inner}>"
-
-    def to_dict(self):
-        data = {
-            "type": self.type.value,
-            "name": self.name,
-            "description": self.description,
-            "required": self.required,
-        }
-
-        if self.choices:
-            data["choices"] = [c.to_dict() for c in self.choices]
-        if self.options:
-            data["options"] = [o.to_dict() for o in self.options]
-        return data
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        choices = [SlashOptionChoice.from_dict(choice) for choice in data.get("choices", [])]
-
-        options = [cls.from_dict(option) for option in data.get("options", [])]
-        return cls(
-            option_type=SlashOptionType(data["type"]),
-            name=data["name"],
-            description=data["description"],
-            required=data.get("required", False),
-            choices=choices,
-            options=options,
-        )
-
-
-class SlashCommand:
-    __slots__ = (
-        "cog",
-        "http",
-        "id",
-        "application_id",
-        "name",
-        "description",
-        "guild_id",
-        "options",
-    )
-
-    def __init__(
-        self,
-        cog,
-        *,
-        id: int = None,
-        application_id: int = None,
-        name: str,
-        description: str,
-        guild_id: int = None,
-        options: List[SlashOption] = [],
-    ):
-        self.cog = cog
-        self.http = cog.http
-
-        self.id = id
-        self.application_id = application_id
-        self.name = name
-        self.description = description
-        self.guild_id = guild_id
-        self.options = options.copy()
-
-    def __str__(self) -> str:
-        return self.name
-
-    def __repr__(self) -> str:
-        members = ("id", "name", "description", "options", "guild_id")
-        attrs = " ".join(f"{member}={getattr(self, member)!r}" for member in members)
-        return f"<SlashCommand {attrs}>"
-
-    @property
-    def qualified_name(self) -> str:
-        return self.name
-
-    def to_request(self) -> dict:
-        return {
-            "name": self.name,
-            "description": self.description,
-            "options": [o.to_dict() for o in self.options],
-        }
-
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "application_id": self.application_id,
-            "name": self.name,
-            "description": self.description,
-            "options": [o.to_dict() for o in self.options],
-            "guild_id": self.guild_id,
-        }
-
-    @classmethod
-    def from_dict(cls, cog, data: dict):
-        id = discord.utils._get_as_snowflake(data, "id")
-        application_id = discord.utils._get_as_snowflake(data, "application_id")
-        name = data["name"]
-        description = data["description"]
-        options = [SlashOption.from_dict(o) for o in data.get("options", [])]
-        guild_id = discord.utils._get_as_snowflake(data, "guild_id")
-        return cls(
-            cog,
-            id=id,
-            application_id=application_id,
-            name=name,
-            description=description,
-            guild_id=guild_id,
-            options=options,
-        )
-
-    def _parse_response_data(self, data: dict):
-        _id = discord.utils._get_as_snowflake(data, "id")
-        application_id = discord.utils._get_as_snowflake(data, "application_id")
-        name = data.get("name")
-        description = data.get("description")
-        if _id:
-            self.id = _id
-        if application_id:
-            self.application_id = application_id
-        if name:
-            self.name = name
-        if description:
-            self.description = description
-        self.options = [SlashOption.from_dict(o) for o in data.get("options", [])]
-
-    async def register(self):
-        if self.guild_id:
-            data = await self.http.add_guild_slash_command(self.guild_id, self.to_request())
-        else:
-            data = await self.http.add_slash_command(self.to_request())
-        self._parse_response_data(data)
-
-    async def edit(
-        self, *, name: str = None, description: str = None, options: List[SlashOption] = None
-    ):
-        payload = {}
-        if name:
-            payload["name"] = name
-        if description:
-            payload["description"] = description
-        if options:
-            payload["options"] = [o.to_dict() for o in options]
-
-        if self.guild_id:
-            data = await self.http.edit_guild_slash_command(self.guild_id, self.id, payload)
-        else:
-            data = await self.http.edit_slash_command(self.id, payload)
-        self._parse_response_data(data)
-
-    async def delete(self):
-        self.remove_from_cache()
-        if self.guild_id:
-            await self.http.remove_guild_slash_command(self.guild_id, self.id)
-        else:
-            await self.http.remove_slash_command(self.id)
-
-    def add_to_cache(self):
-        self.cog.command_cache[self.id] = self
-
-    def remove_from_cache(self):
-        try:
-            del self.cog.command_cache[self.id]
-        except KeyError:
-            pass
-
-
 class SlashTag:
     __slots__ = (
         "cog",
-        "http",
         "config",
         "bot",
         "tagscript",
-        "command",
+        "command_id",
         "guild_id",
         "author_id",
         "uses",
@@ -283,15 +64,14 @@ class SlashTag:
         author_id: int = None,
         uses: int = 0,
         real: bool = True,
-        command: SlashCommand,
+        command_id: int,
     ):
         self.cog = cog
-        self.http: SlashHTTP = cog.http
         self.config: Config = cog.config
         self.bot: Red = cog.bot
         self.tagscript = tagscript
 
-        self.command = command
+        self.command_id = command_id
 
         self.guild_id = guild_id
         self.author_id = author_id
@@ -347,6 +127,10 @@ class SlashTag:
     def author(self) -> Optional[discord.User]:
         return self.bot.get_user(self.author_id)
 
+    @property
+    def command(self) -> SlashCommand:
+        return self.cog.state.get_command(self.command_id)
+
     def run(
         self, interpreter: tse.Interpreter, seed_variables: dict = {}, **kwargs
     ) -> tse.Response:
@@ -373,6 +157,10 @@ class SlashTag:
         guild_id: int = None,
         real_tag: bool = True,
     ):
+        try:
+            command_id = data["command_id"]
+        except KeyError:
+            command_id = data["command"]["id"]
         return cls(
             cog,
             data["tag"],
@@ -380,7 +168,7 @@ class SlashTag:
             author_id=data["author_id"],
             uses=data.get("uses", 0),
             real=real_tag,
-            command=SlashCommand.from_dict(cog, data["command"]),
+            command_id=command_id,
         )
 
     def to_dict(self):
@@ -388,7 +176,7 @@ class SlashTag:
             "author_id": self.author_id,
             "uses": self.uses,
             "tag": self.tagscript,
-            "command": self.command.to_dict(),
+            "command_id": self.command_id,
         }
 
     async def delete(self) -> str:
@@ -402,7 +190,6 @@ class SlashTag:
         return f"{self.name_prefix} `{self}` deleted."
 
     def remove_from_cache(self):
-        self.command.remove_from_cache()
         try:
             del self.cache_path[self.id]
         except KeyError:
@@ -410,7 +197,6 @@ class SlashTag:
 
     def add_to_cache(self):
         self.cache_path[self.id] = self
-        self.command.add_to_cache()
 
     async def edit(self, **kwargs):
         await self.command.edit(**kwargs)
@@ -593,9 +379,7 @@ class SlashContext(commands.Context):
 
     def __repr__(self):
         return (
-            "<SlashContext interaction={0.interaction!r} invoked_with={0.invoked_with!r}>".format(
-                self
-            )
+            f"<SlashContext interaction={self.interaction!r} invoked_with={self.invoked_with!r}>"
         )
 
     @classmethod

@@ -6,12 +6,12 @@ from typing import List, Optional
 
 import discord
 import TagScriptEngine as tse
+from red_interactions import InteractionCommand, SlashOptionType
 from redbot.core import commands
 
 from ..abc import MixinMeta
 from ..blocks import HideBlock
 from ..errors import RequireCheckFailure
-from ..http import InteractionCommand, SlashOptionType
 from ..objects import FakeMessage, SlashContext, SlashTag
 from ..utils import dev_check
 
