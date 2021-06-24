@@ -79,6 +79,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             "eval_command": None,
             "tags": {},
             "testing_enabled": False,
+            "migrated_to_red_interactions": False,
         }
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
@@ -131,6 +132,8 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.state = await ri.initialize(self.bot) if not ri.is_initialized() else ri.state
         data = await self.config.all()
         self.eval_command = data["eval_command"]
+        if not data["migrated_to_red_interactions"]:
+            await self.migrate_to_red_interactions()
 
         if data["testing_enabled"]:
             self.add_test_cog()
@@ -138,6 +141,11 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     async def initialize_task(self):
         pass
+
+    async def migrate_to_red_interactions(self):
+        guilds_data = await self.config.all_guilds()
+        async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
+            ...
 
     async def cache_tags(self, global_data: dict = None):
         guild_cached = 0

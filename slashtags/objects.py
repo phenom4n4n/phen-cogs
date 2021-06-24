@@ -113,7 +113,7 @@ class SlashTag:
 
     @property
     def id(self):
-        return self.command.id
+        return self.command_id
 
     @property
     def description(self):
@@ -176,6 +176,7 @@ class SlashTag:
             "author_id": self.author_id,
             "uses": self.uses,
             "tag": self.tagscript,
+            "command": self.command.to_dict(),
             "command_id": self.command_id,
         }
 
