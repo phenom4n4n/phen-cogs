@@ -486,13 +486,20 @@ class SlashTag:
 
     async def edit_single_option(self, ctx: commands.Context, name: str):
         options = self.command.options
-        option = discord.utils.get(options, name=name)
-        if not option:
+        previous_option = None
+        chosen_option = None
+        for option in options:
+            if option.name == name:
+                chosen_option = option
+                break
+            else:
+                previous_option = option
+        if not chosen_option:
             await ctx.send(
                 f'{self.name_prefix} `{self}` doesn\'t have an argument named "{name}".'
             )
             return
-        added_required = not options[-1].required if len(options) > 2 else False
+        added_required = not previous_option.required if previous_option else False
         try:
             new_option = await self.cog.get_option(ctx, added_required=added_required)
         except asyncio.TimeoutError:
