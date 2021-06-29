@@ -68,7 +68,7 @@ class BanChart(commands.Cog):
         bans = await ctx.guild.bans()
         ban_count = len(bans)
         if not ban_count:
-            return await ctx.send("This server has no bans.")
+            raise commands.UserFeedbackCheckFailure("This server has no bans.")
         limit = min(LIMIT, min(limit, ban_count))
         await ctx.send(f"Gathering stats up to the last {limit} bans.")
         return limit, bans
