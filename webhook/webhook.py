@@ -432,20 +432,21 @@ class Webhook(commands.Cog):
         self,
         *,
         channel: discord.TextChannel = None,
-        me: discord.Member = None,
+        me: discord.Member = None,  # kept to avoid breaking changes but not used
         author: discord.Member = None,
         reason: str = None,
         ctx: commands.Context = None,
     ) -> discord.Webhook:
         if ctx:
             channel = channel or ctx.channel
-            me = me or ctx.me
+            # me = me or ctx.me
             author = author or ctx.author
             reason = (reason or f"For the {ctx.command.qualified_name} command",)
 
         if webhook := self.channel_cache.get(channel.id):
             return webhook
-        if me and not channel.permissions_for(me).manage_webhooks:
+        me = channel.guild.me
+        if not channel.permissions_for(me).manage_webhooks:
             raise discord.Forbidden(
                 FakeResponse(),
                 f"I need permissions to `manage_webhooks` in #{channel}.",
