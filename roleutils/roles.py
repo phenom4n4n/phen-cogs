@@ -25,10 +25,11 @@ SOFTWARE.
 import logging
 from collections import defaultdict
 from colorsys import rgb_to_hsv
-from typing import Optional
+from typing import List, Optional
 
 import discord
 from redbot.core import commands
+from redbot.core.utils.chat_formatting import humanize_number as hn
 from redbot.core.utils.chat_formatting import pagify, text_to_file
 from redbot.core.utils.mod import get_audit_reason
 
@@ -556,3 +557,35 @@ class Roles(MixinMeta):
                 else:
                     skipped.append(member)
         return {"completed": completed, "skipped": skipped, "failed": failed}
+
+    @staticmethod
+    def format_members(members: List[discord.Member]):
+        length = len(members)
+        s = "" if length == 1 else "s"
+        return f"**{hn(length)}** member{s}"
+
+    @role.command("uniquemembers", aliases=["um"])
+    async def role_uniquemembers(
+        self, ctx: commands.Context, role_one: FuzzyRole, role_two: FuzzyRole
+    ):
+        """
+        View the total unique members between two roles.
+        """
+        if not ctx.guild.chunked:
+            await ctx.guild.chunk()
+        color = role_one.color
+        role_one_members = role_one.members
+        role_two_members = role_two.members
+        unique_members = set(role_one_members + role_two_members)
+        description = [
+            f"*Unique members*: {self.format_members(unique_members)}",
+            f"{role_one.mention}: {self.format_members(role_one_members)}",
+            f"{role_two.mention}: {self.format_members(role_two_members)}",
+        ]
+        e = discord.Embed(
+            color=color,
+            title=f"Unique members between {role_one} and {role_two}",
+            description="\n".join(description),
+        )
+        ref = ctx.message.to_reference(fail_if_not_exists=False)
+        await ctx.send(embed=e, reference=ref)
