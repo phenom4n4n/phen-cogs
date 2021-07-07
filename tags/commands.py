@@ -199,7 +199,7 @@ class Commands(MixinMeta):
         """
         Add a tag with TagScript.
 
-        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
+        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/tags/blocks.html#usage)
 
         **Example:**
         `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
@@ -214,11 +214,10 @@ class Commands(MixinMeta):
                 raise TagFeedbackError(
                     f"This server has reached the limit of **{TAG_GUILD_LIMIT}** tags."
                 )
-        else:
-            if tag_count >= TAG_GLOBAL_LIMIT:
-                raise TagFeedbackError(
-                    f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags."
-                )
+        elif tag_count >= TAG_GLOBAL_LIMIT:
+            raise TagFeedbackError(
+                f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags."
+            )
 
     async def create_tag(
         self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False
