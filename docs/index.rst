@@ -34,10 +34,24 @@ Welcome to Phen-Cogs's documentation!
    :maxdepth: 2
    :caption: Tags Documentation
 
-   blocks
-   tse_blocks
-   default_variables
-   parsing_blocks
+   tags/blocks
+   tags/tse_blocks
+   tags/default_variables
+   tags/parsing_blocks
+   tags/example_tags
+
+.. toctree::
+   :maxdepth: 2
+   :caption: SlashTags Documentation
+
+   slashtags/slashtags
+   slashtags/slash_arguments
+   slashtags/example_slashtags
+
+.. toctree::
+    :caption: Credits
+
+    credits
 
 Indices and tables
 ==================

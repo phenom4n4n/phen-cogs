@@ -30,13 +30,26 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import humanize_list, humanize_number, inline, pagify
 
-from .errors import *
+from .errors import TagAliasError
 
 hn = humanize_number
 ALIAS_LIMIT = 10
 
 
 class Tag:
+    __slots__ = (
+        "cog",
+        "config",
+        "bot",
+        "name",
+        "_aliases",
+        "tagscript",
+        "guild_id",
+        "author_id",
+        "uses",
+        "_real_tag",
+    )
+
     def __init__(
         self,
         cog: commands.Cog,
@@ -53,7 +66,7 @@ class Tag:
         self.config: Config = cog.config
         self.bot: Red = cog.bot
         self.name: str = name
-        self._aliases = aliases
+        self._aliases = aliases.copy()
         self.tagscript: str = tagscript
 
         self.guild_id = guild_id
@@ -127,7 +140,10 @@ class Tag:
         path = self.cache_path
         del path[self.name]
         for alias in self.aliases:
-            del path[alias]
+            try:
+                del path[alias]
+            except KeyError:
+                pass
 
     @classmethod
     def from_dict(

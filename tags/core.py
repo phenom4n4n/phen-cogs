@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Coroutine, Optional, Set
+from typing import List, Optional
 
 import aiohttp
 import discord
@@ -100,11 +100,11 @@ class Tags(
             log.exception("An error occurred during cog unload.", exc_info=e)
 
     def __unload(self):
-        super().cog_unload()
         self.bot.remove_dev_env_value("tags")
         if self.initialize_task:
             self.initialize_task.cancel()
         asyncio.create_task(self.session.close())
+        super().cog_unload()
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         if requester not in ("discord_deleted_user", "user"):
@@ -167,9 +167,9 @@ class Tags(
             tag = self.global_tag_cache.get(tag_name)
         return tag
 
-    def get_unique_tags(self, guild: Optional[discord.Guild] = None) -> Set[Tag]:
+    def get_unique_tags(self, guild: Optional[discord.Guild] = None) -> List[Tag]:
         path = self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
-        return set(path.values())
+        return sorted(set(path.values()), key=lambda t: t.name)
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
         output = self.engine.process(tagscript)

@@ -34,7 +34,6 @@ import bs4
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
@@ -86,6 +85,14 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
         return overriden
 
     return decorator
+
+
+def get_menu():
+    try:
+        from slashtags import menu as _menu
+    except ImportError:
+        _menu = menu
+    return _menu
 
 
 class Commands(MixinMeta):
@@ -167,10 +174,10 @@ class Commands(MixinMeta):
             e.description = page
             e.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(e)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.guild_only()
-    @commands.group(aliases=["customcom"])
+    @commands.group(aliases=["customcom", "cc", "alias"])
     async def tag(self, ctx: commands.Context):
         """
         Tag management with TagScript.
@@ -191,11 +198,11 @@ class Commands(MixinMeta):
         """
         Add a tag with TagScript.
 
-        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
+        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/tags/blocks.html#usage)
 
         **Example:**
         `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
-        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.`
+        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.}`
         """
         await self.create_tag(ctx, tag_name, tagscript)
 
@@ -206,11 +213,10 @@ class Commands(MixinMeta):
                 raise TagFeedbackError(
                     f"This server has reached the limit of **{TAG_GUILD_LIMIT}** tags."
                 )
-        else:
-            if tag_count >= TAG_GLOBAL_LIMIT:
-                raise TagFeedbackError(
-                    f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags."
-                )
+        elif tag_count >= TAG_GLOBAL_LIMIT:
+            raise TagFeedbackError(
+                f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags."
+            )
 
     async def create_tag(
         self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False
@@ -359,7 +365,7 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     async def doc_fetch(self):
         # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
@@ -400,7 +406,7 @@ class Commands(MixinMeta):
                 embed = e.copy()
                 embed.description = page
                 embeds.append(embed)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
+            await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
         else:
             e.url = DOCS_URL
             await ctx.send(embed=e)
@@ -539,4 +545,144 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+
+    @commands.is_owner()
+    @commands.command()
+    async def migratealias(self, ctx: commands.Context):
+        """
+        Migrate the Alias cog's global and server aliases into tags.
+
+        This converts all aliases created with the Alias cog into tags with command blocks.
+        This action cannot be undone.
+
+        **Example:**
+        `[p]migratealias`
+        """
+        await ctx.send(f"Are you sure you want to migrate Alias data to tags? (Y/n)")
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            await self.bot.wait_for("message", check=pred, timeout=30)
+        except asyncio.TimeoutError:
+            return await ctx.send("Query timed out, not migrating alias to tags.")
+        if pred.result is False:
+            return await ctx.send("Migration cancelled.")
+
+        migrated_guilds = 0
+        migrated_guild_alias = 0
+        alias_config = Config.get_conf(
+            None, 8927348724, cog_name="Alias"  # core cog doesn't use force_registration=True smh
+        )  # Red can't change these values without breaking data
+        # so while this is sus it is technically safe to use
+        alias_config.register_global(entries=[])
+        all_guild_data: dict = await alias_config.all_guilds()
+
+        async for guild_data in AsyncIter(all_guild_data.values(), steps=100):
+            if not guild_data["entries"]:
+                continue
+            migrated_guilds += 1
+            for alias in guild_data["entries"]:
+                tagscript = "{c:%s {args}}" % alias["command"]
+                tag = Tag(
+                    self,
+                    alias["name"],
+                    tagscript,
+                    author_id=alias["creator"],
+                    guild_id=alias["guild"],
+                    uses=alias["uses"],
+                )
+                await tag.initialize()
+                migrated_guild_alias += 1
+        await ctx.send(
+            f"Migrated {migrated_guild_alias} aliases from {migrated_guilds} "
+            "servers to tags. Moving on to global aliases.."
+        )
+
+        migrated_global_alias = 0
+        async for entry in AsyncIter(await alias_config.entries(), steps=50):
+            tagscript = "{c:%s {args}}" % entry["command"]
+            global_tag = Tag(
+                self,
+                entry["name"],
+                tagscript,
+                author_id=entry["creator"],
+                uses=entry["uses"],
+            )
+            await global_tag.initialize()
+            migrated_global_alias += 1
+        await ctx.send(f"Migrated {migrated_global_alias} global aliases to tags.")
+
+    def parse_cc_text(self, content: str) -> str:
+        output = self.custom_command_engine.process(content)
+        return output.body
+
+    def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
+        author_id = custom_command.get("author", {"id": None})["id"]
+        response = custom_command["response"]
+        if isinstance(response, str):
+            tagscript = self.parse_cc_text(response)
+        else:
+            tag_lines = []
+            indices = []
+            for index, response_text in enumerate(response, 1):
+                script = self.parse_cc_text(response_text)
+                tag_lines.append("{=(choice.%s):%s}" % (index, script))
+                indices.append(index)
+            random_block = "{#:%s}" % ",".join(str(i) for i in indices)
+            tag_lines.append("{=(chosen):%s}" % random_block)
+            tag_lines.append("{choice.{chosen}}")
+            tagscript = "\n".join(tag_lines)
+        return Tag(self, name, tagscript, guild_id=guild_id, author_id=author_id)
+
+    @commands.is_owner()
+    @commands.command(aliases=["migratecustomcommands"])
+    async def migratecustomcom(self, ctx: commands.Context):
+        """
+        Migrate the CustomCommand cog's server commands into tags.
+
+        This converts all custom commands created into tags with the command text as TagScript.
+        Randomized commands are converted into random blocks.
+        Commands with converters are converted into indexed args blocks.
+        This action cannot be undone.
+
+        **Example:**
+        `[p]migratecustomcom`
+        """
+        await ctx.send(f"Are you sure you want to migrate CustomCommands data to tags? (Y/n)")
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            await self.bot.wait_for("message", check=pred, timeout=30)
+        except asyncio.TimeoutError:
+            return await ctx.send("Query timed out, not migrating CustomCommands to tags.")
+        if pred.result is False:
+            return await ctx.send("Migration cancelled.")
+
+        cc_config = Config.get_conf(None, 414589031223512, cog_name="CustomCommands")
+        migrated_guilds = 0
+        migrated_ccs = 0
+        all_guild_data: dict = await cc_config.all_guilds()
+
+        async for guild_id, guild_data in AsyncIter(all_guild_data.items(), steps=100):
+            if not guild_data["commands"]:
+                continue
+            migrated_guilds += 1
+            for name, command in guild_data["commands"].items():
+                if not command:
+                    continue  # some keys in custom commands config are None instead of being deleted
+                try:
+                    tag = self.convert_customcommand(guild_id, name, command)
+                except Exception as exc:
+                    log.exception(
+                        "An exception occured while converting custom command %s (%r) from guild %s"
+                        % (name, command, guild_id),
+                        exc_info=exc,
+                    )
+                    return await ctx.send(
+                        f"An exception occured while converting custom command `{name}` from "
+                        f"server {guild_id}. Check your logs for more details and report this to the cog author."
+                    )
+                await tag.initialize()
+                migrated_ccs += 1
+        await ctx.send(
+            f"Migrated {migrated_ccs} custom commands from {migrated_guilds} servers to tags."
+        )

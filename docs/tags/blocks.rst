@@ -16,7 +16,7 @@ Block Syntax
 ``<arg>`` = Required
 
 Usage
--------------
+-----
 .. note:: ``[p]`` is your prefix.
 
 Add a tag using the following command::

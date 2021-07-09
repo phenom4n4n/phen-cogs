@@ -5,17 +5,10 @@ from typing import Dict, List, Optional, Union
 import discord
 import yaml
 from redbot.core import commands
-from redbot.core.commands import (
-    BadArgument,
-    CheckFailure,
-    Converter,
-    MessageConverter,
-    TextChannelConverter,
-)
 from redbot.core.utils import menus
 
 
-class StringToEmbed(Converter):
+class StringToEmbed(commands.Converter):
     def __init__(
         self, *, conversion_type: str = "json", validate: bool = True, content: bool = False
     ):
@@ -54,7 +47,7 @@ class StringToEmbed(Converter):
 
     def check_data_type(self, ctx: commands.Context, data, *, data_type=dict):
         if not isinstance(data, data_type):
-            raise BadArgument(
+            raise commands.BadArgument(
                 f"This doesn't seem to be properly formatted embed {self.conversion_type.upper()}. "
                 f"Refer to the link on `{ctx.clean_prefix}help {ctx.command.qualified_name}`."
             )
@@ -78,7 +71,7 @@ class StringToEmbed(Converter):
     def get_content(self, data: dict, *, content: str = None) -> Optional[str]:
         content = data.pop("content", content)
         if content is not None and not self.allow_content:
-            raise BadArgument("The `content` field is not supported for this command.")
+            raise commands.BadArgument("The `content` field is not supported for this command.")
         return content
 
     async def create_embed(
@@ -91,14 +84,14 @@ class StringToEmbed(Converter):
         try:
             e = discord.Embed.from_dict(data)
             length = len(e)
-            if length > 6000:
-                raise BadArgument(
-                    f"Embed size exceeds Discord limit of 6000 characters ({length})."
-                )
-        except BadArgument:
-            raise
         except Exception as error:
             await self.embed_convert_error(ctx, "Embed Parse Error", error)
+
+        # Embed.__len__ may error which is why it is included in the try/except
+        if length > 6000:
+            raise commands.BadArgument(
+                f"Embed size exceeds Discord limit of 6000 characters ({length})."
+            )
         return {"embed": e, "content": content}
 
     async def validate_embed(
@@ -120,7 +113,7 @@ class StringToEmbed(Converter):
             text=f"Use `{ctx.prefix}help {ctx.command.qualified_name}` to see an example"
         )
         asyncio.create_task(menus.menu(ctx, [embed], {"❌": menus.close_menu}))
-        raise CheckFailure
+        raise commands.CheckFailure()
 
 
 class ListStringToEmbed(StringToEmbed):
@@ -148,53 +141,63 @@ class ListStringToEmbed(StringToEmbed):
         if embeds:
             return embeds
         else:
-            raise BadArgument
+            raise commands.BadArgument("Failed to convert input into embeds.")
 
 
-class StoredEmbedConverter(Converter):
+class EmbedNotFound(commands.BadArgument):
+    def __init__(self, name: str, *, is_global: bool = False):
+        embed = "Global embed" if is_global else "Embed"
+        super().__init__(f'{embed} "{name}" not found.')
+
+
+class StoredEmbedConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, name: str) -> dict:
         cog = ctx.bot.get_cog("EmbedUtils")
         data = await cog.config.guild(ctx.guild).embeds()
         embed = data.get(name)
         if not embed:
-            raise BadArgument(f'Embed "{name}" not found.')
-
+            raise EmbedNotFound(name)
         embed.update(name=name)
         return embed
 
 
-class GlobalStoredEmbedConverter(Converter):
+class GlobalStoredEmbedConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, name: str) -> dict:
         cog = ctx.bot.get_cog("EmbedUtils")
         data = await cog.config.embeds()
         embed = data.get(name)
+        if not embed:
+            raise EmbedNotFound(name, is_global=True)
         can_view = await ctx.bot.is_owner(ctx.author) or not embed.get("locked")
         if embed and can_view:
             embed.update(name=name)
             return embed
-        else:
-            raise BadArgument(f'Global embed "{name}" not found.')
+        raise EmbedNotFound(name, is_global=True)
 
 
-class MyMessageConverter(MessageConverter):
+class MyMessageConverter(commands.MessageConverter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
         message = await super().convert(ctx, argument)
         if message.author.id != ctx.me.id:
-            raise BadArgument(f"That is not a message sent by me.")
+            raise commands.BadArgument(f"That is not a message sent by me.")
         elif not message.channel.permissions_for(ctx.me).send_messages:
-            raise BadArgument(
+            raise commands.BadArgument(
                 f"I do not have permissions to send/edit messages in {message.channel.mention}."
             )
         return message
 
 
-class MessageableChannel(TextChannelConverter):
+class MessageableChannel(commands.TextChannelConverter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.TextChannel:
         channel = await super().convert(ctx, argument)
         my_perms = channel.permissions_for(ctx.me)
         if not (my_perms.send_messages and my_perms.embed_links):
-            raise BadArgument(f"I do not have permissions to send embeds in {channel.mention}.")
+            raise commands.BadArgument(
+                f"I do not have permissions to send embeds in {channel.mention}."
+            )
         author_perms = channel.permissions_for(ctx.author)
         if not (author_perms.send_messages and author_perms.embed_links):
-            raise BadArgument(f"You do not have permissions to send embeds in {channel.mention}.")
+            raise commands.BadArgument(
+                f"You do not have permissions to send embeds in {channel.mention}."
+            )
         return channel

@@ -24,7 +24,8 @@ SOFTWARE.
 
 import asyncio
 import logging
-import typing
+from datetime import datetime, timedelta
+from typing import Dict, Optional, Tuple, Union
 
 import aiohttp
 import discord
@@ -34,6 +35,13 @@ from redbot.core.utils.chat_formatting import box, humanize_list
 from .converters import ActionConverter, LevelConverter, StrictRole
 
 log = logging.getLogger("red.phenom4n4n.altdentifier")
+
+formatted_trust_factors = {
+    0: "Very Distrusted",
+    1: "Distrusted",
+    2: "Trusted",
+    3: "Very Trusted",
+}
 
 
 class APIError(Exception):
@@ -48,7 +56,7 @@ class AltDentifier(commands.Cog):
     Check new users with AltDentifier API
     """
 
-    __version__ = "1.1.1"
+    __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -61,9 +69,16 @@ class AltDentifier(commands.Cog):
         "whitelist": [],
     }
 
+    TRUST_FACTOR_COLORS = {
+        0: discord.Color.dark_red(),
+        1: discord.Color.red(),
+        2: discord.Color.green(),
+        3: discord.Color.dark_green(),
+    }
+
     def __init__(self, bot):
         self.bot = bot
-        self.session = aiohttp.ClientSession()
+        # self.session = aiohttp.ClientSession()
         self.config = Config.get_conf(
             self,
             identifier=60124753086205362,
@@ -81,7 +96,7 @@ class AltDentifier(commands.Cog):
         self.guild_data_cache = await self.config.all_guilds()
 
     def cog_unload(self):
-        self.bot.loop.create_task(self.session.close())
+        # self.bot.loop.create_task(self.session.close())
         self.task.cancel()
 
     @checks.mod_or_permissions(manage_guild=True)
@@ -135,21 +150,18 @@ class AltDentifier(commands.Cog):
         if not channel:
             await self.config.guild(ctx.guild).channel.clear()
             await ctx.send("Disabled AltDentifier join checks in this server.")
+        elif not (
+            channel.permissions_for(ctx.me).send_messages
+            and channel.permissions_for(ctx.me).send_messages
+        ):
+            await ctx.send("I do not have permission to talk/send embeds in that channel.")
         else:
-            if not (
-                channel.permissions_for(ctx.me).send_messages
-                and channel.permissions_for(ctx.me).send_messages
-            ):
-                await ctx.send("I do not have permission to talk/send embeds in that channel.")
-            else:
-                await self.config.guild(ctx.guild).channel.set(channel.id)
+            await self.config.guild(ctx.guild).channel.set(channel.id)
         await self.build_cache()
         await ctx.tick()
 
     @altset.command()
-    async def action(
-        self, ctx, level: LevelConverter, action: typing.Union[discord.Role, str] = None
-    ):
+    async def action(self, ctx, level: LevelConverter, action: Union[discord.Role, str] = None):
         """Specify what actions to take when a member joins and has a certain Trust Level.
 
         Leave this empty to remove actions for the Level.
@@ -200,31 +212,44 @@ class AltDentifier(commands.Cog):
         await self.build_cache()
         await ctx.tick()
 
-    async def alt_request(self, member: discord.Member):
-        async with self.session.get(
-            f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor"
-        ) as response:
-            if response.status != 200:
-                raise APIError(response, f"invalid status")
-            try:
-                response = await response.json()
-            except aiohttp.client_exceptions.ContentTypeError as error:
-                raise APIError(response, await response.text(), error) from error
-        return response["trustfactor"], response["formatted_trustfactor"]
+    @staticmethod
+    def member_has_default_avatar(member: discord.Member) -> bool:
+        return member.avatar_url == member.default_avatar_url
 
-    def pick_color(self, trustfactor: int):
-        if trustfactor == 0:
-            color = discord.Color.dark_red()
-        elif trustfactor == 1:
-            color = discord.Color.red()
-        elif trustfactor == 2:
-            color = discord.Color.green()
-        elif trustfactor == 3:
-            color = discord.Color.dark_green()
-        return color
+    async def alt_request(self, member: discord.Member) -> Tuple[int, str]:
+        # TODO make calculations on a scale 1-10 that is divided by 4 and rounded
+        # add calculation to see if anyone else in the server has a similar name (fuzzy)
+        # and count members with similar names while also taking server member count into consideration
+        # add calculation based on default avatar
+        # check if "alt" is in username
+        age = datetime.utcnow() - member.created_at
+        if age < timedelta(days=2):
+            trust_factor = 0
+        elif age < timedelta(weeks=2):
+            trust_factor = 1
+        elif age < timedelta(weeks=6 * 4):
+            trust_factor = 2
+        else:
+            trust_factor = 3
+        return trust_factor, formatted_trust_factors[trust_factor]
+
+        # async with self.session.get(
+        #     f"https://altdentifier.com/api/v2/user/{member.id}/trustfactor"
+        # ) as response:
+        #     if response.status != 200:
+        #         raise APIError
+        #     try:
+        #         response = await response.json()
+        #     except aiohttp.client_exceptions.ContentTypeError:
+        #         raise APIError
+        # return response["trustfactor"], response["formatted_trustfactor"]
+
+    @classmethod
+    def pick_color(cls, trustfactor: int):
+        return cls.TRUST_FACTOR_COLORS[trustfactor]
 
     def gen_alt_embed(
-        self, trust: tuple, member: discord.Member, *, actions: typing.Optional[str] = None
+        self, trust: tuple, member: discord.Member, *, actions: Optional[str] = None
     ):
         color = self.pick_color(trust[0])
         e = discord.Embed(
@@ -251,7 +276,11 @@ class AltDentifier(commands.Cog):
         return e
 
     async def take_action(
-        self, guild: discord.Guild, member: discord.Member, trust: int, actions: dict
+        self,
+        guild: discord.Guild,
+        member: discord.Member,
+        trust: int,
+        actions: Dict[str, Union[str, int]],
     ):
         action = actions[str(trust)]
         reason = f"AltDentifier action taken for Trust Level {trust}"
@@ -287,9 +316,12 @@ class AltDentifier(commands.Cog):
                         except discord.Forbidden as e:
                             await self.clear_action(guild, trust)
                             result = f"Adding role failed.\n{e}"
+                    else:
+                        await self.clear_action(member.guild, trust)
+                        result = "Adding the role was skipped due to missing permissions."
                 else:
                     await self.clear_action(member.guild, trust)
-                    result = "Adding the role was skipped due to missing permissions."
+                    result = "Adding the role was skipped as the role was deleted."
         except discord.NotFound as e:
             result = f"The member left before an action could be taken."
         return result
@@ -310,7 +342,6 @@ class AltDentifier(commands.Cog):
             return
         channel = guild.get_channel(channel_id)
         if not channel:
-            await self.config.guild(guild).channel.clear()
             return
         try:
             trust = await self.alt_request(member)

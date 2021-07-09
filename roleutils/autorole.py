@@ -27,11 +27,9 @@ from typing import Union
 
 import discord
 from redbot.core import commands
-from redbot.core.bot import Red
 
 from .abc import MixinMeta
 from .converters import FuzzyRole
-from .utils import is_allowed_by_hierarchy, is_allowed_by_role_hierarchy
 
 log = logging.getLogger("red.phenom4n4n.roleutils.autorole")
 

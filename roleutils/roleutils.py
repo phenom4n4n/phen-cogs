@@ -27,12 +27,10 @@ import logging
 from abc import ABC
 from typing import Literal
 
-import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 
-from .autorole import AutoRole
 from .reactroles import ReactRoles
 from .roles import Roles
 
@@ -60,7 +58,7 @@ class RoleUtils(
     Includes massroling, role targeting, and reaction roles.
     """
 
-    __version__ = "1.3.5"
+    __version__ = "1.3.6"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
