@@ -118,7 +118,9 @@ class Tag:
     ) -> tse.Response:
         self.uses += 1
         seed_variables.update(uses=tse.IntAdapter(self.uses))
-        return interpreter.process(self.tagscript, seed_variables, **kwargs)
+        return interpreter.process(
+            self.tagscript, seed_variables, cooldown_key=f"{self.guild_id}:{self.name}", **kwargs
+        )
 
     async def update_config(self):
         if self._real_tag:

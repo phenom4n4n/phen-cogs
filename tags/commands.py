@@ -35,9 +35,10 @@ import discord
 import TagScriptEngine as tse
 from redbot.core import commands
 from redbot.core.config import Config
+from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate
+from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import MixinMeta
 from .blocks import ContextVariableBlock, ConverterBlock
@@ -412,7 +413,7 @@ class Commands(MixinMeta):
             await ctx.send(embed=e)
 
     @commands.is_owner()
-    @tag.command(name="run", aliases=["execute"])
+    @tag.command("run", aliases=["execute"])
     async def tag_run(self, ctx: commands.Context, *, tagscript: str):
         """
         Execute TagScript without storing.

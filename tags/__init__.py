@@ -40,11 +40,13 @@ conflicting_cogs = (
 )
 
 
-def setup(bot: Red) -> None:
+async def setup(bot: Red) -> None:
     for cog_name, module_name, tag_name in conflicting_cogs:
         if bot.get_cog(cog_name):
             raise CogLoadError(
                 f"This cog conflicts with {cog_name} and both cannot be loaded at the same time. "
                 f"After unloading `{module_name}`, you can migrate {tag_name} to tags with `[p]migrate{module_name}`."
             )
-    bot.add_cog(Tags(bot))
+    tags = Tags(bot)
+    bot.add_cog(tags)
+    await tags.initialize()
