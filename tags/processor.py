@@ -114,10 +114,7 @@ class Processor(MixinMeta):
         seed = self.get_seed_from_context(ctx)
         seed_variables.update(seed)
 
-        try:
-            output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
-        except tse.CooldownExceeded as exc:
-            raise commands.UserFeedbackCheckFailure(str(exc))
+        output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
         await tag.update_config()
         dispatch_prefix = "tag" if tag.guild_id else "g-tag"
         self.bot.dispatch("commandstats_action_v2", f"{dispatch_prefix}:{tag}", ctx.guild)
