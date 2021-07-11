@@ -8,7 +8,7 @@ from redbot.core import commands
 from redbot.core.utils.menus import start_adding_reactions
 
 from .abc import MixinMeta
-from .blocks import DeleteBlock, ReactBlock, ReactUBlock, SilentBlock
+from .blocks import DeleteBlock, ReactBlock, SilentBlock
 from .errors import BlacklistCheckFailure, RequireCheckFailure, WhitelistCheckFailure
 from .objects import SilentContext, Tag
 
@@ -58,7 +58,6 @@ class Processor(MixinMeta):
             DeleteBlock(),
             SilentBlock(),
             ReactBlock(),
-            ReactUBlock(),
         ]
         self.engine = tse.Interpreter(tse_blocks + tag_blocks)
         for block in await self.compile_blocks():

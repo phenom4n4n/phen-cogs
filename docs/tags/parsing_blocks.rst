@@ -54,12 +54,6 @@ React Block
 
 .. autoclass:: tags.blocks.ReactBlock
 
-^^^^^^^^^^^^^^
-ReactU Block
-^^^^^^^^^^^^^^
-
-.. autoclass:: tags.blocks.ReactUBlock
-
 --------------
 Utility Blocks
 --------------
