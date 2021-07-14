@@ -30,7 +30,6 @@ import types
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
 
-import bs4
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
@@ -49,6 +48,7 @@ from .converters import (
     TagName,
     TagScriptConverter,
 )
+from .doc_parser import SphinxObjectFileReader, parse_object_inv
 from .errors import TagFeedbackError
 from .objects import Tag
 
@@ -57,7 +57,7 @@ TAG_GLOBAL_LIMIT = 250
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\btag'?s?\b")
 
-DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
+DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest"
 
 log = logging.getLogger("red.phenom4n4n.tags.commands")
 
@@ -369,17 +369,15 @@ class Commands(MixinMeta):
         await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     async def doc_fetch(self):
-        # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
-        async with self.session.get(f"{DOCS_URL}genindex.html") as response:
-            text = await response.read()
-        soup = bs4.BeautifulSoup(text, "html.parser")
-        self.docs = soup.findAll("a")
+        async with self.session.get(f"{DOCS_URL}/objects.inv") as response:
+            inv = SphinxObjectFileReader(await response.read())
+        self.docs = parse_object_inv(inv, DOCS_URL)
 
-    async def doc_search(self, keyword: str) -> List[bs4.Tag]:
+    async def doc_search(self, keyword: str) -> Dict[str, str]:
         keyword = keyword.lower()
         if not self.docs:
             await self.doc_fetch()
-        return [x for x in self.docs if keyword in str(x).lower()]
+        return {key: value for key, value in self.docs.items() if keyword in key.lower()}
 
     @tag.command(name="docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
@@ -394,12 +392,11 @@ class Commands(MixinMeta):
         await ctx.trigger_typing()
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
-            doc_tags = await self.doc_search(keyword)
+            matched_labels = await self.doc_search(keyword)
             description = [f"Search for: `{keyword}`"]
-            for doc_tag in doc_tags:
-                href = doc_tag.get("href")
-                description.append(f"[`{doc_tag.text}`]({DOCS_URL}{href})")
-            url = f"{DOCS_URL}search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
+            for name, url in matched_labels.items():
+                description.append(f"[`{name}`]({url})")
+            url = f"{DOCS_URL}/search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
             e.url = url
             embeds = []
             description = "\n".join(description)
