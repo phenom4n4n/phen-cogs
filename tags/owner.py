@@ -45,9 +45,9 @@ log = logging.getLogger("red.phenom4n4n.owner")
 
 
 class OwnerCommands(MixinMeta):
-    async def compile_blocks(self) -> List[tse.Block]:
+    async def compile_blocks(self, data: dict = None) -> List[tse.Block]:
         blocks = []
-        blocks_data = await self.config.blocks()
+        blocks_data = data["blocks"] if data else await self.config.blocks()
         for block_code in blocks_data.values():
             block = self.compile_block(block_code)
             blocks.append(block)
@@ -73,6 +73,24 @@ class OwnerCommands(MixinMeta):
     @commands.group(aliases=["tagset"])
     async def tagsettings(self, ctx: commands.Context):
         """Manage Tags cog settings."""
+
+    @tagsettings.command("settings")
+    async def tagsettings_settings(self, ctx: commands.Context):
+        """
+        View Tags settings.
+        """
+        data = await self.config.all()
+        description = [
+            f"**AsyncInterpreter**: `{data['async_enabled']}`",
+            f"**Dot Parameter Parsing**: `{data['dot_parameter']}`",
+            f"**Custom Blocks**: `{len(data['blocks'])}`",
+        ]
+        embed = discord.Embed(
+            title="Tags Settings",
+            color=await ctx.embed_color(),
+            description="\n".join(description),
+        )
+        await ctx.send(embed=embed)
 
     @tagsettings.group("block")
     async def tagsettings_block(self, ctx: commands.Context):
@@ -145,6 +163,39 @@ class OwnerCommands(MixinMeta):
         except KeyError:
             return await ctx.send("That block doesn't exist.")
         await ctx.send_interactive(Dev.get_pages(code), box_lang="py")
+
+    @tagsettings.command("async")
+    async def tagsettings_async(self, ctx: commands.Context, true_or_false: bool = None):
+        """
+        Toggle using the asynchronous TagScript interpreter.
+
+        If you aren't a developer or don't know what this is, there's no reason for you to change it.
+        """
+        target_state = true_or_false if true_or_false is not None else not self.async_enabled
+        await self.config.async_enabled.set(target_state)
+        await self.initialize_interpreter()
+        asynchronous = "asynchronous" if target_state else "synchronous"
+        await ctx.send(f"The TagScript interpreter is now {asynchronous}.")
+
+    @tagsettings.command("dotparam")
+    async def tagsettings_dotparam(self, ctx: commands.Context, true_or_false: bool = None):
+        """
+        Toggle the TagScript parsing style.
+
+        If `dot_parameter` is enabled, TagScript blocks will parse like this:
+        `{declaration.parameter:payload}`
+        instead of:
+        `{declaration(parameter):payload}`
+        """
+        target_state = true_or_false if true_or_false is not None else not self.dot_parameter
+        await self.config.dot_parameter.set(target_state)
+        await self.initialize_interpreter()
+        enabled = "enabled" if target_state else "disabled"
+        parameter = f".parameter" if target_state else f"(parameter)"
+        await ctx.send(
+            f"`dot parameter` parsing has been {enabled}.\n"
+            "Blocks will be parsed like this: `{declaration%s:payload}`." % parameter
+        )
 
     @commands.is_owner()
     @commands.command()

@@ -113,12 +113,21 @@ class Tag:
     def aliases(self) -> List[str]:
         return self._aliases.copy()
 
-    def run(self, seed_variables: dict, **kwargs) -> tse.Response:
+    async def run(self, seed_variables: dict, **kwargs) -> tse.Response:
         self.uses += 1
         seed_variables["uses"] = tse.IntAdapter(self.uses)
-        return self.cog.engine.process(
-            self.tagscript, seed_variables, cooldown_key=f"{self.guild_id}:{self.name}", **kwargs
+        cooldown_key = f"{self.guild_id}:{self.name}"
+        cog = self.cog
+        output = cog.engine.process(
+            self.tagscript,
+            seed_variables,
+            dot_parameter=cog.dot_parameter,
+            cooldown_key=cooldown_key,
+            **kwargs,
         )
+        if cog.async_enabled:
+            return await output
+        return output
 
     async def update_config(self):
         if self._real_tag:

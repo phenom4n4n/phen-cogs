@@ -27,7 +27,11 @@ class Processor(MixinMeta):
         self.bot.remove_dev_env_value("tse")
         super().cog_unload()
 
-    async def initialize_interpreter(self):
+    async def initialize_interpreter(self, data: dict = None):
+        if not data:
+            data = await self.config.all()
+        self.dot_parameter = data["dot_parameter"]
+
         tse_blocks = [
             tse.MathBlock(),
             tse.RandomBlock(),
@@ -59,8 +63,10 @@ class Processor(MixinMeta):
             SilentBlock(),
             ReactBlock(),
         ]
-        self.engine = tse.Interpreter(tse_blocks + tag_blocks)
-        for block in await self.compile_blocks():
+        interpreter = tse.AsyncInterpreter if data["async_enabled"] else tse.Interpreter
+        self.async_enabled = data["async_enabled"]
+        self.engine = interpreter(tse_blocks + tag_blocks)
+        for block in await self.compile_blocks(data):
             self.engine.blocks.append(block())
 
     @commands.Cog.listener()
@@ -114,7 +120,7 @@ class Processor(MixinMeta):
         seed = self.get_seed_from_context(ctx)
         seed_variables.update(seed)
 
-        output = tag.run(seed_variables, **kwargs)
+        output = await tag.run(seed_variables, **kwargs)
         await tag.update_config()
         dispatch_prefix = "tag" if tag.guild_id else "g-tag"
         self.bot.dispatch("commandstats_action_v2", f"{dispatch_prefix}:{tag}", ctx.guild)

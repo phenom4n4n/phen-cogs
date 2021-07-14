@@ -78,13 +78,15 @@ class Tags(
             force_registration=True,
         )
         default_guild = {"tags": {}}
-        default_global = {"tags": {}, "blocks": {}}
+        default_global = {"tags": {}, "blocks": {}, "async_enabled": False, "dot_parameter": False}
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
         self.guild_tag_cache = defaultdict(dict)
         self.global_tag_cache = {}
         self.initialize_task = None
+        self.dot_parameter: bool = None
+        self.async_enabled: bool = None
         # self.initialize_task = self.create_task(self.initialize())
 
         self.session = aiohttp.ClientSession()
@@ -132,9 +134,10 @@ class Tags(
         return task
 
     async def initialize(self):
-        await self.initialize_interpreter()
+        data = await self.config.all()
+        await self.initialize_interpreter(data)
 
-        global_tags = await self.config.tags()
+        global_tags = data["tags"]
         async for global_tag_name, global_tag_data in AsyncIter(global_tags.items(), steps=50):
             tag = Tag.from_dict(self, global_tag_name, global_tag_data)
             tag.add_to_cache()

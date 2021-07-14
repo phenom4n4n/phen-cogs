@@ -415,7 +415,11 @@ class Commands(MixinMeta):
         """
         start = time.monotonic()
         seed = self.get_seed_from_context(ctx)
-        output = self.engine.process(tagscript, seed_variables=seed)
+        output = self.engine.process(
+            tagscript, seed_variables=seed, dot_parameter=self.dot_parameter
+        )
+        if self.async_enabled:
+            output = await output
         end = time.monotonic()
         actions = output.actions
 
