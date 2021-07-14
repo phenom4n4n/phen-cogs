@@ -108,12 +108,13 @@ class Processor(MixinMeta):
         return seed
 
     async def process_tag(
-        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
+        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = None, **kwargs
     ) -> str:
+        seed_variables = {} if seed_variables is None else seed_variables
         seed = self.get_seed_from_context(ctx)
         seed_variables.update(seed)
 
-        output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
+        output = tag.run(seed_variables, **kwargs)
         await tag.update_config()
         dispatch_prefix = "tag" if tag.guild_id else "g-tag"
         self.bot.dispatch("commandstats_action_v2", f"{dispatch_prefix}:{tag}", ctx.guild)

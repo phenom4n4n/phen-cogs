@@ -177,17 +177,14 @@ class Tags(
         if is_owner:
             return True
         author_perms = ctx.channel.permissions_for(ctx.author)
-        if output.actions.get("overrides"):
-            if not author_perms.manage_guild:
-                raise MissingTagPermissions(
-                    "You must have **Manage Server** permissions to use the `override` block."
-                )
-        if output.actions.get("allowed_mentions"):
-            # if not author_perms.mention_everyone:
-            if not is_owner:
-                raise MissingTagPermissions(
-                    "You must have **Mention Everyone** permissions to use the `allowedmentions` block."
-                )
+        if output.actions.get("overrides") and not author_perms.manage_guild:
+            raise MissingTagPermissions(
+                "You must have **Manage Server** permissions to use the `override` block."
+            )
+        if output.actions.get("allowed_mentions") and not is_owner:
+            raise MissingTagPermissions(
+                "You must have **Mention Everyone** permissions to use the `allowedmentions` block."
+            )
         return True
 
     async def cog_command_error(self, ctx: commands.Context, exc: Exception):

@@ -28,15 +28,18 @@ import textwrap
 import traceback
 from typing import List
 
+import discord
 import TagScriptEngine as tse
 from redbot.core import Config, commands
 from redbot.core.dev_commands import Dev
 from redbot.core.utils import AsyncIter
+from redbot.core.utils.menus import DEFAULT_CONTROLS
 from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import MixinMeta
 from .errors import BlockCompileError
 from .objects import Tag
+from .utils import get_menu
 
 log = logging.getLogger("red.phenom4n4n.owner")
 
@@ -56,9 +59,9 @@ class OwnerCommands(MixinMeta):
         env = globals().copy()
         exec(compiled, env)
         result = env["func"]()
-        if not (inspect.isclass(result) or issubclass(result, tse.Block)):
+        if not (inspect.isclass(result) and issubclass(result, tse.Block)):
             raise BlockCompileError(f"code must return a {tse.Block}, not {type(result)}")
-        log.debug("compiled block, result: %r" % result)
+        log.debug("compiled block, result: %r", result)
         return result
 
     @staticmethod
@@ -71,8 +74,14 @@ class OwnerCommands(MixinMeta):
     async def tagsettings(self, ctx: commands.Context):
         """Manage Tags cog settings."""
 
-    @tagsettings.command("addblock")
-    async def tagsettings_addblock(
+    @tagsettings.group("block")
+    async def tagsettings_block(self, ctx: commands.Context):
+        """
+        Manage custom TagScript blocks.
+        """
+
+    @tagsettings_block.command("add")
+    async def tagsettings_block_add(
         self, ctx: commands.Context, name: str, *, code: Dev.cleanup_code
     ):
         """
@@ -91,9 +100,51 @@ class OwnerCommands(MixinMeta):
             return await ctx.send_interactive(Dev.get_pages(response), box_lang="py")
 
         async with self.config.blocks() as b:
-            b["name"] = code
+            b[name] = code
         await self.initialize_interpreter()
         await ctx.send(f"Added block `{block.__name__}` to the Tags interpreter.")
+
+    @tagsettings_block.command("remove", aliases=["delete"])
+    async def tagsettings_block_remove(self, ctx: commands.Context, name: str):
+        """
+        Remove a custom block from the TagScript interpreter.
+        """
+        async with self.config.blocks() as b:
+            if name not in b:
+                return await ctx.send("That block doesn't exist.")
+            del b[name]
+        await self.initialize_interpreter()
+        await ctx.send(f"Deleted block `{name}`.")
+
+    @tagsettings_block.command("list")
+    async def tagsettings_block_list(self, ctx: commands.Context):
+        """
+        List all custom blocks in the TagScript interpreter.
+        """
+        blocks = await self.config.blocks()
+        if not blocks:
+            return await ctx.send("No custom blocks found.")
+        description = [f"`{name}` - {len(code)} characters" for name, code in blocks.items()]
+        embed = discord.Embed(
+            title="Custom TagScript Blocks",
+            color=await ctx.embed_color(),
+            description="\n".join(description),
+        )
+        await get_menu()(ctx, [embed], DEFAULT_CONTROLS)
+
+    @tagsettings_block.command("show")
+    async def tagsettings_block_show(self, ctx: commands.Context, name: str):
+        """
+        Show the code of a custom block.
+        """
+        blocks = await self.config.blocks()
+        if not blocks:
+            return await ctx.send("No custom blocks found.")
+        try:
+            code = blocks[name]
+        except KeyError:
+            return await ctx.send("That block doesn't exist.")
+        await ctx.send_interactive(Dev.get_pages(code), box_lang="py")
 
     @commands.is_owner()
     @commands.command()

@@ -36,7 +36,7 @@ from redbot.core import commands
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
+from redbot.core.utils.menus import DEFAULT_CONTROLS, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import MixinMeta
@@ -51,6 +51,7 @@ from .converters import (
 from .doc_parser import SphinxObjectFileReader, parse_object_inv
 from .errors import TagFeedbackError
 from .objects import Tag
+from .utils import get_menu
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
@@ -86,14 +87,6 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
         return overriden
 
     return decorator
-
-
-def get_menu():
-    try:
-        from slashtags import menu as _menu
-    except ImportError:
-        _menu = menu
-    return _menu
 
 
 class Commands(MixinMeta):

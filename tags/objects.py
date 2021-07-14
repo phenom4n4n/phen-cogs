@@ -113,12 +113,10 @@ class Tag:
     def aliases(self) -> List[str]:
         return self._aliases.copy()
 
-    def run(
-        self, interpreter: tse.Interpreter, seed_variables: dict = {}, **kwargs
-    ) -> tse.Response:
+    def run(self, seed_variables: dict, **kwargs) -> tse.Response:
         self.uses += 1
-        seed_variables.update(uses=tse.IntAdapter(self.uses))
-        return interpreter.process(
+        seed_variables["uses"] = tse.IntAdapter(self.uses)
+        return self.cog.engine.process(
             self.tagscript, seed_variables, cooldown_key=f"{self.guild_id}:{self.name}", **kwargs
         )
 
