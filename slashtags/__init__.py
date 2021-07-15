@@ -30,7 +30,6 @@ from redbot.core.bot import Red
 from redbot.core.errors import CogLoadError
 
 from .core import SlashTags
-from .http import *  # noqa
 from .objects import *  # noqa
 from .testing.button_menus import *  # noqa
 from .utils import validate_tagscriptengine

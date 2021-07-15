@@ -2,10 +2,10 @@ import logging
 from typing import Optional
 
 import discord
+from red_interactions import Button, ButtonStyle, Component, InteractionButton
 from redbot.core import commands
 from redbot.core.bot import Red
 
-from ..http import Button, ButtonStyle, Component, InteractionButton
 from .button_menus import menu
 
 log = logging.getLogger("red.phenom4n4n.slashtags.testing.test_cog")
@@ -57,7 +57,7 @@ class SlashTagTesting(commands.Cog):
         await self.bot._connection.http.request(r, json=data)
 
     @commands.Cog.listener()
-    async def on_button_interaction(self, button: InteractionButton):
+    async def on_red_button_interaction(self, button: InteractionButton):
         try:
             clicks = self.cookie_clickers[button.custom_id]
         except KeyError:
