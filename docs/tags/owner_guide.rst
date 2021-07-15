@@ -18,7 +18,7 @@ Start off with the ``[p]tagset block add <name> <code>`` command. The code passe
 :class:`TagScriptEngine.Block` and return the subclass. Here's an example of a block that returns
 a random duck image ::
 
-    [p]tagset block add ```py
+    [p]tagset block add duck ```py
     import aiohttp
 
     class RandomDuck(tse.Block):
@@ -26,8 +26,8 @@ a random duck image ::
 
         async def process(self, ctx: tse.Context):
             async with aiohttp.ClientSession() as session:
-            async with session.get("https://random-d.uk/api/v2/random") as resp:
-                data = await resp.json()
+                async with session.get("https://random-d.uk/api/v2/random") as resp:
+                    data = await resp.json()
             return data["url"]
 
     return RandomDuck
@@ -46,6 +46,24 @@ can be enabled as detailed in :ref:`Asynchronous Interpreter`.
 Custom blocks can be viewed with ``[p]tagset block list`` or ``[p]tagset block show <block_name>``.
 They can be deleted with ``[p]tagset block remove <block_name>``, and edited by simply re-adding a
 block with the same name.
+
+^^^^^^^^^^^^^^^^^^^^^^^^
+Custom Block Environment
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following global scope variables are available when compiling custom block code:
+
++-------------+--------------------------------------+
+| Name        | Value                                |
++=============+======================================+
+| ``tse``     | The TagScriptEngine module.          |
++-------------+--------------------------------------+
+| ``asyncio`` | The standard library asyncio module. |
++-------------+--------------------------------------+
+| ``bot``     | The bot object.                      |
++-------------+--------------------------------------+
+| ``tags``    | The Tags cog object.                 |
++-------------+--------------------------------------+
 
 ------------------------
 Asynchronous Interpreter
