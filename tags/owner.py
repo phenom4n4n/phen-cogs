@@ -57,6 +57,8 @@ class OwnerCommands(MixinMeta):
         to_compile = "def func():\n%s" % textwrap.indent(code, "  ")
         compiled = Dev.async_compile(to_compile, "<string>", "exec")
         env = globals().copy()
+        env["bot"] = self.bot
+        env["tags"] = self
         exec(compiled, env)
         result = env["func"]()
         if not (inspect.isclass(result) and issubclass(result, tse.Block)):
