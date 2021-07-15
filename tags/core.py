@@ -176,6 +176,8 @@ class Tags(
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
         output = self.engine.process(tagscript)
+        if self.async_enabled:
+            output = await output
         is_owner = await self.bot.is_owner(ctx.author)
         if is_owner:
             return True
