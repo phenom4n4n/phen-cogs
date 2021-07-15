@@ -23,15 +23,33 @@ SOFTWARE.
 """
 
 import json
+import re
 from pathlib import Path
 
 from redbot.core.bot import Red
 from redbot.core.errors import CogLoadError
 
 from .core import Tags
+from .utils import validate_tagscriptengine
+
+VERSION_RE = re.compile(r"TagScript==(\d\.\d\.\d)")
 
 with open(Path(__file__).parent / "info.json") as fp:
-    __red_end_user_data_statement__ = json.load(fp)["end_user_data_statement"]
+    data = json.load(fp)
+
+__red_end_user_data_statement__ = data["end_user_data_statement"]
+
+tse_version = None
+for requirement in data.get("requirements", []):
+    match = VERSION_RE.search(requirement)
+    if match:
+        tse_version = match.group(1)
+        break
+
+if not tse_version:
+    raise CogLoadError(
+        "Failed to find TagScriptEngine version number. Please report this to the cog author."
+    )
 
 
 conflicting_cogs = (
@@ -41,6 +59,8 @@ conflicting_cogs = (
 
 
 async def setup(bot: Red) -> None:
+    await validate_tagscriptengine(bot, tse_version)
+
     for cog_name, module_name, tag_name in conflicting_cogs:
         if bot.get_cog(cog_name):
             raise CogLoadError(
