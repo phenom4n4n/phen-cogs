@@ -68,3 +68,7 @@ class TagFeedbackError(TagError):
 
 class TagAliasError(TagFeedbackError):
     """Raised to provide feedback if an error occurs while adding/removing a tag alias."""
+
+
+class BlockCompileError(TagError):
+    """Raised when a block fails to compile."""

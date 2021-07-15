@@ -23,8 +23,11 @@ SOFTWARE.
 """
 
 import re
+from importlib import reload
 
 from redbot.core import commands
+from redbot.core.bot import Red
+from redbot.core.errors import CogLoadError
 
 VALID_NAME = r"[\w-]{1,32}"
 
@@ -35,3 +38,40 @@ ARGUMENT_NAME_DESCRIPTION = re.compile(r"^(%s):(.{1,100})$" % VALID_NAME)
 
 def dev_check(ctx: commands.Context):
     return ctx.bot.get_cog("Dev")
+
+
+async def validate_tagscriptengine(bot: Red, tse_version: str, *, reloaded: bool = False):
+    try:
+        import TagScriptEngine as tse
+    except ImportError as exc:
+        raise CogLoadError(
+            "The SlashTags cog failed to install TagScriptEngine. Reinstall the cog and restart your "
+            "bot. If it continues to fail to load, contact the cog author."
+        ) from exc
+
+    commands = [
+        "`pip(3) uninstall -y TagScriptEngine`",
+        "`pip(3) uninstall -y TagScript`",
+        f"`pip(3) install TagScript=={tse_version}`",
+    ]
+    commands = "\n".join(commands)
+
+    message = (
+        "The SlashTags cog attempted to install TagScriptEngine, but the version installed "
+        "is outdated. Shut down your bot, then in shell in your venv, run the following "
+        f"commands:\n{commands}\nAfter running these commands, restart your bot and reinstall "
+        "Tags. If it continues to fail to load, contact the cog author."
+    )
+
+    if not hasattr(tse, "VersionInfo"):
+        if not reloaded:
+            reload(tse)
+            await validate_tagscriptengine(bot, tse_version, reloaded=True)
+            return
+
+        await bot.send_to_owners(message)
+        raise CogLoadError(message)
+
+    if tse.version_info < tse.VersionInfo.from_str(tse_version):
+        await bot.send_to_owners(message)
+        raise CogLoadError(message)

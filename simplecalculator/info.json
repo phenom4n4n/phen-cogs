@@ -7,8 +7,7 @@
     "description": "Calculate stuff",
     "tags": ["utility", "calculator"],
     "requirements": [
-        "PyParsing",
-        "git+https://github.com/JonSnowbd/TagScript.git"
+        "TagScript"
     ],
     "hidden": false,
     "end_user_data_statement": "This cog does not store any End User Data."

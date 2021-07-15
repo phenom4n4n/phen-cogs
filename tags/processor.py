@@ -8,13 +8,30 @@ from redbot.core import commands
 from redbot.core.utils.menus import start_adding_reactions
 
 from .abc import MixinMeta
-from .blocks import DeleteBlock, ReactBlock, ReactUBlock, SilentBlock
+from .blocks import DeleteBlock, ReactBlock, SilentBlock
 from .errors import BlacklistCheckFailure, RequireCheckFailure, WhitelistCheckFailure
 from .objects import SilentContext, Tag
 
 
 class Processor(MixinMeta):
     def __init__(self):
+        self.role_converter = commands.RoleConverter()
+        self.channel_converter = commands.TextChannelConverter()
+        self.member_converter = commands.MemberConverter()
+        self.emoji_converter = commands.EmojiConverter()
+
+        self.bot.add_dev_env_value("tse", lambda ctx: tse)
+        super().__init__()
+
+    def cog_unload(self):
+        self.bot.remove_dev_env_value("tse")
+        super().cog_unload()
+
+    async def initialize_interpreter(self, data: dict = None):
+        if not data:
+            data = await self.config.all()
+        self.dot_parameter = data["dot_parameter"]
+
         tse_blocks = [
             tse.MathBlock(),
             tse.RandomBlock(),
@@ -39,25 +56,18 @@ class Processor(MixinMeta):
             tse.CommandBlock(),
             tse.OverrideBlock(),
             tse.RedirectBlock(),
+            tse.CooldownBlock(),
         ]
         tag_blocks = [
             DeleteBlock(),
             SilentBlock(),
             ReactBlock(),
-            ReactUBlock(),
         ]
-        self.engine = tse.Interpreter(tse_blocks + tag_blocks)
-        self.role_converter = commands.RoleConverter()
-        self.channel_converter = commands.TextChannelConverter()
-        self.member_converter = commands.MemberConverter()
-        self.emoji_converter = commands.EmojiConverter()
-
-        self.bot.add_dev_env_value("tse", lambda ctx: tse)
-        super().__init__()
-
-    def cog_unload(self):
-        self.bot.remove_dev_env_value("tse")
-        super().cog_unload()
+        interpreter = tse.AsyncInterpreter if data["async_enabled"] else tse.Interpreter
+        self.async_enabled = data["async_enabled"]
+        self.engine = interpreter(tse_blocks + tag_blocks)
+        for block in await self.compile_blocks(data):
+            self.engine.blocks.append(block())
 
     @commands.Cog.listener()
     async def on_command_error(
@@ -104,12 +114,13 @@ class Processor(MixinMeta):
         return seed
 
     async def process_tag(
-        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
+        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = None, **kwargs
     ) -> str:
+        seed_variables = {} if seed_variables is None else seed_variables
         seed = self.get_seed_from_context(ctx)
         seed_variables.update(seed)
 
-        output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
+        output = await tag.run(seed_variables, **kwargs)
         await tag.update_config()
         dispatch_prefix = "tag" if tag.guild_id else "g-tag"
         self.bot.dispatch("commandstats_action_v2", f"{dispatch_prefix}:{tag}", ctx.guild)

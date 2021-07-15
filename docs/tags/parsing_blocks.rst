@@ -10,7 +10,7 @@ Restriction Blocks
 ------------------
 
 The following blocks allow for restriction of tags behind roles or
-channels, or setting tag cooldowns (soon).
+channels, or setting tag cooldowns.
 
 ^^^^^^^^^^^^^
 Require Block
@@ -23,6 +23,12 @@ Blacklist Block
 ^^^^^^^^^^^^^^^
 
 .. autoclass:: TagScriptEngine.BlacklistBlock
+
+^^^^^^^^^^^^^^
+Cooldown Block
+^^^^^^^^^^^^^^
+
+.. autoclass:: TagScriptEngine.CooldownBlock
 
 --------------
 Message Blocks
@@ -53,12 +59,6 @@ React Block
 ^^^^^^^^^^^^^^
 
 .. autoclass:: tags.blocks.ReactBlock
-
-^^^^^^^^^^^^^^
-ReactU Block
-^^^^^^^^^^^^^^
-
-.. autoclass:: tags.blocks.ReactUBlock
 
 --------------
 Utility Blocks
