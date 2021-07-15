@@ -39,6 +39,7 @@ Welcome to Phen-Cogs's documentation!
    tags/default_variables
    tags/parsing_blocks
    tags/example_tags
+   tags/owner_guide
 
 .. toctree::
    :maxdepth: 2
