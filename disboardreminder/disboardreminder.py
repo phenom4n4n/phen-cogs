@@ -387,7 +387,10 @@ class DisboardReminder(commands.Cog):
             return
 
         if data["lock"] and my_perms.manage_roles:
-            await self.autolock_channel(guild, channel, my_perms, lock=False)
+            try:
+                await self.autolock_channel(guild, channel, my_perms, lock=False)
+            except discord.Forbidden:
+                await self.config.guild(guild).lock.clear()
 
         message = data["message"]
         allowed_mentions = self.bot.allowed_mentions
@@ -468,7 +471,10 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(guild).channel.clear()
 
         if data["lock"] and my_perms.manage_roles:
-            await self.autolock_channel(guild, bump_channel, my_perms, lock=True)
+            try:
+                await self.autolock_channel(guild, bump_channel, my_perms, lock=True)
+            except discord.Forbidden:
+                await self.config.guild(guild).lock.clear()
 
     @commands.Cog.listener()
     async def on_message_without_command(self, message: discord.Message):
