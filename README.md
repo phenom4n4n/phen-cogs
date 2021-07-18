@@ -25,28 +25,31 @@
 `[p]repo add Phen-Cogs https://github.com/phenom4n4n/phen-cogs`
 
 # Cogs
-| Cog | Description |
-| --- | --- |
-| Aki | Play the famous [akinator game](https://en.akinator.com/) in Discord. |
-| AltDentifier | Uses the AltDentifier API to check user's trust levels and take actions on users that join the server. |
-| BanChart | Display a chart of the moderators with the most bans. |
-| Baron | Manage guild joins and leaves with a variety of auto leave options, and guild blacklisting. |
-| CustomPing | Just a ping command with bot, host and websocket latency. |
-| DisboardReminder | Reminds servers to run `!d bump` every 2 hours after the last bump. |
-| EmbedUtils | A variety of embed utility commands, including posting embeds from JSON, download embed JSON, and storing them for later use.|
-| ForceMention | Modified version of Bobloy's forcemention cog, which my other cogs use for mentioning roles. |
-| LinkQuoter | Quotes messages using message links, using webhooks when possible. |
-| Lock | A basic channel and server lock command which allows role locking. |
-| PermissionsLocker | Forces configured permissions when a user tries running any command, and raises `CommandCheckFailure` if those permissions aren't met. |
-| PfpImgen | A couple fun commands that create memes/images using user avatars. |
-| PhenUtils | Developer utility commands. |
-| PlagueGame | Infect people in Discord. |
-| Prefix | Easier server prefix management. |
-| Ratings | Rate members on multiple scales including their iq, sanity, and how much they simp for something. |
-| RoleUtils | Role management commands. |
-| SimpleCalculator | Math calculator that uses [TagScriptEngine](https://github.com/JonSnowbd/TagScript). Random and range blocks are supported, queries will automatically be wrapped into a math block for you. |
-| Tags | An alternative to core CustomCom with [TagScriptEngine](https://github.com/JonSnowbd/TagScript) blocks. |
-| Webhook | Send messages through webhooks. |
+| Name              | Status/Version   | Description (Click to see full status)                                                                                                                     | Authors                                            |
+|-------------------|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|
+| Aki               | 1.1.0            | <details><summary>Play Akinator in Discord!</summary>Play Akinator in Discord!</details>                                                                   | PhenoM4n4n                                         |
+| AltDentifier      | 1.2.0            | <details><summary>Check users with AltDentifier API</summary>Check users with AltDentifier API</details>                                                   | PhenoM4n4n                                         |
+| AntiHonde         |                  | <details><summary>Automatically ban H0nde alts.</summary>Automatically ban H0nde alts.</details>                                                           | PhenoM4n4n and TrustyJAID                          |
+| BanChart          |                  | <details><summary>Display a chart of ban moderators.</summary>Display a chart of ban moderators.</details>                                                 | PhenoM4n4n and Aikaterna                           |
+| Baron             | 1.2.3            | <details><summary>Tools for managing guild joins and leaves.</summary>Tools for managing guild joins and leaves.</details>                                 | PhenoM4n4n, DragDev Studios, and KableKompany      |
+| Connect4          | 1.0.0            | <details><summary>Play Connect 4 in Discord!</summary>Play Connect 4 in Discord!</details>                                                                 | Benjamin Mintz, flare, and PhenoM4n4n              |
+|                   |                  | <details><summary>Creates a custom ping embed to display latency statistics.</summary>Creates a custom ping embed to display latency statistics.</details> | PhenoM4n4n                                         |
+| DisboardReminder  | 1.3.4            | <details><summary>Set a reminder to bump on Disboard.</summary>Set a reminder to bump on Disboard.</details>                                               | PhenoM4n4n                                         |
+| EmbedUtils        | 1.3.0            | <details><summary>Create, post, and store embeds</summary>Create, post, and store embeds.</details>                                                        | PhenoM4n4n                                         |
+|                   |                  | <details><summary>Mention unmentionables</summary>Mentions roles that are unmentionable</details>                                                          | Bobloy and PhenoM4n4n                              |
+| LinkQuoter        | 1.1.0            | <details><summary>Quote Discord message links.</summary>Quote Discord message links.</details>                                                             | PhenoM4n4n                                         |
+| Lock              | 1.1.4            | <details><summary>Lock channels</summary>Lock channels or the whole server</details>                                                                       | PhenoM4n4n                                         |
+| PermissionsLocker | 1.3.0            | <details><summary>Force permissions for the bot.</summary>Lock bot commands to a certain permissions set.</details>                                        | PhenoM4n4n                                         |
+| PfpImgen          |                  | <details><summary>Make images from avatars!</summary>Make images from avatars!</details>                                                                   | PhenoM4n4n                                         |
+| PhenUtils         |                  | <details><summary>Various developer utilities.</summary>Various developer utilities.</details>                                                             | PhenoM4n4n                                         |
+| Plague            | 1.0.6            | <details><summary>Infect users with the plague!</summary>Plague game with a doctor and plaguebearer.</details>                                             | PhenoM4n4n                                         |
+| Prefix            | 1.0.2            | <details><summary>Manage guild prefixes.</summary>Manage guild prefixes more extensively.</details>                                                        | PhenoM4n4n                                         |
+| Ratings           |                  | <details><summary>Find out how (simp|sane|smart) you are.</summary>Rate yourself on many things.</details>                                                 | PhenoM4n4n                                         |
+| RoleUtils         | 1.3.6            | <details><summary>Reaction roles, massroling, and role targeting!.</summary>Reaction roles, massroling, and role targeting!.</details>                     | PhenoM4n4n, Bobloy, TrustyJaid, and Neuro Assassin |
+| Calculator        |                  | <details><summary>Calculate stuff</summary>Calculate stuff</details>                                                                                       | PhenoM4n4n                                         |
+| SlashTags         | 0.4.3            | <details><summary>Create custom slash commands.</summary>Create custom slash commands.</details>                                                           | PhenoM4n4n                                         |
+| Tags              | 2.3.0            | <details><summary>Create and use tags.</summary>Create and use tags.</details>                                                                             | PhenoM4n4n                                         |
+| Webhook           | 1.2.1            | <details><summary>Webhook related commands.</summary>Various webhook commands to create and send messages along webhooks.</details>                        | PhenoM4n4n                                         |
 
 # Contact
 If you encounter bugs or require support, go to *#support_phen-cogs* on the [cog support server](https://discord.gg/GET4DVk).
