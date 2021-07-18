@@ -51,6 +51,8 @@ class BanChart(commands.Cog):
     Display a chart of the moderators with the most bans.
     """
 
+    __version__ = "1.1.0"
+
     def __init__(self, bot: Red) -> None:
         self.bot = bot
         self.config = Config.get_conf(

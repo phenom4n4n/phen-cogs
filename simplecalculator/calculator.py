@@ -34,6 +34,8 @@ class Calculator(commands.Cog):
     Do math
     """
 
+    __version__ = "1.0.0"
+
     def __init__(self, bot):
         self.bot = bot
         blocks = [

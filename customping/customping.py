@@ -42,6 +42,8 @@ log = logging.getLogger("red.phenom4n4n.customping")
 class CustomPing(commands.Cog):
     """A more information rich ping message."""
 
+    __version__ = "1.0.0"
+
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(
