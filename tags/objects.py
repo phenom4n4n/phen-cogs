@@ -28,7 +28,7 @@ import discord
 import TagScriptEngine as tse
 from redbot.core import Config, commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import humanize_list, humanize_number, inline, pagify
+from redbot.core.utils.chat_formatting import box, humanize_list, humanize_number, inline, pagify
 
 from .errors import TagAliasError
 
@@ -242,12 +242,8 @@ class Tag:
         return await ctx.send(embed=await self.get_info(ctx))
 
     async def send_raw_tagscript(self, ctx: commands.Context):
-        tagscript = discord.utils.escape_markdown(self.tagscript)
-        for page in pagify(tagscript):
-            await ctx.send(
-                page,
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
+        for page in pagify(self.tagscript):
+            await ctx.send(box(page), allowed_mentions=discord.AllowedMentions.none())
 
 
 class SilentContext(commands.Context):
