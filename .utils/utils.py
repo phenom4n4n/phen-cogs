@@ -72,7 +72,6 @@ For feature requests, open a PR/issue on this repo.
 [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot)
 
 All Cog Creators
-
 """
 
 
