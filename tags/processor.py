@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from copy import copy
 from typing import Dict, List, Optional
 
@@ -11,6 +12,8 @@ from .abc import MixinMeta
 from .blocks import DeleteBlock, ReactBlock, SilentBlock
 from .errors import BlacklistCheckFailure, RequireCheckFailure, WhitelistCheckFailure
 from .objects import SilentContext, Tag
+
+log = logging.getLogger("red.phenom4n4n.tags.processor")
 
 
 class Processor(MixinMeta):
@@ -223,31 +226,39 @@ class Processor(MixinMeta):
     async def process_command(
         self, command_message: discord.Message, silent: bool, overrides: dict
     ):
-        ctx = await self.bot.get_context(
-            command_message, cls=SilentContext if silent else commands.Context
-        )
+        command_cls = SilentContext if silent else commands.Context
+        ctx = await self.bot.get_context(command_message, cls=command_cls)
+        if not ctx.valid:
+            return
+        if overrides:
+            ctx.command = self.handle_overrides(ctx.command, overrides)
+        await self.bot.invoke(ctx)
 
-        if ctx.valid:
-            if overrides:
-                command = copy(ctx.command)
-                # command = commands.Command()
-                # command = ctx.command.copy() # does not work as it makes ctx a regular argument
-                requires: commands.Requires = copy(command.requires)
-                priv_level = requires.privilege_level
-                if priv_level not in (
-                    commands.PrivilegeLevel.NONE,
-                    commands.PrivilegeLevel.BOT_OWNER,
-                    commands.PrivilegeLevel.GUILD_OWNER,
-                ):
-                    if overrides["admin"] and priv_level is commands.PrivilegeLevel.ADMIN:
-                        requires.privilege_level = commands.PrivilegeLevel.NONE
-                    elif overrides["mod"] and priv_level is commands.PrivilegeLevel.MOD:
-                        requires.privilege_level = commands.PrivilegeLevel.NONE
-                if overrides["permissions"] and requires.user_perms:
-                    requires.user_perms = discord.Permissions.none()
-                command.requires = requires
-                ctx.command = command
-            await self.bot.invoke(ctx)
+    @classmethod
+    def handle_overrides(cls, command: commands.Command, overrides: dict) -> commands.Command:
+        overriden_command = copy(command)
+        # overriden_command = command.copy() # does not work as it makes ctx a regular argument
+        # overriden_command.cog = command.cog
+        requires: commands.Requires = copy(command.requires)
+        priv_level = requires.privilege_level
+        if priv_level not in (
+            commands.PrivilegeLevel.NONE,
+            commands.PrivilegeLevel.BOT_OWNER,
+            commands.PrivilegeLevel.GUILD_OWNER,
+        ):
+            if overrides["admin"] and priv_level is commands.PrivilegeLevel.ADMIN:
+                requires.privilege_level = commands.PrivilegeLevel.NONE
+            elif overrides["mod"] and priv_level is commands.PrivilegeLevel.MOD:
+                requires.privilege_level = commands.PrivilegeLevel.NONE
+
+        if overrides["permissions"] and requires.user_perms:
+            requires.user_perms = discord.Permissions.none()
+        overriden_command.requires = requires
+
+        if all_commands := getattr(overriden_command, "all_commands", None):
+            for name, child in all_commands.copy().items():
+                all_commands[name] = cls.handle_overrides(child, overrides)
+        return overriden_command
 
     async def validate_checks(self, ctx: commands.Context, actions: dict):
         to_gather = []

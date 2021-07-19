@@ -67,6 +67,7 @@ async def setup(bot: Red) -> None:
                 f"This cog conflicts with {cog_name} and both cannot be loaded at the same time. "
                 f"After unloading `{module_name}`, you can migrate {tag_name} to tags with `[p]migrate{module_name}`."
             )
+
     tags = Tags(bot)
     bot.add_cog(tags)
     await tags.initialize()

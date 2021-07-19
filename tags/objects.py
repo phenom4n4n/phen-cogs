@@ -219,6 +219,12 @@ class Tag:
         await self.update_config()
         return f"Edited `{self}`'s tagscript from **{hn(old_tagscript)}** to **{hn(len(self.tagscript))}** characters."
 
+    async def append_tagscript(self, tagscript: str) -> str:
+        old_tagscript = len(self.tagscript)
+        self.tagscript += f"\n{tagscript}"
+        await self.update_config()
+        return f"Edited `{self}`'s tagscript from **{hn(old_tagscript)}** to **{hn(len(self.tagscript))}** characters."
+
     async def get_info(self, ctx: commands.Context) -> discord.Embed:
         desc = [
             f"Author: {self.author.mention if self.author else self.author_id}",

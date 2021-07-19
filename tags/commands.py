@@ -181,7 +181,7 @@ class Commands(MixinMeta):
         """
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="add", aliases=["create", "+"])
+    @tag.command("add", aliases=["create", "+"])
     async def tag_add(
         self,
         ctx: commands.Context,
@@ -247,7 +247,7 @@ class Commands(MixinMeta):
         await ctx.send(await tag.initialize())
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="alias")
+    @tag.command("alias")
     async def tag_alias(self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName):
         """
                 Add an alias for a tag.
@@ -261,7 +261,7 @@ class Commands(MixinMeta):
         await ctx.send(await tag.add_alias(alias))
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="unalias")
+    @tag.command("unalias")
     async def tag_unalias(
         self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName(allow_named_tags=True)
     ):
@@ -277,7 +277,7 @@ class Commands(MixinMeta):
         await ctx.send(await tag.remove_alias(alias))
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="edit", aliases=["e"])
+    @tag.command("edit", aliases=["e"])
     async def tag_edit(
         self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
     ):
@@ -293,7 +293,20 @@ class Commands(MixinMeta):
         await ctx.send(await tag.edit_tagscript(tagscript))
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="remove", aliases=["delete", "-"])
+    @tag.command("append")
+    async def tag_append(
+        self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
+    ):
+        """
+        Add text to a tag's TagScript.
+
+        **Example:**
+        `[p]tag append rickroll Never gonna let you down!`
+        """
+        await ctx.send(await tag.append_tagscript(tagscript))
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @tag.command("remove", aliases=["delete", "-"])
     async def tag_remove(self, ctx: commands.Context, tag: GuildTagConverter):
         """
         Permanently delete a tag.
@@ -305,7 +318,7 @@ class Commands(MixinMeta):
         """
         await ctx.send(await tag.delete())
 
-    @tag.command(name="info")
+    @tag.command("info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
         """
         Show information about a tag.
@@ -318,7 +331,7 @@ class Commands(MixinMeta):
         """
         await tag.send_info(ctx)
 
-    @tag.command(name="raw")
+    @tag.command("raw")
     async def tag_raw(self, ctx: commands.Context, tag: GuildTagConverter):
         """
         Get a tag's raw content.
@@ -330,7 +343,7 @@ class Commands(MixinMeta):
         """
         await tag.send_raw_tagscript(ctx)
 
-    @tag.command(name="list")
+    @tag.command("list")
     async def tag_list(self, ctx: commands.Context):
         """
         View all stored tags on this server.
@@ -372,7 +385,7 @@ class Commands(MixinMeta):
             await self.doc_fetch()
         return {key: value for key, value in self.docs.items() if keyword in key.lower()}
 
-    @tag.command(name="docs")
+    @tag.command("docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
         """
         Search the TagScript documentation for a block.
@@ -445,7 +458,7 @@ class Commands(MixinMeta):
         await ctx.send(embed=e)
 
     @commands.is_owner()
-    @tag.command(name="process")
+    @tag.command("process")
     async def tag_process(self, ctx: commands.Context, *, tagscript: str):
         """
         Process a temporary Tag without storing.
@@ -467,12 +480,12 @@ class Commands(MixinMeta):
         await ctx.tick()
 
     @commands.is_owner()
-    @tag.group(name="global")
+    @tag.group("global")
     @copy_doc(tag)
     async def tag_global(self, ctx: commands.Context):
         pass
 
-    @tag_global.command(name="add", aliases=["create", "+"])
+    @tag_global.command("add", aliases=["create", "+"])
     @copy_doc(tag_add)
     async def tag_global_add(
         self,
@@ -483,21 +496,21 @@ class Commands(MixinMeta):
     ):
         await self.create_tag(ctx, tag_name, tagscript, global_tag=True)
 
-    @tag_global.command(name="alias")
+    @tag_global.command("alias")
     @copy_doc(tag_alias)
     async def tag_global_alias(
         self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName
     ):
         await ctx.send(await tag.add_alias(alias))
 
-    @tag_global.command(name="unalias")
+    @tag_global.command("unalias")
     @copy_doc(tag_unalias)
     async def tag_global_unalias(
         self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName(allow_named_tags=True)
     ):
         await ctx.send(await tag.remove_alias(alias))
 
-    @tag_global.command(name="edit", aliases=["e"])
+    @tag_global.command("edit", aliases=["e"])
     @copy_doc(tag_edit)
     async def tag_global_edit(
         self,
@@ -508,17 +521,24 @@ class Commands(MixinMeta):
     ):
         await ctx.send(await tag.edit_tagscript(tagscript))
 
-    @tag_global.command(name="remove", aliases=["delete", "-"])
+    @tag_global.command("append")
+    @copy_doc(tag_append)
+    async def tag_global_append(
+        self, ctx: commands.Context, tag: GlobalTagConverter, *, tagscript: TagScriptConverter
+    ):
+        await ctx.send(await tag.append_tagscript(tagscript))
+
+    @tag_global.command("remove", aliases=["delete", "-"])
     @copy_doc(tag_remove)
     async def tag_global_remove(self, ctx: commands.Context, tag: GlobalTagConverter):
         await ctx.send(await tag.delete())
 
-    @tag_global.command(name="raw")
+    @tag_global.command("raw")
     @copy_doc(tag_raw)
     async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
         await tag.send_raw_tagscript(ctx)
 
-    @tag_global.command(name="list")
+    @tag_global.command("list")
     @copy_doc(tag_list)
     async def tag_global_list(self, ctx: commands.Context):
         tags = self.get_unique_tags()
