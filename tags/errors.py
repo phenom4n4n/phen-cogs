@@ -24,6 +24,8 @@ SOFTWARE.
 
 from typing import Optional
 
+from redbot.core.commands import UserFeedbackCheckFailure
+
 __all__ = (
     "TagError",
     "MissingTagPermissions",
@@ -62,7 +64,7 @@ class BlacklistCheckFailure(RequireCheckFailure):
     """Raised when a user is in a blacklisted channel or has a blacklisted role."""
 
 
-class TagFeedbackError(TagError):
+class TagFeedbackError(UserFeedbackCheckFailure, TagError):
     """Provides feedback to the user when running tag commands."""
 
 

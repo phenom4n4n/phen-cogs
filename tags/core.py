@@ -37,7 +37,7 @@ from TagScriptEngine import __version__ as tse_version
 
 from .abc import CompositeMetaClass
 from .commands import Commands
-from .errors import MissingTagPermissions, TagFeedbackError
+from .errors import MissingTagPermissions
 from .objects import Tag
 from .owner import OwnerCommands
 from .processor import Processor
@@ -58,7 +58,7 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.3.1"
+    __version__ = "2.3.2"
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -191,14 +191,3 @@ class Tags(
                 "You must have **Mention Everyone** permissions to use the `allowedmentions` block."
             )
         return True
-
-    async def cog_command_error(self, ctx: commands.Context, exc: Exception):
-        if isinstance(exc, commands.CommandInvokeError):
-            error = exc.original
-            if isinstance(error, TagFeedbackError):
-                ref = ctx.message.to_reference(fail_if_not_exists=False)
-                await ctx.send(error, reference=ref)
-            else:
-                self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)
-        else:
-            self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)
