@@ -29,6 +29,7 @@ import time
 import types
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
+import requests
 
 import discord
 import TagScriptEngine as tse
@@ -245,6 +246,26 @@ class Commands(MixinMeta):
 
         tag = Tag(self, tag_name, tagscript, **kwargs)
         await ctx.send(await tag.initialize())
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @tag.command("more", aliases=["++"])
+    async def tag_more(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(allow_named_tags=True),
+        *,
+        link: TagScriptConverter,
+    ):
+        """Edit a tag using contents from a pastebin link. The link should be in the format `https://pastebin.com/raw/<id>`"""
+        link_check=("^(http:\/\/www\.pastebin|https:\/\/www\.pastebin|http:\/\/pastebin|https:\/\/pastebin).[a-z]{2,5}\/raw\/(:[0-9]{1,5})?(.*)?$")
+        checked = re.compile(link_check)
+        pastebin = checked.match(link)
+        if not pastebin:
+            return await ctx.send("Invalid link. Use `[p]help tag more` to learn how to format the link.")
+        url = pastebin[0]
+        r = requests.get(url)
+        content = r.text
+        await self.tag_add(ctx, tag_name, tagscript=content)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command("alias")
