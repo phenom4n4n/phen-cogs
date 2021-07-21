@@ -268,13 +268,13 @@ class Commands(MixinMeta):
     @tag.command("alias")
     async def tag_alias(self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName):
         """
-                Add an alias for a tag.
+        Add an alias for a tag.
 
-                Adding an alias to the tag will make the tag invokable using the alias or the tag name.
-                In the example below, running `[p]donation` will invoke the `donate` tag.
-        ​
-                **Example:**
-                `[p]tag alias donate donation`
+        Adding an alias to the tag will make the tag invokable using the alias or the tag name.
+        In the example below, running `[p]donation` will invoke the `donate` tag.
+​
+        **Example:**
+        `[p]tag alias donate donation`
         """
         await ctx.send(await tag.add_alias(alias))
 
