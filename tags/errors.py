@@ -25,6 +25,7 @@ SOFTWARE.
 from typing import Optional
 
 from redbot.core.commands import UserFeedbackCheckFailure
+from redbot.core.utils.chat_formatting import humanize_number as hn
 
 __all__ = (
     "TagError",
@@ -74,3 +75,10 @@ class TagAliasError(TagFeedbackError):
 
 class BlockCompileError(TagError):
     """Raised when a block fails to compile."""
+
+
+class TagCharacterLimitReached(TagError):
+    """Raised when the TagScript character limit is reached."""
+
+    def __init__(self, limit: int, length: int):
+        super().__init__(f"TagScript cannot be longer than {hn(limit)} (**{hn(length)}**).")

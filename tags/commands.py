@@ -29,7 +29,6 @@ import time
 import types
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
-import requests
 
 import discord
 import TagScriptEngine as tse
@@ -45,6 +44,7 @@ from .blocks import ContextVariableBlock, ConverterBlock
 from .converters import (
     GlobalTagConverter,
     GuildTagConverter,
+    PastebinConverter,
     TagConverter,
     TagName,
     TagScriptConverter,
@@ -171,36 +171,6 @@ class Commands(MixinMeta):
             embeds.append(e)
         await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
-    @commands.guild_only()
-    @commands.group(aliases=["customcom", "cc", "alias"])
-    async def tag(self, ctx: commands.Context):
-        """
-        Tag management with TagScript.
-
-        These commands use TagScriptEngine.
-        Read the [TagScript documentation](https://phen-cogs.readthedocs.io/en/latest/) to learn how to use TagScript blocks.
-        """
-
-    @commands.mod_or_permissions(manage_guild=True)
-    @tag.command("add", aliases=["create", "+"])
-    async def tag_add(
-        self,
-        ctx: commands.Context,
-        tag_name: TagName(allow_named_tags=True),
-        *,
-        tagscript: TagScriptConverter,
-    ):
-        """
-        Add a tag with TagScript.
-
-        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/tags/blocks.html#usage)
-
-        **Example:**
-        `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
-        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.}`
-        """
-        await self.create_tag(ctx, tag_name, tagscript)
-
     def validate_tag_count(self, guild: discord.Guild):
         tag_count = len(self.get_unique_tags(guild))
         if guild:
@@ -247,25 +217,52 @@ class Commands(MixinMeta):
         tag = Tag(self, tag_name, tagscript, **kwargs)
         await ctx.send(await tag.initialize())
 
+    @commands.guild_only()
+    @commands.group(aliases=["customcom", "cc", "alias"])
+    async def tag(self, ctx: commands.Context):
+        """
+        Tag management with TagScript.
+
+        These commands use TagScriptEngine.
+        Read the [TagScript documentation](https://phen-cogs.readthedocs.io/en/latest/) to learn how to use TagScript blocks.
+        """
+
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command("more", aliases=["++"])
-    async def tag_more(
+    @tag.command("add", aliases=["create", "+"])
+    async def tag_add(
         self,
         ctx: commands.Context,
         tag_name: TagName(allow_named_tags=True),
         *,
-        link: TagScriptConverter,
+        tagscript: TagScriptConverter,
     ):
-        """Edit a tag using contents from a pastebin link. The link should be in the format `https://pastebin.com/raw/<id>`"""
-        link_check=("^(http:\/\/www\.pastebin|https:\/\/www\.pastebin|http:\/\/pastebin|https:\/\/pastebin).[a-z]{2,5}\/raw\/(:[0-9]{1,5})?(.*)?$")
-        checked = re.compile(link_check)
-        pastebin = checked.match(link)
-        if not pastebin:
-            return await ctx.send("Invalid link. Use `[p]help tag more` to learn how to format the link.")
-        url = pastebin[0]
-        r = requests.get(url)
-        content = r.text
-        await self.tag_add(ctx, tag_name, tagscript=content)
+        """
+        Add a tag with TagScript.
+
+        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/tags/blocks.html#usage)
+
+        **Example:**
+        `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
+        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.}`
+        """
+        await self.create_tag(ctx, tag_name, tagscript)
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @tag.command("pastebin", aliases=["++"])
+    async def tag_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(allow_named_tags=True),
+        *,
+        link: PastebinConverter,
+    ):
+        """
+        Add a tag with a Pastebin link.
+
+        **Example:**
+        `[p]tag pastebin starwarsopeningcrawl https://pastebin.com/CKjn6uYv`
+        """
+        await self.create_tag(ctx, tag_name, link)
 
     @commands.mod_or_permissions(manage_guild=True)
     @tag.command("alias")
@@ -516,6 +513,17 @@ class Commands(MixinMeta):
         tagscript: TagScriptConverter,
     ):
         await self.create_tag(ctx, tag_name, tagscript, global_tag=True)
+
+    @tag_global.command("pastebin", aliases=["++"])
+    @copy_doc(tag_pastebin)
+    async def tag_global_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(global_priority=True),
+        *,
+        link: PastebinConverter,
+    ):
+        await self.create_tag(ctx, tag_name, link, global_tag=True)
 
     @tag_global.command("alias")
     @copy_doc(tag_alias)

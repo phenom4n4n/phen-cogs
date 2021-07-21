@@ -37,12 +37,14 @@ from TagScriptEngine import __version__ as tse_version
 
 from .abc import CompositeMetaClass
 from .commands import Commands
-from .errors import MissingTagPermissions
+from .errors import MissingTagPermissions, TagCharacterLimitReached
 from .objects import Tag
 from .owner import OwnerCommands
 from .processor import Processor
 
 log = logging.getLogger("red.phenom4n4n.tags")
+
+TAGSCRIPT_LIMIT = 10_000
 
 
 class Tags(
@@ -175,6 +177,9 @@ class Tags(
         return sorted(set(path.values()), key=lambda t: t.name)
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
+        length = len(tagscript)
+        if length > TAGSCRIPT_LIMIT:
+            raise TagCharacterLimitReached(TAGSCRIPT_LIMIT, length)
         output = self.engine.process(tagscript)
         if self.async_enabled:
             output = await output
