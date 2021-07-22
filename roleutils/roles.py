@@ -564,27 +564,26 @@ class Roles(MixinMeta):
         s = "" if length == 1 else "s"
         return f"**{hn(length)}** member{s}"
 
-    @role.command("uniquemembers", aliases=["um"])
-    async def role_uniquemembers(
-        self, ctx: commands.Context, role_one: FuzzyRole, role_two: FuzzyRole
-    ):
+    @role.command("uniquemembers", aliases=["um"], require_var_positional=True)
+    async def role_uniquemembers(self, ctx: commands.Context, *roles: FuzzyRole):
         """
-        View the total unique members between two roles.
+        View the total unique members between multiple roles.
         """
+        roles_length = len(roles)
+        if roles_length == 1:
+            raise commands.UserFeedbackCheckFailure("You must provide at least 2 roles.")
         if not ctx.guild.chunked:
             await ctx.guild.chunk()
-        color = role_one.color
-        role_one_members = role_one.members
-        role_two_members = role_two.members
-        unique_members = set(role_one_members + role_two_members)
-        description = [
-            f"*Unique members*: {self.format_members(unique_members)}",
-            f"{role_one.mention}: {self.format_members(role_one_members)}",
-            f"{role_two.mention}: {self.format_members(role_two_members)}",
-        ]
+        color = roles[0].color
+        unique_members = set()
+        description = []
+        for role in roles:
+            unique_members.update(role.members)
+            description.append(f"{role.mention}: {self.format_members(role.members)}")
+        description.insert(0, f"**Unique members**: {self.format_members(unique_members)}")
         e = discord.Embed(
             color=color,
-            title=f"Unique members between {role_one} and {role_two}",
+            title=f"Unique members between {roles_length} roles",
             description="\n".join(description),
         )
         ref = ctx.message.to_reference(fail_if_not_exists=False)
