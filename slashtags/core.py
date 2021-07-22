@@ -122,7 +122,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         if self.testing_enabled:
             self.remove_test_cog()
         self.load_task.cancel()
-        self.session.close()
+        asyncio.create_task(self.session.close())
 
     async def cog_before_invoke(self, ctx: commands.Context) -> bool:
         if not self.bot.get_cog("SlashInjector"):
