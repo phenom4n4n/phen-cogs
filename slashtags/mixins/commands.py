@@ -16,10 +16,10 @@ from ..abc import MixinMeta
 from ..converters import (
     GlobalTagConverter,
     GuildTagConverter,
+    PastebinConverter,
     TagConverter,
     TagName,
     TagScriptConverter,
-    PastebinConverter,
 )
 from ..http import SlashOptionType
 from ..objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
