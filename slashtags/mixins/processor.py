@@ -55,6 +55,8 @@ class Processor(MixinMeta):
             tse.URLEncodeBlock(),
             tse.CommandBlock(),
             tse.RedirectBlock(),
+            tse.OverrideBlock(),
+            tse.CooldownBlock(),
         ]
         slash_blocks = [HideBlock()]
         self.engine = tse.Interpreter(tse_blocks + slash_blocks)
