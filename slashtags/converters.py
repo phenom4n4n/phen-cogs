@@ -22,14 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import re
 from typing import TYPE_CHECKING
 
 from discord.utils import escape_mentions
 from redbot.core import commands
 
-from .errors import MissingTagPermissions
+from .errors import SlashTagException
 from .objects import SlashTag
 from .utils import SLASH_NAME
+
+PASTEBIN_RE = re.compile(r"(?:https?://(?:www\.)?)?pastebin\.com/(?:raw/)?([a-zA-Z0-9]+)")
 
 
 class TagSearcher:
@@ -73,14 +76,27 @@ GuildTagConverter = TagConverter(check_global=False, global_priority=False)
 
 class TagScriptConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> str:
-        cog = ctx.bot.get_cog("SlashTags")
         try:
-            await cog.validate_tagscript(ctx, argument)
-        except MissingTagPermissions as e:
+            await ctx.cog.validate_tagscript(ctx, argument)
+        except SlashTagException as e:
             raise commands.BadArgument(str(e))
         return argument
+
+
+class PastebinConverter(TagScriptConverter):
+    async def convert(self, ctx: commands.Context, argument: str) -> str:
+        match = PASTEBIN_RE.match(argument)
+        if not match:
+            raise commands.BadArgument(f"`{argument}` is not a valid Pastebin link.")
+        paste_id = match.group(1)
+        async with ctx.cog.session.get(f"https://pastebin.com/raw/{paste_id}") as resp:
+            if resp.status != 200:
+                raise commands.BadArgument(f"`{argument}` is not a valid Pastebin link.")
+            tagscript = await resp.text()
+        return await super().convert(ctx, tagscript)
 
 
 if TYPE_CHECKING:
     TagConverter = SlashTag
     TagScriptConverter = str
+    PastebinConverter = str

@@ -27,7 +27,7 @@ import re
 from discord.utils import escape_mentions
 from redbot.core import commands
 
-from .errors import MissingTagPermissions
+from .errors import TagError
 from .objects import Tag
 
 PASTEBIN_RE = re.compile(r"(?:https?://(?:www\.)?)?pastebin\.com/(?:raw/)?([a-zA-Z0-9]+)")
@@ -79,7 +79,7 @@ class TagScriptConverter(commands.Converter):
     async def convert(self, ctx: commands.Context, argument: str) -> str:
         try:
             await ctx.cog.validate_tagscript(ctx, argument)
-        except MissingTagPermissions as e:
+        except TagError as e:
             raise commands.BadArgument(str(e))
         return argument
 

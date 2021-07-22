@@ -19,6 +19,7 @@ from ..converters import (
     TagConverter,
     TagName,
     TagScriptConverter,
+    PastebinConverter,
 )
 from ..http import SlashOptionType
 from ..objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
@@ -286,6 +287,20 @@ class Commands(MixinMeta):
         )
 
     @commands.mod_or_permissions(manage_guild=True)
+    @slashtag.command("pastebin", aliases=["++"])
+    async def slashtag_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(check_global=False),
+        *,
+        link: PastebinConverter,
+    ):
+        """
+        Add a slash tag with a Pastebin link.
+        """
+        await self.create_slash_tag(ctx, tag_name, link, is_global=False)
+
+    @commands.mod_or_permissions(manage_guild=True)
     @slashtag.group("edit", aliases=["e"], invoke_without_command=True)
     async def slashtag_edit(
         self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
@@ -433,6 +448,17 @@ class Commands(MixinMeta):
         tagscript: TagScriptConverter,
     ):
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True)
+
+    @slashtag_global.command("pastebin", aliases=["++"])
+    @copy_doc(slashtag_pastebin)
+    async def slashtag_global_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(check_global=False),
+        *,
+        link: PastebinConverter,
+    ):
+        await self.create_slash_tag(ctx, tag_name, link, is_global=True)
 
     @slashtag_global.group("edit", aliases=["e"], invoke_without_command=True)
     @copy_doc(slashtag_edit)

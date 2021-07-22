@@ -33,6 +33,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
+from redbot.core.utils.chat_formatting import humanize_list
 from TagScriptEngine import __version__ as tse_version
 
 from .abc import CompositeMetaClass
@@ -60,7 +61,8 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.3.2"
+    __version__ = "2.3.3"
+    __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -69,6 +71,7 @@ class Tags(
             f"{pre_processed}{n}",
             f"Cog Version: **{self.__version__}**",
             f"TagScriptEngine Version: **{tse_version}**",
+            f"Author: {humanize_list(self.__author__)}",
         ]
         return "\n".join(text)
 

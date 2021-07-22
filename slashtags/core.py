@@ -28,6 +28,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Coroutine, Dict, Optional
 
+import aiohttp
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
@@ -37,6 +38,7 @@ from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list
 
 from .abc import CompositeMetaClass
+from .errors import MissingTagPermissions
 from .http import InteractionButton, InteractionCommand, SlashHTTP
 from .mixins import Commands, Processor
 from .objects import SlashCommand, SlashContext, SlashTag
@@ -51,8 +53,8 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.4.3"
-    __author__ = ["PhenoM4n4n"]
+    __version__ = "0.4.4"
+    __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -90,6 +92,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.global_tag_cache: Dict[int, SlashTag] = {}
 
         self.load_task = self.create_task(self.initialize_task())
+        self.session = aiohttp.ClientSession()
         bot.add_dev_env_value("st", lambda ctx: self)
 
         super().__init__()
@@ -119,6 +122,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         if self.testing_enabled:
             self.remove_test_cog()
         self.load_task.cancel()
+        self.session.close()
 
     async def cog_before_invoke(self, ctx: commands.Context) -> bool:
         if not self.bot.get_cog("SlashInjector"):
@@ -174,7 +178,11 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         is_owner = await self.bot.is_owner(ctx.author)
         if is_owner:
             return True
-        # TODO block validation
+        author_perms = ctx.channel.permissions_for(ctx.author)
+        if output.actions.get("overrides") and not author_perms.manage_guild:
+            raise MissingTagPermissions(
+                "You must have **Manage Server** permissions to use the `override` block."
+            )
         return True
 
     def get_tag(
