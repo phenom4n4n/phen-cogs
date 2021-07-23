@@ -423,7 +423,7 @@ class Commands(MixinMeta):
     @tag.command("usage", aliases=["stats"])
     async def tag_usage(self, ctx: commands.Context):
         """
-        See this tag usage stats.
+        See tag usage stats.
 
         **Example:**
         `[p]tag usage`

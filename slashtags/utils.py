@@ -75,3 +75,12 @@ async def validate_tagscriptengine(bot: Red, tse_version: str, *, reloaded: bool
     if tse.version_info < tse.VersionInfo.from_str(tse_version):
         await bot.send_to_owners(message)
         raise CogLoadError(message)
+
+
+def chunks(l, n):
+    """
+    Yield successive n-sized chunks from l.
+    https://github.com/flaree/flare-cogs/blob/08b78e33ab814aa4da5422d81a5037ae3df51d4e/commandstats/commandstats.py#L16
+    """
+    for i in range(0, len(l), n):
+        yield l[i : i + n]

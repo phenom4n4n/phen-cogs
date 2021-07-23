@@ -10,7 +10,7 @@
     "required_cogs": {},
     "requirements": [
         "TagScript==2.6.1",
-        "beautifulsoup4"
+        "tabulate"
     ],
     "tags": [
         "tags"

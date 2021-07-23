@@ -2,15 +2,16 @@ import asyncio
 import logging
 import re
 import types
+from collections import Counter
 from copy import copy
 from typing import Dict, List, Union
 
 import discord
 from redbot.core import commands
-from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
-
-# from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
+from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 from redbot.core.utils.predicates import MessagePredicate
+from tabulate import tabulate
 
 from ..abc import MixinMeta
 from ..converters import (
@@ -24,7 +25,7 @@ from ..converters import (
 from ..http import SlashOptionType
 from ..objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
 from ..testing.button_menus import menu as button_menu
-from ..utils import ARGUMENT_NAME_DESCRIPTION, dev_check
+from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
 
@@ -409,6 +410,33 @@ class Commands(MixinMeta):
             return await ctx.send("There are no slash tags on this server.")
         await self.view_slash_tags(ctx, tags, is_global=False)
 
+    async def show_slash_tag_usage(self, ctx: commands.Context, guild: discord.Guild = None):
+        tags = self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
+        if not tags:
+            message = (
+                "This server has no slash tags." if guild else "There are no global slash tags."
+            )
+            return await ctx.send(message)
+        counter = Counter({tag.name: tag.uses for tag in tags.copy().values()})
+        e = discord.Embed(title="Slash Tag Stats", color=await ctx.embed_color())
+        embeds = []
+        for usage_data in chunks(counter.most_common(), 10):
+            usage_chart = box(tabulate(usage_data, headers=("Tag", "Uses")), "prolog")
+            embed = e.copy()
+            embed.description = usage_chart
+            embeds.append(embed)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+
+    @slashtag.command("usage", aliases=["stats"])
+    async def slashtag_usage(self, ctx: commands.Context):
+        """
+        See this slash tag usage stats.
+
+        **Example:**
+        `[p]slashtag usage`
+        """
+        await self.show_slash_tag_usage(ctx, ctx.guild)
+
     @commands.is_owner()
     @slashtag.command("clear", hidden=True)
     async def slashtag_clear(self, ctx: commands.Context):
@@ -518,6 +546,11 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send("There are no global slash tags.")
         await self.view_slash_tags(ctx, tags, is_global=True)
+
+    @slashtag_global.command("usage", aliases=["stats"])
+    @copy_doc(slashtag_usage)
+    async def slashtag_global_usage(self, ctx: commands.Context):
+        await self.show_slash_tag_usage(ctx)
 
     @commands.is_owner()
     @commands.group(aliases=["slashset"])
