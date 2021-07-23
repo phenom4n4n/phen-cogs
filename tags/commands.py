@@ -29,14 +29,17 @@ import time
 import types
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
+from tabulate import tabulate
+from collections import Counter
+
 
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, start_adding_reactions
+from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import MixinMeta
@@ -52,7 +55,7 @@ from .converters import (
 from .doc_parser import SphinxObjectFileReader, parse_object_inv
 from .errors import TagFeedbackError
 from .objects import Tag
-from .utils import get_menu
+from .utils import chunks, get_menu
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
@@ -402,6 +405,21 @@ class Commands(MixinMeta):
         if not self.docs:
             await self.doc_fetch()
         return {key: value for key, value in self.docs.items() if keyword in key.lower()}
+    
+    @tag.command("usage")
+    async def tag_usage(self, ctx: commands.Context):
+        """Shows the most used tags in the server."""
+        guild = ctx.guild
+        uses = Counter({name: tag.uses for name, tag in self.guild_tag_cache[guild.id].copy().items()}).most_common()
+        e = discord.Embed(title="Tag Stats", color=await ctx.embed_color())
+        embeds = []
+        for usage_data in chunks(uses, 10):
+            usage_chart = box(tabulate(usage_data, headers=("Tag", "Uses")), "prolog")
+            embed = e.copy()
+            embed.description = usage_chart
+            embeds.append(embed)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        
 
     @tag.command("docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
