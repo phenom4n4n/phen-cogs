@@ -27,6 +27,7 @@ import logging
 import re
 import time
 import types
+from collections import Counter
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
 
@@ -35,9 +36,10 @@ import TagScriptEngine as tse
 from redbot.core import commands
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, start_adding_reactions
+from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
+from tabulate import tabulate
 
 from .abc import MixinMeta
 from .blocks import ContextVariableBlock, ConverterBlock
@@ -52,7 +54,7 @@ from .converters import (
 from .doc_parser import SphinxObjectFileReader, parse_object_inv
 from .errors import TagFeedbackError
 from .objects import Tag
-from .utils import get_menu
+from .utils import chunks, get_menu
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
@@ -403,6 +405,31 @@ class Commands(MixinMeta):
             await self.doc_fetch()
         return {key: value for key, value in self.docs.items() if keyword in key.lower()}
 
+    async def show_tag_usage(self, ctx: commands.Context, guild: discord.Guild = None):
+        tags = self.get_unique_tags(guild)
+        if not tags:
+            message = "This server has no tags" if guild else "There are no global tags."
+            return await ctx.send(message)
+        counter = Counter({tag.name: tag.uses for tag in tags})
+        e = discord.Embed(title="Tag Stats", color=await ctx.embed_color())
+        embeds = []
+        for usage_data in chunks(counter.most_common(), 10):
+            usage_chart = box(tabulate(usage_data, headers=("Tag", "Uses")), "prolog")
+            embed = e.copy()
+            embed.description = usage_chart
+            embeds.append(embed)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+
+    @tag.command("usage", aliases=["stats"])
+    async def tag_usage(self, ctx: commands.Context):
+        """
+        See tag usage stats.
+
+        **Example:**
+        `[p]tag usage`
+        """
+        await self.show_tag_usage(ctx, ctx.guild)
+
     @tag.command("docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
         """
@@ -590,6 +617,11 @@ class Commands(MixinMeta):
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
         await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+
+    @tag_global.command("usage", aliases=["stats"])
+    @copy_doc(tag_usage)
+    async def tag_global_usage(self, ctx: commands.Context):
+        await self.show_tag_usage(ctx)
 
     @commands.is_owner()
     @commands.command()
