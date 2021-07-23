@@ -49,6 +49,7 @@ async def validate_tagscriptengine(bot: Red, tse_version: str, *, reloaded: bool
         await bot.send_to_owners(message)
         raise CogLoadError(message)
 
+
 def chunks(l, n):
     """
     Yield successive n-sized chunks from l.
