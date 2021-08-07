@@ -256,8 +256,10 @@ class Processor(MixinMeta):
         overriden_command.requires = requires
 
         if all_commands := getattr(overriden_command, "all_commands", None):
+            all_commands = all_commands.copy()
             for name, child in all_commands.copy().items():
                 all_commands[name] = cls.handle_overrides(child, overrides)
+            overridden_command.all_commands = all_commands
         return overriden_command
 
     async def validate_checks(self, ctx: commands.Context, actions: dict):
