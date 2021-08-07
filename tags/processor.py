@@ -259,7 +259,7 @@ class Processor(MixinMeta):
             all_commands = all_commands.copy()
             for name, child in all_commands.copy().items():
                 all_commands[name] = cls.handle_overrides(child, overrides)
-            overridden_command.all_commands = all_commands
+            overriden_command.all_commands = all_commands
         return overriden_command
 
     async def validate_checks(self, ctx: commands.Context, actions: dict):
