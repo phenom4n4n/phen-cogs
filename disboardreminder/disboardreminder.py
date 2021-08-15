@@ -409,7 +409,7 @@ class DisboardReminder(commands.Cog):
         if not message.embeds:
             return
         embed = message.embeds[0]
-        if "Bump done" in embed.description:
+        if ":thumbsup:" in embed.description:
             return embed
 
     async def respond_to_bump(
