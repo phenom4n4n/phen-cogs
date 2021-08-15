@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import asyncio
+import logging
 from typing import Dict, Optional, Union
 
 import aiohttp
@@ -30,12 +31,14 @@ import discord
 from redbot.core import Config, commands
 from redbot.core.utils.chat_formatting import humanize_list, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
-from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
+from redbot.core.utils.predicates import ReactionPredicate
 
 from .converters import WebhookLinkConverter
 from .errors import InvalidWebhook, WebhookNotMatched
 from .session import Session
 from .utils import USER_MENTIONS, WEBHOOK_RE, FakeResponse, _monkeypatch_send
+
+log = logging.getLogger("red.phenom4n4n.webhook")
 
 
 class Webhook(commands.Cog):
@@ -422,35 +425,40 @@ class Webhook(commands.Cog):
                 pass
             raise InvalidWebhook("You need to provide a valid webhook link.") from exc
 
+    async def webhook_check(self, webhook: discord.Webhook) -> bool:
+        return webhook.token
+
     async def get_webhook(
         self,
         *,
         channel: discord.TextChannel = None,
-        me: discord.Member = None,
+        me: discord.Member = None,  # kept to avoid breaking changes but not used
         author: discord.Member = None,
         reason: str = None,
         ctx: commands.Context = None,
     ) -> discord.Webhook:
         if ctx:
             channel = channel or ctx.channel
-            me = me or ctx.me
+            # me = me or ctx.me
             author = author or ctx.author
             reason = (reason or f"For the {ctx.command.qualified_name} command",)
 
         if webhook := self.channel_cache.get(channel.id):
             return webhook
-        if me and not channel.permissions_for(me).manage_webhooks:
+        me = channel.guild.me
+        if not channel.permissions_for(me).manage_webhooks:
             raise discord.Forbidden(
                 FakeResponse(),
                 f"I need permissions to `manage_webhooks` in #{channel}.",
             )
         chan_hooks = await channel.webhooks()
-        webhook_list = [w for w in chan_hooks if w.type == discord.WebhookType.incoming]
+        webhook_list = [w for w in chan_hooks if await self.webhook_check(w)]
         if webhook_list:
             webhook = webhook_list[0]
         else:
             if len(chan_hooks) == 10:
-                # await chan_hooks[-1].delete()
+                # delete_hook = chan_hooks[-1]
+                # await delete_hook.delete()
                 return  # can't delete follower type webhooks
             creation_reason = (
                 f"Webhook creation requested by {author} ({author.id})" if author else ""
@@ -462,6 +470,8 @@ class Webhook(commands.Cog):
                 reason=creation_reason,
                 avatar=await me.avatar_url.read(),
             )
+        if not webhook.token:
+            raise RuntimeError(f"returned webhook {webhook} has no token")
         self.channel_cache[channel.id] = webhook
         return webhook
 
@@ -482,13 +492,21 @@ class Webhook(commands.Cog):
         """
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
-        for _ in range(5):
+        for index in range(5):
             webhook = await self.get_webhook(
                 channel=channel, me=me, author=author, reason=reason, ctx=ctx
             )
             if not webhook:
+                log.debug("webhook not found for %r", channel)
                 return
             try:
                 return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
             except (discord.InvalidArgument, discord.NotFound):
                 del self.channel_cache[channel.id]
+                if index >= 5:
+                    log.debug(
+                        "reached max retries when sending webhook %r type=%r",
+                        webhook,
+                        webhook.type,
+                    )
+                    raise

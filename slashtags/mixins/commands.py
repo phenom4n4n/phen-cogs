@@ -1,46 +1,39 @@
 import asyncio
+import logging
 import re
 import types
+from collections import Counter
 from copy import copy
 from typing import Dict, List, Union
 
 import discord
 from redbot.core import commands
-from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
+from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
 from redbot.core.utils.predicates import MessagePredicate
+from tabulate import tabulate
 
-from .abc import MixinMeta
-from .converters import (
+from ..abc import MixinMeta
+from ..converters import (
     GlobalTagConverter,
     GuildTagConverter,
+    PastebinConverter,
     TagConverter,
     TagName,
     TagScriptConverter,
 )
-from .errors import (
-    BlacklistCheckFailure,
-    MissingTagPermissions,
-    RequireCheckFailure,
-    WhitelistCheckFailure,
-)
-from .http import SlashHTTP
-from .models import SlashOptionType
-from .objects import (
-    FakeMessage,
-    SlashCommand,
-    SlashContext,
-    SlashOption,
-    SlashOptionChoice,
-    SlashTag,
-)
-from .utils import ARGUMENT_NAME_DESCRIPTION, dev_check
+from ..http import SlashOptionType
+from ..objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
+from ..testing.button_menus import menu as button_menu
+from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
 
 CHOICE_RE = re.compile(r".{1,100}:.{1,100}")
 
 CHOICE_LIMIT = 25
+
+log = logging.getLogger("red.phenom4n4n.slashtags.commands")
 
 
 def _sub(match: re.Match) -> str:
@@ -126,13 +119,20 @@ class Commands(MixinMeta):
         )
         try:
             await command.register()
-        except discord.Forbidden:
+        except discord.Forbidden as error:
+            log.error(
+                f"Failed to create command {command!r} on guild {ctx.guild!r}", exc_info=error
+            )
             text = (
                 "Looks like I don't have permission to add Slash Commands here. Reinvite me "
                 "with this invite link and try again: <https://discordapp.com/oauth2/authorize"
                 f"?client_id={self.bot.user.id}&scope=bot%20applications.commands>"
             )
             return await ctx.send(text)
+        except Exception as error:
+            log.error(f"Failed to create command {command!r} on guild {ctx.guild!r}")
+            # exc info unneeded since error handler should print it, however info on the command options is needed
+            raise
 
         tag = SlashTag(
             self,
@@ -288,6 +288,20 @@ class Commands(MixinMeta):
         )
 
     @commands.mod_or_permissions(manage_guild=True)
+    @slashtag.command("pastebin", aliases=["++"])
+    async def slashtag_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(check_global=False),
+        *,
+        link: PastebinConverter,
+    ):
+        """
+        Add a slash tag with a Pastebin link.
+        """
+        await self.create_slash_tag(ctx, tag_name, link, is_global=False)
+
+    @commands.mod_or_permissions(manage_guild=True)
     @slashtag.group("edit", aliases=["e"], invoke_without_command=True)
     async def slashtag_edit(
         self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
@@ -307,7 +321,7 @@ class Commands(MixinMeta):
         self, ctx: commands.Context, tag: GuildTagConverter, name: TagName(check_global=False)
     ):
         """Edit a slash tag's name."""
-        await ctx.send(tag.edit_name(name))
+        await ctx.send(await tag.edit_name(name))
 
     @slashtag_edit.command("description")
     async def slashtag_edit_description(
@@ -365,7 +379,9 @@ class Commands(MixinMeta):
         *,
         is_global: bool,
     ):
-        description = [self.format_tagscript(tag) for tag in tags.values()]
+        description = [
+            self.format_tagscript(tag) for tag in sorted(tags.values(), key=lambda t: t.name)
+        ]
         description = "\n".join(description)
 
         e = discord.Embed(color=await ctx.embed_color())
@@ -383,7 +399,8 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {len(tags)} {slash_tags}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        # await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await button_menu(ctx, embeds)
 
     @slashtag.command("list")
     async def slashtag_list(self, ctx: commands.Context):
@@ -392,6 +409,33 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send("There are no slash tags on this server.")
         await self.view_slash_tags(ctx, tags, is_global=False)
+
+    async def show_slash_tag_usage(self, ctx: commands.Context, guild: discord.Guild = None):
+        tags = self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
+        if not tags:
+            message = (
+                "This server has no slash tags." if guild else "There are no global slash tags."
+            )
+            return await ctx.send(message)
+        counter = Counter({tag.name: tag.uses for tag in tags.copy().values()})
+        e = discord.Embed(title="Slash Tag Stats", color=await ctx.embed_color())
+        embeds = []
+        for usage_data in chunks(counter.most_common(), 10):
+            usage_chart = box(tabulate(usage_data, headers=("Tag", "Uses")), "prolog")
+            embed = e.copy()
+            embed.description = usage_chart
+            embeds.append(embed)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+
+    @slashtag.command("usage", aliases=["stats"])
+    async def slashtag_usage(self, ctx: commands.Context):
+        """
+        See this slash tag usage stats.
+
+        **Example:**
+        `[p]slashtag usage`
+        """
+        await self.show_slash_tag_usage(ctx, ctx.guild)
 
     @commands.is_owner()
     @slashtag.command("clear", hidden=True)
@@ -433,6 +477,17 @@ class Commands(MixinMeta):
     ):
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True)
 
+    @slashtag_global.command("pastebin", aliases=["++"])
+    @copy_doc(slashtag_pastebin)
+    async def slashtag_global_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(check_global=False),
+        *,
+        link: PastebinConverter,
+    ):
+        await self.create_slash_tag(ctx, tag_name, link, is_global=True)
+
     @slashtag_global.group("edit", aliases=["e"], invoke_without_command=True)
     @copy_doc(slashtag_edit)
     async def slashtag_global_edit(
@@ -452,7 +507,7 @@ class Commands(MixinMeta):
     async def slashtag_global_edit_name(
         self, ctx: commands.Context, tag: GlobalTagConverter, name: TagName(global_priority=True)
     ):
-        await ctx.send(tag.edit_name(name))
+        await ctx.send(await tag.edit_name(name))
 
     @slashtag_global_edit.command("description")
     @copy_doc(slashtag_edit_description)
@@ -492,6 +547,11 @@ class Commands(MixinMeta):
             return await ctx.send("There are no global slash tags.")
         await self.view_slash_tags(ctx, tags, is_global=True)
 
+    @slashtag_global.command("usage", aliases=["stats"])
+    @copy_doc(slashtag_usage)
+    async def slashtag_global_usage(self, ctx: commands.Context):
+        await self.show_slash_tag_usage(ctx)
+
     @commands.is_owner()
     @commands.group(aliases=["slashset"])
     async def slashtagset(self, ctx: commands.Context):
@@ -501,9 +561,11 @@ class Commands(MixinMeta):
     async def slashtagset_settings(self, ctx: commands.Context):
         """View SlashTags settings."""
         eval_command = f"✅ (**{self.eval_command}**)" if self.eval_command else "❎"
+        testing_enabled = f"✅" if self.testing_enabled else "❎"
         description = [
             f"Application ID: **{self.application_id}**",
             f"Eval command: {eval_command}",
+            f"Test cog loaded: {testing_enabled}",
         ]
         embed = discord.Embed(
             color=0xC9C9C9, title="SlashTags Settings", description="\n".join(description)
@@ -551,3 +613,24 @@ class Commands(MixinMeta):
         await self.config.eval_command.clear()
         self.eval_command = None
         await ctx.send("`/eval` has been deleted.")
+
+    @slashtagset.command("testing")
+    async def slashtagset_testing(self, ctx: commands.Context, true_or_false: bool = None):
+        """
+        Load or unload the SlashTag interaction development test cog.
+        """
+        target_state = (
+            true_or_false if true_or_false is not None else not await self.config.testing_enabled()
+        )
+        if target_state is self.testing_enabled:
+            loaded = "loaded" if target_state else "unloaded"
+            return await ctx.send(f"The SlashTag interaction testing cog is already {loaded}.")
+
+        await self.config.testing_enabled.set(target_state)
+        if target_state:
+            loaded = "Loaded"
+            self.add_test_cog()
+        else:
+            loaded = "Unloaded"
+            self.remove_test_cog()
+        await ctx.send(f"{loaded} the SlashTag interaction testing cog.")

@@ -28,6 +28,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Coroutine, Dict, Optional
 
+import aiohttp
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
@@ -35,22 +36,12 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list
-from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
 
 from .abc import CompositeMetaClass
-from .commands import Commands
-from .http import SlashHTTP
-from .models import (
-    Button,
-    Component,
-    InteractionButton,
-    InteractionCommand,
-    InteractionResponse,
-    SlashOptionType,
-)
-from .objects import FakeMessage, SlashCommand, SlashContext, SlashOption, SlashTag
-from .processor import Processor
-from .utils import dev_check
+from .errors import MissingTagPermissions
+from .http import InteractionButton, InteractionCommand, SlashHTTP
+from .mixins import Commands, Processor
+from .objects import SlashCommand, SlashContext, SlashTag
 
 log = logging.getLogger("red.phenom4n4n.slashtags")
 
@@ -62,8 +53,8 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.4.1"
-    __author__ = ["PhenoM4n4n"]
+    __version__ = "0.4.5"
+    __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -87,16 +78,21 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             force_registration=True,
         )
         default_guild = {"tags": {}}
-        default_global = {"application_id": None, "eval_command": None, "tags": {}}
+        default_global = {
+            "application_id": None,
+            "eval_command": None,
+            "tags": {},
+            "testing_enabled": False,
+        }
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
         self.command_cache: Dict[int, SlashCommand] = {}
-        self.button_cache = {}
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache: Dict[int, SlashTag] = {}
 
         self.load_task = self.create_task(self.initialize_task())
+        self.session = aiohttp.ClientSession()
         bot.add_dev_env_value("st", lambda ctx: self)
 
         super().__init__()
@@ -116,8 +112,17 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         return task
 
     def cog_unload(self):
+        try:
+            self.__unload()
+        except Exception as error:
+            log.exception("An error occurred while unloading the cog.", exc_info=error)
+
+    def __unload(self):
         self.bot.remove_dev_env_value("st")
+        if self.testing_enabled:
+            self.remove_test_cog()
         self.load_task.cancel()
+        asyncio.create_task(self.session.close())
 
     async def cog_before_invoke(self, ctx: commands.Context) -> bool:
         if not self.bot.get_cog("SlashInjector"):
@@ -132,8 +137,12 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         if app_id := data["application_id"]:
             self.application_id = app_id
 
+        if data["testing_enabled"]:
+            self.add_test_cog()
+
     async def initialize_task(self):
-        await self.cache_tags()
+        all_data = await self.config.all()
+        await self.cache_tags(all_data)
         if self.application_id is None:
             await self.set_app_id()
 
@@ -143,7 +152,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         await self.config.application_id.set(app_id)
         self.application_id = app_id
 
-    async def cache_tags(self):
+    async def cache_tags(self, global_data: dict = None):
         guild_cached = 0
         guilds_data = await self.config.all_guilds()
         async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
@@ -153,7 +162,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
                 guild_cached += 1
 
         cached = 0
-        all_data = await self.config.all()
+        all_data = global_data or await self.config.all()
         for global_tag_data in all_data["tags"].values():
             tag = SlashTag.from_dict(self, global_tag_data)
             tag.add_to_cache()
@@ -169,7 +178,11 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         is_owner = await self.bot.is_owner(ctx.author)
         if is_owner:
             return True
-        # TODO block validation
+        author_perms = ctx.channel.permissions_for(ctx.author)
+        if output.actions.get("overrides") and not author_perms.manage_guild:
+            raise MissingTagPermissions(
+                "You must have **Manage Server** permissions to use the `override` block."
+            )
         return True
 
     def get_tag(
@@ -251,25 +264,14 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         except Exception as e:
             raise commands.CommandInvokeError(e) from e
 
-    @commands.Cog.listener()
-    async def on_button_interaction(self, button: InteractionButton):
-        cached_button = self.button_cache.get(button.custom_id)
-        await button.send(
-            f"Congrats for pressing button {cached_button.label if cached_button else button.custom_id}!"
-        )
+    @property
+    def testing_enabled(self):
+        return bool(self.bot.get_cog("SlashTagTesting"))
 
-    @commands.is_owner()
-    @commands.command(hidden=True)
-    async def buttontest(
-        self, ctx: commands.Context, style: Optional[int] = 1, label: str = "Button!"
-    ):
-        """Test buttons."""
-        r = discord.http.Route(
-            "POST", "/channels/{channel_id}/messages", channel_id=ctx.channel.id
-        )
-        data = {"content": "Here's your button."}
-        button = Button(style=style, label=label, custom_id=ctx.message.id)
-        self.button_cache[button.custom_id] = button
-        components = Component(components=[button])
-        data["components"] = [components.to_dict()]
-        await self.bot._connection.http.request(r, json=data)
+    def add_test_cog(self):
+        from .testing.test_cog import SlashTagTesting
+
+        self.bot.add_cog(SlashTagTesting(self.bot))
+
+    def remove_test_cog(self):
+        self.bot.remove_cog("SlashTagTesting")

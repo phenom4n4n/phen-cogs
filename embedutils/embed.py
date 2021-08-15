@@ -28,9 +28,8 @@ from typing import Optional, Union
 
 import discord
 from redbot.core import Config, commands
-from redbot.core.utils import menus
-from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
+from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
+from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu
 
 from .commands import help_formatted_group
 from .converters import (

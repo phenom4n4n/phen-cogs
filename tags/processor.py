@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from copy import copy
 from typing import Dict, List, Optional
 
@@ -8,13 +9,32 @@ from redbot.core import commands
 from redbot.core.utils.menus import start_adding_reactions
 
 from .abc import MixinMeta
-from .blocks import DeleteBlock, ReactBlock, ReactUBlock, SilentBlock
+from .blocks import DeleteBlock, ReactBlock, SilentBlock
 from .errors import BlacklistCheckFailure, RequireCheckFailure, WhitelistCheckFailure
 from .objects import SilentContext, Tag
+
+log = logging.getLogger("red.phenom4n4n.tags.processor")
 
 
 class Processor(MixinMeta):
     def __init__(self):
+        self.role_converter = commands.RoleConverter()
+        self.channel_converter = commands.TextChannelConverter()
+        self.member_converter = commands.MemberConverter()
+        self.emoji_converter = commands.EmojiConverter()
+
+        self.bot.add_dev_env_value("tse", lambda ctx: tse)
+        super().__init__()
+
+    def cog_unload(self):
+        self.bot.remove_dev_env_value("tse")
+        super().cog_unload()
+
+    async def initialize_interpreter(self, data: dict = None):
+        if not data:
+            data = await self.config.all()
+        self.dot_parameter = data["dot_parameter"]
+
         tse_blocks = [
             tse.MathBlock(),
             tse.RandomBlock(),
@@ -39,25 +59,18 @@ class Processor(MixinMeta):
             tse.CommandBlock(),
             tse.OverrideBlock(),
             tse.RedirectBlock(),
+            tse.CooldownBlock(),
         ]
         tag_blocks = [
             DeleteBlock(),
             SilentBlock(),
             ReactBlock(),
-            ReactUBlock(),
         ]
-        self.engine = tse.Interpreter(tse_blocks + tag_blocks)
-        self.role_converter = commands.RoleConverter()
-        self.channel_converter = commands.TextChannelConverter()
-        self.member_converter = commands.MemberConverter()
-        self.emoji_converter = commands.EmojiConverter()
-
-        self.bot.add_dev_env_value("tse", lambda ctx: tse)
-        super().__init__()
-
-    def cog_unload(self):
-        self.bot.remove_dev_env_value("tse")
-        super().cog_unload()
+        interpreter = tse.AsyncInterpreter if data["async_enabled"] else tse.Interpreter
+        self.async_enabled = data["async_enabled"]
+        self.engine = interpreter(tse_blocks + tag_blocks)
+        for block in await self.compile_blocks(data):
+            self.engine.blocks.append(block())
 
     @commands.Cog.listener()
     async def on_command_error(
@@ -104,12 +117,13 @@ class Processor(MixinMeta):
         return seed
 
     async def process_tag(
-        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = {}, **kwargs
+        self, ctx: commands.Context, tag: Tag, *, seed_variables: dict = None, **kwargs
     ) -> str:
+        seed_variables = {} if seed_variables is None else seed_variables
         seed = self.get_seed_from_context(ctx)
         seed_variables.update(seed)
 
-        output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
+        output = await tag.run(seed_variables, **kwargs)
         await tag.update_config()
         dispatch_prefix = "tag" if tag.guild_id else "g-tag"
         self.bot.dispatch("commandstats_action_v2", f"{dispatch_prefix}:{tag}", ctx.guild)
@@ -212,31 +226,41 @@ class Processor(MixinMeta):
     async def process_command(
         self, command_message: discord.Message, silent: bool, overrides: dict
     ):
-        ctx = await self.bot.get_context(
-            command_message, cls=SilentContext if silent else commands.Context
-        )
+        command_cls = SilentContext if silent else commands.Context
+        ctx = await self.bot.get_context(command_message, cls=command_cls)
+        if not ctx.valid:
+            return
+        if overrides:
+            ctx.command = self.handle_overrides(ctx.command, overrides)
+        await self.bot.invoke(ctx)
 
-        if ctx.valid:
-            if overrides:
-                command = copy(ctx.command)
-                # command = commands.Command()
-                # command = ctx.command.copy() # does not work as it makes ctx a regular argument
-                requires: commands.Requires = copy(command.requires)
-                priv_level = requires.privilege_level
-                if priv_level not in (
-                    commands.PrivilegeLevel.NONE,
-                    commands.PrivilegeLevel.BOT_OWNER,
-                    commands.PrivilegeLevel.GUILD_OWNER,
-                ):
-                    if overrides["admin"] and priv_level is commands.PrivilegeLevel.ADMIN:
-                        requires.privilege_level = commands.PrivilegeLevel.NONE
-                    elif overrides["mod"] and priv_level is commands.PrivilegeLevel.MOD:
-                        requires.privilege_level = commands.PrivilegeLevel.NONE
-                if overrides["permissions"] and requires.user_perms:
-                    requires.user_perms = discord.Permissions.none()
-                command.requires = requires
-                ctx.command = command
-            await self.bot.invoke(ctx)
+    @classmethod
+    def handle_overrides(cls, command: commands.Command, overrides: dict) -> commands.Command:
+        overriden_command = copy(command)
+        # overriden_command = command.copy() # does not work as it makes ctx a regular argument
+        # overriden_command.cog = command.cog
+        requires: commands.Requires = copy(command.requires)
+        priv_level = requires.privilege_level
+        if priv_level not in (
+            commands.PrivilegeLevel.NONE,
+            commands.PrivilegeLevel.BOT_OWNER,
+            commands.PrivilegeLevel.GUILD_OWNER,
+        ):
+            if overrides["admin"] and priv_level is commands.PrivilegeLevel.ADMIN:
+                requires.privilege_level = commands.PrivilegeLevel.NONE
+            elif overrides["mod"] and priv_level is commands.PrivilegeLevel.MOD:
+                requires.privilege_level = commands.PrivilegeLevel.NONE
+
+        if overrides["permissions"] and requires.user_perms:
+            requires.user_perms = discord.Permissions.none()
+        overriden_command.requires = requires
+
+        if all_commands := getattr(overriden_command, "all_commands", None):
+            all_commands = all_commands.copy()
+            for name, child in all_commands.copy().items():
+                all_commands[name] = cls.handle_overrides(child, overrides)
+            overriden_command.all_commands = all_commands
+        return overriden_command
 
     async def validate_checks(self, ctx: commands.Context, actions: dict):
         to_gather = []

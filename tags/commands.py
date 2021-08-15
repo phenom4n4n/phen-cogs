@@ -27,39 +27,41 @@ import logging
 import re
 import time
 import types
+from collections import Counter
 from typing import Dict, List, Optional, Set, Union
 from urllib.parse import quote_plus
 
-import bs4
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.bot import Red
-from redbot.core.commands import PrivilegeLevel, Requires
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
+from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
 from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
+from tabulate import tabulate
 
 from .abc import MixinMeta
 from .blocks import ContextVariableBlock, ConverterBlock
 from .converters import (
     GlobalTagConverter,
     GuildTagConverter,
+    PastebinConverter,
     TagConverter,
     TagName,
     TagScriptConverter,
 )
+from .doc_parser import SphinxObjectFileReader, parse_object_inv
 from .errors import TagFeedbackError
 from .objects import Tag
+from .utils import chunks, get_menu
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\btag'?s?\b")
 
-DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest/"
+DOCS_URL = "https://phen-cogs.readthedocs.io/en/latest"
 
 log = logging.getLogger("red.phenom4n4n.tags.commands")
 
@@ -169,37 +171,7 @@ class Commands(MixinMeta):
             e.description = page
             e.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(e)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
-
-    @commands.guild_only()
-    @commands.group(aliases=["customcom"])
-    async def tag(self, ctx: commands.Context):
-        """
-        Tag management with TagScript.
-
-        These commands use TagScriptEngine.
-        Read the [TagScript documentation](https://phen-cogs.readthedocs.io/en/latest/) to learn how to use TagScript blocks.
-        """
-
-    @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="add", aliases=["create", "+"])
-    async def tag_add(
-        self,
-        ctx: commands.Context,
-        tag_name: TagName(allow_named_tags=True),
-        *,
-        tagscript: TagScriptConverter,
-    ):
-        """
-        Add a tag with TagScript.
-
-        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/blocks.html#usage)
-
-        **Example:**
-        `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
-        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.`
-        """
-        await self.create_tag(ctx, tag_name, tagscript)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     def validate_tag_count(self, guild: discord.Guild):
         tag_count = len(self.get_unique_tags(guild))
@@ -208,11 +180,10 @@ class Commands(MixinMeta):
                 raise TagFeedbackError(
                     f"This server has reached the limit of **{TAG_GUILD_LIMIT}** tags."
                 )
-        else:
-            if tag_count >= TAG_GLOBAL_LIMIT:
-                raise TagFeedbackError(
-                    f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags."
-                )
+        elif tag_count >= TAG_GLOBAL_LIMIT:
+            raise TagFeedbackError(
+                f"You have reached the limit of **{TAG_GLOBAL_LIMIT}** global tags."
+            )
 
     async def create_tag(
         self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False
@@ -248,8 +219,55 @@ class Commands(MixinMeta):
         tag = Tag(self, tag_name, tagscript, **kwargs)
         await ctx.send(await tag.initialize())
 
+    @commands.guild_only()
+    @commands.group(aliases=["customcom", "cc", "alias"])
+    async def tag(self, ctx: commands.Context):
+        """
+        Tag management with TagScript.
+
+        These commands use TagScriptEngine.
+        Read the [TagScript documentation](https://phen-cogs.readthedocs.io/en/latest/) to learn how to use TagScript blocks.
+        """
+
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="alias")
+    @tag.command("add", aliases=["create", "+"])
+    async def tag_add(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(allow_named_tags=True),
+        *,
+        tagscript: TagScriptConverter,
+    ):
+        """
+        Add a tag with TagScript.
+
+        [Tag usage guide](https://phen-cogs.readthedocs.io/en/latest/tags/blocks.html#usage)
+
+        **Example:**
+        `[p]tag add lawsofmotion {embed(title):Newton's Laws of motion}
+        {embed(description): According to all known laws of aviation, there is no way a bee should be able to fly.}`
+        """
+        await self.create_tag(ctx, tag_name, tagscript)
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @tag.command("pastebin", aliases=["++"])
+    async def tag_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(allow_named_tags=True),
+        *,
+        link: PastebinConverter,
+    ):
+        """
+        Add a tag with a Pastebin link.
+
+        **Example:**
+        `[p]tag pastebin starwarsopeningcrawl https://pastebin.com/CKjn6uYv`
+        """
+        await self.create_tag(ctx, tag_name, link)
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @tag.command("alias")
     async def tag_alias(self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName):
         """
                 Add an alias for a tag.
@@ -263,7 +281,7 @@ class Commands(MixinMeta):
         await ctx.send(await tag.add_alias(alias))
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="unalias")
+    @tag.command("unalias")
     async def tag_unalias(
         self, ctx: commands.Context, tag: GuildTagConverter, alias: TagName(allow_named_tags=True)
     ):
@@ -279,7 +297,7 @@ class Commands(MixinMeta):
         await ctx.send(await tag.remove_alias(alias))
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="edit", aliases=["e"])
+    @tag.command("edit", aliases=["e"])
     async def tag_edit(
         self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
     ):
@@ -295,7 +313,20 @@ class Commands(MixinMeta):
         await ctx.send(await tag.edit_tagscript(tagscript))
 
     @commands.mod_or_permissions(manage_guild=True)
-    @tag.command(name="remove", aliases=["delete", "-"])
+    @tag.command("append")
+    async def tag_append(
+        self, ctx: commands.Context, tag: GuildTagConverter, *, tagscript: TagScriptConverter
+    ):
+        """
+        Add text to a tag's TagScript.
+
+        **Example:**
+        `[p]tag append rickroll Never gonna let you down!`
+        """
+        await ctx.send(await tag.append_tagscript(tagscript))
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @tag.command("remove", aliases=["delete", "-"])
     async def tag_remove(self, ctx: commands.Context, tag: GuildTagConverter):
         """
         Permanently delete a tag.
@@ -307,7 +338,7 @@ class Commands(MixinMeta):
         """
         await ctx.send(await tag.delete())
 
-    @tag.command(name="info")
+    @tag.command("info")
     async def tag_info(self, ctx: commands.Context, tag: TagConverter):
         """
         Show information about a tag.
@@ -320,7 +351,7 @@ class Commands(MixinMeta):
         """
         await tag.send_info(ctx)
 
-    @tag.command(name="raw")
+    @tag.command("raw")
     async def tag_raw(self, ctx: commands.Context, tag: GuildTagConverter):
         """
         Get a tag's raw content.
@@ -332,7 +363,7 @@ class Commands(MixinMeta):
         """
         await tag.send_raw_tagscript(ctx)
 
-    @tag.command(name="list")
+    @tag.command("list")
     async def tag_list(self, ctx: commands.Context):
         """
         View all stored tags on this server.
@@ -361,22 +392,45 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     async def doc_fetch(self):
-        # from https://github.com/eunwoo1104/slash-bot/blob/8162fd5a0b6ac6c372486438e498a3140b5970bb/modules/sphinx_parser.py#L5
-        async with self.session.get(f"{DOCS_URL}genindex.html") as response:
-            text = await response.read()
-        soup = bs4.BeautifulSoup(text, "html.parser")
-        self.docs = soup.findAll("a")
+        async with self.session.get(f"{DOCS_URL}/objects.inv") as response:
+            inv = SphinxObjectFileReader(await response.read())
+        self.docs = parse_object_inv(inv, DOCS_URL)
 
-    async def doc_search(self, keyword: str) -> List[bs4.Tag]:
+    async def doc_search(self, keyword: str) -> Dict[str, str]:
         keyword = keyword.lower()
         if not self.docs:
             await self.doc_fetch()
-        return [x for x in self.docs if keyword in str(x).lower()]
+        return {key: value for key, value in self.docs.items() if keyword in key.lower()}
 
-    @tag.command(name="docs")
+    async def show_tag_usage(self, ctx: commands.Context, guild: discord.Guild = None):
+        tags = self.get_unique_tags(guild)
+        if not tags:
+            message = "This server has no tags" if guild else "There are no global tags."
+            return await ctx.send(message)
+        counter = Counter({tag.name: tag.uses for tag in tags})
+        e = discord.Embed(title="Tag Stats", color=await ctx.embed_color())
+        embeds = []
+        for usage_data in chunks(counter.most_common(), 10):
+            usage_chart = box(tabulate(usage_data, headers=("Tag", "Uses")), "prolog")
+            embed = e.copy()
+            embed.description = usage_chart
+            embeds.append(embed)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+
+    @tag.command("usage", aliases=["stats"])
+    async def tag_usage(self, ctx: commands.Context):
+        """
+        See tag usage stats.
+
+        **Example:**
+        `[p]tag usage`
+        """
+        await self.show_tag_usage(ctx, ctx.guild)
+
+    @tag.command("docs")
     async def tag_docs(self, ctx: commands.Context, keyword: str = None):
         """
         Search the TagScript documentation for a block.
@@ -389,12 +443,11 @@ class Commands(MixinMeta):
         await ctx.trigger_typing()
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
-            doc_tags = await self.doc_search(keyword)
+            matched_labels = await self.doc_search(keyword)
             description = [f"Search for: `{keyword}`"]
-            for doc_tag in doc_tags:
-                href = doc_tag.get("href")
-                description.append(f"[`{doc_tag.text}`]({DOCS_URL}{href})")
-            url = f"{DOCS_URL}search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
+            for name, url in matched_labels.items():
+                description.append(f"[`{name}`]({url})")
+            url = f"{DOCS_URL}/search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
             e.url = url
             embeds = []
             description = "\n".join(description)
@@ -402,13 +455,13 @@ class Commands(MixinMeta):
                 embed = e.copy()
                 embed.description = page
                 embeds.append(embed)
-            await menu(ctx, embeds, DEFAULT_CONTROLS)
+            await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
         else:
             e.url = DOCS_URL
             await ctx.send(embed=e)
 
     @commands.is_owner()
-    @tag.command(name="run", aliases=["execute"])
+    @tag.command("run", aliases=["execute"])
     async def tag_run(self, ctx: commands.Context, *, tagscript: str):
         """
         Execute TagScript without storing.
@@ -420,7 +473,11 @@ class Commands(MixinMeta):
         """
         start = time.monotonic()
         seed = self.get_seed_from_context(ctx)
-        output = self.engine.process(tagscript, seed_variables=seed)
+        output = self.engine.process(
+            tagscript, seed_variables=seed, dot_parameter=self.dot_parameter
+        )
+        if self.async_enabled:
+            output = await output
         end = time.monotonic()
         actions = output.actions
 
@@ -446,7 +503,7 @@ class Commands(MixinMeta):
         await ctx.send(embed=e)
 
     @commands.is_owner()
-    @tag.command(name="process")
+    @tag.command("process")
     async def tag_process(self, ctx: commands.Context, *, tagscript: str):
         """
         Process a temporary Tag without storing.
@@ -468,12 +525,12 @@ class Commands(MixinMeta):
         await ctx.tick()
 
     @commands.is_owner()
-    @tag.group(name="global")
+    @tag.group("global")
     @copy_doc(tag)
     async def tag_global(self, ctx: commands.Context):
         pass
 
-    @tag_global.command(name="add", aliases=["create", "+"])
+    @tag_global.command("add", aliases=["create", "+"])
     @copy_doc(tag_add)
     async def tag_global_add(
         self,
@@ -484,21 +541,32 @@ class Commands(MixinMeta):
     ):
         await self.create_tag(ctx, tag_name, tagscript, global_tag=True)
 
-    @tag_global.command(name="alias")
+    @tag_global.command("pastebin", aliases=["++"])
+    @copy_doc(tag_pastebin)
+    async def tag_global_pastebin(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(global_priority=True),
+        *,
+        link: PastebinConverter,
+    ):
+        await self.create_tag(ctx, tag_name, link, global_tag=True)
+
+    @tag_global.command("alias")
     @copy_doc(tag_alias)
     async def tag_global_alias(
         self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName
     ):
         await ctx.send(await tag.add_alias(alias))
 
-    @tag_global.command(name="unalias")
+    @tag_global.command("unalias")
     @copy_doc(tag_unalias)
     async def tag_global_unalias(
         self, ctx: commands.Context, tag: GlobalTagConverter, alias: TagName(allow_named_tags=True)
     ):
         await ctx.send(await tag.remove_alias(alias))
 
-    @tag_global.command(name="edit", aliases=["e"])
+    @tag_global.command("edit", aliases=["e"])
     @copy_doc(tag_edit)
     async def tag_global_edit(
         self,
@@ -509,17 +577,24 @@ class Commands(MixinMeta):
     ):
         await ctx.send(await tag.edit_tagscript(tagscript))
 
-    @tag_global.command(name="remove", aliases=["delete", "-"])
+    @tag_global.command("append")
+    @copy_doc(tag_append)
+    async def tag_global_append(
+        self, ctx: commands.Context, tag: GlobalTagConverter, *, tagscript: TagScriptConverter
+    ):
+        await ctx.send(await tag.append_tagscript(tagscript))
+
+    @tag_global.command("remove", aliases=["delete", "-"])
     @copy_doc(tag_remove)
     async def tag_global_remove(self, ctx: commands.Context, tag: GlobalTagConverter):
         await ctx.send(await tag.delete())
 
-    @tag_global.command(name="raw")
+    @tag_global.command("raw")
     @copy_doc(tag_raw)
     async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
         await tag.send_raw_tagscript(ctx)
 
-    @tag_global.command(name="list")
+    @tag_global.command("list")
     @copy_doc(tag_list)
     async def tag_global_list(self, ctx: commands.Context):
         tags = self.get_unique_tags()
@@ -541,7 +616,12 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+
+    @tag_global.command("usage", aliases=["stats"])
+    @copy_doc(tag_usage)
+    async def tag_global_usage(self, ctx: commands.Context):
+        await self.show_tag_usage(ctx)
 
     @commands.is_owner()
     @commands.command()
@@ -610,8 +690,7 @@ class Commands(MixinMeta):
 
     def parse_cc_text(self, content: str) -> str:
         output = self.custom_command_engine.process(content)
-        tagscript = output.body
-        return tagscript
+        return output.body
 
     def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
         author_id = custom_command.get("author", {"id": None})["id"]
@@ -643,7 +722,7 @@ class Commands(MixinMeta):
         This action cannot be undone.
 
         **Example:**
-        `[p]migratealias`
+        `[p]migratecustomcom`
         """
         await ctx.send(f"Are you sure you want to migrate CustomCommands data to tags? (Y/n)")
         pred = MessagePredicate.yes_or_no(ctx)

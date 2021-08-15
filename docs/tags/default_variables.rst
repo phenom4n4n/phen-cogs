@@ -19,9 +19,9 @@ Args Block
 
 .. autoclass:: TagScriptEngine.StringAdapter
 
-    The ``{args}`` block represents the arguments passed after the tag name when invoking 
+    The ``{args}`` block represents the arguments passed after the tag name when invoking
     a tag. If no parameter is passed, it returns all the text after the invocation name.
-    If an index is passed, it will split the arguments into a list by the given splitter, 
+    If an index is passed, it will split the arguments into a list by the given splitter,
     and return the word at that index. The default splitter is a " ".
 
     **Usage:** ``{args([index]):[splitter]>}``
@@ -30,9 +30,9 @@ Args Block
 
     **Parameter:** index
 
-    **Examples:** 
+    **Examples:**
 
-    In the following examples, assume the tag's name is ``argstag`` and the message 
+    In the following examples, assume the tag's name is ``argstag`` and the message
     content is ``[p]argstag My dog is cute! Would you like to see a photo?``. ::
 
         {args}
@@ -79,8 +79,8 @@ Author Block
 Target Block
 ^^^^^^^^^^^^
 
-    The ``{target}`` block follows the same usage and has the same attributes as the 
-    :ref:`Author Block`, but it defaults to the mentioned user in the tag 
+    The ``{target}`` block follows the same usage and has the same attributes as the
+    :ref:`Author Block`, but it defaults to the mentioned user in the tag
     invocation message if any users are mentioned, or the tag author.
 
     **Usage:** ``{target}``

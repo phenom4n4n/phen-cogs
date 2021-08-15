@@ -26,7 +26,6 @@ import logging
 from typing import List
 
 import discord
-from redbot.core.bot import Red
 
 log = logging.getLogger("red.phenom4n4n.slashtags.http")
 
@@ -141,8 +140,9 @@ class SlashHTTP:
         tts: bool = False,
         allowed_mentions: discord.AllowedMentions = None,
         flags: int = None,
+        components: list = None,
     ):
-        payload = {"type": type}
+        payload = {"type": type.value}
 
         if embed is not None:
             embeds = [embed]
@@ -151,19 +151,26 @@ class SlashHTTP:
 
         data = {}
         if content:
-            data["content"] = content
+            data["content"] = str(content)
         if tts:
             data["tts"] = True
         if embeds:
             data["embeds"] = [e.to_dict() for e in embeds]
         if allowed_mentions:
-            data["allowed_mentions"] = allowed_mentions.to_dict()
+            data[
+                "allowed_mentions"
+            ] = (
+                allowed_mentions.to_dict()
+            )  # its 1:30 am but i should check later whether this is necessary
         if flags:
             data["flags"] = flags
         if embeds:
             data["embeds"] = [e.to_dict() for e in embeds]
         if flags:
             data["flags"] = flags
+        if components is not None:
+            data["components"] = [c.to_dict() for c in components]
+
         if data:
             data["allowed_mentions"] = allowed_mentions.to_dict()
             payload["data"] = data
@@ -188,16 +195,20 @@ class SlashHTTP:
     def edit_message(
         self,
         token: str,
-        message_id: int,
+        message_id: int = None,
         *,
         content: str = None,
         embed: discord.Embed = None,
         embeds: List[discord.Embed] = None,
         allowed_mentions: discord.AllowedMentions = None,
+        original: bool = False,
+        components: list = None,
     ):
+        url = "/webhooks/{application_id}/{token}/messages/"
+        url += "@original" if original else "{message_id}"
         route = Route(
             "PATCH",
-            "/webhooks/{application_id}/{token}/messages/{message_id}",
+            url,
             application_id=self.application_id,
             token=token,
             message_id=message_id,
@@ -207,9 +218,14 @@ class SlashHTTP:
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
 
-        payload = {"content": content}
+        payload = {}
+        if content:
+            payload["content"] = str(content)
         if embeds:
             payload["embeds"] = [e.to_dict() for e in embeds]
+        if components is not None:
+            payload["components"] = [c.to_dict() for c in components]
+
         payload["allowed_mentions"] = allowed_mentions.to_dict()
 
         return self.request(route, json=payload)

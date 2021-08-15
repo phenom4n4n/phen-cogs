@@ -26,7 +26,7 @@ import asyncio
 import functools
 import time
 from io import BytesIO
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Tuple
 
 import discord
 from matplotlib import pyplot as plt
@@ -42,7 +42,7 @@ from redbot.core.utils.chat_formatting import (
     humanize_timedelta,
     pagify,
 )
-from redbot.core.utils.menus import DEFAULT_CONTROLS, close_menu, menu, start_adding_reactions
+from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
@@ -61,7 +61,7 @@ class Baron(commands.Cog):
     Tools for managing guild joins and leaves.
     """
 
-    __version__ = "1.2.2"
+    __version__ = "1.2.3"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -491,8 +491,8 @@ class Baron(commands.Cog):
         """Leave servers with the given bot to member ratio."""
         if rate not in range(1, 100):
             raise commands.BadArgument
-        guilds = (await self.get_bot_farms(rate / 100))[0]
-        if not guilds[0]:
+        guilds, _ = await self.get_bot_farms(rate / 100)
+        if not guilds:
             await ctx.send(f"There are no servers with a bot ratio higher or equal than {rate}%.")
             return
         await self.leave_guilds(
@@ -634,7 +634,7 @@ class Baron(commands.Cog):
             await self.baron_log("mass_leave", guilds=unwl_guilds, author=ctx.author)
         await ctx.send(f"Done. I left {len(unwl_guilds)} servers.")
 
-    async def get_bot_farms(self, rate: float):
+    async def get_bot_farms(self, rate: float) -> Tuple[List[discord.Guild], int]:
         bot_farms = []
         ok_guilds = 0
         async for guild in AsyncIter(self.bot.guilds, steps=100):
@@ -671,14 +671,14 @@ class Baron(commands.Cog):
                 title="Limit Leave",
                 description=f"I left {guild.name} since it was past my server limit. ({data['limit']})",
             )
-            e.set_author(name=guild.name, icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
             await channel.send(embed=e)
         elif log_type == "min_member_leave":
             e = discord.Embed(
                 title="Minimum Member Leave",
                 description=f"I left {guild.name} since it has less than {data['min_members']} members. ({guild.member_count})",
             )
-            e.set_author(name=guild.name, icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
             await channel.send(embed=e)
         elif log_type == "mass_leave":
             e = discord.Embed(
@@ -691,14 +691,14 @@ class Baron(commands.Cog):
                 title="Bot Farm Leave",
                 description=f"I left {guild.name} since it has a high bot to member ratio. ({data['bot_ratio']}%)",
             )
-            e.set_author(name=guild.name, icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
             await channel.send(embed=e)
         elif log_type == "bl_leave":
             e = discord.Embed(
                 title="Blacklist Leave",
                 description=f"I left {guild.name} since it was in the blacklist.",
             )
-            e.set_author(name=guild.name, icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
             await channel.send(embed=e)
 
     async def notify_guild(self, guild: discord.Guild, message: str):

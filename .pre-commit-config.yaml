@@ -1,0 +1,35 @@
+default_language_version:
+    python: python3.8
+fail_fast: false
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+    -   id: check-builtin-literals
+    -   id: check-ast
+    -   id: check-json
+    -   id: detect-private-key
+    # -   id: pretty-format-json
+    #     args: [--autofix, --indent 4]
+    -   id: requirements-txt-fixer
+    -   id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+
+-   repo: https://github.com/psf/black
+    rev: '20.8b1'
+    hooks:
+      - id: black
+
+-   repo: https://github.com/pycqa/isort
+    rev: '5.8.0'
+    hooks:
+      - id: isort
+
+-   repo: https://github.com/humitos/mirrors-autoflake.git
+    rev: v1.1
+    hooks:
+        - id: autoflake
+          args: ['--recursive', '--in-place', '--remove-all-unused-imports']

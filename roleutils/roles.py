@@ -25,18 +25,13 @@ SOFTWARE.
 import logging
 from collections import defaultdict
 from colorsys import rgb_to_hsv
-from typing import Optional
+from typing import List, Optional
 
 import discord
 from redbot.core import commands
-from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import (
-    humanize_list,
-    humanize_timedelta,
-    pagify,
-    text_to_file,
-)
-from redbot.core.utils.mod import check_permissions, get_audit_reason, is_admin_or_superior
+from redbot.core.utils.chat_formatting import humanize_number as hn
+from redbot.core.utils.chat_formatting import pagify, text_to_file
+from redbot.core.utils.mod import get_audit_reason
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole, TargeterArgs, TouchableMember
@@ -44,7 +39,6 @@ from .utils import (
     can_run_command,
     guild_roughly_chunked,
     humanize_roles,
-    is_allowed_by_hierarchy,
     is_allowed_by_role_hierarchy,
 )
 
@@ -100,7 +94,7 @@ class Roles(MixinMeta):
             await ctx.send_help()
 
     @commands.bot_has_permissions(embed_links=True)
-    @role.command(name="info")
+    @role.command("info")
     async def role_info(self, ctx: commands.Context, *, role: FuzzyRole):
         """Get information about a role."""
         await ctx.send(embed=await self.get_info(role))
@@ -132,7 +126,7 @@ class Roles(MixinMeta):
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
-    @role.command(name="members", aliases=["dump"])
+    @role.command("members", aliases=["dump"])
     async def role_members(self, ctx: commands.Context, *, role: FuzzyRole):
         """Sends a list of members in a role."""
         if guild_roughly_chunked(ctx.guild) is False and self.bot.intents.members:
@@ -151,7 +145,7 @@ class Roles(MixinMeta):
 
     @commands.bot_has_permissions(embed_links=True)
     @commands.admin_or_permissions(manage_roles=True)
-    @role.command(name="colors")
+    @role.command("colors")
     async def role_colors(self, ctx: commands.Context):
         """Sends the server's roles, ordered by color."""
         roles = defaultdict(list)
@@ -166,7 +160,7 @@ class Roles(MixinMeta):
 
     @commands.bot_has_permissions(manage_roles=True)
     @commands.admin_or_permissions(manage_roles=True)
-    @role.command(name="create")
+    @role.command("create")
     async def role_create(
         self,
         ctx: commands.Context,
@@ -188,7 +182,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command(name="color")
+    @role.command("color", aliases=["colour"])
     async def role_color(
         self, ctx: commands.Context, role: StrictRole(check_integrated=False), color: discord.Color
     ):
@@ -200,7 +194,22 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command(name="name")
+    @role.command("hoist")
+    async def role_hoist(
+        self,
+        ctx: commands.Context,
+        role: StrictRole(check_integrated=False),
+        hoisted: bool = None,
+    ):
+        """Toggle whether a role should appear seperate from other roles."""
+        hoisted = hoisted if hoisted is not None else not role.hoist
+        await role.edit(hoist=hoisted)
+        now = "now" if hoisted else "no longer"
+        await ctx.send(f"**{role}** is {now} hoisted.", embed=await self.get_info(role))
+
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @role.command("name")
     async def role_name(
         self, ctx: commands.Context, role: StrictRole(check_integrated=False), *, name: str
     ):
@@ -211,7 +220,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command(name="add")
+    @role.command("add")
     async def role_add(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
         """Add a role to a member."""
         if role in member.roles:
@@ -225,7 +234,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command(name="remove")
+    @role.command("remove")
     async def role_remove(
         self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole
     ):
@@ -314,7 +323,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @multirole.command(name="remove", require_var_positional=True)
+    @multirole.command("remove", require_var_positional=True)
     async def multirole_remove(
         self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole
     ):
@@ -412,7 +421,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command(name="in")
+    @role.command("in")
     async def role_in(
         self, ctx: commands.Context, target_role: FuzzyRole, *, add_role: StrictRole
     ):
@@ -426,7 +435,7 @@ class Roles(MixinMeta):
 
     @commands.admin_or_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @role.command(name="rin")
+    @role.command("rin")
     async def role_rin(
         self, ctx: commands.Context, target_role: FuzzyRole, *, remove_role: StrictRole
     ):
@@ -450,7 +459,7 @@ class Roles(MixinMeta):
         An explanation of Targeter and test commands to preview the members affected can be found with `[p]target`.
         """
 
-    @target.command(name="add")
+    @target.command("add")
     async def target_add(self, ctx: commands.Context, role: StrictRole, *, args: TargeterArgs):
         """
         Add a role to members using targeting args.
@@ -464,7 +473,7 @@ class Roles(MixinMeta):
             f"No one was found with the given args that was eligible to recieve **{role}**.",
         )
 
-    @target.command(name="remove")
+    @target.command("remove")
     async def target_remove(self, ctx: commands.Context, role: StrictRole, *, args: TargeterArgs):
         """
         Remove a role from members using targeting args.
@@ -548,3 +557,34 @@ class Roles(MixinMeta):
                 else:
                     skipped.append(member)
         return {"completed": completed, "skipped": skipped, "failed": failed}
+
+    @staticmethod
+    def format_members(members: List[discord.Member]):
+        length = len(members)
+        s = "" if length == 1 else "s"
+        return f"**{hn(length)}** member{s}"
+
+    @role.command("uniquemembers", aliases=["um"], require_var_positional=True)
+    async def role_uniquemembers(self, ctx: commands.Context, *roles: FuzzyRole):
+        """
+        View the total unique members between multiple roles.
+        """
+        roles_length = len(roles)
+        if roles_length == 1:
+            raise commands.UserFeedbackCheckFailure("You must provide at least 2 roles.")
+        if not ctx.guild.chunked:
+            await ctx.guild.chunk()
+        color = roles[0].color
+        unique_members = set()
+        description = []
+        for role in roles:
+            unique_members.update(role.members)
+            description.append(f"{role.mention}: {self.format_members(role.members)}")
+        description.insert(0, f"**Unique members**: {self.format_members(unique_members)}")
+        e = discord.Embed(
+            color=color,
+            title=f"Unique members between {roles_length} roles",
+            description="\n".join(description),
+        )
+        ref = ctx.message.to_reference(fail_if_not_exists=False)
+        await ctx.send(embed=e, reference=ref)

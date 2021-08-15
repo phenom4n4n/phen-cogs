@@ -25,13 +25,15 @@ import re
 from typing import List, Optional
 
 import discord
-from redbot.core import Config, commands
+from redbot.core import commands
+
+from .converters import PrefixConverter
 
 
 class Prefix(commands.Cog):
     """Prefix management."""
 
-    __version__ = "1.0.0"
+    __version__ = "1.0.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -89,7 +91,7 @@ class Prefix(commands.Cog):
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="set", aliases=["="], require_var_positional=True)
-    async def prefix_set(self, ctx: commands.Context, *prefixes: str):
+    async def prefix_set(self, ctx: commands.Context, *prefixes: PrefixConverter):
         """
         Set the prefixes for this server.
 
@@ -111,7 +113,7 @@ class Prefix(commands.Cog):
 
     @commands.admin_or_permissions(manage_guild=True)
     @prefix.command(name="add", aliases=["+"])
-    async def prefix_add(self, ctx: commands.Context, prefix: str):
+    async def prefix_add(self, ctx: commands.Context, prefix: PrefixConverter):
         """
         Add a prefix to this server's prefix list.
 
@@ -171,21 +173,34 @@ class Prefix(commands.Cog):
         embed.set_footer(text=f"set the prefixes with {self.format_command(ctx, 'prefix set')}")
         await self.reply(ctx, f"Reset this server's prefixes.", embed=embed)
 
-    async def get_prefixes(self, guild: discord.Guild) -> List[str]:
+    async def get_prefixes(self, guild: discord.Guild = None) -> List[str]:
         prefixes = await self.bot.get_valid_prefixes(guild)
         if self.mentionable:
             prefixes = [p for p in prefixes if not self.mention_re.match(p)]
         return prefixes
 
-    async def prefix_embed(self, ctx: commands.Context) -> discord.Embed:
+    async def get_unique_prefixes(self, guild: discord.Guild = None) -> List[str]:
         prefixes = []
-        for p in await self.bot.get_valid_prefixes(ctx.guild):
+        for p in await self.bot.get_valid_prefixes(guild):
             if self.mentionable and self.mention_re.match(p):
                 p = p.replace("!", "")
                 if p in prefixes:
                     continue
             prefixes.append(p)
+        return prefixes
 
+    async def get_clean_prefixes(self, guild: discord.Guild = None) -> List[str]:
+        prefixes = []
+        for p in await self.bot.get_valid_prefixes(guild):
+            if self.mentionable:
+                p = self.mention_re.sub(f"@{self.bot.user.name} ", p)
+                if p in prefixes:
+                    continue
+            prefixes.append(p)
+        return prefixes
+
+    async def prefix_embed(self, ctx: commands.Context) -> discord.Embed:
+        prefixes = await self.get_unique_prefixes(ctx.guild)
         prefix_list = "\n".join(f"{index}. {prefix}" for index, prefix in enumerate(prefixes, 1))
         es = "es" if len(prefixes) > 1 else ""
         color = await ctx.embed_color()

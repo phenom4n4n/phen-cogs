@@ -23,20 +23,20 @@ SOFTWARE.
 """
 
 import asyncio
-import functools
 import logging
 from enum import IntEnum
-from typing import Dict, List
+from typing import Any, Dict, Iterator, List, Tuple, Union
 
 import discord
-from redbot.core.bot import Red
 
-from .http import SlashHTTP
+from .httpclient import SlashHTTP
 
 log = logging.getLogger("red.phenom4n4n.slashtags.models")
 
 __all__ = (
     "SlashOptionType",
+    "ButtonStyle",
+    "InteractionCallbackType",
     "ResponseOption",
     "Component",
     "Button",
@@ -80,8 +80,26 @@ class SlashOptionType(IntEnum):
     ROLE = 8
 
 
+class ButtonStyle(IntEnum):
+    blurple = 1
+    grey = 2
+    green = 3
+    red = 4
+    link = 5
+
+
+class InteractionCallbackType(IntEnum):
+    pong = 1
+    channel_message_with_source = 4
+    deferred_channel_message_with_source = 5
+    deferred_update_message = 6
+    update_message = 7
+
+
 # {'options': [{'value': 'args', 'type': 3, 'name': 'args'}]
 class ResponseOption:
+    __slots__ = ("type", "name", "value")
+
     def __init__(self, *, type: SlashOptionType, name: str, value: str):
         self.type = type
         self.name = name
@@ -100,15 +118,19 @@ class ResponseOption:
 
 
 class Component:
+    __slots__ = ("type", "components", "style", "label", "custom_id", "url", "emoji", "disabled")
+
     def __init__(
         self,
         type: int = 1,
         *,
         components: List["Component"] = [],
-        style: str = None,
+        style: ButtonStyle = None,
         label: str = None,
         custom_id: int = None,
         url: str = None,
+        emoji: Union[discord.PartialEmoji, str] = None,
+        disabled: bool = False,
     ):
         self.type = type
         self.components = components.copy()
@@ -116,9 +138,15 @@ class Component:
         self.label = label
         self.custom_id = str(custom_id) if custom_id else None
         self.url = url
+        self.emoji = emoji
+        if emoji and isinstance(emoji, str):
+            self.emoji = discord.PartialEmoji(name=emoji)
+        self.disabled = disabled
 
     def __repr__(self):
-        kwargs = " ".join(f"{key}={value}" for key, value in self.__dict__.items() if value)
+        kwargs = " ".join(
+            f"{k}={v!r}" for k, v in self.get_slotted_items() if v and not k.startswith("_")
+        )
         return f"<{type(self).__name__} {kwargs}>"
 
     def to_dict(self):
@@ -126,24 +154,34 @@ class Component:
         if self.type == 1:
             data["components"] = [c.to_dict() for c in self.components]
         else:  # elif type == 2:
-            data["label"] = self.label
-            data["style"] = self.style
-            data["custom_id"] = self.custom_id
+            data["style"] = self.style.value
+            if self.label:
+                data["label"] = self.label
+            if self.custom_id:
+                data["custom_id"] = self.custom_id
             if self.url:
                 data["url"] = self.url
+            if self.emoji:
+                data["emoji"] = self.emoji.to_dict()
+            if self.disabled:
+                data["disabled"] = self.disabled
         return data
 
     @classmethod
     def from_dict(cls, data: dict):
         type = data.pop["type"]
         components = [cls.from_dict(c) for c in data.get("components", [])]
-        style = data.get("style")
+        style = ButtonStyle(data.get("style"), 1)
         label = data.get("label")
         custom_id = data.get("custom_id")
         url = data.get("url")
         return cls(
             type, components=components, style=style, label=label, custom_id=custom_id, url=url
         )
+
+    def get_slotted_items(self) -> Iterator[Tuple[str, Any]]:
+        for slot in self.__slots__:
+            yield slot, getattr(self, slot)
 
 
 class Button(Component):
@@ -202,6 +240,7 @@ class InteractionMessage(discord.Message):
 
 
 class UnknownCommand:
+    __slots__ = ("id",)
     cog = None
 
     def __init__(self, *, id: int = None):
@@ -223,6 +262,27 @@ class UnknownCommand:
 
 
 class InteractionResponse:
+    __slots__ = (
+        "cog",
+        "bot",
+        "http",
+        "_state",
+        "id",
+        "version",
+        "_token",
+        "_original_data",
+        "guild_id",
+        "channel_id",
+        "_channel",
+        "application_id",
+        "author_id",
+        "author",
+        "interaction_data",
+        "sent",
+        "deferred",
+        "completed",
+    )
+
     def __init__(self, *, cog, data: dict):
         self.cog = cog
         self.bot = cog.bot
@@ -235,6 +295,7 @@ class InteractionResponse:
 
         self.guild_id = guild_id = discord.utils._get_as_snowflake(data, "guild_id")
         self.channel_id = discord.utils._get_as_snowflake(data, "channel_id")
+        self._channel = None
         self.application_id = discord.utils._get_as_snowflake(data, "application_id")
 
         if guild_id:
@@ -262,10 +323,24 @@ class InteractionResponse:
 
     @property
     def channel(self) -> discord.TextChannel:
-        if self.guild_id:
-            return self.guild.get_channel(self.channel_id)
+        if channel := self._channel:
+            return channel
+        elif self.guild_id:
+            if guild_channel := self.guild.get_channel(self.channel_id):
+                self._channel = channel
+                return guild_channel
+        elif dm_channel := self.bot.get_channel(self.channel_id):
+            self._channel = dm_channel
+            return dm_channel
+
+    async def get_channel(self) -> Union[discord.TextChannel, discord.DMChannel]:
+        if channel := self.channel:
+            return channel
+        if not self.guild_id:
+            self._channel = await self.author.create_dm()
         else:
-            return self.bot.get_channel(self.channel_id)
+            self._channel = await self.bot.fetch_channel(self.channel_id)
+        return self._channel
 
     @property
     def created_at(self):
@@ -289,7 +364,7 @@ class InteractionResponse:
         data = await self.http.send_message(
             self._token,
             self.id,
-            type=4,
+            type=InteractionCallbackType.channel_message_with_source,
             initial_response=initial,
             content=content,
             embed=embed,
@@ -299,7 +374,7 @@ class InteractionResponse:
             flags=flags,
         )
 
-        if not self.sent:
+        if initial:
             self.sent = True
         if not self.completed:
             self.completed = True
@@ -313,7 +388,7 @@ class InteractionResponse:
                     state=self._state,
                 )
             except Exception as e:
-                log.exception("Failed to create message object for data:\n%r" % data, exc_info=e)
+                log.exception("Failed to create message object for data:\n%r", data, exc_info=e)
             else:
                 if delete_after is not None:
                     await message.delete(delay=delete_after)
@@ -327,7 +402,7 @@ class InteractionResponse:
         data = await self.http.send_message(
             self._token,
             self.id,
-            type=5,
+            type=InteractionCallbackType.deferred_channel_message_with_source,
             initial_response=initial,
             flags=flags,
         )
@@ -338,13 +413,89 @@ class InteractionResponse:
 
 
 class InteractionButton(InteractionResponse):
+    __slots__ = ("custom_id", "component_type", "message")
+
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
-        self.custom_id = self.interaction_data["custom_id"]
-        self.component_type = self.interaction_data["component_type"]
+        interaction_data = self.interaction_data
+        self.custom_id = interaction_data["custom_id"]
+        self.component_type = interaction_data["component_type"]
+
+        message = data["message"]
+        if reference := message.get("message_reference"):
+            if "channel_id" not in reference:
+                reference["channel_id"] = self.channel_id
+                # used if dislash is loaded since Message.reference creation
+                # pops channel_id from the message_reference dict
+
+        try:
+            self.message = discord.Message(channel=self.channel, data=message, state=self._state)
+        except Exception as exc:
+            log.exception("An error occured while creating the message for %r", self, exc_info=exc)
+            self.message = None
+
+    async def defer_update(self, *, hidden: bool = False):
+        flags = 64 if hidden else None
+        initial = not self.sent
+        data = await self.http.send_message(
+            self._token,
+            self.id,
+            type=InteractionCallbackType.deferred_update_message,
+            initial_response=initial,
+            flags=flags,
+        )
+        if not self.sent:
+            self.sent = True
+        self.deferred = True
+        return data
+
+    async def update(
+        self,
+        content: str = None,
+        *,
+        embed: discord.Embed = None,
+        embeds: List[discord.Embed] = [],
+        tts: bool = False,
+        allowed_mentions: discord.AllowedMentions = None,
+        hidden: bool = False,
+        delete_after: int = None,
+        components: List[Component] = None,
+    ):
+        flags = 64 if hidden else None
+        initial = not self.sent
+        if initial:
+            data = await self.http.send_message(
+                self._token,
+                self.id,
+                type=InteractionCallbackType.update_message,
+                initial_response=initial,
+                content=content,
+                embed=embed,
+                embeds=embeds,
+                allowed_mentions=allowed_mentions,
+                tts=tts,
+                flags=flags,
+                components=components,
+            )
+            self.sent = True
+        else:
+            data = await self.http.edit_message(
+                self._token,
+                content=content,
+                embed=embed,
+                embeds=embeds,
+                allowed_mentions=allowed_mentions,
+                components=components,
+                original=True,
+            )
+
+        if not self.completed:
+            self.completed = True
 
 
 class InteractionCommand(InteractionResponse):
+    __slots__ = ("command_name", "command_id", "options", "_cs_content")
+
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
         self.command_name = self.interaction_data["name"]
@@ -357,7 +508,7 @@ class InteractionCommand(InteractionResponse):
     def __repr__(self) -> str:
         return f"<{type(self).__name__} id={self.id} command={self.command!r} options={self.options!r} channel={self.channel!r} author={self.author!r}>"
 
-    @functools.cached_property
+    @discord.utils.cached_slot_property("_cs_content")
     def content(self):
         items = [f"/{self.command_name}"]
         for option in self.options:
@@ -386,7 +537,7 @@ class InteractionCommand(InteractionResponse):
                     option = handler(o, option, resolved)
                 except Exception as error:
                     log.exception(
-                        "Failed to handle option data for option:\n%r" % o, exc_info=error
+                        "Failed to handle option data for option:\n%r", o, exc_info=error
                     )
             self.options.append(option)
 

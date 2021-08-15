@@ -4,15 +4,7 @@ import discord
 from rapidfuzz import process
 from redbot.core import commands
 from redbot.core.bot import Red
-from redbot.core.commands import (
-    BadArgument,
-    Converter,
-    EmojiConverter,
-    IDConverter,
-    MemberConverter,
-    RoleConverter,
-)
-from redbot.core.utils.chat_formatting import inline
+from redbot.core.commands import BadArgument, RoleConverter
 from unidecode import unidecode
 
 

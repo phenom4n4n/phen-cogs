@@ -30,10 +30,9 @@ import discord
 import TagScriptEngine as tse
 from redbot.core import Config, commands
 from redbot.core.bot import Red
-from redbot.core.utils.chat_formatting import pagify
+from redbot.core.utils.chat_formatting import box, pagify
 
-from .http import SlashHTTP
-from .models import InteractionResponse, SlashOptionType
+from .http import InteractionResponse, SlashHTTP, SlashOptionType
 
 log = logging.getLogger("red.phenom4n4n.slashtags.objects")
 
@@ -48,6 +47,8 @@ __all__ = (
 
 
 class SlashOptionChoice:
+    __slots__ = ("name", "value")
+
     def __init__(self, name: str, value: Union[str, int]):
         self.name = name
         self.value = value
@@ -61,6 +62,8 @@ class SlashOptionChoice:
 
 
 class SlashOption:
+    __slots__ = ("type", "name", "description", "required", "choices", "options")
+
     def __init__(
         self,
         *,
@@ -122,6 +125,17 @@ class SlashOption:
 
 
 class SlashCommand:
+    __slots__ = (
+        "cog",
+        "http",
+        "id",
+        "application_id",
+        "name",
+        "description",
+        "guild_id",
+        "options",
+    )
+
     def __init__(
         self,
         cog,
@@ -147,9 +161,9 @@ class SlashCommand:
         return self.name
 
     def __repr__(self) -> str:
-        return "<SlashCommand id={0.id} name={0.name!r} description={0.description!r} guild_id={0.guild_id!r}>".format(
-            self
-        )
+        members = ("id", "name", "description", "options", "guild_id")
+        attrs = " ".join(f"{member}={getattr(self, member)!r}" for member in members)
+        return f"<SlashCommand {attrs}>"
 
     @property
     def qualified_name(self) -> str:
@@ -247,6 +261,19 @@ class SlashCommand:
 
 
 class SlashTag:
+    __slots__ = (
+        "cog",
+        "http",
+        "config",
+        "bot",
+        "tagscript",
+        "command",
+        "guild_id",
+        "author_id",
+        "uses",
+        "_real_tag",
+    )
+
     def __init__(
         self,
         cog: commands.Cog,
@@ -427,12 +454,8 @@ class SlashTag:
         return await ctx.send(embed=await self.get_info(ctx))
 
     async def send_raw_tagscript(self, ctx: commands.Context):
-        tagscript = discord.utils.escape_markdown(self.tagscript)
-        for page in pagify(tagscript):
-            await ctx.send(
-                page,
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
+        for page in pagify(self.tagscript):
+            await ctx.send(box(page), allowed_mentions=discord.AllowedMentions.none())
 
     async def edit_tagscript(self, tagscript: str) -> str:
         old_tagscript = self.tagscript
@@ -459,13 +482,20 @@ class SlashTag:
 
     async def edit_single_option(self, ctx: commands.Context, name: str):
         options = self.command.options
-        option = discord.utils.get(options, name=name)
-        if not option:
+        previous_option = None
+        chosen_option = None
+        for option in options:
+            if option.name == name:
+                chosen_option = option
+                break
+            else:
+                previous_option = option
+        if not chosen_option:
             await ctx.send(
                 f'{self.name_prefix} `{self}` doesn\'t have an argument named "{name}".'
             )
             return
-        added_required = not options[-1].required if len(options) > 2 else False
+        added_required = not previous_option.required if previous_option else False
         try:
             new_option = await self.cog.get_option(ctx, added_required=added_required)
         except asyncio.TimeoutError:
@@ -554,7 +584,7 @@ class FakeMessage(discord.Message):
             del kwargs["reference"]  # this shouldn't be passed when replying but it might be
         except KeyError:
             pass
-        destination = self.interaction if self.interaction else self.channel
+        destination = self.interaction or self.channel
         return destination.send(content, **kwargs)
 
 

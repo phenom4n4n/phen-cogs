@@ -7,6 +7,8 @@ from .errors import InvalidWebhook
 
 
 class Session:
+    __slots__ = ("cog", "channel", "webhook", "author")
+
     def __init__(
         self,
         cog,

@@ -24,6 +24,9 @@ SOFTWARE.
 
 from typing import Optional
 
+from redbot.core.commands import UserFeedbackCheckFailure
+from redbot.core.utils.chat_formatting import humanize_number as hn
+
 __all__ = (
     "TagError",
     "MissingTagPermissions",
@@ -62,9 +65,20 @@ class BlacklistCheckFailure(RequireCheckFailure):
     """Raised when a user is in a blacklisted channel or has a blacklisted role."""
 
 
-class TagFeedbackError(TagError):
+class TagFeedbackError(UserFeedbackCheckFailure, TagError):
     """Provides feedback to the user when running tag commands."""
 
 
 class TagAliasError(TagFeedbackError):
     """Raised to provide feedback if an error occurs while adding/removing a tag alias."""
+
+
+class BlockCompileError(TagError):
+    """Raised when a block fails to compile."""
+
+
+class TagCharacterLimitReached(TagError):
+    """Raised when the TagScript character limit is reached."""
+
+    def __init__(self, limit: int, length: int):
+        super().__init__(f"TagScript cannot be longer than {hn(limit)} (**{hn(length)}**).")

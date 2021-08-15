@@ -8,17 +8,12 @@ import discord
 import TagScriptEngine as tse
 from redbot.core import commands
 
-from .abc import MixinMeta
-from .blocks import HideBlock
-from .errors import (
-    BlacklistCheckFailure,
-    MissingTagPermissions,
-    RequireCheckFailure,
-    WhitelistCheckFailure,
-)
-from .models import InteractionCommand, SlashOptionType
-from .objects import FakeMessage, SlashContext, SlashTag
-from .utils import dev_check
+from ..abc import MixinMeta
+from ..blocks import HideBlock
+from ..errors import RequireCheckFailure
+from ..http import InteractionCommand, SlashOptionType
+from ..objects import FakeMessage, SlashContext, SlashTag
+from ..utils import dev_check
 
 PL = commands.PrivilegeLevel
 RS = commands.Requires
@@ -60,6 +55,8 @@ class Processor(MixinMeta):
             tse.URLEncodeBlock(),
             tse.CommandBlock(),
             tse.RedirectBlock(),
+            tse.OverrideBlock(),
+            tse.CooldownBlock(),
         ]
         slash_blocks = [HideBlock()]
         self.engine = tse.Interpreter(tse_blocks + slash_blocks)
@@ -114,7 +111,7 @@ class Processor(MixinMeta):
 
         guild = interaction.guild
         author = interaction.author
-        channel = interaction.channel
+        channel = await interaction.get_channel()
 
         tag_author = tse.MemberAdapter(author)
         tag_channel = tse.ChannelAdapter(channel)

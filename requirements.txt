@@ -1,3 +1,4 @@
+autoflake
 black
 isort
-autoflake
+pre-commit

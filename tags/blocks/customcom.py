@@ -46,5 +46,5 @@ class ConverterBlock(Block):
 
     def process(self, ctx: Context) -> str:
         match = CONVERTER_RE.match(ctx.verb.declaration)
-        num = match.group(1)
+        num = int(match.group(1)) + 1
         return "{args(%s)}" % num
