@@ -64,7 +64,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.3.0"
+    __version__ = "1.4.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -153,17 +153,33 @@ class EmbedUtils(commands.Cog):
         await channel.send(embed=e)
 
     @embed.command(name="json", aliases=["fromjson", "fromdata"], add_example_info=True)
-    async def embed_json(self, ctx, *, data: JSON_CONTENT_CONVERTER):
+    async def embed_json(
+        self,
+        ctx: commands.Context,
+        channel: MessageableChannel = None,
+        *,
+        data: JSON_CONTENT_CONVERTER,
+    ):
         """
         Post an embed from valid JSON.
         """
+        if channel:
+            await channel.send(embed=data)
         await ctx.tick()
 
     @embed.command(name="yaml", aliases=["fromyaml"], add_example_info=True, info_type="yaml")
-    async def embed_yaml(self, ctx, *, data: YAML_CONTENT_CONVERTER):
+    async def embed_yaml(
+        self,
+        ctx: commands.Context,
+        channel: MessageableChannel = None,
+        *,
+        data: YAML_CONTENT_CONVERTER,
+    ):
         """
         Post an embed from valid YAML.
         """
+        if channel:
+            await channel.send(embed=data)
         await ctx.tick()
 
     @embed.command(
@@ -171,12 +187,14 @@ class EmbedUtils(commands.Cog):
         aliases=["fromjsonfile", "fromdatafile"],
         add_example_info=True,
     )
-    async def embed_fromfile(self, ctx: commands.Context):
+    async def embed_fromfile(self, ctx: commands.Context, channel: MessageableChannel = None):
         """
         Post an embed from a valid JSON file.
         """
         data = await self.get_file_from_message(ctx, file_types=("json", "txt"))
-        await JSON_CONTENT_CONVERTER.convert(ctx, data)
+        embed = await JSON_CONTENT_CONVERTER.convert(ctx, data)
+        if channel:
+            await channel.send(embed=embed)
         await ctx.tick()
 
     @embed.command(
@@ -185,12 +203,14 @@ class EmbedUtils(commands.Cog):
         add_example_info=True,
         info_type="yaml",
     )
-    async def embed_yamlfile(self, ctx: commands.Context):
+    async def embed_yamlfile(self, ctx: commands.Context, channel: MessageableChannel = None):
         """
         Post an embed from a valid YAML file.
         """
         data = await self.get_file_from_message(ctx, file_types=("yaml", "txt"))
-        await YAML_CONTENT_CONVERTER.convert(ctx, data)
+        embed = await YAML_CONTENT_CONVERTER.convert(ctx, data)
+        if channel:
+            await channel.send(embed=embed)
         await ctx.tick()
 
     @embed.command(
@@ -199,12 +219,20 @@ class EmbedUtils(commands.Cog):
         add_example_info=True,
         info_type="index",
     )
-    async def embed_message(self, ctx, message: discord.Message, index: int = 0):
+    async def embed_message(
+        self,
+        ctx,
+        message: discord.Message,
+        index: Optional[int] = 0,
+        channel: MessageableChannel = None,
+    ):
         """
         Post an embed from a message.
         """
         embed = await self.get_embed_from_message(ctx, message, index)
-        await ctx.send(embed=embed)
+        channel = channel or ctx.channel
+        await channel.send(embed=embed)
+        await ctx.tick()
 
     @commands.bot_has_permissions(attach_files=True)
     @embed.command(name="download", add_example_info=True, info_type="index")
