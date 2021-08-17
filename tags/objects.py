@@ -113,16 +113,19 @@ class Tag:
     def aliases(self) -> List[str]:
         return self._aliases.copy()
 
+    @property
+    def cooldown_key(self) -> str:
+        return f"{self.guild_id}:{self.name}"
+
     async def run(self, seed_variables: dict, **kwargs) -> tse.Response:
         self.uses += 1
         seed_variables["uses"] = tse.IntAdapter(self.uses)
-        cooldown_key = f"{self.guild_id}:{self.name}"
         cog = self.cog
         output = cog.engine.process(
             self.tagscript,
             seed_variables,
             dot_parameter=cog.dot_parameter,
-            cooldown_key=cooldown_key,
+            cooldown_key=self.cooldown_key,
             **kwargs,
         )
         if cog.async_enabled:
@@ -153,6 +156,10 @@ class Tag:
                 del path[alias]
             except KeyError:
                 pass
+        try:
+            del tse.CooldownBlock._CooldownBlock__COOLDOWNS[self.cooldown_key]
+        except KeyError:
+            pass
 
     @classmethod
     def from_dict(
