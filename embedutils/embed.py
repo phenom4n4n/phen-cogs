@@ -64,7 +64,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.4.0"
+    __version__ = "1.4.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -156,14 +156,14 @@ class EmbedUtils(commands.Cog):
     async def embed_json(
         self,
         ctx: commands.Context,
-        channel: MessageableChannel = None,
+        channel: Optional[MessageableChannel] = None,
         *,
         data: JSON_CONTENT_CONVERTER,
     ):
         """
         Post an embed from valid JSON.
         """
-        if channel:
+        if channel and channel != ctx.channel:
             await channel.send(embed=data)
         await ctx.tick()
 
@@ -171,14 +171,14 @@ class EmbedUtils(commands.Cog):
     async def embed_yaml(
         self,
         ctx: commands.Context,
-        channel: MessageableChannel = None,
+        channel: Optional[MessageableChannel] = None,
         *,
         data: YAML_CONTENT_CONVERTER,
     ):
         """
         Post an embed from valid YAML.
         """
-        if channel:
+        if channel and channel != ctx.channel:
             await channel.send(embed=data)
         await ctx.tick()
 
@@ -193,7 +193,7 @@ class EmbedUtils(commands.Cog):
         """
         data = await self.get_file_from_message(ctx, file_types=("json", "txt"))
         embed = await JSON_CONTENT_CONVERTER.convert(ctx, data)
-        if channel:
+        if channel and channel != ctx.channel:
             await channel.send(embed=embed)
         await ctx.tick()
 
@@ -209,7 +209,7 @@ class EmbedUtils(commands.Cog):
         """
         data = await self.get_file_from_message(ctx, file_types=("yaml", "txt"))
         embed = await YAML_CONTENT_CONVERTER.convert(ctx, data)
-        if channel:
+        if channel and channel != ctx.channel:
             await channel.send(embed=embed)
         await ctx.tick()
 
