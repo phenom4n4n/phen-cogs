@@ -280,7 +280,7 @@ class Commands(MixinMeta):
             required = False
 
         return SlashOption(
-            name=name,
+            name=name.lower(),
             description=description,
             option_type=option_type,
             required=required,
