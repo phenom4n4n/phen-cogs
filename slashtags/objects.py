@@ -77,7 +77,7 @@ class SlashOption:
         if not isinstance(option_type, SlashOptionType):
             option_type = SlashOptionType(option_type)
         self.type = option_type
-        self.name = name
+        self.name = name.lower()
         self.description = description
         self.required = required
         self.choices = choices.copy()
