@@ -57,7 +57,9 @@ class TagName(TagSearcher, commands.Converter):
             argument = argument.lower()
             match = SLASH_NAME.match(argument)
             if not match:
-                raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
+                raise commands.BadArgument(
+                    "Slash tag characters must be alphanumeric or '_' or '-'."
+                )
             name = match.group(1)
         else:
             name = argument
