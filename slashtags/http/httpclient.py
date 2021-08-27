@@ -197,7 +197,7 @@ class SlashHTTP:
         token: str,
         message_id: int = None,
         *,
-        content: str = None,
+        content: str = ...,
         embed: discord.Embed = None,
         embeds: List[discord.Embed] = None,
         allowed_mentions: discord.AllowedMentions = None,
@@ -219,8 +219,8 @@ class SlashHTTP:
             allowed_mentions = self.bot.allowed_mentions
 
         payload = {}
-        if content:
-            payload["content"] = str(content)
+        if content is not ...:
+            payload["content"] = str(content) if content is not None else None
         if embeds:
             payload["embeds"] = [e.to_dict() for e in embeds]
         if components is not None:
