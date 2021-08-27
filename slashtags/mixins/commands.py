@@ -23,7 +23,13 @@ from ..converters import (
     TagScriptConverter,
 )
 from ..http import SlashOptionType
-from ..objects import ApplicationCommand, SlashOption, SlashOptionChoice, SlashTag, ApplicationCommandType
+from ..objects import (
+    ApplicationCommand,
+    ApplicationCommandType,
+    SlashOption,
+    SlashOptionChoice,
+    SlashTag,
+)
 from ..testing.button_menus import menu as button_menu
 from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check
 
@@ -96,13 +102,13 @@ class Commands(MixinMeta):
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False)
 
     async def create_slash_tag(
-        self, 
-        ctx: commands.Context, 
-        tag_name: str, 
-        tagscript: str, 
-        *, 
+        self,
+        ctx: commands.Context,
+        tag_name: str,
+        tagscript: str,
+        *,
         is_global: bool = False,
-        command_type: ApplicationCommandType = ApplicationCommandType.CHAT_INPUT
+        command_type: ApplicationCommandType = ApplicationCommandType.CHAT_INPUT,
     ):
         options: List[SlashOption] = []
         guild_id = None if is_global else ctx.guild.id
@@ -131,7 +137,12 @@ class Commands(MixinMeta):
                     await self.get_options(ctx, options)
 
         command = ApplicationCommand(
-            self, name=tag_name, description=description, guild_id=guild_id, options=options, type=command_type
+            self,
+            name=tag_name,
+            description=description,
+            guild_id=guild_id,
+            options=options,
+            type=command_type,
         )
         try:
             await command.register()
@@ -317,7 +328,9 @@ class Commands(MixinMeta):
 
         [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
         """
-        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.MESSAGE)
+        await self.create_slash_tag(
+            ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.MESSAGE
+        )
 
     @commands.mod_or_permissions(manage_guild=True)
     @slashtag.command("user")
@@ -333,7 +346,9 @@ class Commands(MixinMeta):
 
         [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
         """
-        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.USER)
+        await self.create_slash_tag(
+            ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.USER
+        )
 
     @commands.mod_or_permissions(manage_guild=True)
     @slashtag.command("pastebin", aliases=["++"])
@@ -536,7 +551,9 @@ class Commands(MixinMeta):
         *,
         tagscript: TagScriptConverter,
     ):
-        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True, command_type=ApplicationCommandType.MESSAGE)
+        await self.create_slash_tag(
+            ctx, tag_name, tagscript, is_global=True, command_type=ApplicationCommandType.MESSAGE
+        )
 
     @commands.mod_or_permissions(manage_guild=True)
     @slashtag_global.command("user")
@@ -548,7 +565,9 @@ class Commands(MixinMeta):
         *,
         tagscript: TagScriptConverter,
     ):
-        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True, command_type=ApplicationCommandType.USER)
+        await self.create_slash_tag(
+            ctx, tag_name, tagscript, is_global=True, command_type=ApplicationCommandType.USER
+        )
 
     @slashtag_global.command("pastebin", aliases=["++"])
     @copy_doc(slashtag_pastebin)
