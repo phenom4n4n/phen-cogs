@@ -37,6 +37,7 @@ __all__ = (
     "SlashOptionType",
     "ButtonStyle",
     "InteractionCallbackType",
+    "ApplicationCommandType",
     "ResponseOption",
     "Component",
     "Button",
@@ -94,6 +95,12 @@ class InteractionCallbackType(IntEnum):
     deferred_channel_message_with_source = 5
     deferred_update_message = 6
     update_message = 7
+
+
+class ApplicationCommandType(IntEnum):
+    CHAT_INPUT = 1
+    USER = 2
+    MESSAGE = 3
 
 
 # {'options': [{'value': 'args', 'type': 3, 'name': 'args'}]

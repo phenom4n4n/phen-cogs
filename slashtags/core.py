@@ -41,7 +41,7 @@ from .abc import CompositeMetaClass
 from .errors import MissingTagPermissions
 from .http import InteractionButton, InteractionCommand, SlashHTTP
 from .mixins import Commands, Processor
-from .objects import SlashCommand, SlashContext, SlashTag
+from .objects import ApplicationCommand, SlashContext, SlashTag
 
 log = logging.getLogger("red.phenom4n4n.slashtags")
 
@@ -53,7 +53,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.4.5"
+    __version__ = "0.5.0"
     __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -87,7 +87,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
 
-        self.command_cache: Dict[int, SlashCommand] = {}
+        self.command_cache: Dict[int, ApplicationCommand] = {}
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache: Dict[int, SlashTag] = {}
 
@@ -220,7 +220,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             tag = get(self.global_tag_cache.values())
         return tag
 
-    def get_command(self, command_id: int) -> SlashCommand:
+    def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
 
     @commands.Cog.listener()
@@ -254,7 +254,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     async def invoke_and_catch(self, interaction: InteractionCommand):
         try:
             command = interaction.command
-            if isinstance(command, SlashCommand):
+            if isinstance(command, ApplicationCommand):
                 tag = self.get_tag(interaction.guild, command.id)
                 await self.process_tag(interaction, tag)
             elif interaction.command_id == self.eval_command:

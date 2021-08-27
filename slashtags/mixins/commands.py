@@ -23,7 +23,7 @@ from ..converters import (
     TagScriptConverter,
 )
 from ..http import SlashOptionType
-from ..objects import SlashCommand, SlashOption, SlashOptionChoice, SlashTag
+from ..objects import ApplicationCommand, SlashOption, SlashOptionChoice, SlashTag, ApplicationCommandType
 from ..testing.button_menus import menu as button_menu
 from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check
 
@@ -63,6 +63,12 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
 
 
 class Commands(MixinMeta):
+    COMMAND_TYPE_PREFIXES = {
+        ApplicationCommandType.CHAT_INPUT: "/",
+        ApplicationCommandType.MESSAGE: "[message] ",
+        ApplicationCommandType.USER: "[user] ",
+    }
+
     @commands.guild_only()
     @commands.group(aliases=["st"])
     async def slashtag(self, ctx: commands.Context):
@@ -90,32 +96,42 @@ class Commands(MixinMeta):
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False)
 
     async def create_slash_tag(
-        self, ctx: commands.Context, tag_name: str, tagscript: str, *, is_global: bool = False
+        self, 
+        ctx: commands.Context, 
+        tag_name: str, 
+        tagscript: str, 
+        *, 
+        is_global: bool = False,
+        command_type: ApplicationCommandType = ApplicationCommandType.CHAT_INPUT
     ):
         options: List[SlashOption] = []
         guild_id = None if is_global else ctx.guild.id
-        try:
-            description = await self.send_and_query_response(
-                ctx,
-                "What should the tag description to be? (maximum 100 characters)",
-                pred=MessagePredicate.length_less(101, ctx),
-            )
-        except asyncio.TimeoutError:
-            return await ctx.send("Tag addition timed out.")
-
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            await self.send_and_query_response(
-                ctx, "Would you like to add arguments to this tag? (Y/n)", pred
-            )
-        except asyncio.TimeoutError:
-            await ctx.send("Query timed out, not adding arguments.")
+        if command_type == ApplicationCommandType.CHAT_INPUT:
+            try:
+                description = await self.send_and_query_response(
+                    ctx,
+                    "What should the tag description to be? (maximum 100 characters)",
+                    pred=MessagePredicate.length_less(101, ctx),
+                )
+            except asyncio.TimeoutError:
+                return await ctx.send("Tag addition timed out.")
         else:
-            if pred.result is True:
-                await self.get_options(ctx, options)
+            description = ""
 
-        command = SlashCommand(
-            self, name=tag_name, description=description, guild_id=guild_id, options=options
+        if command_type == ApplicationCommandType.CHAT_INPUT:
+            pred = MessagePredicate.yes_or_no(ctx)
+            try:
+                await self.send_and_query_response(
+                    ctx, "Would you like to add arguments to this tag? (Y/n)", pred
+                )
+            except asyncio.TimeoutError:
+                await ctx.send("Query timed out, not adding arguments.")
+            else:
+                if pred.result is True:
+                    await self.get_options(ctx, options)
+
+        command = ApplicationCommand(
+            self, name=tag_name, description=description, guild_id=guild_id, options=options, type=command_type
         )
         try:
             await command.register()
@@ -288,6 +304,38 @@ class Commands(MixinMeta):
         )
 
     @commands.mod_or_permissions(manage_guild=True)
+    @slashtag.command("message")
+    async def slashtag_message(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(check_global=False, check_regex=False),
+        *,
+        tagscript: TagScriptConverter,
+    ):
+        """
+        Add a message command tag with TagScript.
+
+        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
+        """
+        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.MESSAGE)
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @slashtag.command("user")
+    async def slashtag_user(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(check_global=False, check_regex=False),
+        *,
+        tagscript: TagScriptConverter,
+    ):
+        """
+        Add a user command tag with TagScript.
+
+        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
+        """
+        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.USER)
+
+    @commands.mod_or_permissions(manage_guild=True)
     @slashtag.command("pastebin", aliases=["++"])
     async def slashtag_pastebin(
         self,
@@ -362,15 +410,16 @@ class Commands(MixinMeta):
         """Get a slash tag's raw content."""
         await tag.send_raw_tagscript(ctx)
 
-    @staticmethod
-    def format_tagscript(tag: SlashTag, limit: int = 60) -> str:
-        prefix = f"`/{tag.name}` - "
-        limit -= len(prefix)
+    @classmethod
+    def format_tagscript(cls, tag: SlashTag, limit: int = 60) -> str:
+        prefix = cls.COMMAND_TYPE_PREFIXES.get(tag.command.type, "/")
+        title = f"`{prefix}{tag.name}` - "
+        limit -= len(title)
         tagscript = tag.tagscript
         if len(tagscript) > limit - 3:
             tagscript = tagscript[:limit] + "..."
         tagscript = tagscript.replace("\n", " ")
-        return f"{prefix}{discord.utils.escape_markdown(tagscript)}"
+        return f"{title}{discord.utils.escape_markdown(tagscript)}"
 
     async def view_slash_tags(
         self,
@@ -476,6 +525,30 @@ class Commands(MixinMeta):
         tagscript: TagScriptConverter,
     ):
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True)
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @slashtag_global.command("message")
+    @copy_doc(slashtag_message)
+    async def slashtag_global_message(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(global_priority=True, check_regex=False),
+        *,
+        tagscript: TagScriptConverter,
+    ):
+        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True, command_type=ApplicationCommandType.MESSAGE)
+
+    @commands.mod_or_permissions(manage_guild=True)
+    @slashtag_global.command("user")
+    @copy_doc(slashtag_user)
+    async def slashtag_global_user(
+        self,
+        ctx: commands.Context,
+        tag_name: TagName(global_priority=True, check_regex=False),
+        *,
+        tagscript: TagScriptConverter,
+    ):
+        await self.create_slash_tag(ctx, tag_name, tagscript, is_global=True, command_type=ApplicationCommandType.USER)
 
     @slashtag_global.command("pastebin", aliases=["++"])
     @copy_doc(slashtag_pastebin)
@@ -590,7 +663,7 @@ class Commands(MixinMeta):
         """Add a slash eval command for debugging."""
         if self.eval_command:
             return await ctx.send("An eval command is already registered.")
-        slasheval = SlashCommand(
+        slasheval = ApplicationCommand(
             self,
             name="eval",
             description="SlashTags debugging eval command. Only bot owners can use this.",

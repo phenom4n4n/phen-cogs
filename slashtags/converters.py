@@ -45,18 +45,22 @@ class TagSearcher:
 
 
 class TagName(TagSearcher, commands.Converter):
-    def __init__(self, *, check_command: bool = True, **search_kwargs):
+    def __init__(self, *, check_command: bool = True, check_regex: bool = True, **search_kwargs):
         self.check_command = check_command
+        self.check_regex = check_regex
         super().__init__(**search_kwargs)
 
     async def convert(self, ctx: commands.Converter, argument: str) -> str:
         if len(argument) > 32:
             raise commands.BadArgument("Slash tag names may not exceed 32 characters.")
-        argument = argument.lower()
-        match = SLASH_NAME.match(argument)
-        if not match:
-            raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
-        name = match.group(1)
+        if self.check_regex:
+            argument = argument.lower()
+            match = SLASH_NAME.match(argument)
+            if not match:
+                raise commands.BadArgument("Slash tag characters must be alphanumeric or '_' or '-'.")
+            name = match.group(1)
+        else:
+            name = argument
         if self.check_command and self.get_tag(ctx, name):
             raise commands.BadArgument(f"A slash tag named `{name}` is already registered.")
         return name

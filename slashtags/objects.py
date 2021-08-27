@@ -32,14 +32,14 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box, pagify
 
-from .http import InteractionResponse, SlashHTTP, SlashOptionType
+from .http import InteractionResponse, SlashHTTP, SlashOptionType, ApplicationCommandType
 
 log = logging.getLogger("red.phenom4n4n.slashtags.objects")
 
 __all__ = (
     "SlashOptionChoice",
     "SlashOption",
-    "SlashCommand",
+    "ApplicationCommand",
     "SlashTag",
     "FakeMessage",
     "SlashContext",
@@ -124,7 +124,7 @@ class SlashOption:
         )
 
 
-class SlashCommand:
+class ApplicationCommand:
     __slots__ = (
         "cog",
         "http",
@@ -134,6 +134,7 @@ class SlashCommand:
         "description",
         "guild_id",
         "options",
+        "type",
     )
 
     def __init__(
@@ -146,6 +147,7 @@ class SlashCommand:
         description: str,
         guild_id: int = None,
         options: List[SlashOption] = [],
+        type: ApplicationCommandType = ApplicationCommandType.CHAT_INPUT,
     ):
         self.cog = cog
         self.http = cog.http
@@ -155,15 +157,16 @@ class SlashCommand:
         self.name = name
         self.description = description
         self.guild_id = guild_id
+        self.type = type
         self.options = options.copy()
 
     def __str__(self) -> str:
         return self.name
 
     def __repr__(self) -> str:
-        members = ("id", "name", "description", "options", "guild_id")
+        members = ("id", "type", "name", "description", "options", "guild_id")
         attrs = " ".join(f"{member}={getattr(self, member)!r}" for member in members)
-        return f"<SlashCommand {attrs}>"
+        return f"<{self.__class__.__name__} {attrs}>"
 
     @property
     def qualified_name(self) -> str:
@@ -174,6 +177,7 @@ class SlashCommand:
             "name": self.name,
             "description": self.description,
             "options": [o.to_dict() for o in self.options],
+            "type": self.type.value,
         }
 
     def to_dict(self) -> dict:
@@ -184,25 +188,22 @@ class SlashCommand:
             "description": self.description,
             "options": [o.to_dict() for o in self.options],
             "guild_id": self.guild_id,
+            "type": self.type.value,
         }
 
     @classmethod
     def from_dict(cls, cog, data: dict):
-        id = discord.utils._get_as_snowflake(data, "id")
-        application_id = discord.utils._get_as_snowflake(data, "application_id")
-        name = data["name"]
-        description = data["description"]
-        options = [SlashOption.from_dict(o) for o in data.get("options", [])]
-        guild_id = discord.utils._get_as_snowflake(data, "guild_id")
-        return cls(
-            cog,
-            id=id,
-            application_id=application_id,
-            name=name,
-            description=description,
-            guild_id=guild_id,
-            options=options,
-        )
+        kwargs = {
+            "id": discord.utils._get_as_snowflake(data, "id"),
+            "application_id": discord.utils._get_as_snowflake(data, "application_id"),
+            "name": data["name"],
+            "description": data["description"],
+            "options": [SlashOption.from_dict(o) for o in data.get("options", [])],
+            "guild_id": discord.utils._get_as_snowflake(data, "guild_id"),
+        }
+        if command_type := data.get("type"):
+            kwargs["type"] = ApplicationCommandType(command_type)
+        return cls(cog, **kwargs)
 
     def _parse_response_data(self, data: dict):
         _id = discord.utils._get_as_snowflake(data, "id")
@@ -283,7 +284,7 @@ class SlashTag:
         author_id: int = None,
         uses: int = 0,
         real: bool = True,
-        command: SlashCommand,
+        command: ApplicationCommand,
     ):
         self.cog = cog
         self.http: SlashHTTP = cog.http
@@ -380,7 +381,7 @@ class SlashTag:
             author_id=data["author_id"],
             uses=data.get("uses", 0),
             real=real_tag,
-            command=SlashCommand.from_dict(cog, data["command"]),
+            command=ApplicationCommand.from_dict(cog, data["command"]),
         )
 
     def to_dict(self):
