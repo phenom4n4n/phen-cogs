@@ -6,6 +6,8 @@ SlashTags also supports adding context menu commands. These can be added with ``
 or ``[p]slashtags message``. Context menu commands differ from slash commands as they are
 invoked through the ``Apps`` section on a message/user context menu.
 
+You can only add 5 global and 5 server context menu commands for each type.
+
 ----------------------
 Context Menu Arguments
 ----------------------
