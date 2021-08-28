@@ -4,6 +4,7 @@ Example Slash Tags
 
 The following examples show the capabilities of slash tags.
 
+-------------------------
 Command Execution Example
 -------------------------
 
@@ -22,3 +23,17 @@ Arguments:
 ::
 
     [p]slashtag add ban {c:ban {victim(id)} {reason}}
+
+--------------------
+Context Menu Example
+--------------------
+
+This slash tag adds a ``View user info`` user command that shows user information by invoking
+the user info command.
+
+Arguments:
+**None**
+
+::
+
+    [p]slashtag user "View user info" {c:userinfo {target_id}}

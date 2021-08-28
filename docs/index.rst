@@ -47,6 +47,7 @@ Welcome to Phen-Cogs's documentation!
 
    slashtags/slashtags
    slashtags/slash_arguments
+   slashtags/context_menus
    slashtags/example_slashtags
 
 .. toctree::

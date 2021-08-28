@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 from enum import IntEnum
-from typing import Any, Dict, Iterator, List, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import discord
 
@@ -101,6 +101,22 @@ class ApplicationCommandType(IntEnum):
     CHAT_INPUT = 1
     USER = 2
     MESSAGE = 3
+
+    def get_human_name(self) -> str:
+        humanized_types = {
+            self.CHAT_INPUT: "slash",
+            self.USER: "user",
+            self.MESSAGE: "message",
+        }
+        return humanized_types.get(self, "unknown")
+
+    def get_prefix(self) -> str:
+        command_prefixes = {
+            self.CHAT_INPUT: "/",
+            self.MESSAGE: "[message] ",
+            self.USER: "[user] ",
+        }
+        return command_prefixes.get(self, "/")
 
 
 # {'options': [{'value': 'args', 'type': 3, 'name': 'args'}]
@@ -500,20 +516,99 @@ class InteractionButton(InteractionResponse):
             self.completed = True
 
 
+class InteractionResolved:
+    __slots__ = (
+        "_data",
+        "_parent",
+        "_state",
+        "_users",
+        "_members",
+        "_roles",
+        "_channels",
+        "_messages",
+    )
+
+    def __init__(self, parent: "InteractionCommand"):
+        self._data = parent.interaction_data.get("resolved", {})
+        self._parent = parent
+        self._state = parent._state
+        self._users = {}
+        self._members = {}
+        self._roles = {}
+        self._channels = {}
+        self._messages = {}
+
+    def __repr__(self) -> str:
+        inner = " ".join(f"{k}={len(v)}" for k, v in self._data.items() if v)
+        return f"<{type(self).__name__} {inner}>"
+
+    @property
+    def users(self) -> Dict[int, discord.User]:
+        if self._users:
+            return self._users.copy()
+        users = {
+            int(user_id): self._state.store_user(user_data)
+            for user_id, user_data in self._data.get("users", {}).items()
+        }
+        self._users = users
+        return self.users
+
+    @property
+    def members(self) -> Dict[int, discord.Member]:
+        ...
+
+    @property
+    def roles(self) -> Dict[int, discord.Role]:
+        ...
+
+    @property
+    def channels(self) -> Dict[int, Union[discord.TextChannel, discord.DMChannel]]:
+        ...
+
+    @property
+    def messages(self) -> Dict[int, discord.Message]:
+        if self._messages:
+            return self._messages.copy()
+        messages = {
+            int(message_id): discord.Message(
+                channel=self._parent.channel, data=message_data, state=self._state
+            )
+            for message_id, message_data in self._data.get("messages", {}).items()
+        }
+        self._messages = messages
+        return self.messages
+
+
 class InteractionCommand(InteractionResponse):
-    __slots__ = ("command_name", "command_id", "options", "_cs_content")
+    __slots__ = (
+        "type",
+        "command_name",
+        "command_id",
+        "options",
+        "_cs_content",
+        "target_id",
+        "resolved",
+    )
 
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
-        self.command_name = self.interaction_data["name"]
-        self.command_id = int(self.interaction_data["id"])
+        interaction_data = self.interaction_data
+        self.type = ApplicationCommandType(interaction_data["type"])
+        self.command_name = interaction_data["name"]
+        self.command_id = int(interaction_data["id"])
         self.options: List[ResponseOption] = []
+        self.target_id: Optional[int] = discord.utils._get_as_snowflake(
+            interaction_data, "target_id"
+        )
+        self.resolved: Optional[InteractionResolved] = InteractionResolved(self)
         self._parse_options(
-            self.interaction_data.get("options", []), self.interaction_data.get("resolved", {})
+            interaction_data.get("options", []), interaction_data.get("resolved", {})
         )
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__} id={self.id} command={self.command!r} options={self.options!r} channel={self.channel!r} author={self.author!r}>"
+        values = ("id", "command", "options", "channel", "author")
+        inner = " ".join(f"{value}={getattr(self, value)!r}" for value in values)
+        return f"<{type(self).__name__} {inner}"
 
     @discord.utils.cached_slot_property("_cs_content")
     def content(self):

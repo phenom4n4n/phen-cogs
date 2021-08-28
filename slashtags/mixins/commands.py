@@ -69,12 +69,6 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
 
 
 class Commands(MixinMeta):
-    COMMAND_TYPE_PREFIXES = {
-        ApplicationCommandType.CHAT_INPUT: "/",
-        ApplicationCommandType.MESSAGE: "[message] ",
-        ApplicationCommandType.USER: "[user] ",
-    }
-
     @commands.guild_only()
     @commands.group(aliases=["st"])
     async def slashtag(self, ctx: commands.Context):
@@ -381,7 +375,7 @@ class Commands(MixinMeta):
 
     @slashtag_edit.command("name")
     async def slashtag_edit_name(
-        self, ctx: commands.Context, tag: GuildTagConverter, name: TagName(check_global=False)
+        self, ctx: commands.Context, tag: GuildTagConverter, *, name: TagName(check_global=False)
     ):
         """Edit a slash tag's name."""
         await ctx.send(await tag.edit_name(name))
@@ -411,24 +405,23 @@ class Commands(MixinMeta):
 
     @commands.mod_or_permissions(manage_guild=True)
     @slashtag.command("remove", aliases=["delete", "-"])
-    async def slashtag_remove(self, ctx: commands.Context, tag: GuildTagConverter):
+    async def slashtag_remove(self, ctx: commands.Context, *, tag: GuildTagConverter):
         """Delete a slash tag."""
         await ctx.send(await tag.delete())
 
     @slashtag.command("info")
-    async def slashtag_info(self, ctx: commands.Context, tag: TagConverter):
+    async def slashtag_info(self, ctx: commands.Context, *, tag: TagConverter):
         """Get info about a slash tag that is stored on this server."""
         await tag.send_info(ctx)
 
     @slashtag.command("raw")
-    async def slashtag_raw(self, ctx: commands.Context, tag: GuildTagConverter):
+    async def slashtag_raw(self, ctx: commands.Context, *, tag: GuildTagConverter):
         """Get a slash tag's raw content."""
         await tag.send_raw_tagscript(ctx)
 
     @classmethod
     def format_tagscript(cls, tag: SlashTag, limit: int = 60) -> str:
-        prefix = cls.COMMAND_TYPE_PREFIXES.get(tag.command.type, "/")
-        title = f"`{prefix}{tag.name}` - "
+        title = f"`{tag.type.get_prefix()}{tag.name}` - "
         limit -= len(title)
         tagscript = tag.tagscript
         if len(tagscript) > limit - 3:
@@ -597,7 +590,11 @@ class Commands(MixinMeta):
     @slashtag_global_edit.command("name")
     @copy_doc(slashtag_edit_name)
     async def slashtag_global_edit_name(
-        self, ctx: commands.Context, tag: GlobalTagConverter, name: TagName(global_priority=True)
+        self,
+        ctx: commands.Context,
+        tag: GlobalTagConverter,
+        *,
+        name: TagName(global_priority=True),
     ):
         await ctx.send(await tag.edit_name(name))
 
@@ -618,17 +615,16 @@ class Commands(MixinMeta):
     async def slashtag_global_edit_argument(
         self, ctx: commands.Context, tag: GuildTagConverter, argument: str
     ):
-        """Edit a single slash tag's argument by name."""
         await tag.edit_single_option(ctx, argument)
 
     @slashtag_global.command("remove", aliases=["delete", "-"])
     @copy_doc(slashtag_remove)
-    async def slashtag_global_remove(self, ctx: commands.Context, tag: GlobalTagConverter):
+    async def slashtag_global_remove(self, ctx: commands.Context, *, tag: GlobalTagConverter):
         await ctx.send(await tag.delete())
 
     @slashtag_global.command("raw")
     @copy_doc(slashtag_raw)
-    async def slashtag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
+    async def slashtag_global_raw(self, ctx: commands.Context, *, tag: GlobalTagConverter):
         await tag.send_raw_tagscript(ctx)
 
     @slashtag_global.command("list")
@@ -701,7 +697,10 @@ class Commands(MixinMeta):
         """Remove the slash eval command."""
         if not self.eval_command:
             return await ctx.send("The eval command hasn't been registered.")
-        await self.http.remove_slash_command(self.eval_command)
+        try:
+            await self.http.remove_slash_command(self.eval_command)
+        except discord.HTTPException:
+            pass
         await self.config.eval_command.clear()
         self.eval_command = None
         await ctx.send("`/eval` has been deleted.")

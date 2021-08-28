@@ -11,7 +11,7 @@ from redbot.core import commands
 from ..abc import MixinMeta
 from ..blocks import HideBlock
 from ..errors import RequireCheckFailure
-from ..http import InteractionCommand, SlashOptionType
+from ..http import ApplicationCommandType, InteractionCommand, SlashOptionType
 from ..objects import FakeMessage, SlashContext, SlashTag
 from ..utils import dev_check
 
@@ -79,7 +79,9 @@ class Processor(MixinMeta):
     ) -> tse.Adapter:
         return self.OPTION_ADAPTERS.get(option_type, default)
 
-    def handle_seed_variables(self, interaction: InteractionCommand, seed_variables: dict) -> dict:
+    async def handle_seed_variables(
+        self, interaction: InteractionCommand, seed_variables: dict
+    ) -> dict:
         seed_variables = seed_variables.copy()
         for option in interaction.options:
             adapter = self.get_adapter(option.type)
@@ -96,6 +98,26 @@ class Processor(MixinMeta):
             if original_option.name not in seed_variables:
                 log.debug("optional option %s not found, using empty adapter" % original_option)
                 seed_variables[original_option.name] = self.EMPTY_ADAPTER
+
+        guild = interaction.guild
+        author = interaction.author
+        channel = await interaction.get_channel()
+        seed_variables["author"] = tse.MemberAdapter(author)
+        seed_variables["channel"] = tse.ChannelAdapter(channel)
+        if guild:
+            seed_variables["server"] = tse.GuildAdapter(guild)
+
+        interaction_type = interaction.type
+        if interaction_type == ApplicationCommandType.USER:
+            target_id: int = interaction.target_id
+            user = interaction.resolved.users[target_id]
+            seed_variables["user"] = tse.MemberAdapter(user)
+            seed_variables["target_id"] = tse.StringAdapter(target_id)
+        elif interaction_type == ApplicationCommandType.MESSAGE:
+            target_id: int = interaction.target_id
+            message = interaction.resolved.messages[target_id]
+            seed_variables["message"] = tse.SafeObjectAdapter(message)
+            seed_variables["target_id"] = tse.StringAdapter(target_id)
         return seed_variables
 
     async def process_tag(
@@ -107,23 +129,7 @@ class Processor(MixinMeta):
         **kwargs,
     ) -> str:
         log.debug("processing tag %s | options: %r" % (tag, interaction.options))
-        seed_variables = self.handle_seed_variables(interaction, seed_variables)
-
-        guild = interaction.guild
-        author = interaction.author
-        channel = await interaction.get_channel()
-
-        tag_author = tse.MemberAdapter(author)
-        tag_channel = tse.ChannelAdapter(channel)
-        seed = {
-            "author": tag_author,
-            "channel": tag_channel,
-        }
-        if guild:
-            tag_guild = tse.GuildAdapter(guild)
-            seed["server"] = tag_guild
-        seed_variables.update(seed)
-
+        seed_variables = await self.handle_seed_variables(interaction, seed_variables)
         output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
         await tag.update_config()
         to_gather = []

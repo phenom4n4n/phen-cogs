@@ -348,6 +348,10 @@ class SlashTag:
     def author(self) -> Optional[discord.User]:
         return self.bot.get_user(self.author_id)
 
+    @property
+    def type(self) -> ApplicationCommandType:
+        return self.command.type
+
     def run(
         self, interpreter: tse.Interpreter, seed_variables: dict = {}, **kwargs
     ) -> tse.Response:
@@ -422,6 +426,7 @@ class SlashTag:
             f"Author: {self.author.mention if self.author else self.author_id}",
             f"Uses: {self.uses}",
             f"Length: {len(self)}",
+            f"Type: {self.type.get_human_name()} command",
         ]
         e = discord.Embed(
             color=await ctx.embed_color(),
