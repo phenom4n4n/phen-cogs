@@ -437,8 +437,9 @@ class SlashTag:
         command_info = [
             f"ID: `{c.id}`",
             f"Name: {c.name}",
-            f"Description: {c.description}",
         ]
+        if c.description:
+            command_info.append(f"Description: {c.description}")
         e.add_field(name="Command", value="\n".join(command_info), inline=False)
 
         option_info = []
