@@ -91,7 +91,7 @@ class Commands(MixinMeta):
         """
         Add a slash tag with TagScript.
 
-        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
+        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags/slashtags.html)
         """
         await self.create_slash_tag(ctx, tag_name, tagscript, is_global=False)
 
@@ -392,7 +392,7 @@ class Commands(MixinMeta):
         """
         Edit a slash tag's arguments.
 
-        See [this documentation page](https://phen-cogs.readthedocs.io/en/latest/slash_arguments.html) for more information on slash tag arguments.
+        See [this documentation page](https://phen-cogs.readthedocs.io/en/latest/slashtags/slash_arguments.html) for more information on slash tag arguments.
         """
         await tag.edit_options(ctx)
 
