@@ -69,7 +69,10 @@ class Lock(commands.Cog):
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
-        """Lock a channel. You can only lock a maximum of 10 things at once.
+        """Lock a channel. 
+        
+        Provide a role or member if you would like to lock it for them.
+        You can only lock a maximum of 10 things at once.
         
         **Examples:**
         `[p]lock #general`
@@ -138,7 +141,10 @@ class Lock(commands.Cog):
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
     ):
-        """Prevent users from viewing a channel. You can only lock a maximum of 10 things at once.
+        """Prevent users from viewing a channel. 
+        
+        Provide a role or member if you would like to lock it for them.
+        You can only lock a maximum of 10 things at once.
         
         **Example:**
         `[p]viewlock #secret-channel`
@@ -184,6 +190,8 @@ class Lock(commands.Cog):
     @lock.command(name="server")
     async def lock_server(self, ctx, roles: commands.Greedy[FuzzyRole] = None):
         """Lock the server.
+        
+        Provide a role if you would like to lock it for that role.
         
         **Example:**
         `[p]lock server @members`"""
@@ -264,6 +272,7 @@ class Lock(commands.Cog):
     ):
         """Unlock a channel.
 
+        Provide a role or member if you would like to unlock it for them.
         If you would like to override-unlock for something, you can do so by pass `true` as the state argument.
         You can only unlock a maximum of 10 things at once.
         
@@ -333,6 +342,7 @@ class Lock(commands.Cog):
     ):
         """Allow users to view a channel.
 
+        Provide a role or member if you would like to unlock it for them.
         If you would like to override-unlock for something, you can do so by pass `true` as the state argument.
         You can only unlock a maximum of 10 things at once.
         
@@ -380,6 +390,8 @@ class Lock(commands.Cog):
     @unlock.command(name="server")
     async def unlock_server(self, ctx, roles: commands.Greedy[FuzzyRole] = None):
         """Unlock the server.
+        
+        Provide a role if you would like to unlock it for that role.
         
         **Examples:**
         `[p]unlock server @members`"""
