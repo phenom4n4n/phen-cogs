@@ -320,7 +320,7 @@ class Commands(MixinMeta):
         """
         Add a message command tag with TagScript.
 
-        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
+        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags/slashtags.html)
         """
         await self.create_slash_tag(
             ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.MESSAGE
@@ -338,7 +338,7 @@ class Commands(MixinMeta):
         """
         Add a user command tag with TagScript.
 
-        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags.html)
+        [Slash tag usage guide](https://phen-cogs.readthedocs.io/en/latest/slashtags/slashtags.html)
         """
         await self.create_slash_tag(
             ctx, tag_name, tagscript, is_global=False, command_type=ApplicationCommandType.USER
