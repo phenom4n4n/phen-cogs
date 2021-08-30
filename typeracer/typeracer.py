@@ -170,7 +170,7 @@ class TypeRacer(commands.Cog):
         ref = msg.to_reference(fail_if_not_exists=False)
         with Timer() as timer:
             try:
-                winner = await ctx.bot.wait_for("message", check=check, timeout=30)
+                winner = await ctx.bot.wait_for("message", check=check, timeout=60)
             except asyncio.TimeoutError:
                 embed = discord.Embed(
                     color=discord.Color.blurple(),
