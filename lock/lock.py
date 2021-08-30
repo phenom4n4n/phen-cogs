@@ -278,7 +278,7 @@ class Lock(commands.Cog):
         
         **Examples:**
         `[p]unlock #general`
-        `unlock 69420696969 true @i like men`"""
+        `[p]unlock 739562845027353 true`"""
         try:
             await ctx.trigger_typing()
         except discord.Forbidden:  # when another bot is faster to lock
