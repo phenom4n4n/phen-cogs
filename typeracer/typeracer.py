@@ -61,7 +61,7 @@ class TypeRacer(commands.Cog):
 
     FONT_SIZE = 30
 
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -184,5 +184,5 @@ class TypeRacer(commands.Cog):
             f"{winner.author.mention} typed the [sentence]({msg.jump_url}) in `{timer.time:.2f}s` "
             f"with **{acc:.2f}%** accuracy. (**{wpm:.1f} WPM**)"
         )
-        embed = discord.Embed(color=discord.Color.blurple(), description=description)
+        embed = discord.Embed(color=winner.author.color, description=description)
         await ctx.send(embed=embed, reference=winner_ref)
