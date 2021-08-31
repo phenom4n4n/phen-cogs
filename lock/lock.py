@@ -32,7 +32,7 @@ from redbot.core.config import Config
 from redbot.core.utils.chat_formatting import humanize_list, inline
 from redbot.core.utils.mod import get_audit_reason
 
-from .converters import ChannelToggle, FuzzyRole, LockableChannel
+from .converters import ChannelToggle, LockableChannel, LockableRole
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -42,7 +42,7 @@ class Lock(commands.Cog):
     Advanced channel and server locking.
     """
 
-    __version__ = "1.1.4"
+    __version__ = "1.1.5"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -67,16 +67,18 @@ class Lock(commands.Cog):
         self,
         ctx: commands.Context,
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
-        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
+        roles_or_members: commands.Greedy[Union[LockableRole, discord.Member]] = None,
     ):
-        """Lock a channel.
+        """
+        Lock a channel.
 
         Provide a role or member if you would like to lock it for them.
         You can only lock a maximum of 10 things at once.
 
         **Examples:**
         `[p]lock #general`
-        `[p]lock 737958453905063977 @members`"""
+        `[p]lock 737958453905063977 @members`
+        """
         try:
             await ctx.trigger_typing()
         except discord.Forbidden:  # when another bot is faster to lock
@@ -139,16 +141,18 @@ class Lock(commands.Cog):
         self,
         ctx: commands.Context,
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
-        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
+        roles_or_members: commands.Greedy[Union[LockableRole, discord.Member]] = None,
     ):
-        """Prevent users from viewing a channel.
+        """
+        Prevent users from viewing a channel.
 
         Provide a role or member if you would like to lock it for them.
         You can only lock a maximum of 10 things at once.
 
         **Example:**
         `[p]viewlock #secret-channel`
-        `[p]viewlock 7382395026348520 @nubs`"""
+        `[p]viewlock 7382395026348520 @nubs`
+        """
         try:
             await ctx.trigger_typing()
         except discord.Forbidden:  # when another bot is faster to lock
@@ -187,14 +191,16 @@ class Lock(commands.Cog):
         if msg:
             await ctx.send(msg)
 
-    @lock.command(name="server")
-    async def lock_server(self, ctx, roles: commands.Greedy[FuzzyRole] = None):
-        """Lock the server.
+    @lock.command("server")
+    async def lock_server(self, ctx: commands.Context, *roles: LockableRole):
+        """
+        Lock the server.
 
         Provide a role if you would like to lock it for that role.
 
         **Example:**
-        `[p]lock server @members`"""
+        `[p]lock server @members`
+        """
         if not roles:
             roles = [ctx.guild.default_role]
         succeeded = []
@@ -224,12 +230,12 @@ class Lock(commands.Cog):
             )
 
     @commands.is_owner()  # unstable, incomplete
-    @lock.command(name="perms")
+    @lock.command("perms")
     async def lock_perms(
         self,
         ctx: commands.Context,
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
-        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
+        roles_or_members: commands.Greedy[Union[LockableRole, discord.Member]] = None,
         *permissions: str,
     ):
         """Set the given permissions for a role or member to True."""
@@ -265,12 +271,13 @@ class Lock(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def unlock(
         self,
-        ctx,
+        ctx: commands.Context,
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         state: Optional[ChannelToggle] = None,
-        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
+        roles_or_members: commands.Greedy[Union[LockableRole, discord.Member]] = None,
     ):
-        """Unlock a channel.
+        """
+        Unlock a channel.
 
         Provide a role or member if you would like to unlock it for them.
         If you would like to override-unlock for something, you can do so by pass `true` as the state argument.
@@ -278,7 +285,8 @@ class Lock(commands.Cog):
 
         **Examples:**
         `[p]unlock #general`
-        `[p]unlock 739562845027353 true`"""
+        `[p]unlock 739562845027353 true`
+        """
         try:
             await ctx.trigger_typing()
         except discord.Forbidden:  # when another bot is faster to lock
@@ -335,12 +343,13 @@ class Lock(commands.Cog):
     @commands.group(invoke_without_command=True)
     async def unviewlock(
         self,
-        ctx,
+        ctx: commands.Context,
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         state: Optional[ChannelToggle] = None,
-        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
+        roles_or_members: commands.Greedy[Union[LockableRole, discord.Member]] = None,
     ):
-        """Allow users to view a channel.
+        """
+        Allow users to view a channel.
 
         Provide a role or member if you would like to unlock it for them.
         If you would like to override-unlock for something, you can do so by pass `true` as the state argument.
@@ -348,7 +357,8 @@ class Lock(commands.Cog):
 
         **Example:**
         `[p]unviewlock #hidden-channel true`
-        `[p]unviewlock 746284923572835 @boosters`"""
+        `[p]unviewlock 746284923572835 @boosters`
+        """
         try:
             await ctx.trigger_typing()
         except discord.Forbidden:  # when another bot is faster to lock
@@ -387,14 +397,16 @@ class Lock(commands.Cog):
         if msg:
             await ctx.send(msg)
 
-    @unlock.command(name="server")
-    async def unlock_server(self, ctx, roles: commands.Greedy[FuzzyRole] = None):
-        """Unlock the server.
+    @unlock.command("server")
+    async def unlock_server(self, ctx: commands.Context, *roles: LockableRole):
+        """
+        Unlock the server.
 
         Provide a role if you would like to unlock it for that role.
 
         **Examples:**
-        `[p]unlock server @members`"""
+        `[p]unlock server @members`
+        """
         if not roles:
             roles = [ctx.guild.default_role]
         succeeded = []
@@ -428,16 +440,18 @@ class Lock(commands.Cog):
             await ctx.send("\n".join(msg))
 
     @commands.is_owner()  # unstable, incomplete
-    @unlock.command(name="perms")
+    @unlock.command("perms")
     async def unlock_perms(
         self,
         ctx: commands.Context,
         channel: Optional[Union[LockableChannel, discord.VoiceChannel]] = None,
         state: Optional[ChannelToggle] = None,
-        roles_or_members: commands.Greedy[Union[FuzzyRole, discord.Member]] = None,
+        roles_or_members: commands.Greedy[Union[LockableRole, discord.Member]] = None,
         *permissions: str,
     ):
-        """Set the given permissions for a role or member to `True` or `None`, depending on the given state"""
+        """
+        Set the given permissions for a role or member to `True` or `None`, depending on the given state
+        """
         if not permissions:
             raise commands.BadArgument
 

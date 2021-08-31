@@ -25,18 +25,16 @@ SOFTWARE.
 from typing import Optional, Union
 
 import discord
-from discord.ext.commands.converter import Converter, RoleConverter, TextChannelConverter
 from rapidfuzz import process
 from redbot.core import commands
-from redbot.core.commands import BadArgument
 from unidecode import unidecode
 
 
-class ChannelToggle(Converter):
+class ChannelToggle(commands.Converter):
     async def convert(self, ctx: commands.Context, arg: str) -> Union[bool, None]:
         arg = arg.lower()
         if arg not in ["true", "default", "neutral"]:
-            raise BadArgument(
+            raise commands.BadArgument(
                 f"`{arg} is not a valid channel state. You use provide `true` or `default`."
             )
         if arg in ["neutral", "default"]:
@@ -46,18 +44,24 @@ class ChannelToggle(Converter):
         return ret
 
 
-class LockableChannel(TextChannelConverter):
+class LockableChannel(commands.TextChannelConverter):
     async def convert(self, ctx: commands.Context, arg: str) -> Optional[discord.TextChannel]:
         channel = await super().convert(ctx, arg)
         if not ctx.channel.permissions_for(ctx.me).manage_roles:
-            raise BadArgument(
+            raise commands.BadArgument(
                 f"I do not have permission to edit permissions in {channel.mention}."
             )
+        if not await ctx.bot.is_owner(ctx.author):
+            author_perms = channel.permissions_for(ctx.author)
+            if not (author_perms.read_messages and author_perms.manage_roles):
+                raise commands.BadArgument(
+                    f"You do not have permission to edit permissions in {channel.mention}."
+                )
         return channel
 
 
 # original converter from https://github.com/TrustyJAID/Trusty-cogs/blob/master/serverstats/converters.py#L19
-class FuzzyRole(RoleConverter):
+class FuzzyRole(commands.RoleConverter):
     """
     This will accept role ID's, mentions, and perform a fuzzy search for
     roles within the guild and return a list of role objects
@@ -74,7 +78,7 @@ class FuzzyRole(RoleConverter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
         try:
             basic_role = await super().convert(ctx, argument)
-        except BadArgument:
+        except commands.BadArgument:
             pass
         else:
             return basic_role
@@ -89,7 +93,17 @@ class FuzzyRole(RoleConverter):
             )
         ]
         if not result:
-            raise BadArgument(f'Role "{argument}" not found.' if self.response else None)
+            raise commands.BadArgument(f'Role "{argument}" not found.' if self.response else None)
 
         sorted_result = sorted(result, key=lambda r: r[1], reverse=True)
         return sorted_result[0][0]
+
+
+class LockableRole(FuzzyRole):
+    async def convert(self, ctx: commands.Context, argument: str) -> discord.Role:
+        role = await super().convert(ctx, argument)
+        if not await ctx.bot.is_owner(ctx.author) and role >= ctx.author.top_role:
+            raise commands.BadArgument(
+                f"You do not have permission to edit **{role}**'s permissions."
+            )
+        return role
