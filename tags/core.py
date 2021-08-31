@@ -61,7 +61,7 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.3.4"
+    __version__ = "2.3.5"
     __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -96,6 +96,8 @@ class Tags(
 
         self.session = aiohttp.ClientSession()
         self.docs: list = []
+        if bot._cli_flags.logging_level == logging.DEBUG:
+            logging.getLogger("TagScriptEngine").setLevel(logging.DEBUG)
 
         bot.add_dev_env_value("tags", lambda ctx: self)
         super().__init__()

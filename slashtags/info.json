@@ -9,7 +9,7 @@
     ],
     "required_cogs": {},
     "requirements": [
-        "TagScript==2.6.1",
+        "TagScript==2.6.2",
         "tabulate"
     ],
     "tags": [

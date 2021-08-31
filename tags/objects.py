@@ -157,7 +157,7 @@ class Tag:
             except KeyError:
                 pass
         try:
-            del tse.CooldownBlock._CooldownBlock__COOLDOWNS[self.cooldown_key]
+            del tse.CooldownBlock.COOLDOWNS[self.cooldown_key]
         except KeyError:
             pass
 
