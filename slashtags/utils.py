@@ -59,8 +59,8 @@ async def validate_tagscriptengine(bot: Red, tse_version: str, *, reloaded: bool
     message = (
         "The SlashTags cog attempted to install TagScriptEngine, but the version installed "
         "is outdated. Shut down your bot, then in shell in your venv, run the following "
-        f"commands:\n{commands}\nAfter running these commands, restart your bot and reinstall "
-        "Tags. If it continues to fail to load, contact the cog author."
+        f"commands:\n{commands}\nAfter running these commands, restart your bot and reload "
+        "SlashTags. If it continues to fail to load, contact the cog author."
     )
 
     if not hasattr(tse, "VersionInfo"):
