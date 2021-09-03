@@ -501,7 +501,7 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_store.command(name="pastebin", aliases=["frompaste"])
-    async def embed_store_yaml(self, ctx, name: str, *, data: PASTEBIN_CONVERTER):
+    async def embed_store_pastebin(self, ctx, name: str, *, data: PASTEBIN_CONVERTER):
         """
         Store an embed from valid JSON or YAML from a pastebin link on this server.
         """
