@@ -201,7 +201,7 @@ class EmbedUtils(commands.Cog):
         data: PASTEBIN_CONTENT_CONVERTER,
     ):
         """
-        Post an embed from valid YAML.
+        Post an embed from valid pastebin link containing valid JSON or YAML.
         """
         if channel and channel != ctx.channel:
             await channel.send(embed=data)
@@ -360,7 +360,7 @@ class EmbedUtils(commands.Cog):
         data: PASTEBIN_CONVERTER,
     ):
         """
-        Edit a message's embed using valid YAML.
+        Edit a message's embed using a pastebin link which contain a valid JSON or YAML.
         """
         await message.edit(embed=data)
         await ctx.tick()
@@ -503,7 +503,7 @@ class EmbedUtils(commands.Cog):
     @embed_store.command(name="pastebin", aliases=["frompaste"])
     async def embed_store_yaml(self, ctx, name: str, *, data: PASTEBIN_CONVERTER):
         """
-        Store an embed from valid YAML on this server.
+        Store an embed from valid JSON or YAML from a pastebin link on this server.
         """
         await self.store_embed(ctx, name, data)
         await ctx.tick()
@@ -624,8 +624,8 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @global_store.command(name="pastebin", aliases=["frompaste"])
-    async def global_store_json(self, ctx, name: str, locked: bool, *, data: PASTEBIN_CONVERTER):
-        """Store an embed from valid JSON globally.
+    async def global_store_pastebin(self, ctx, name: str, locked: bool, *, data: PASTEBIN_CONVERTER):
+        """Store an embed from valid JSON or YAML globally using a pastebin link.
 
         The `locked` argument specifies whether the embed should be locked to owners only."""
         await self.global_store_embed(ctx, name, data, locked)
@@ -773,7 +773,7 @@ class EmbedUtils(commands.Cog):
         embeds: PastebinConverterWebhook(conversion_type="yaml"),  # noqa: F821
     ):
         """
-        Send embeds through webhooks using YAML.
+        Send embeds through webhooks using YAML from a pastebin link.
         """
         await self.webhook_send(ctx, embeds=embeds[:10])
 
