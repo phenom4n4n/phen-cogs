@@ -53,9 +53,9 @@ class LockableChannel(commands.TextChannelConverter):
             )
         if not await ctx.bot.is_owner(ctx.author):
             author_perms = channel.permissions_for(ctx.author)
-            if not (author_perms.read_messages and author_perms.manage_roles):
+            if not author_perms.read_messages:
                 raise commands.BadArgument(
-                    f"You do not have permission to edit permissions in {channel.mention}."
+                    f"You do not have permission to view or edit {channel.mention}."
                 )
         return channel
 
