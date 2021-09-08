@@ -28,11 +28,11 @@ from colorsys import rgb_to_hsv
 from typing import List, Optional
 
 import discord
-from TagScriptEngine import Interpreter, MemberAdapter, LooseVariableGetterBlock
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import humanize_number as hn
 from redbot.core.utils.chat_formatting import pagify, text_to_file
 from redbot.core.utils.mod import get_audit_reason
+from TagScriptEngine import Interpreter, LooseVariableGetterBlock, MemberAdapter
 
 from .abc import MixinMeta
 from .converters import FuzzyRole, StrictRole, TargeterArgs, TouchableMember
@@ -136,10 +136,16 @@ class Roles(MixinMeta):
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
     @role.command("members", aliases=["dump"])
-    async def role_members(self, ctx: commands.Context, role: FuzzyRole, *, formatting: str = "{member} - {member(id)}"):
+    async def role_members(
+        self,
+        ctx: commands.Context,
+        role: FuzzyRole,
+        *,
+        formatting: str = "{member} - {member(id)}",
+    ):
         """
         Sends a list of members in a role.
-        
+
         You can supply a custom formatting tagscript for each member.
         The [member](https://phen-cogs.readthedocs.io/en/latest/tags/default_variables.html#author-block) block is available to use, found on the [TagScript documentation](https://phen-cogs.readthedocs.io/en/latest/index.html).
 
