@@ -28,6 +28,7 @@ from colorsys import rgb_to_hsv
 from typing import List, Optional
 
 import discord
+from TagScriptEngine import Interpreter, MemberAdapter, LooseVariableGetterBlock
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import humanize_number as hn
 from redbot.core.utils.chat_formatting import pagify, text_to_file
@@ -63,6 +64,10 @@ class Roles(MixinMeta):
     """
     Useful role commands.
     """
+
+    def __init__(self):
+        self.interpreter = Interpreter([LooseVariableGetterBlock()])
+        super().__init__()
 
     async def initialize(self):
         log.debug("Roles Initialize")
@@ -124,20 +129,32 @@ class Roles(MixinMeta):
         e.set_footer(text=role.id)
         return e
 
+    def format_member(self, member: discord.Member, formatting: str) -> str:
+        output = self.interpreter.process(formatting, {"member": MemberAdapter(member)})
+        return output.body
+
     @commands.bot_has_permissions(attach_files=True)
     @commands.admin_or_permissions(manage_roles=True)
     @role.command("members", aliases=["dump"])
-    async def role_members(self, ctx: commands.Context, *, role: FuzzyRole):
-        """Sends a list of members in a role."""
+    async def role_members(self, ctx: commands.Context, role: FuzzyRole, *, formatting: str = "{member} - {member(id)}"):
+        """
+        Sends a list of members in a role.
+        
+        You can supply a custom formatting tagscript for each member.
+        The [member](https://phen-cogs.readthedocs.io/en/latest/tags/default_variables.html#author-block) block is available to use, found on the [TagScript documentation](https://phen-cogs.readthedocs.io/en/latest/index.html).
+
+        **Example:**
+        `[p]role dump @admin <t:{member(timestamp)}> - {member(mention)}`
+        """
         if guild_roughly_chunked(ctx.guild) is False and self.bot.intents.members:
             await ctx.guild.chunk()
         if not role.members:
             return await ctx.send(f"**{role}** has no members.")
-        members = "\n".join(f"{member} - {member.id}" for member in role.members)
+        members = "\n".join(self.format_member(member, formatting) for member in role.members)
         if len(members) > 2000:
             await ctx.send(file=text_to_file(members, f"members.txt"))
         else:
-            await ctx.send(members)
+            await ctx.send(members, allowed_mentions=discord.AllowedMentions.none())
 
     @staticmethod
     def get_hsv(role: discord.Role):

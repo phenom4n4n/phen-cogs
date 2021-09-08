@@ -11,7 +11,7 @@
         "Neuro Assassin"
     ],
     "required_cogs": {},
-    "requirements": ["unidecode", "rapidfuzz"],
+    "requirements": ["unidecode", "rapidfuzz", "TagScript"],
     "tags": [
         "utility",
         "server",
