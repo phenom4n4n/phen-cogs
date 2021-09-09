@@ -1,6 +1,5 @@
 import asyncio
 import textwrap
-import time
 from difflib import SequenceMatcher
 from functools import partial
 from io import BytesIO
@@ -15,43 +14,6 @@ from redbot.core.config import Config
 from redbot.core.data_manager import bundled_data_path
 
 
-class Timer:
-    def __init__(self):
-        self._start = None
-        self._end = None
-
-    def start(self):
-        self._start = time.perf_counter()
-
-    def stop(self):
-        self._end = time.perf_counter()
-
-    def __enter__(self):
-        self.start()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stop()
-
-    def __int__(self):
-        return round(self.time)
-
-    def __float__(self):
-        return self.time
-
-    def __str__(self):
-        return str(self.time)
-
-    def __repr__(self):
-        return f"<Timer time={self.time}>"
-
-    @property
-    def time(self):
-        if self._end is None:
-            raise ValueError("Timer has not been ended.")
-        return self._end - self._start
-
-
 class TypeRacer(commands.Cog):
     """
     Race to see who can type the fastest!
@@ -61,7 +23,7 @@ class TypeRacer(commands.Cog):
 
     FONT_SIZE = 30
 
-    __version__ = "1.0.1"
+    __version__ = "1.0.2"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -168,20 +130,20 @@ class TypeRacer(commands.Cog):
             return False
 
         ref = msg.to_reference(fail_if_not_exists=False)
-        with Timer() as timer:
-            try:
-                winner = await ctx.bot.wait_for("message", check=check, timeout=60)
-            except asyncio.TimeoutError:
-                embed = discord.Embed(
-                    color=discord.Color.blurple(),
-                    description=f"No one typed the [sentence]({msg.jump_url}) in time.",
-                )
-                return await ctx.send(embed=embed, reference=ref)
+        try:
+            winner = await ctx.bot.wait_for("message", check=check, timeout=60)
+        except asyncio.TimeoutError:
+            embed = discord.Embed(
+                color=discord.Color.blurple(),
+                description=f"No one typed the [sentence]({msg.jump_url}) in time.",
+            )
+            return await ctx.send(embed=embed, reference=ref)
 
+        seconds = (winner.created_at - msg.created_at).total_seconds()
         winner_ref = winner.to_reference(fail_if_not_exists=False)
-        wpm = (len(quote) / 5) / (timer.time / 60) * (acc / 100)
+        wpm = (len(quote) / 5) / (seconds / 60) * (acc / 100)
         description = (
-            f"{winner.author.mention} typed the [sentence]({msg.jump_url}) in `{timer.time:.2f}s` "
+            f"{winner.author.mention} typed the [sentence]({msg.jump_url}) in `{seconds:.2f}s` "
             f"with **{acc:.2f}%** accuracy. (**{wpm:.1f} WPM**)"
         )
         embed = discord.Embed(color=winner.author.color, description=description)
