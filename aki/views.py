@@ -1,5 +1,4 @@
 import logging
-from collections import namedtuple
 
 import akinator
 import discord
@@ -30,7 +29,9 @@ class AkiView(discord.ui.View):
         await interaction.response.defer()
         return True
 
-    async def send_initial_message(self, ctx: commands.Context, channel: discord.TextChannel) -> discord.Message:
+    async def send_initial_message(
+        self, ctx: commands.Context, channel: discord.TextChannel
+    ) -> discord.Message:
         return await channel.send(embed=self.current_question_embed(), view=self)
 
     async def start(self, ctx: commands.Context) -> discord.Message:
@@ -152,7 +153,9 @@ class AkiView(discord.ui.View):
     async def edit(self, interaction: discord.Interaction):
         await interaction.message.edit(embed=self.current_question_embed(), view=self)
 
-    async def cancel(self, interaction: discord.Interaction, message: str = "Akinator game cancelled."):
+    async def cancel(
+        self, interaction: discord.Interaction, message: str = "Akinator game cancelled."
+    ):
         await self.edit_or_send(interaction, content=message, embed=None, view=None)
         self.stop()
 

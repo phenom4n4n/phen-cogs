@@ -31,7 +31,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 
-from .views import channel_is_nsfw, AkiView
+from .views import AkiView, channel_is_nsfw
 
 log = logging.getLogger("red.phenom4n4n.aki")
 
@@ -62,9 +62,7 @@ class Aki(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
     @commands.command(aliases=["akinator"])
-    async def aki(
-        self, ctx: commands.Context, language: str.lower = "en"
-    ):
+    async def aki(self, ctx: commands.Context, language: str.lower = "en"):
         """
         Start a game of Akinator!
         """
