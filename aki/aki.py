@@ -31,7 +31,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 
-from .menus import channel_is_nsfw, get_menu
+from .views import channel_is_nsfw, AkiView
 
 log = logging.getLogger("red.phenom4n4n.aki")
 
@@ -49,7 +49,7 @@ class Aki(commands.Cog):
             force_registration=True,
         )
 
-    __version__ = "1.1.0"
+    __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -63,20 +63,10 @@ class Aki(commands.Cog):
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
     @commands.command(aliases=["akinator"])
     async def aki(
-        self, ctx: commands.Context, language: str.lower = "en", use_buttons: bool = True
+        self, ctx: commands.Context, language: str.lower = "en"
     ):
         """
         Start a game of Akinator!
-
-        Controls:
-        > ✅ : yes
-        > ❎ : no
-        > ❔ : i don't know
-        > 📉 : probably
-        > 📈 : probably not
-        > 🔙 : back
-        > 🏆 : win
-        > 🗑️ : cancel
         """
         await ctx.trigger_typing()
         aki = Akinator()
@@ -91,5 +81,4 @@ class Aki(commands.Cog):
             await ctx.send("I encountered an error while connecting to the Akinator servers.")
         else:
             aki_color = discord.Color(0xE8BC90)
-            menu = get_menu(buttons=use_buttons)
-            await menu(aki, aki_color).start(ctx)
+            await AkiView(aki, aki_color, author_id=ctx.author.id).start(ctx)
