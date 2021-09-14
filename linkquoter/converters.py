@@ -42,9 +42,8 @@ class LinkToMessage(commands.Converter):
         else:
             return await self.validate_message(ctx, message)
 
-    async def validate_message(
-        self, ctx: commands.Context, message: discord.Message
-    ) -> discord.Message:
+    @staticmethod
+    async def validate_message(ctx: commands.Context, message: discord.Message) -> discord.Message:
         if not message.guild:
             raise commands.BadArgument("I can only quote messages from servers.")
         guild = message.guild
