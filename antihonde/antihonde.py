@@ -12,7 +12,7 @@ log = logging.getLogger("red.phenom4n4n.antihonde")
 
 
 class AntiHonde(commands.Cog):
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def __init__(self, bot):
         self.bot = bot
