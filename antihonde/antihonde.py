@@ -97,7 +97,7 @@ class AntiHonde(commands.Cog):
 
     def is_honde(self, member: discord.Member) -> bool:
         two_weeks = timedelta(weeks=2)
-        if (datetime.now() - member.created_at) > two_weeks:
+        if (discord.utils.utcnow() - member.created_at) > two_weeks:
             return False
         return bool(self.h0nde_re.search(member.name))
 
@@ -114,7 +114,7 @@ class AntiHonde(commands.Cog):
         await modlog.create_case(
             self.bot,
             guild,
-            datetime.now(tz=timezone.utc),
+            discord.utils.utcnow(),
             "ban",
             member,
             guild.me,
