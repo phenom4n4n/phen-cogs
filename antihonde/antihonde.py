@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import discord
 from redbot.core import Config, commands, modlog
