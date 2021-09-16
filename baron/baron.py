@@ -61,7 +61,7 @@ class Baron(commands.Cog):
     Tools for managing guild joins and leaves.
     """
 
-    __version__ = "1.2.3"
+    __version__ = "1.2.4"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -114,7 +114,7 @@ class Baron(commands.Cog):
         guilds = [
             guild.me.joined_at
             async for guild in AsyncIter(self.bot.guilds, steps=100)
-            if guild.me.joined_at.timestamp() > date.timestamp()
+            if guild.me.joined_at > date
         ]
         if len(guilds) <= 1:
             return await ctx.send("There aren't enough server joins during that time.")
@@ -671,14 +671,14 @@ class Baron(commands.Cog):
                 title="Limit Leave",
                 description=f"I left {guild.name} since it was past my server limit. ({data['limit']})",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon.url)
             await channel.send(embed=e)
         elif log_type == "min_member_leave":
             e = discord.Embed(
                 title="Minimum Member Leave",
                 description=f"I left {guild.name} since it has less than {data['min_members']} members. ({guild.member_count})",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon.url)
             await channel.send(embed=e)
         elif log_type == "mass_leave":
             e = discord.Embed(
@@ -691,14 +691,14 @@ class Baron(commands.Cog):
                 title="Bot Farm Leave",
                 description=f"I left {guild.name} since it has a high bot to member ratio. ({data['bot_ratio']}%)",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon.url)
             await channel.send(embed=e)
         elif log_type == "bl_leave":
             e = discord.Embed(
                 title="Blacklist Leave",
                 description=f"I left {guild.name} since it was in the blacklist.",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon.url)
             await channel.send(embed=e)
 
     async def notify_guild(self, guild: discord.Guild, message: str):
