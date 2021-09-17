@@ -1,9 +1,8 @@
-from typing import Optional, List, Any, Tuple
+from typing import Any, List, Optional, Tuple
 
 import discord
 from redbot.core import commands
 from redbot.vendored.discord.ext.menus import ListPageSource
-
 
 __all__ = ("ConfirmationView", "PageSource", "PaginatedView")
 
@@ -26,12 +25,15 @@ class BaseView(discord.ui.View):
                 item.style = discord.ButtonStyle.gray
             item.disabled = True
 
+
 class ConfirmationView(BaseView):
     def __init__(self, timeout: int = 60):
         super().__init__(timeout=timeout)
         self.value = None
 
-    async def send_initial_message(self, ctx: commands.Context, content: str = None, **kwargs) -> discord.Message:
+    async def send_initial_message(
+        self, ctx: commands.Context, content: str = None, **kwargs
+    ) -> discord.Message:
         self._author_id = ctx.author.id
         message = await ctx.reply(content, view=self, **kwargs)
         self.message = message
@@ -59,7 +61,9 @@ class ConfirmationView(BaseView):
         await self.message.edit(view=self)
 
     @classmethod
-    async def confirm(cls, ctx: commands.Context, content: str = None, timeout: int = 60, **kwargs) -> bool:
+    async def confirm(
+        cls, ctx: commands.Context, content: str = None, timeout: int = 60, **kwargs
+    ) -> bool:
         view = cls(timeout=timeout)
         await view.send_initial_message(ctx, content, **kwargs)
         await view.wait()
@@ -83,6 +87,7 @@ class Button(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         await self._callback(self, interaction)
 
+
 class PaginatedView(BaseView):
     def __init__(self, source: PageSource, *, timeout: int = 60):
         super().__init__(timeout=timeout)
@@ -92,10 +97,12 @@ class PaginatedView(BaseView):
         self.message: Optional[discord.Message] = None
         length = source.get_max_pages()
         if length > 1:
-            self.add_item(Button("previous", style=discord.ButtonStyle.blurple, callback=self.previous))
+            self.add_item(
+                Button("previous", style=discord.ButtonStyle.blurple, callback=self.previous)
+            )
         self.add_item(Button("close", style=discord.ButtonStyle.red, callback=self.close))
         if length > 1:
-            self.add_item(Button("next", style=discord.ButtonStyle.blurple, callback=self.next))	
+            self.add_item(Button("next", style=discord.ButtonStyle.blurple, callback=self.next))
 
     async def send_initial_message(self, ctx: commands.Context) -> discord.Message:
         self._author_id = ctx.author.id
