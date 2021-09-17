@@ -46,12 +46,12 @@ from .converters import (
 )
 from .errors import EmbedConversionError, EmbedFileError, EmbedNotFound, EmbedUtilsException
 
-YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
-PASTEBIN_CONVERTER = PastebinConverter(conversion_type="yaml")
-PASTEBIN_CONTENT_CONVERTER = PastebinConverter(conversion_type="yaml", content=True)
-YAML_CONTENT_CONVERTER = StringToEmbed(conversion_type="yaml", content=True)
 JSON_CONVERTER = StringToEmbed()
 JSON_CONTENT_CONVERTER = StringToEmbed(content=True)
+YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
+YAML_CONTENT_CONVERTER = StringToEmbed(conversion_type="yaml", content=True)
+PASTEBIN_CONVERTER = PastebinConverter(conversion_type="yaml")
+PASTEBIN_CONTENT_CONVERTER = PastebinConverter(conversion_type="yaml", content=True)
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
@@ -70,7 +70,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.4.1"
+    __version__ = "1.5.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -192,7 +192,7 @@ class EmbedUtils(commands.Cog):
             await channel.send(embed=data)
         await ctx.tick()
 
-    @embed.command(name="pastebin", aliases=["frompaste"])
+    @embed.command(name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin")
     async def embed_pastebin(
         self,
         ctx: commands.Context,
@@ -201,7 +201,7 @@ class EmbedUtils(commands.Cog):
         data: PASTEBIN_CONTENT_CONVERTER,
     ):
         """
-        Post an embed from valid pastebin link containing valid JSON or YAML.
+        Post an embed from a pastebin link containing valid JSON or YAML.
         """
         if channel and channel != ctx.channel:
             await channel.send(embed=data)
@@ -351,7 +351,7 @@ class EmbedUtils(commands.Cog):
         await message.edit(embed=data)
         await ctx.tick()
 
-    @embed_edit.command(name="pastebin", aliases=["frompaste"])
+    @embed_edit.command(name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin")
     async def embed_edit_pastebin(
         self,
         ctx: commands.Context,
@@ -360,7 +360,7 @@ class EmbedUtils(commands.Cog):
         data: PASTEBIN_CONVERTER,
     ):
         """
-        Edit a message's embed using a pastebin link which contain a valid JSON or YAML.
+        Edit a message's embed using a pastebin link which contains valid JSON or YAML.
         """
         await message.edit(embed=data)
         await ctx.tick()
@@ -492,7 +492,7 @@ class EmbedUtils(commands.Cog):
         await self.store_embed(ctx, name, data)
         await ctx.tick()
 
-    @embed_store.command(name="yaml", aliases=["fromyaml"])
+    @embed_store.command(name="yaml", aliases=["fromyaml"], add_example_info=True, info_type="yaml")
     async def embed_store_yaml(self, ctx, name: str, *, data: YAML_CONVERTER):
         """
         Store an embed from valid YAML on this server.
@@ -500,7 +500,7 @@ class EmbedUtils(commands.Cog):
         await self.store_embed(ctx, name, data)
         await ctx.tick()
 
-    @embed_store.command(name="pastebin", aliases=["frompaste"])
+    @embed_store.command(name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin")
     async def embed_store_pastebin(self, ctx, name: str, *, data: PASTEBIN_CONVERTER):
         """
         Store an embed from valid JSON or YAML from a pastebin link on this server.
@@ -623,7 +623,7 @@ class EmbedUtils(commands.Cog):
         await self.global_store_embed(ctx, name, data, locked)
         await ctx.tick()
 
-    @global_store.command(name="pastebin", aliases=["frompaste"])
+    @global_store.command(name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin")
     async def global_store_pastebin(self, ctx, name: str, locked: bool, *, data: PASTEBIN_CONVERTER):
         """Store an embed from valid JSON or YAML globally using a pastebin link.
 
@@ -765,7 +765,7 @@ class EmbedUtils(commands.Cog):
         """
         await self.webhook_send(ctx, embeds=embeds[:10])
 
-    @webhook.command(name="pastebin", aliases=["frompaste"])
+    @webhook.command(name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin")
     async def webhook_pastebin(
         self,
         ctx: commands.Context,
@@ -773,7 +773,7 @@ class EmbedUtils(commands.Cog):
         embeds: PastebinConverterWebhook(conversion_type="yaml"),  # noqa: F821
     ):
         """
-        Send embeds through webhooks using YAML from a pastebin link.
+        Send embeds through webhooks using a pastebin link with valid YAML or JSON.
         """
         await self.webhook_send(ctx, embeds=embeds[:10])
 
