@@ -42,8 +42,8 @@ from redbot.core.utils.chat_formatting import (
     humanize_timedelta,
     pagify,
 )
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate
+
+from .views import ConfirmationView, PageSource, PaginatedView
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -336,7 +336,8 @@ class Baron(commands.Cog):
                 footer_text += f" | {footer}"
             e.set_footer(text=footer_text)
             embeds.append(e)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        source = PageSource(embeds)
+        await PaginatedView(source).send_initial_message(ctx)
 
     @baron.group(name="view")
     async def baron_view(self, ctx: commands.Context):
@@ -612,19 +613,13 @@ class Baron(commands.Cog):
         )
 
         if not confirmed:
-            msg = await ctx.send(
+            msg = (
                 f"Are you sure you want me to leave the following {len(unwl_guilds)} servers?\n"
                 + box(guild_preview, "py")
             )
-            start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
-            pred = ReactionPredicate.yes_or_no(msg, ctx.author)
-            try:
-                await self.bot.wait_for("reaction_add", check=pred, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send("Timed out, action cancelled.")
-
-            if not pred.result:
-                return await ctx.send("Action cancelled.")
+            confirmed = await ConfirmationView.confirm(ctx, msg)
+            if not confirmed:
+                return
 
         async with ctx.typing():
             async for guild in AsyncIter(unwl_guilds, steps=100):
