@@ -1,7 +1,7 @@
 import asyncio
 import json
-from typing import Dict, List, Optional, Union
 import re
+from typing import Dict, List, Optional, Union
 
 import discord
 import yaml
@@ -9,6 +9,7 @@ from redbot.core import commands
 from redbot.core.utils import menus
 
 PASTEBIN_RE = re.compile(r"(?:https?://(?:www\.)?)?pastebin\.com/(?:raw/)?([a-zA-Z0-9]+)")
+
 
 class StringToEmbed(commands.Converter):
     def __init__(
