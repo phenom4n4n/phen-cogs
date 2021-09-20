@@ -234,7 +234,7 @@ class PfpImgen(commands.Cog):
 
     async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
-        await member.avatar_url.save(avatar, seek_begin=True)
+        await member.avatar.save(avatar, seek_begin=True)
         return avatar
 
     def bytes_to_image(self, image: BytesIO, size: int):
