@@ -73,9 +73,9 @@ class PermissionsLocker(commands.Cog):
     async def before_invoke_hook(self, ctx: commands.Context):
         if not ctx.guild or isinstance(ctx.command, commands.commands._AlwaysAvailableCommand):
             return
+        guild = ctx.guild
         if guild.id in self._whitelist:
             return
-        guild = ctx.guild
         me = guild.me
         if me == guild.owner:
             return
