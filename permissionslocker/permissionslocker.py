@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 # original invoke hook logic from https://github.com/mikeshardmind/SinbadCogs/tree/v3/noadmin
-from typing import Literal
+from typing import Literal, Optional, Set
 
 import discord
 from redbot.core import commands
@@ -55,8 +55,8 @@ class PermissionsLocker(commands.Cog):
         )
         default_global = {"permissions": 387136, "whitelisted": []}
         self.config.register_global(**default_global)
-        self.perms = None
-        self._whitelist = set()
+        self.perms: Optional[discord.Permissions] = None
+        self._whitelist: Set[int] = set()
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -73,19 +73,19 @@ class PermissionsLocker(commands.Cog):
     async def before_invoke_hook(self, ctx: commands.Context):
         if not ctx.guild or isinstance(ctx.command, commands.commands._AlwaysAvailableCommand):
             return
+        if guild.id in self._whitelist:
+            return
         guild = ctx.guild
-        if guild.me == guild.owner:
+        me = guild.me
+        if me == guild.owner:
             return
         if await ctx.bot.is_owner(ctx.author):
             return
-        if guild.id in self._whitelist:
-            return
-        me = guild.me
 
         required_perms = self.perms
         myPerms = ctx.channel.permissions_for(me)
         if not myPerms.is_superset(required_perms):
-            missingPerms = await self.humanize_perms(
+            missingPerms = self.humanize_perms(
                 discord.Permissions((myPerms.value ^ required_perms.value) & required_perms.value),
                 True,
             )
@@ -142,7 +142,7 @@ class PermissionsLocker(commands.Cog):
             name="Required Permissions",
             value=str(data["permissions"])
             + box(
-                await self.humanize_perms(discord.Permissions(data["permissions"]), True),
+                self.humanize_perms(discord.Permissions(data["permissions"]), True),
                 "diff",
             ),
             inline=False,
@@ -152,7 +152,7 @@ class PermissionsLocker(commands.Cog):
             e.add_field(name="Whitelisted", value=", ".join(whitelisted), inline=False)
         await ctx.send(embed=e)
 
-    async def humanize_perms(self, permissions: discord.Permissions, check: bool):
+    def humanize_perms(self, permissions: discord.Permissions, check: bool):
         perms = dict(permissions)
         perms_list = [f"+ {key}" for key, value in perms.items() if value == check]
         return "\n".join(perms_list)
