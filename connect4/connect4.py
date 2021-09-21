@@ -1,14 +1,13 @@
-import asyncio
 from collections import Counter
-from typing import TypedDict, Optional
+from typing import Optional, TypedDict
 
 import discord
 from redbot.core import Config, commands
 from redbot.core.utils.chat_formatting import humanize_list
-from redbot.core.utils.predicates import MessagePredicate
 
 from .core import Connect4Game
 from .views import ConfirmationView, Connect4View
+
 
 class EmbedFields(TypedDict):
     name: str
