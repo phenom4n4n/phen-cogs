@@ -26,7 +26,7 @@ import asyncio
 import logging
 import re
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Coroutine, DefaultDict, Dict, Optional
 
 import discord
@@ -160,7 +160,7 @@ class DisboardReminder(commands.Cog):
         end_time = guild_data["nextBump"]
         if not end_time:
             return
-        now = datetime.utcnow().timestamp()
+        now = discord.utils.utcnow().timestamp()
         remaining = end_time - now
         if remaining > 60:
             return
@@ -326,20 +326,20 @@ class DisboardReminder(commands.Cog):
             title="Bump Reminder Settings",
             description=description,
         )
-        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon.url)
 
         for key, value in data.items():
             if isinstance(value, str):
                 value = f"```{discord.utils.escape_markdown(value)}```"
                 e.add_field(name=key, value=value, inline=False)
         if data["nextBump"]:
-            timestamp = datetime.fromtimestamp(data["nextBump"])
+            timestamp = datetime.fromtimestamp(data["nextBump"], timezone.utc)
             e.timestamp = timestamp
             e.set_footer(text="Next bump registered for")
         await ctx.send(embed=e)
 
     async def bump_timer(self, guild: discord.Guild, timestamp: int):
-        d = datetime.fromtimestamp(timestamp)
+        d = datetime.fromtimestamp(timestamp, timezone.utc)
         await discord.utils.sleep_until(d)
         await self.bump_remind(guild)
 
