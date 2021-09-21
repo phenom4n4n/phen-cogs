@@ -73,11 +73,8 @@ class Connect4(commands.Cog):
         game = Connect4Game(ctx.author, member)
         view = Connect4View(self, game)
         await view.start(ctx)
-        print("view started")
         await view.wait()
-        print("view waited")
         await self.store_stats(ctx.guild, game)
-        print("stats stored")
 
     @connect4.command("stats")
     async def connect4_stats(self, ctx: commands.Context, member: discord.Member = None):
