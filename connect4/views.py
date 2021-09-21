@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Tuple, Optional
+from typing import TYPE_CHECKING, Optional, Tuple
 
 import discord
 
 from .core import Connect4Game
 
 if TYPE_CHECKING:
-    from .connect4 import Connect4
     from redbot.core import commands
+
+    from .connect4 import Connect4
 
 
 class BaseView(discord.ui.View):
@@ -64,7 +65,13 @@ class ConfirmationView(BaseView):
 
     @classmethod
     async def confirm(
-        cls, ctx: commands.Context, content: str = None, timeout: int = 60, *, user_id: int, **kwargs
+        cls,
+        ctx: commands.Context,
+        content: str = None,
+        timeout: int = 60,
+        *,
+        user_id: int,
+        **kwargs,
     ) -> bool:
         view = cls(ctx, timeout=timeout, user_id=user_id)
         await view.send_initial_message(ctx, content, **kwargs)
@@ -81,7 +88,9 @@ class Connect4Button(discord.ui.Button["Connect4View"]):
 class DigitButton(Connect4Button):
     def __init__(self, digit: int):
         self.digit = digit
-        super().__init__(style=discord.ButtonStyle.red, emoji=f"{digit}\N{combining enclosing keycap}")
+        super().__init__(
+            style=discord.ButtonStyle.red, emoji=f"{digit}\N{combining enclosing keycap}"
+        )
 
     async def callback(self, interaction: discord.Interaction):
         self.game.move(self.digit - 1)
@@ -121,7 +130,9 @@ class Connect4View(discord.ui.View):
     async def interaction_check(self, interaction: discord.Interaction):
         user_id = interaction.user.id
         if user_id not in self.game.player_ids:
-            await interaction.response.send_message("You aren't playing this Connect 4 game!", ephemeral=True)
+            await interaction.response.send_message(
+                "You aren't playing this Connect 4 game!", ephemeral=True
+            )
             return False
         if user_id != self.game.current_player.id:
             await interaction.response.send_message("It's not your turn!", ephemeral=True)
@@ -153,7 +164,11 @@ class Connect4View(discord.ui.View):
             item.disabled = True
 
     def recolor(self):
-        style = discord.ButtonStyle.red if self.game.whomst_turn() == 1 else discord.ButtonStyle.blurple
+        style = (
+            discord.ButtonStyle.red
+            if self.game.whomst_turn() == 1
+            else discord.ButtonStyle.blurple
+        )
         for button in self.children:
             if isinstance(button, CancelButton):
                 continue
