@@ -1,5 +1,6 @@
 import asyncio
 from collections import Counter
+from typing import TypedDict, Optional
 
 import discord
 from redbot.core import Config, commands
@@ -7,7 +8,12 @@ from redbot.core.utils.chat_formatting import humanize_list
 from redbot.core.utils.predicates import MessagePredicate
 
 from .core import Connect4Game
-from .menus import get_menu
+from .views import ConfirmationView, Connect4View
+
+class EmbedFields(TypedDict):
+    name: str
+    value: str
+    inline: Optional[bool]
 
 
 class Connect4(commands.Cog):
@@ -21,7 +27,7 @@ class Connect4(commands.Cog):
         3: "\N{THIRD PLACE MEDAL}",
     }
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
 
     __authors__ = ["Benjamin Mintz", "flare", "PhenoM4n4n"]
 
@@ -42,26 +48,15 @@ class Connect4(commands.Cog):
         return "\n".join(formatted)
 
     @staticmethod
-    async def startgame(ctx: commands.Context, user: discord.Member) -> bool:
+    async def start_game(ctx: commands.Context, user: discord.Member) -> bool:
         """
         Whether to start the connect 4 game.
         """
-        await ctx.send(
-            f"{user.mention}, {ctx.author.name} is challenging you to a game of Connect4. (y/n)"
+        msg = (
+            f"{user.mention}, {ctx.author.name} is challenging you to a game of Connect4. "
+            "Press the buttons to accept or deny their challenge."
         )
-
-        try:
-            pred = MessagePredicate.yes_or_no(ctx, user=user)
-            await ctx.bot.wait_for("message", check=pred, timeout=60)
-        except asyncio.TimeoutError:
-            await ctx.send("Game offer declined, cancelling.")
-            return False
-
-        if pred.result:
-            return True
-
-        await ctx.send("Game cancelled.")
-        return False
+        return await ConfirmationView.confirm(ctx, msg, user_id=user.id)
 
     @commands.group(invoke_without_command=True)
     async def connect4(self, ctx: commands.Context, member: discord.Member):
@@ -72,25 +67,17 @@ class Connect4(commands.Cog):
             return await ctx.send("That's a bot, silly!")
         if ctx.author == member:
             return await ctx.send("You can't play yourself!")
-        if not await self.startgame(ctx, member):
+        if not await self.start_game(ctx, member):
             return
 
         game = Connect4Game(ctx.author, member)
-        menu = get_menu()(self, game)
-        await menu.start(ctx)
-
-    def create_field(self, stats: dict, key: str) -> dict:
-        counter = Counter(stats[key])
-        values = []
-        total = sum(counter.values())
-        for place, (user_id, win_count) in enumerate(counter.most_common(3), 1):
-            medal = self.EMOJI_MEDALS[place]
-            values.append(f"{medal} <@!{user_id}>: {win_count}")
-        return (
-            {"name": f"{key.title()}: {total}", "value": "\n".join(values), "inline": True}
-            if values
-            else {}
-        )
+        view = Connect4View(self, game)
+        await view.start(ctx)
+        print("view started")
+        await view.wait()
+        print("view waited")
+        await self.store_stats(ctx.guild, game)
+        print("stats stored")
 
     @connect4.command("stats")
     async def connect4_stats(self, ctx: commands.Context, member: discord.Member = None):
@@ -109,7 +96,7 @@ class Connect4(commands.Cog):
                 f"Draws: {draws}",
             ]
             e = discord.Embed(color=member.color, description="\n".join(description))
-            e.set_author(name=f"{member} Connect 4 Stats", icon_url=ctx.author.avatar_url)
+            e.set_author(name=f"{member} Connect 4 Stats", icon_url=ctx.author.avatar.url)
         else:
             games_played = stats["played"]
             ties = stats["ties"]
@@ -124,5 +111,45 @@ class Connect4(commands.Cog):
                 e.add_field(**losses)
             if draws := self.create_field(stats, "draws"):
                 e.add_field(**draws)
-            e.set_author(name=f"{ctx.guild} Connect 4 Stats", icon_url=ctx.guild.icon_url)
+            e.set_author(name=f"{ctx.guild} Connect 4 Stats", icon_url=ctx.guild.icon.url)
         await ctx.send(embed=e)
+
+    @staticmethod
+    def add_stat(stats: dict, key: str, user_id: str):
+        if user_id in stats[key]:
+            stats[key][user_id] += 1
+        else:
+            stats[key][user_id] = 1
+
+    async def store_stats(self, guild: discord.Guild, game: Connect4Game):
+        winnernum = game.whomst_won()
+        if winnernum in (Connect4Game.FORFEIT, Connect4Game.NO_WINNER):
+            return
+
+        player1_id = str(game.player1.id)
+        player2_id = str(game.player2.id)
+        async with self.config.guild(guild).stats() as stats:
+            stats["played"] += 1
+            if winnernum == Connect4Game.TIE:
+                stats["ties"] += 1
+                self.add_stat(stats, "draw", player1_id)
+                self.add_stat(stats, "draw", player2_id)
+            else:
+                winner, loser = (
+                    (player1_id, player2_id) if winnernum == 1 else (player2_id, player1_id)
+                )
+                self.add_stat(stats, "wins", winner)
+                self.add_stat(stats, "losses", loser)
+
+    def create_field(self, stats: dict, key: str) -> EmbedFields:
+        counter = Counter(stats[key])
+        total = sum(counter.values())
+        values = []
+        for place, (user_id, win_count) in enumerate(counter.most_common(3), 1):
+            medal = self.EMOJI_MEDALS[place]
+            values.append(f"{medal} <@!{user_id}>: {win_count}")
+        return (
+            {"name": f"{key.title()}: {total}", "value": "\n".join(values), "inline": True}
+            if values
+            else {}
+        )
