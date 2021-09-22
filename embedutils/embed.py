@@ -22,10 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import asyncio
 import io
 import json
 from typing import Optional, Union
 
+import aiohttp
 import discord
 from redbot.core import Config, commands
 from redbot.core.utils.chat_formatting import humanize_list, inline, pagify
@@ -37,15 +39,19 @@ from .converters import (
     ListStringToEmbed,
     MessageableChannel,
     MyMessageConverter,
+    PastebinConverter,
+    PastebinConverterWebhook,
     StoredEmbedConverter,
     StringToEmbed,
 )
 from .errors import EmbedConversionError, EmbedFileError, EmbedNotFound, EmbedUtilsException
 
-YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
-YAML_CONTENT_CONVERTER = StringToEmbed(conversion_type="yaml", content=True)
 JSON_CONVERTER = StringToEmbed()
 JSON_CONTENT_CONVERTER = StringToEmbed(content=True)
+YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
+YAML_CONTENT_CONVERTER = StringToEmbed(conversion_type="yaml", content=True)
+PASTEBIN_CONVERTER = PastebinConverter(conversion_type="yaml")
+PASTEBIN_CONTENT_CONVERTER = PastebinConverter(conversion_type="yaml", content=True)
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
@@ -64,7 +70,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.4.1"
+    __version__ = "1.5.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -82,6 +88,10 @@ class EmbedUtils(commands.Cog):
         default_guild = {"embeds": {}}
         self.config.register_global(**default_global)
         self.config.register_guild(**default_guild)
+        self.session = aiohttp.ClientSession()
+
+    def cog_unload(self):
+        asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         guilds_data = await self.config.all_guilds()
@@ -177,6 +187,23 @@ class EmbedUtils(commands.Cog):
     ):
         """
         Post an embed from valid YAML.
+        """
+        if channel and channel != ctx.channel:
+            await channel.send(embed=data)
+        await ctx.tick()
+
+    @embed.command(
+        name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin"
+    )
+    async def embed_pastebin(
+        self,
+        ctx: commands.Context,
+        channel: Optional[MessageableChannel] = None,
+        *,
+        data: PASTEBIN_CONTENT_CONVERTER,
+    ):
+        """
+        Post an embed from a pastebin link containing valid JSON or YAML.
         """
         if channel and channel != ctx.channel:
             await channel.send(embed=data)
@@ -327,6 +354,22 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_edit.command(
+        name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin"
+    )
+    async def embed_edit_pastebin(
+        self,
+        ctx: commands.Context,
+        message: MyMessageConverter,
+        *,
+        data: PASTEBIN_CONVERTER,
+    ):
+        """
+        Edit a message's embed using a pastebin link which contains valid JSON or YAML.
+        """
+        await message.edit(embed=data)
+        await ctx.tick()
+
+    @embed_edit.command(
         name="fromfile",
         aliases=["fromjsonfile", "fromdatafile"],
         add_example_info=True,
@@ -453,10 +496,22 @@ class EmbedUtils(commands.Cog):
         await self.store_embed(ctx, name, data)
         await ctx.tick()
 
-    @embed_store.command(name="yaml", aliases=["fromyaml"])
+    @embed_store.command(
+        name="yaml", aliases=["fromyaml"], add_example_info=True, info_type="yaml"
+    )
     async def embed_store_yaml(self, ctx, name: str, *, data: YAML_CONVERTER):
         """
         Store an embed from valid YAML on this server.
+        """
+        await self.store_embed(ctx, name, data)
+        await ctx.tick()
+
+    @embed_store.command(
+        name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin"
+    )
+    async def embed_store_pastebin(self, ctx, name: str, *, data: PASTEBIN_CONVERTER):
+        """
+        Store an embed from valid JSON or YAML from a pastebin link on this server.
         """
         await self.store_embed(ctx, name, data)
         await ctx.tick()
@@ -571,6 +626,18 @@ class EmbedUtils(commands.Cog):
     @global_store.command(name="json", aliases=["fromjson", "fromdata"], add_example_info=True)
     async def global_store_json(self, ctx, name: str, locked: bool, *, data: JSON_CONVERTER):
         """Store an embed from valid JSON globally.
+
+        The `locked` argument specifies whether the embed should be locked to owners only."""
+        await self.global_store_embed(ctx, name, data, locked)
+        await ctx.tick()
+
+    @global_store.command(
+        name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin"
+    )
+    async def global_store_pastebin(
+        self, ctx, name: str, locked: bool, *, data: PASTEBIN_CONVERTER
+    ):
+        """Store an embed from valid JSON or YAML globally using a pastebin link.
 
         The `locked` argument specifies whether the embed should be locked to owners only."""
         await self.global_store_embed(ctx, name, data, locked)
@@ -707,6 +774,20 @@ class EmbedUtils(commands.Cog):
     ):
         """
         Send embeds through webhooks using YAML.
+        """
+        await self.webhook_send(ctx, embeds=embeds[:10])
+
+    @webhook.command(
+        name="pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin"
+    )
+    async def webhook_pastebin(
+        self,
+        ctx: commands.Context,
+        *,
+        embeds: PastebinConverterWebhook(conversion_type="yaml"),  # noqa: F821
+    ):
+        """
+        Send embeds through webhooks using a pastebin link with valid YAML or JSON.
         """
         await self.webhook_send(ctx, embeds=embeds[:10])
 

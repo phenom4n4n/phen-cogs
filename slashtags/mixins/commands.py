@@ -278,7 +278,7 @@ class Commands(MixinMeta):
             "\n".join(option_query),
             MessagePredicate.lower_contained_in(valid_option_types, ctx),
         )
-        if option_type == "choices":
+        if option_type.lower() == "choices":
             choices = await self.get_choices(ctx)
             option_type = "STRING"
         else:

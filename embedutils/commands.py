@@ -16,6 +16,7 @@ INFO_EXAMPLES = {
         "yaml", "https://gist.github.com/phenom4n4n/9ab118b8ec7911954499b150d0182c60"
     ),
     "index": "If the message has multiple embeds, you can pass a number to `index` to specify which embed.",
+    "pastebin": _example("pastebin", "https://pastebin.com/YarwmY1v"),
 }
 
 
