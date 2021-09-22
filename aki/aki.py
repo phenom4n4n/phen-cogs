@@ -22,8 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import asyncio
 import logging
 
+import aiohttp
 import akinator
 import discord
 from akinator.async_aki import Akinator
@@ -48,8 +50,9 @@ class Aki(commands.Cog):
             identifier=8237578807127857,
             force_registration=True,
         )
+        self.session = aiohttp.ClientSession()
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -58,6 +61,9 @@ class Aki(commands.Cog):
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
         return
+
+    def cog_unload(self):
+        asyncio.create_task(self.session.close())
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)
@@ -82,7 +88,7 @@ class Aki(commands.Cog):
         aki = Akinator()
         child_mode = not channel_is_nsfw(ctx.channel)
         try:
-            await aki.start_game(language=language.replace(" ", "_"), child_mode=child_mode)
+            await aki.start_game(language=language.replace(" ", "_"), child_mode=child_mode, client_session=self.session)
         except akinator.InvalidLanguageError:
             await ctx.send(
                 "Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>"
