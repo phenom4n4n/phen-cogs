@@ -52,7 +52,7 @@ class Calculator(commands.Cog):
     async def calculate(self, ctx: commands.Context, *, query):
         """
         Calculate a math expression.
-        
+
         **Example:**
         `[p]calculate 7 / (2 * 2)`
         """
