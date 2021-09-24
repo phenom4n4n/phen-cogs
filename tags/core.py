@@ -24,11 +24,14 @@ SOFTWARE.
 
 import asyncio
 import logging
+import re
 from collections import defaultdict
+from operator import itemgetter
 from typing import Coroutine, List, Optional
 
 import aiohttp
 import discord
+from rapidfuzz import fuzz, process
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
@@ -159,6 +162,30 @@ class Tags(
         async for tag_name, tag_data in AsyncIter(guild_data["tags"].items(), steps=50):
             tag = Tag.from_dict(self, tag_name, tag_data, guild_id=guild_id)
             tag.add_to_cache()
+
+    def search_tag(self, tag_name: str, guild: Optional[discord.Guild] = None):
+        unique_tags = self.get_unique_tags(guild)
+        result_tags = []
+        for tag_obj in unique_tags:
+            name_score = fuzz.ratio(tag_name.lower(), tag_obj.name.lower())
+
+            if alias_score := process.extractOne(tag_name, tag_obj.aliases, scorer=fuzz.QRatio):
+                alias_score = alias_score[1]
+            else:
+                alias_score = 0
+
+            if script_score := process.extractOne(
+                tag_name, re.findall(r"\w+", tag_obj.tagscript), scorer=fuzz.QRatio
+            ):
+                script_score = script_score[1]
+            else:
+                script_score = 0
+
+            final_score = name_score + alias_score + script_score
+            # print((name_score, alias_score, script_score , final_score), tag_obj.name)
+            if final_score > 80:
+                result_tags.append((final_score, tag_obj))
+        return [res[1] for res in sorted(result_tags, key=itemgetter(0), reverse=True)]
 
     def get_tag(
         self,

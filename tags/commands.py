@@ -363,6 +363,35 @@ class Commands(MixinMeta):
         """
         await tag.send_raw_tagscript(ctx)
 
+    @tag.command("search")
+    async def tag_search(self, ctx: commands.Context, *, keyword: str):
+        """
+        Search for tags by name.
+
+        **Example:**
+        `[p]tag search notsupport`
+        """
+        tags = self.search_tag(keyword, guild=ctx.guild)
+        if not tags:
+            return await ctx.send("There are no close matches.")
+
+        data = self.generate_tag_list(tags)
+        aliases = data["aliases"]
+        description = data["description"]
+
+        e = discord.Embed(color=await ctx.embed_color())
+        e.set_author(name="Stored Tags", icon_url=ctx.guild.icon_url)
+
+        embeds = []
+        pages = list(pagify("\n".join(description)))
+        footer = f"{len(tags)} tags | {len(aliases)} aliases"
+        for index, page in enumerate(pages, 1):
+            embed = e.copy()
+            embed.description = page
+            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
+            embeds.append(embed)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+
     @tag.command("list")
     async def tag_list(self, ctx: commands.Context):
         """
@@ -443,7 +472,7 @@ class Commands(MixinMeta):
         await ctx.trigger_typing()
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
-            matched_labels = await self.doc_search(keyword)
+            matched_labels = await self.tag_search(keyword)
             description = [f"Search for: `{keyword}`"]
             for name, url in matched_labels.items():
                 description.append(f"[`{name}`]({url})")
@@ -593,6 +622,30 @@ class Commands(MixinMeta):
     @copy_doc(tag_raw)
     async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
         await tag.send_raw_tagscript(ctx)
+
+    @tag_global.command("search")
+    @copy_doc(tag_list)
+    async def tag_global_search(self, ctx: commands.Context, *, keyword: str):
+        tags = self.search_tag(keyword)
+        if not tags:
+            return await ctx.send("There are no close matches.")
+
+        data = self.generate_tag_list(tags)
+        aliases = data["aliases"]
+        description = data["description"]
+
+        e = discord.Embed(color=await ctx.embed_color())
+        e.set_author(name="Search Results for Tags in this Server", icon_url=ctx.me.avatar_url)
+
+        embeds = []
+        pages = list(pagify("\n".join(description)))
+        footer = f"{len(tags)} tags | {len(aliases)} aliases"
+        for index, page in enumerate(pages, 1):
+            embed = e.copy()
+            embed.description = page
+            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
+            embeds.append(embed)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     @tag_global.command("list")
     @copy_doc(tag_list)
