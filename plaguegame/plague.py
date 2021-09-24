@@ -395,7 +395,7 @@ class Plague(commands.Cog):
     @plagueset.command("reset")
     async def plagueset_reset(self, ctx):
         """Reset the entire Plague Game."""
-        msg = await ctx.send('Are you sure you want to reset the current Plague Game?')
+        msg = await ctx.send("Are you sure you want to reset the current Plague Game?")
         start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
         pred = ReactionPredicate.yes_or_no(msg, ctx.author)
         try:
@@ -513,10 +513,10 @@ class Plague(commands.Cog):
             title = f"You have been cured from {plagueName}!"
             description = f"{ctx.author} cured you."
         elif notificationType == NotificationType.DOCTOR:
-            title = 'You are now a Doctor!'
+            title = "You are now a Doctor!"
             description = f"{ctx.author} has set you as a Doctor. You now have access to `{prefixes[-1]}cure`."
         elif notificationType == NotificationType.PLAGUEBEARER:
-            title = 'You are now a Plaguebearer!'
+            title = "You are now a Plaguebearer!"
             description = f"{ctx.author} has set you as a Plaguebearer. You now have access to `{prefixes[-1]}infect`."
 
         embed = discord.Embed(title=title, description=description)
