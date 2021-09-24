@@ -146,7 +146,7 @@ class Plague(commands.Cog):
         userRole = data["gameRole"]
         userState = data["gameState"]
 
-        title = f"Plague Profile"
+        title = "Plague Profile"
         description = (
             f"Role: {userRole}\nState: {userState}\nNotifications: {data['notifications']}"
         )
@@ -164,7 +164,7 @@ class Plague(commands.Cog):
 
         embed = discord.Embed(title=title, colour=color, description=description)
         embed.set_thumbnail(url=thumbnail)
-        embed.set_author(name=member, icon_url=member.avatar_url)
+        embed.set_author(name=member, icon_url=member.avatar.url)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -300,7 +300,7 @@ class Plague(commands.Cog):
         else:
             await ctx.send("No one has been infected yet..")
 
-    @infected.command(name="guild")
+    @infected.command("guild")
     async def guild_infected(self, ctx, *, guild: discord.Guild = None):
         """Sends a list of the infected users in a guild."""
         if not guild:
@@ -392,10 +392,10 @@ class Plague(commands.Cog):
         await self.config.logChannel.set(channel.id)
         await ctx.send(f"Set {channel.mention} as the log channel.")
 
-    @plagueset.command(name="reset")
+    @plagueset.command("reset")
     async def plagueset_reset(self, ctx):
         """Reset the entire Plague Game."""
-        msg = await ctx.send(f"Are you sure you want to reset the current Plague Game?")
+        msg = await ctx.send('Are you sure you want to reset the current Plague Game?')
         start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
         pred = ReactionPredicate.yes_or_no(msg, ctx.author)
         try:
@@ -419,28 +419,28 @@ class Plague(commands.Cog):
             pass
         await ctx.send(f"**{user}** has been reset.")
 
-    @plagueset.command(name="rate")
+    @plagueset.command("rate")
     async def plagueset_rate(self, ctx: commands.Context, rate: hundred_int):
         """Set the Plague Game infection rate."""
         await self.config.rate.set(rate)
         await ctx.send(f"The Plague Game rate has been set to {rate}%.")
 
-    @plagueset.command(name="settings", aliases=["showsettings"])
+    @plagueset.command("settings", aliases=["showsettings"])
     async def plagueset_settings(self, ctx: commands.Context):
         """View the Plague Game settings."""
         data = await self.config.all()
         channel = self.bot.get_channel(data["logChannel"])
         channel = channel.mention if channel else "None"
-        description = (
-            f"Name: {data['plagueName']}\n"
-            f"Log Channel: {channel}\n"
-            f"Infection Rate: {data['rate']}%"
-        )
+        description = [
+            f"Name: {data['plagueName']}",
+            f"Log Channel: {channel}",
+            f"Infection Rate: {data['rate']}%",
+        ]
         e = discord.Embed(
             color=await ctx.embed_color(),
-            description=description,
+            description="\n".join(description),
         )
-        e.set_author(name=f"Plague Game Settings", icon_url=self.bot.user.avatar_url)
+        e.set_author(name="Plague Game Settings", icon_url=self.bot.user.avatar.url)
         await ctx.send(embed=e)
 
     async def get_plague_stats(self) -> Counter:
@@ -450,7 +450,7 @@ class Plague(commands.Cog):
             data[user_data["gameState"]] += 1
         return data
 
-    @plagueset.command(name="stats")
+    @plagueset.command("stats")
     async def plagueset_stats(self, ctx: commands.Context):
         """View plague game stats."""
         data = await self.get_plague_stats()
@@ -513,10 +513,10 @@ class Plague(commands.Cog):
             title = f"You have been cured from {plagueName}!"
             description = f"{ctx.author} cured you."
         elif notificationType == NotificationType.DOCTOR:
-            title = f"You are now a Doctor!"
+            title = 'You are now a Doctor!'
             description = f"{ctx.author} has set you as a Doctor. You now have access to `{prefixes[-1]}cure`."
         elif notificationType == NotificationType.PLAGUEBEARER:
-            title = f"You are now a Plaguebearer!"
+            title = 'You are now a Plaguebearer!'
             description = f"{ctx.author} has set you as a Plaguebearer. You now have access to `{prefixes[-1]}infect`."
 
         embed = discord.Embed(title=title, description=description)
