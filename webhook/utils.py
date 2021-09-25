@@ -17,7 +17,7 @@ async def _monkeypatch_send(ctx: Context, content: str = None, **kwargs) -> disc
     try:
         webhook = await self.get_webhook(ctx=ctx)
         kwargs["username"] = ctx.author.display_name
-        kwargs["avatar_url"] = ctx.author.avatar_url
+        kwargs["avatar_url"] = ctx.author.avatar.url
         kwargs["wait"] = True
         return await webhook.send(content, **kwargs)
     except Exception:
