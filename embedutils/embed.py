@@ -236,7 +236,9 @@ class EmbedUtils(commands.Cog):
 
     @commands.bot_has_permissions(attach_files=True)
     @embed.command("download", add_example_info=True, info_type="index")
-    async def embed_download(self, ctx: commands.Context, message: discord.Message, index: int = 0):
+    async def embed_download(
+        self, ctx: commands.Context, message: discord.Message, index: int = 0
+    ):
         """
         Download a JSON file for a message's embed.
         """
@@ -262,7 +264,10 @@ class EmbedUtils(commands.Cog):
 
     @embed_post.command("global")
     async def embed_post_global(
-        self, ctx: commands.Context, name: GlobalStoredEmbedConverter, channel: MessageableChannel = None
+        self,
+        ctx: commands.Context,
+        name: GlobalStoredEmbedConverter,
+        channel: MessageableChannel = None,
     ):
         """Post a global stored embed."""
         channel = channel or ctx.channel
@@ -496,7 +501,9 @@ class EmbedUtils(commands.Cog):
         add_example_info=True,
         info_type="index",
     )
-    async def embed_store_message(self, ctx: commands.Context, name: str, message: discord.Message, index: int = 0):
+    async def embed_store_message(
+        self, ctx: commands.Context, name: str, message: discord.Message, index: int = 0
+    ):
         """
         Store an embed from a message on this server.
         """
@@ -528,7 +535,9 @@ class EmbedUtils(commands.Cog):
         embeds = await self.config.embeds()
         names = [f"`{embed}`" for embed in embeds]
         description = "\n".join(names)
-        e = discord.Embed(color=await ctx.embed_color(), title="Stored Embeds", description=description)
+        e = discord.Embed(
+            color=await ctx.embed_color(), title="Stored Embeds", description=description
+        )
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar.url)
         await ctx.send(embed=e)
 
@@ -555,7 +564,9 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @global_store.command("json", aliases=["fromjson", "fromdata"], add_example_info=True)
-    async def global_store_json(self, ctx: commands.Context, name: str, locked: bool, *, data: JSON_CONVERTER):
+    async def global_store_json(
+        self, ctx: commands.Context, name: str, locked: bool, *, data: JSON_CONVERTER
+    ):
         """Store an embed from valid JSON globally.
 
         The `locked` argument specifies whether the embed should be locked to owners only."""
@@ -602,7 +613,12 @@ class EmbedUtils(commands.Cog):
         info_type="index",
     )
     async def global_store_message(
-        self, ctx: commands.Context, name: str, message: discord.Message, locked: bool, index: int = 0
+        self,
+        ctx: commands.Context,
+        name: str,
+        message: discord.Message,
+        locked: bool,
+        index: int = 0,
     ):
         """
         Store an embed from a message globally.
