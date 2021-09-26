@@ -472,7 +472,7 @@ class Commands(MixinMeta):
         await ctx.trigger_typing()
         e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
         if keyword:
-            matched_labels = await self.tag_search(keyword)
+            matched_labels = await self.doc_search(keyword)
             description = [f"Search for: `{keyword}`"]
             for name, url in matched_labels.items():
                 description.append(f"[`{name}`]({url})")
