@@ -624,7 +624,7 @@ class Commands(MixinMeta):
         await tag.send_raw_tagscript(ctx)
 
     @tag_global.command("search")
-    @copy_doc(tag_list)
+    @copy_doc(tag_search)
     async def tag_global_search(self, ctx: commands.Context, *, keyword: str):
         tags = self.search_tag(keyword)
         if not tags:
