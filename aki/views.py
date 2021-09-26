@@ -24,7 +24,9 @@ class AkiView(discord.ui.View):
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
-            await interaction.response.send_message("This isn't your Akinator game.")
+            await interaction.response.send_message(
+                "This isn't your Akinator game.", ephemeral=True
+            )
             return False
         await interaction.response.defer()
         return True
