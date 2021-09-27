@@ -448,9 +448,7 @@ class DisboardReminder(commands.Cog):
         match = MENTION_RE.search(embed.description)
         if match:
             member_id = int(match.group(1))
-            if not guild.chunked:
-                await guild.chunk()
-            user = guild.get_member(member_id) or await self.bot.get_or_fetch_user(member_id)
+            user = await self.bot.get_or_fetch_member(guild, member_id)
             member_adapter = tse.MemberAdapter(user)
         elif my_perms.read_message_history:
             async for m in bump_channel.history(before=message, limit=10):
