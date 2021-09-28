@@ -12,6 +12,7 @@ from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.data_manager import bundled_data_path
+from redbot.core.utils.chat_formatting import humanize_number as hn
 
 
 class TypeRacer(commands.Cog):
@@ -23,7 +24,7 @@ class TypeRacer(commands.Cog):
 
     FONT_SIZE = 30
 
-    __version__ = "1.0.2"
+    __version__ = "1.1.0"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -35,6 +36,16 @@ class TypeRacer(commands.Cog):
         self.session = aiohttp.ClientSession()
         self._font = None
 
+        # Thanks Gareth
+        self.ordinal = lambda n: "%d%s" % (
+            n,
+            "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10 :: 4],
+        )
+
+        self.default_global = {"leaderboard": []}
+
+        self.config.register_global(**self.default_global)
+
     def cog_unload(self) -> None:
         asyncio.create_task(self.session.close())
 
@@ -43,8 +54,11 @@ class TypeRacer(commands.Cog):
         n = "\n" if "\n\n" not in pre_processed else ""
         return f"{pre_processed}{n}\nCog Version: {self.__version__}"
 
-    async def red_delete_data_for_user(self, **kwargs) -> None:
-        pass
+    async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
+        async with self.config.leaderboard() as lb:
+            for user in lb.copy():
+                if user["user_id"] == user_id:
+                    lb.remove(user)
 
     async def get_quote(self) -> Tuple[str, str]:
         async with self.session.get("https://api.quotable.io/random") as resp:
@@ -142,9 +156,75 @@ class TypeRacer(commands.Cog):
         seconds = (winner.created_at - msg.created_at).total_seconds()
         winner_ref = winner.to_reference(fail_if_not_exists=False)
         wpm = (len(quote) / 5) / (seconds / 60) * (acc / 100)
+
+        lb = await self.config.leaderboard()
+
+        winnerdata = {"user_id": ctx.author.id, "wpm": wpm}
+
+        position = None
+        movedup = False
+        previouspos = None
+
+        for pos, data in enumerate(lb):
+            if data["user_id"] == ctx.author.id:
+                previouspos = pos
+                if data["wpm"] < wpm:
+                    lb.remove(data)
+                    movedup = True
+
+            if data["wpm"] < wpm:
+                position = pos
+
+        if position is None:
+            position = len(lb)
+
+        if previouspos is None:
+            movedup = True
+
+        if movedup and position != previouspos:
+            lb.insert(position, winnerdata)
+
+            movedup_desc = (
+                f"You moved up the leaderboard to **{self.ordinal(position + 1)}** place!"
+            )
+        else:
+            movedup_desc = f"Your still in {self.ordinal(previouspos + 1)}, keep on trying!"
+
+        await self.config.leaderboard.set(lb)
+
         description = (
             f"{winner.author.mention} typed the [sentence]({msg.jump_url}) in `{seconds:.2f}s` "
-            f"with **{acc:.2f}%** accuracy. (**{wpm:.1f} WPM**)"
+            f"with **{acc:.2f}%** accuracy. (**{wpm:.1f} WPM**)\n{movedup_desc}"
         )
         embed = discord.Embed(color=winner.author.color, description=description)
         await ctx.send(embed=embed, reference=winner_ref)
+
+    @commands.command(aliases=["trlb"])
+    async def trleaderboard(self, ctx):
+        """
+        Show the typeracer's top 10 faster typers!
+        """
+
+        lb = await self.config.leaderboard()
+
+        description = ""
+        shown = 0
+
+        for place, typer in enumerate(lb, start=1):
+            if place == 11:
+                break
+            try:
+                user = await self.bot.get_or_fetch_user(typer["user_id"])
+                username = user.name
+            except discord.NotFound:
+                username = "Unknown"
+            description += f"**{self.ordinal(place)}** {username} **{typer['wpm']:.1f} WPM**\n"
+            shown += 1
+
+        embed = discord.Embed(
+            title="TypeRacer's Top 10 Fastest Typers",
+            description=description,
+            colour=await ctx.embed_colour(),
+        )
+        embed.set_footer(text=f"Top {shown} of {hn(len(lb))} shown.")
+        await ctx.send(embed=embed)
