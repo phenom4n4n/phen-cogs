@@ -24,11 +24,14 @@ SOFTWARE.
 
 import asyncio
 import logging
+import re
 from collections import defaultdict
+from operator import itemgetter
 from typing import Coroutine, List, Optional
 
 import aiohttp
 import discord
+from rapidfuzz import fuzz, process
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
@@ -61,8 +64,8 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.3.5"
-    __author__ = ("PhenoM4n4n",)
+    __version__ = "2.3.6"
+    __author__ = ("PhenoM4n4n", "sravan", "npc203")
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
@@ -159,6 +162,42 @@ class Tags(
         async for tag_name, tag_data in AsyncIter(guild_data["tags"].items(), steps=50):
             tag = Tag.from_dict(self, tag_name, tag_data, guild_id=guild_id)
             tag.add_to_cache()
+
+    def search_tag(self, tag_name: str, guild: Optional[discord.Guild] = None) -> List[Tag]:
+        tags = self.get_unique_tags(guild)
+        matches = []
+        for tag in tags:
+            name_score = fuzz.ratio(tag_name.lower(), tag.name.lower())
+
+            if alias_search := process.extractOne(tag_name, tag.aliases, scorer=fuzz.QRatio):
+                alias_score = alias_search[1]
+            else:
+                alias_score = 0
+
+            tagscript = tag.tagscript.split()
+            if tag_name in tagscript:
+                script_score = 100
+            elif script_search := process.extractOne(
+                tag_name, re.findall(r"\w+", tag.tagscript), scorer=fuzz.QRatio
+            ):
+                script_score = script_search[1]
+            else:
+                script_score = 0
+
+            scores = (name_score, alias_score, script_score)
+            final_score = sum(scores)
+            log.debug(
+                "search: %r | %s NAME: %s ALIAS: %s SCRIPT %s FINAL %s",
+                tag_name,
+                tag.name,
+                name_score,
+                alias_score,
+                script_score,
+                final_score,
+            )
+            if any(score >= 70 for score in scores) or final_score > 180:
+                matches.append((final_score, tag))
+        return [match[1] for match in sorted(matches, key=itemgetter(0), reverse=True)]
 
     def get_tag(
         self,

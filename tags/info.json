@@ -5,12 +5,15 @@
     "end_user_data_statement": "This cog stores End User Data when storing the author of a tag. If a user requests data-deletion, all their tags will be removed from the bot.",
     "install_msg": "Thanks for installing Tags!\nGet started by reading the documentation found here.\n<https://phen-cogs.readthedocs.io/en/latest/>\nThis cog's behavior conflicts with Alias and CustomCommands and can cause duplicate bot responses if misused. It is recommended to unload and migrate them to tags with `[p]migratealias` and `[p]migratecustomcom`.",
     "author": [
-        "PhenoM4n4n"
+        "PhenoM4n4n",
+        "sravan",
+        "npc203"
     ],
     "required_cogs": {},
     "requirements": [
         "TagScript==2.6.2",
-        "tabulate"
+        "tabulate",
+        "rapidfuzz"
     ],
     "tags": [
         "tags"

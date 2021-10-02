@@ -28,7 +28,7 @@ import re
 import time
 import types
 from collections import Counter
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Union
 from urllib.parse import quote_plus
 
 import discord
@@ -91,7 +91,7 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
 
 class Commands(MixinMeta):
     @staticmethod
-    def generate_tag_list(tags: Set[Tag]) -> Dict[str, List[str]]:
+    def generate_tag_list(tags: List[Tag]) -> Dict[str, List[str]]:
         aliases = []
         description = []
 
@@ -104,6 +104,23 @@ class Commands(MixinMeta):
             description.append(f"`{tag}` - {tagscript}")
 
         return {"aliases": aliases, "description": description}
+
+    @staticmethod
+    async def show_tag_list(ctx, data: Dict[str, List[str]], name: str, icon_url: str):
+        aliases = data["aliases"]
+        description = data["description"]
+        e = discord.Embed(color=await ctx.embed_color())
+        e.set_author(name=name, icon_url=icon_url)
+
+        embeds = []
+        pages = list(pagify("\n".join(description)))
+        footer = f"{len(description)} tags | {len(aliases)} aliases"
+        for index, page in enumerate(pages, 1):
+            embed = e.copy()
+            embed.description = page
+            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
+            embeds.append(embed)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.command(usage="<tag_name> [args]")
     async def invoketag(
@@ -356,6 +373,20 @@ class Commands(MixinMeta):
         """
         await tag.send_raw_tagscript(ctx)
 
+    @tag.command("search")
+    async def tag_search(self, ctx: commands.Context, *, keyword: str):
+        """
+        Search for tags by name.
+
+        **Example:**
+        `[p]tag search notsupport`
+        """
+        tags = self.search_tag(keyword, guild=ctx.guild)
+        if not tags:
+            return await ctx.send(f"There are no close matches for '{keyword}'.")
+        data = self.generate_tag_list(tags)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.guild.icon_url)
+
     @tag.command("list")
     async def tag_list(self, ctx: commands.Context):
         """
@@ -369,23 +400,8 @@ class Commands(MixinMeta):
         tags = self.get_unique_tags(ctx.guild)
         if not tags:
             return await ctx.send("There are no stored tags on this server.")
-
         data = self.generate_tag_list(tags)
-        aliases = data["aliases"]
-        description = data["description"]
-
-        e = discord.Embed(color=await ctx.embed_color())
-        e.set_author(name="Stored Tags", icon_url=ctx.guild.icon_url)
-
-        embeds = []
-        pages = list(pagify("\n".join(description)))
-        footer = f"{len(tags)} tags | {len(aliases)} aliases"
-        for index, page in enumerate(pages, 1):
-            embed = e.copy()
-            embed.description = page
-            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
-            embeds.append(embed)
-        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+        await self.show_tag_list(ctx, data, "Stored Tags", ctx.guild.icon_url)
 
     async def doc_fetch(self):
         async with self.session.get(f"{DOCS_URL}/objects.inv") as response:
@@ -587,29 +603,23 @@ class Commands(MixinMeta):
     async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
         await tag.send_raw_tagscript(ctx)
 
+    @tag_global.command("search")
+    @copy_doc(tag_search)
+    async def tag_global_search(self, ctx: commands.Context, *, keyword: str):
+        tags = self.search_tag(keyword)
+        if not tags:
+            return await ctx.send(f"There are no close matches for '{keyword}'.")
+        data = self.generate_tag_list(tags)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.me.avatar_url)
+
     @tag_global.command("list")
     @copy_doc(tag_list)
     async def tag_global_list(self, ctx: commands.Context):
         tags = self.get_unique_tags()
         if not tags:
             return await ctx.send("There are no global tags.")
-
         data = self.generate_tag_list(tags)
-        aliases = data["aliases"]
-        description = data["description"]
-
-        e = discord.Embed(color=await ctx.embed_color())
-        e.set_author(name="Global Tags", icon_url=ctx.me.avatar_url)
-
-        embeds = []
-        pages = list(pagify("\n".join(description)))
-        footer = f"{len(tags)} tags | {len(aliases)} aliases"
-        for index, page in enumerate(pages, 1):
-            embed = e.copy()
-            embed.description = page
-            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
-            embeds.append(embed)
-        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+        await self.show_tag_list(ctx, data, "Global Tags", ctx.me.avatar_url)
 
     @tag_global.command("usage", aliases=["stats"])
     @copy_doc(tag_usage)
