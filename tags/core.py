@@ -174,10 +174,11 @@ class Tags(
             else:
                 alias_score = 0
 
-            if tag_name in tag.tagscript:
+            tagscript = tag.tagscript.split()
+            if tag_name in tagscript:
                 script_score = 100
             elif script_search := process.extractOne(
-                tag_name, tag.tagscript.split(), scorer=fuzz.QRatio
+                tag_name, re.findall(r"\w+", tag.tagscript), scorer=fuzz.QRatio
             ):
                 script_score = script_search[1]
             else:
@@ -186,10 +187,15 @@ class Tags(
             scores = (name_score, alias_score, script_score)
             final_score = sum(scores)
             log.debug(
-                "%s NAME: %s ALIAS: %s SCRIPT %s FINAL %s", 
-                tag.name, name_score, alias_score, script_score, final_score)
-            if any(score > 80 for score in scores) or final_score > 180:
-                matches.append(tag)
+                "search: %r | %s NAME: %s ALIAS: %s SCRIPT %s FINAL %s",
+                tag_name,
+                tag.name,
+                name_score,
+                alias_score,
+                script_score,
+                final_score,
+            )
+            if any(score >= 70 for score in scores) or final_score > 180:
                 matches.append((final_score, tag))
         return [match[1] for match in sorted(matches, key=itemgetter(0), reverse=True)]
 

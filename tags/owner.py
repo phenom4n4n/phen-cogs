@@ -50,7 +50,6 @@ class OwnerCommands(MixinMeta):
         self.custom_command_engine = tse.Interpreter([ContextVariableBlock(), ConverterBlock()])
         super().__init__()
 
-
     async def compile_blocks(self, data: dict = None) -> List[tse.Block]:
         blocks = []
         blocks_data = data["blocks"] if data else await self.config.blocks()
