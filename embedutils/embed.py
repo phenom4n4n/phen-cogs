@@ -24,7 +24,7 @@ SOFTWARE.
 
 import io
 import json
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import discord
 from redbot.core import Config, commands
@@ -44,8 +44,10 @@ from .errors import EmbedConversionError, EmbedFileError, EmbedNotFound, EmbedUt
 
 YAML_CONVERTER = StringToEmbed(conversion_type="yaml")
 YAML_CONTENT_CONVERTER = StringToEmbed(conversion_type="yaml", content=True)
+YAML_LIST_CONVERTER = ListStringToEmbed(conversion_type="yaml")
 JSON_CONVERTER = StringToEmbed()
 JSON_CONTENT_CONVERTER = StringToEmbed(content=True)
+JSON_LIST_CONVERTER = ListStringToEmbed()
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
@@ -131,6 +133,28 @@ class EmbedUtils(commands.Cog):
             raise EmbedFileError("Failed to read embed file contents.") from exc
         return data
 
+    async def send_embed(
+        self,
+        ctx: commands.Context,
+        channel: Optional[discord.TextChannel],
+        embed: discord.Embed,
+    ):
+        if channel and channel != ctx.channel:
+            await channel.send(embed=embed)
+        await ctx.tick()
+
+    async def send_multiple_embeds(
+        self,
+        ctx: commands.Context,
+        channel: Optional[discord.TextChannel],
+        embeds: List[discord.Embed],
+    ):
+        channel = channel or ctx.channel
+        try:
+            await channel.send(embeds=embeds)
+        except discord.HTTPException as error:
+            raise EmbedConversionError(ctx, "Embed Send Error", error) from error
+
     @commands.guild_only()
     @commands.mod_or_permissions(embed_links=True)
     @commands.bot_has_permissions(embed_links=True)
@@ -144,9 +168,11 @@ class EmbedUtils(commands.Cog):
         *,
         description: str,
     ):
-        """Post a simple embed.
+        """
+        Post a simple embed.
 
-        Put the title in quotes if it is multiple words."""
+        Put the title in quotes if it is multiple words.
+        """
         channel = channel or ctx.channel
         color = color or await ctx.embed_color()
         e = discord.Embed(color=color, title=title, description=description)
@@ -163,9 +189,7 @@ class EmbedUtils(commands.Cog):
         """
         Post an embed from valid JSON.
         """
-        if channel and channel != ctx.channel:
-            await channel.send(embed=data)
-        await ctx.tick()
+        await self.send_embed(ctx, channel, data)
 
     @embed.command("yaml", aliases=["fromyaml"], add_example_info=True, info_type="yaml")
     async def embed_yaml(
@@ -178,9 +202,7 @@ class EmbedUtils(commands.Cog):
         """
         Post an embed from valid YAML.
         """
-        if channel and channel != ctx.channel:
-            await channel.send(embed=data)
-        await ctx.tick()
+        await self.send_embed(ctx, channel, data)
 
     @embed.command(
         name="fromfile",
@@ -193,9 +215,7 @@ class EmbedUtils(commands.Cog):
         """
         data = await self.get_file_from_message(ctx, file_types=("json", "txt"))
         embed = await JSON_CONTENT_CONVERTER.convert(ctx, data)
-        if channel and channel != ctx.channel:
-            await channel.send(embed=embed)
-        await ctx.tick()
+        await self.send_embed(ctx, channel, embed)
 
     @embed.command(
         name="yamlfile",
@@ -209,9 +229,7 @@ class EmbedUtils(commands.Cog):
         """
         data = await self.get_file_from_message(ctx, file_types=("yaml", "txt"))
         embed = await YAML_CONTENT_CONVERTER.convert(ctx, data)
-        if channel and channel != ctx.channel:
-            await channel.send(embed=embed)
-        await ctx.tick()
+        await self.send_embed(ctx, channel, embed)
 
     @embed.command(
         name="message",
@@ -694,7 +712,7 @@ class EmbedUtils(commands.Cog):
         )
 
     @webhook.command("json", aliases=["fromjson", "fromdata"], add_example_info=True)
-    async def webhook_json(self, ctx: commands.Context, *, embeds: ListStringToEmbed):
+    async def webhook_json(self, ctx: commands.Context, *, embeds: JSON_LIST_CONVERTER):
         """
         Send embeds through webhooks using JSON.
         """
@@ -705,7 +723,7 @@ class EmbedUtils(commands.Cog):
         self,
         ctx: commands.Context,
         *,
-        embeds: ListStringToEmbed(conversion_type="yaml"),  # noqa: F821
+        embeds: YAML_LIST_CONVERTER,
     ):
         """
         Send embeds through webhooks using YAML.
@@ -732,7 +750,7 @@ class EmbedUtils(commands.Cog):
         Send embeds through webhooks, using JSON files.
         """
         data = await self.get_file_from_message(ctx, file_types=("json", "txt"))
-        embeds = await ListStringToEmbed().convert(ctx, data)
+        embeds = await JSON_LIST_CONVERTER.convert(ctx, data)
         await self.webhook_send(ctx, embeds=embeds[:10])
 
     @webhook.command(
@@ -746,7 +764,7 @@ class EmbedUtils(commands.Cog):
         Send embeds through webhooks, using JSON files.
         """
         data = await self.get_file_from_message(ctx, file_types=("yaml", "txt"))
-        embeds = await ListStringToEmbed(conversion_type="yaml").convert(ctx, data)
+        embeds = await YAML_LIST_CONVERTER.convert(ctx, data)
         await self.webhook_send(ctx, embeds=embeds[:10])
 
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
