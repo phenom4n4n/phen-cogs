@@ -166,9 +166,9 @@ class AltDentifier(commands.Cog):
 
         Leave this empty to remove actions for the Level.
         The available actions are:
-        `kick`
-        `ban`
-        `role` (don't say 'role' for this, pass an actual role."""
+        `Kick`
+        `Ban`
+        `Role` - Don't say 'role' for this, pass an actual role or valid role id."""
         if not action:
             await self.clear_action(ctx.guild, level)
             return await ctx.send(f"Removed actions for Trust Level {level}.")
