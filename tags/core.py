@@ -174,8 +174,7 @@ class Tags(
             else:
                 alias_score = 0
 
-            tagscript = tag.tagscript.split()
-            if tag_name in tagscript:
+            if tag_name.lower() in tag.tagscript.lower():
                 script_score = 100
             elif script_search := process.extractOne(
                 tag_name, re.findall(r"\w+", tag.tagscript), scorer=fuzz.QRatio
