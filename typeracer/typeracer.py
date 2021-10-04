@@ -1,9 +1,9 @@
 import asyncio
+import json
+import textwrap
 from difflib import SequenceMatcher
 from functools import partial
-import json
 from io import BytesIO
-import textwrap
 from typing import Optional, Tuple
 
 import aiohttp
