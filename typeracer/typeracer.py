@@ -53,7 +53,7 @@ class TypeRacer(commands.Cog):
         #    return resp["content"], resp["author"]
         # old api went down, if it starts working again I'd like to switch back to it
         async with self.session.get("https://zenquotes.io/api/random") as resp:
-            data = json.loads(await r.text())[0]
+            data = json.loads(await resp.text())[0]
         return data["q"], data["a"]
 
     @property
