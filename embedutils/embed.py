@@ -421,7 +421,9 @@ class EmbedUtils(commands.Cog):
         await ctx.tick()
 
     @embed_edit.group("store", aliases=["stored"], invoke_without_command=True)
-    async def embed_edit_store(self, ctx: commands.Context, message: MyMessageConverter, name: StoredEmbedConverter):
+    async def embed_edit_store(
+        self, ctx: commands.Context, message: MyMessageConverter, name: StoredEmbedConverter
+    ):
         """
         Edit a message's embed using an embed that's stored on this server.
         """
@@ -432,7 +434,9 @@ class EmbedUtils(commands.Cog):
             a[name["name"]]["uses"] += 1
 
     @embed_edit_store.command("global")
-    async def embed_edit_store_global(self, ctx: commands.Context, message: MyMessageConverter, name: GlobalStoredEmbedConverter):
+    async def embed_edit_store_global(
+        self, ctx: commands.Context, message: MyMessageConverter, name: GlobalStoredEmbedConverter
+    ):
         """
         Edit a message's embed using an embed that's stored globally.
         """
