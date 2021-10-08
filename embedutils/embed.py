@@ -126,12 +126,14 @@ class EmbedUtils(commands.Cog):
     ) -> str:
         if not ctx.message.attachments:
             raise EmbedFileError(
-                f"Run `{ctx.clean_prefix}{ctx.command.qualified_name}` again, but this time attach an embed file."
+                f"Run `{ctx.clean_prefix}{ctx.command.qualified_name}` again, but this time "
+                "attach an embed file."
             )
         attachment = ctx.message.attachments[0]
         if not any(attachment.filename.endswith("." + ft) for ft in file_types):
+            file_names = humanize_list([inline(ft) for ft in file_types])
             raise EmbedFileError(
-                f"Invalid file type. The file name must end with one of {humanize_list([inline(ft) for ft in file_types])}."
+                f"Invalid file type. The file name must end with one of {file_names}."
             )
 
         content = await attachment.read()
@@ -418,6 +420,28 @@ class EmbedUtils(commands.Cog):
         await target.edit(embed=embed)
         await ctx.tick()
 
+    @embed_edit.group("store", aliases=["stored"], invoke_without_command=True)
+    async def embed_edit_store(self, ctx: commands.Context, message: MyMessageConverter, name: StoredEmbedConverter):
+        """
+        Edit a message's embed using an embed that's stored on this server.
+        """
+        embed = discord.Embed.from_dict(name["embed"])
+        await message.edit(embed=embed)
+        await ctx.tick()
+        async with self.config.guild(ctx.guild).embeds() as a:
+            a[name["name"]]["uses"] += 1
+
+    @embed_edit_store.command("global")
+    async def embed_edit_store_global(self, ctx: commands.Context, message: MyMessageConverter, name: GlobalStoredEmbedConverter):
+        """
+        Edit a message's embed using an embed that's stored globally.
+        """
+        embed = discord.Embed.from_dict(name["embed"])
+        await message.edit(embed=embed)
+        await ctx.tick()
+        async with self.config.embeds() as a:
+            a[name["name"]]["uses"] += 1
+
     @commands.mod_or_permissions(manage_guild=True)
     @embed.group(name="store")
     async def embed_store(self, ctx):
@@ -451,7 +475,7 @@ class EmbedUtils(commands.Cog):
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(color=color, title=f"Stored Embeds")
+        e = discord.Embed(color=color, title="Stored Embeds")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
 
         if len(description) > 2048:
@@ -574,7 +598,7 @@ class EmbedUtils(commands.Cog):
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
+        e = discord.Embed(color=color, title="Stored Embeds", description=description)
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
 
@@ -597,7 +621,7 @@ class EmbedUtils(commands.Cog):
         description = "\n".join(description)
 
         color = await self.bot.get_embed_colour(ctx)
-        e = discord.Embed(color=color, title=f"Stored Embeds", description=description)
+        e = discord.Embed(color=color, title="Stored Embeds", description=description)
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
 
@@ -820,7 +844,7 @@ class EmbedUtils(commands.Cog):
         add_example_info=True,
         info_type="yaml",
     )
-    async def webhook_yamlfile(self, ctx: commands.Context, name: str, locked: bool):
+    async def webhook_yamlfile(self, ctx: commands.Context):
         """
         Send embeds through webhooks, using JSON files.
         """
@@ -858,7 +882,7 @@ class EmbedUtils(commands.Cog):
         try:
             data = data[name]
             embed = data["embed"]
-            if data["locked"] == True and not await self.bot.is_owner(ctx.author):
+            if data["locked"] is True and not await self.bot.is_owner(ctx.author):
                 await ctx.send("This is not a stored embed.")
                 return
         except KeyError:
