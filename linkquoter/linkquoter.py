@@ -32,6 +32,7 @@ from redbot.core import Config, checks, commands
 from .converters import LinkToMessage
 
 log = logging.getLogger("red.phenom4n4n.linkquoter")
+
 COOLDOWN = (3, 10, commands.BucketType.channel)
 
 
@@ -375,7 +376,7 @@ class LinkQuoter(commands.Cog):
         current = message.created_at.timestamp()
         retry_after = bucket.get_retry_after(current)
         if retry_after:
-            log.debug("%r ratelimits exhausted, retry after: %s" % (channel, retry_after))
+            log.debug("%r ratelimits exhausted, retry after: %s", channel, retry_after)
             return
 
         ctx = commands.Context(
