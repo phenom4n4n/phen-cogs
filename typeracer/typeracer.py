@@ -24,7 +24,7 @@ class TypeRacer(commands.Cog):
 
     FONT_SIZE = 30
 
-    __version__ = "1.0.3"
+    __version__ = "1.0.4"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -48,13 +48,13 @@ class TypeRacer(commands.Cog):
         pass
 
     async def get_quote(self) -> Tuple[str, str]:
-        # async with self.session.get("https://api.quotable.io/random") as resp:
-        #    data = await resp.json()
-        #    return resp["content"], resp["author"]
-        # old api went down, if it starts working again I'd like to switch back to it
-        async with self.session.get("https://zenquotes.io/api/random") as resp:
-            data = json.loads(await resp.text())[0]
-        return data["q"], data["a"]
+        async with self.session.get("https://api.quotable.io/random") as resp:
+            data = await resp.json()
+        return data["content"], data["author"]
+        # back up api in case above goes down
+        # async with self.session.get("https://zenquotes.io/api/random") as resp:
+        #    data = await resp.json(content_type=None)[0]
+        # return data["q"], data["a"]
 
     @property
     def font(self) -> ImageFont:
