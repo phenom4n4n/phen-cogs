@@ -39,12 +39,8 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactio
 from redbot.core.utils.predicates import ReactionPredicate
 from tabulate import tabulate
 
-from ..doc_parser import SphinxObjectFileReader, parse_object_inv
-from ..errors import TagFeedbackError
-from ..objects import Tag
-from ..utils import chunks, get_menu
-from .abc import MixinMeta
-from .converters import (
+from ..abc import MixinMeta
+from ..converters import (
     GlobalTagConverter,
     GuildTagConverter,
     PastebinConverter,
@@ -52,6 +48,10 @@ from .converters import (
     TagName,
     TagScriptConverter,
 )
+from ..doc_parser import SphinxObjectFileReader, parse_object_inv
+from ..errors import TagFeedbackError
+from ..objects import Tag
+from ..utils import chunks, get_menu
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
