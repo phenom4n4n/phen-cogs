@@ -131,7 +131,7 @@ class Tags(
         except asyncio.CancelledError:
             pass
         except Exception as error:
-            log.exception(f"Task failed.", exc_info=error)
+            log.exception("Task failed.", exc_info=error)
 
     def create_task(self, coroutine: Coroutine, *, name: str = None):
         task = asyncio.create_task(coroutine, name=name)

@@ -37,14 +37,16 @@ COOLDOWN = (3, 10, commands.BucketType.channel)
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
+    if not ctx.channel.permissions_for(ctx.me).manage_webhooks:
+        raise commands.UserFeedbackCheckFailure(
+            "I need the **Manage Webhooks** permission for webhook quoting."
+        )
     cog = ctx.bot.get_cog("Webhook")
-    if (
-        ctx.channel.permissions_for(ctx.me).manage_webhooks
-        and cog
-        and cog.__author__ == "PhenoM4n4n"
-    ):
+    if cog and cog.__author__ == "PhenoM4n4n":
         return cog
-    return False
+    raise commands.UserFeedbackCheckFailure(
+        "The Webhook cog by PhenoM4n4n must be loaded for webhook quoting."
+    )
 
 
 class LinkQuoter(commands.Cog):
@@ -394,7 +396,11 @@ class LinkQuoter(commands.Cog):
         if not await self.bot.message_eligible_as_command(message):
             return
 
-        cog = webhook_check(ctx)
+        try:
+            cog = webhook_check(ctx)
+        except commands.CheckFailure:
+            cog = False
+
         data = await self.config.guild(ctx.guild).all()
         tasks = []
         if cog and data["webhooks"]:

@@ -42,6 +42,7 @@ log = logging.getLogger("red.phenom4n4n.disboardreminder")
 DISBOARD_BOT_ID = 302050872383242240
 LOCK_REASON = "DisboardReminder auto-lock"
 MENTION_RE = re.compile(r"<@!?(\d{15,20})>")
+BUMP_RE = re.compile(r"!d bump\b")
 
 
 class DisboardReminder(commands.Cog):
@@ -49,7 +50,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.3.5"
+    __version__ = "1.3.6"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -442,14 +443,18 @@ class DisboardReminder(commands.Cog):
         next_bump = message.created_at.timestamp() + 7200
         await self.config.guild(guild).nextBump.set(next_bump)
 
+        member_adapter = None
         match = MENTION_RE.search(embed.description)
         if match:
             member_id = int(match.group(1))
-            if not guild.chunked:
-                await guild.chunk()
-            user = guild.get_member(member_id) or await self.bot.get_or_fetch_user(member_id)
+            user = await self.bot.get_or_fetch_member(guild, member_id)
             member_adapter = tse.MemberAdapter(user)
-        else:
+        elif my_perms.read_message_history:
+            async for m in bump_channel.history(before=message, limit=10):
+                if m.content and BUMP_RE.match(m.content):
+                    member_adapter = tse.MemberAdapter(m.author)
+                    break
+        if member_adapter is None:
             member_adapter = tse.StringAdapter("Unknown User")
         tymessage = data["tyMessage"]
 
