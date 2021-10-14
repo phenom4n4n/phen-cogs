@@ -36,12 +36,12 @@ from redbot.core.utils import AsyncIter
 from redbot.core.utils.menus import DEFAULT_CONTROLS
 from redbot.core.utils.predicates import MessagePredicate
 
-from .abc import MixinMeta
-from .errors import BlockCompileError
-from .objects import Tag
-from .utils import get_menu
+from ..abc import MixinMeta
+from ..errors import BlockCompileError
+from ..objects import Tag
+from ..utils import get_menu
 
-log = logging.getLogger("red.phenom4n4n.owner")
+log = logging.getLogger("red.phenom4n4n.tags.owner")
 
 
 class OwnerCommands(MixinMeta):

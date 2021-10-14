@@ -37,11 +37,9 @@ from redbot.core.utils.chat_formatting import humanize_list
 from TagScriptEngine import __version__ as tse_version
 
 from .abc import CompositeMetaClass
-from .commands import Commands
 from .errors import MissingTagPermissions, TagCharacterLimitReached
+from .mixins import Commands, OwnerCommands, Processor
 from .objects import Tag
-from .owner import OwnerCommands
-from .processor import Processor
 
 log = logging.getLogger("red.phenom4n4n.tags")
 
