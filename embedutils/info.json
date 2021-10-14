@@ -1,6 +1,6 @@
 {
     "author": ["PhenoM4n4n"],
-    "install_msg": "Thanks for installing EmbedUtils!\nGet started with `[p] help embed`.",
+    "install_msg": "Thanks for installing EmbedUtils!\nGet started with `[p]help embed`.",
     "name": "EmbedUtils",
     "disabled": false,
     "short": "Create, post, and store embeds",
