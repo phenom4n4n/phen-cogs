@@ -152,6 +152,8 @@ class Tags(
         async for global_tag_name, global_tag_data in AsyncIter(global_tags.items(), steps=50):
             tag = Tag.from_dict(self, global_tag_name, global_tag_data)
             tag.add_to_cache()
+            if "created_at" not in global_tag_data:
+                await tag.update_config()
 
         guilds_data = await self.config.all_guilds()
         async for guild_id, guild_data in AsyncIter(guilds_data.items(), steps=100):
@@ -163,6 +165,8 @@ class Tags(
         async for tag_name, tag_data in AsyncIter(guild_data["tags"].items(), steps=50):
             tag = Tag.from_dict(self, tag_name, tag_data, guild_id=guild_id)
             tag.add_to_cache()
+            if "created_at" not in tag_data:
+                await tag.update_config()
 
     def search_tag(self, tag_name: str, guild: Optional[discord.Guild] = None) -> List[Tag]:
         tags = self.get_unique_tags(guild)
