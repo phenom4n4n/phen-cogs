@@ -64,17 +64,18 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.3.6"
+    __version__ = "2.3.7"
     __author__ = ("PhenoM4n4n", "sravan", "npc203")
 
     def format_help_for_context(self, ctx: commands.Context):
         pre_processed = super().format_help_for_context(ctx)
         n = "\n" if "\n\n" not in pre_processed else ""
+        authors = [f"**{name}**" for name in self.__author__]
         text = [
             f"{pre_processed}{n}",
             f"Cog Version: **{self.__version__}**",
             f"TagScriptEngine Version: **{tse_version}**",
-            f"Author: {humanize_list(self.__author__)}",
+            f"Author: {humanize_list(authors)}",
         ]
         return "\n".join(text)
 

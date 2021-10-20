@@ -198,7 +198,7 @@ class Commands(MixinMeta):
     async def create_tag(
         self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False
     ):
-        kwargs = {"author_id": ctx.author.id}
+        kwargs = {"author_id": ctx.author.id, "created_at": ctx.message.created_at}
 
         if global_tag:
             guild = None
