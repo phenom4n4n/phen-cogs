@@ -186,9 +186,9 @@ class Tag:
             "author_id": data.get("author_id") or data.get("author"),
             "real": real_tag,
         }
-        for name in ("aliases", "uses"):
-            if name in data:
-                kwargs[name] = data[name]
+        for key in ("aliases", "uses"):
+            if key in data:
+                kwargs[key] = data[key]
         if timestamp := data.get("created_at"):
             kwargs["created_at"] = datetime.fromtimestamp(timestamp, timezone.utc)
         return cls(cog, name, data["tag"], **kwargs)
