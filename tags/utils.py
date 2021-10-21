@@ -1,12 +1,13 @@
 from importlib import reload
-from typing import Union, List
+from typing import List, Union
 
+import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.errors import CogLoadError
-import discord
 
-from .views import PaginatedView, PageSource
+from .views import PageSource, PaginatedView
+
 
 async def menu(ctx: commands.Context, pages: List[Union[str, discord.Embed]]):
     view = PaginatedView(PageSource(pages))

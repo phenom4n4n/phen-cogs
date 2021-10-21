@@ -197,7 +197,9 @@ class Commands(MixinMeta):
         if tag:
             tag_prefix = tag.name_prefix
             msg = f"`{tag_name}` is already a registered {tag_prefix.lower()}. Would you like to overwrite it?"
-            confirmed = await ConfirmationView.confirm(ctx, msg, cancel_message=f"{tag_prefix} cancelled.")
+            confirmed = await ConfirmationView.confirm(
+                ctx, msg, cancel_message=f"{tag_prefix} cancelled."
+            )
             if not confirmed:
                 return
             await ctx.send(await tag.edit_tagscript(tagscript))

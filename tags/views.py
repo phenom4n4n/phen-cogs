@@ -63,18 +63,19 @@ class ConfirmationView(BaseView):
 
     @classmethod
     async def confirm(
-        cls, 
-        ctx: commands.Context, 
-        content: str = None, 
-        timeout: int = 60, 
+        cls,
+        ctx: commands.Context,
+        content: str = None,
+        timeout: int = 60,
         *,
-        cancel_message: str = "Action cancelled.", 
+        cancel_message: str = "Action cancelled.",
         **kwargs
     ) -> bool:
         view = cls(timeout, cancel_message=cancel_message)
         await view.send_initial_message(ctx, content, **kwargs)
         await view.wait()
         return view.value
+
 
 class PageSource(ListPageSource):
     def __init__(self, pages: List[Any], per_page: int = 1):
@@ -86,10 +87,7 @@ class PageSource(ListPageSource):
 
 class Button(discord.ui.Button):
     def __init__(
-        self, 
-        label: str, 
-        style: discord.ButtonStyle = discord.ButtonStyle.blurple,
-        **kwargs
+        self, label: str, style: discord.ButtonStyle = discord.ButtonStyle.blurple, **kwargs
     ):
         callback = kwargs.pop("callback")
         super().__init__(label=label, style=style, **kwargs)
@@ -97,6 +95,7 @@ class Button(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         await self._callback(self, interaction)
+
 
 class PaginatedView(BaseView):
     def __init__(self, source: PageSource, *, timeout: int = 60):
