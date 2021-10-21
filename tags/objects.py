@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import discord
@@ -47,6 +48,7 @@ class Tag:
         "guild_id",
         "author_id",
         "uses",
+        "created_at",
         "_real_tag",
     )
 
@@ -56,22 +58,30 @@ class Tag:
         name: str,
         tagscript: str,
         *,
-        guild_id: int = None,
+        guild_id: Optional[int] = None,
         author_id: int = None,
         uses: int = 0,
         real: bool = True,
-        aliases: List[str] = [],
+        aliases: List[str] = None,
+        created_at: datetime = None,
     ):
         self.cog = cog
         self.config: Config = cog.config
         self.bot: Red = cog.bot
         self.name: str = name
-        self._aliases = aliases.copy()
+        self._aliases = aliases or []
         self.tagscript: str = tagscript
 
-        self.guild_id = guild_id
+        self.guild_id: Optional[int] = guild_id
         self.author_id: int = author_id
         self.uses: int = uses
+        if created_at is None:
+            created_at = datetime.now(timezone.utc)
+        elif created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        elif created_at.tzinfo != timezone.utc:
+            raise ValueError(f"created_at must be {timezone.utc}")
+        self.created_at: datetime = created_at
 
         self._real_tag: bool = real
 
@@ -168,19 +178,20 @@ class Tag:
         name: str,
         data: dict,
         *,
-        guild_id: int = None,
+        guild_id: Optional[int] = None,
         real_tag: bool = True,
     ):
-        return cls(
-            cog,
-            name,
-            data["tag"],
-            guild_id=guild_id,
-            author_id=data.get("author_id", data.get("author")),
-            uses=data.get("uses", 0),
-            real=real_tag,
-            aliases=data.get("aliases", []),
-        )
+        kwargs = {
+            "guild_id": guild_id,
+            "author_id": data.get("author_id") or data.get("author"),
+            "real": real_tag,
+        }
+        for name in ("aliases", "uses"):
+            if name in data:
+                kwargs[name] = data[name]
+        if timestamp := data.get("created_at"):
+            kwargs["created_at"] = datetime.fromtimestamp(timestamp, timezone.utc)
+        return cls(cog, name, data["tag"], **kwargs)
 
     def to_dict(self):
         return {
@@ -188,6 +199,7 @@ class Tag:
             "uses": self.uses,
             "tag": self.tagscript,
             "aliases": self.aliases,
+            "created_at": self.created_at.timestamp(),
         }
 
     async def delete(self) -> str:
@@ -244,7 +256,8 @@ class Tag:
             color=await ctx.embed_color(),
             title=f"{self.name_prefix} `{self}` Info",
             description="\n".join(desc),
-        )
+            timestamp=self.created_at,
+        ).set_footer(text="Created at")
         if self.guild_id:
             e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
         else:
