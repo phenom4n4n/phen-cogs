@@ -1,16 +1,16 @@
 from importlib import reload
+from typing import Union, List
 
+from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.errors import CogLoadError
-from redbot.core.utils.menus import menu
+import discord
 
+from .views import PaginatedView, PageSource
 
-def get_menu():
-    try:
-        from slashtags import menu as _menu
-    except ImportError:
-        _menu = menu
-    return _menu
+async def menu(ctx: commands.Context, pages: List[Union[str, discord.Embed]]):
+    view = PaginatedView(PageSource(pages))
+    await view.send_initial_message(ctx)
 
 
 async def validate_tagscriptengine(bot: Red, tse_version: str, *, reloaded: bool = False):

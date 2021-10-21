@@ -119,7 +119,7 @@ class StringToEmbed(commands.Converter[discord.Embed]):
         raise commands.CheckFailure()
 
 
-class ListStringToEmbed(StringToEmbed[List[discord.Embed]]):
+class ListStringToEmbed(StringToEmbed):
     def __init__(self, *, conversion_type: str = "json", limit: int = 10):
         super().__init__(conversion_type=conversion_type)
         self.limit = limit

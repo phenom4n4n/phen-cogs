@@ -121,7 +121,7 @@ class Tags(
             guild = self.bot.get_guild(guild_id)
             if guild and data["tags"]:
                 for name, tag in data["tags"].items():
-                    if str(user_id) in str(tag["author"]):
+                    if str(user_id) in str(tag["author_id"]):
                         async with self.config.guild(guild).tags() as t:
                             del t[name]
 

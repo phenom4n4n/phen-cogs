@@ -617,8 +617,7 @@ class Baron(commands.Cog):
                 f"Are you sure you want me to leave the following {len(unwl_guilds)} servers?\n"
                 + box(guild_preview, "py")
             )
-            confirmed = await ConfirmationView.confirm(ctx, msg)
-            if not confirmed:
+            if not await ConfirmationView.confirm(ctx, msg):
                 return
 
         async with ctx.typing():
