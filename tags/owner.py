@@ -118,7 +118,7 @@ class OwnerCommands(MixinMeta):
             block = self.compile_block(code)
             self.test_block(block)
         except SyntaxError as e:
-            return await ctx.send(Dev.get_syntax_error(e))
+            return await ctx.send_interactive(Dev.get_syntax_error(e))
         except Exception as e:
             response = traceback.format_exc()
             response = Dev.sanitize_output(ctx, response)
