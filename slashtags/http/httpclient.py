@@ -27,6 +27,8 @@ from typing import List
 
 import discord
 
+from .models import InteractionCallbackType
+
 log = logging.getLogger("red.phenom4n4n.slashtags.http")
 
 
@@ -156,12 +158,6 @@ class SlashHTTP:
             data["tts"] = True
         if embeds:
             data["embeds"] = [e.to_dict() for e in embeds]
-        if allowed_mentions:
-            data[
-                "allowed_mentions"
-            ] = (
-                allowed_mentions.to_dict()
-            )  # its 1:30 am but i should check later whether this is necessary
         if flags:
             data["flags"] = flags
         if embeds:
@@ -189,7 +185,7 @@ class SlashHTTP:
             application_id=self.application_id,
         )
 
-        log.debug("sending response, initial = %r: %r" % (initial_response, send_data))
+        log.debug("sending response, initial = %r: %r", initial_response, send_data)
         return self.request(route, json=send_data)
 
     def edit_message(
@@ -239,3 +235,16 @@ class SlashHTTP:
             message_id=message_id,
         )
         return self.request(route)
+
+    def autocomplete(self, token: str, interaction_id: int, choices: List[dict]):
+        route = Route(
+            "POST",
+            "/interactions/{interaction_id}/{token}/callback",
+            token=token,
+            interaction_id=interaction_id,
+        )
+        payload = {
+            "type": InteractionCallbackType.application_command_autocomplete_result.value,
+            "data": {"choices": choices},
+        }
+        return self.request(route, json=payload)

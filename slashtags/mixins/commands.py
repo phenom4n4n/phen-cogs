@@ -22,14 +22,8 @@ from ..converters import (
     TagName,
     TagScriptConverter,
 )
-from ..http import SlashOptionType
-from ..objects import (
-    ApplicationCommand,
-    ApplicationCommandType,
-    SlashOption,
-    SlashOptionChoice,
-    SlashTag,
-)
+from ..http import ApplicationOptionChoice, SlashOptionType
+from ..objects import ApplicationCommand, ApplicationCommandType, SlashOption, SlashTag
 from ..testing.button_menus import menu as button_menu
 from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check
 
@@ -142,7 +136,7 @@ class Commands(MixinMeta):
             await command.register()
         except discord.Forbidden as error:
             log.error(
-                f"Failed to create command {command!r} on guild {ctx.guild!r}", exc_info=error
+                "Failed to create command {command!r} on guild {ctx.guild!r}", exc_info=error
             )
             text = (
                 "Looks like I don't have permission to add Slash Commands here. Reinvite me "
@@ -150,8 +144,8 @@ class Commands(MixinMeta):
                 f"?client_id={self.bot.user.id}&scope=bot%20applications.commands>"
             )
             return await ctx.send(text)
-        except Exception as error:
-            log.error(f"Failed to create command {command!r} on guild {ctx.guild!r}")
+        except Exception:
+            log.error("Failed to create command {command!r} on guild {ctx.guild!r}")
             # exc info unneeded since error handler should print it, however info on the command options is needed
             raise
 
@@ -215,7 +209,7 @@ class Commands(MixinMeta):
         await self.delete_quietly(message)
         return message.content
 
-    async def get_choices(self, ctx: commands.Context) -> List[SlashOptionChoice]:
+    async def get_choices(self, ctx: commands.Context) -> List[ApplicationOptionChoice]:
         query = (
             "Send the list of choice names and values you would like to add as choices to "
             "the tag. Choice names and values should be seperated by `:`, and each choice "
@@ -223,7 +217,7 @@ class Commands(MixinMeta):
         )
         response = await self.send_and_query_response(ctx, query)
         choices = []
-        for index, choice_text in enumerate(response.split("|"), 1):
+        for choice_text in response.split("|"):
             if ":" not in choice_text:
                 await ctx.send(
                     f"Failed to parse `{choice_text}` to a choice as its name and value "
@@ -238,7 +232,7 @@ class Commands(MixinMeta):
                     delete_after=15,
                 )
                 continue
-            choice = SlashOptionChoice(*choice_text.split(":", 1))
+            choice = ApplicationOptionChoice(*choice_text.split(":", 1))
             choices.append(choice)
             if len(choices) >= CHOICE_LIMIT:
                 await ctx.send(f"Reached max choices ({CHOICE_LIMIT}).")
@@ -649,7 +643,7 @@ class Commands(MixinMeta):
     async def slashtagset_settings(self, ctx: commands.Context):
         """View SlashTags settings."""
         eval_command = f"✅ (**{self.eval_command}**)" if self.eval_command else "❎"
-        testing_enabled = f"✅" if self.testing_enabled else "❎"
+        testing_enabled = "✅" if self.testing_enabled else "❎"
         description = [
             f"Application ID: **{self.application_id}**",
             f"Eval command: {eval_command}",
