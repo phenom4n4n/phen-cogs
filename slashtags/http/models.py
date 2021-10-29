@@ -22,14 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from enum import IntEnum
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union
 
 import discord
 
-from .httpclient import SlashHTTP
+if TYPE_CHECKING:
+    from .httpclient import SlashHTTP
 
 log = logging.getLogger("red.phenom4n4n.slashtags.models")
 
@@ -38,14 +41,17 @@ __all__ = (
     "ButtonStyle",
     "InteractionCallbackType",
     "ApplicationCommandType",
+    "ApplicationOptionChoice",
     "ResponseOption",
     "Component",
     "Button",
     "InteractionMessage",
     "UnknownCommand",
+    "InteractionType",
     "InteractionResponse",
     "InteractionButton",
     "InteractionCommand",
+    "InteractionAutocomplete",
 )
 
 
@@ -56,7 +62,7 @@ class SlashOptionType(IntEnum):
     +=========+=======================================================================================================+======================+============================================+
     | String  | Accepts any user inputted text as an argument.                                                        | ``{string}``         | :doc:`StringAdapter <tse:adapter>`         |
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
-    | Integer | Only allows number input for the argument.                                                            | ``{integer}``        | :doc:`IntAdapter <tse:adapter>`            |
+    | Integer | Only allows integer input for the argument.                                                           | ``{integer}``        | :doc:`IntAdapter <tse:adapter>`            |
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
     | Boolean | Allows either ``True`` or ``False`` as input.                                                         | ``{boolean}``        | :doc:`StringAdapter <tse:adapter>`         |
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
@@ -65,6 +71,8 @@ class SlashOptionType(IntEnum):
     | Channel | Refers to a text, voice, or category channel in this server, accepting channel names or IDs as input. | ``{channel(topic)}`` | :doc:`ChannelAdapter <tse:adapter>`        |
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
     | Role    | Refers to a server role, accepting role name or IDs as input.                                         | ``{role(id)}``       | :doc:`SafeObjectAdapter <tse:adapter>`     |
+    +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
+    | Number  | Accepts any floating point number.                                                                    | ``{number}``         | :doc:`StringAdapter <tse:adapter>`         |
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
     | Choices | Offers a list of choices for the user to pick.                                                        | ``{choice}``         | :doc:`StringAdapter <tse:adapter>`         |
     |         | Each option has a name and underlying value which is returned as string argument when accessed.       |                      |                                            |
@@ -79,6 +87,7 @@ class SlashOptionType(IntEnum):
     USER = 6
     CHANNEL = 7
     ROLE = 8
+    NUMBER = 10
 
 
 class ButtonStyle(IntEnum):
@@ -95,6 +104,7 @@ class InteractionCallbackType(IntEnum):
     deferred_channel_message_with_source = 5
     deferred_update_message = 6
     update_message = 7
+    application_command_autocomplete_result = 8
 
 
 class ApplicationCommandType(IntEnum):
@@ -119,25 +129,45 @@ class ApplicationCommandType(IntEnum):
         return command_prefixes.get(self, "/")
 
 
+class ApplicationOptionChoice:
+    __slots__ = ("name", "value")
+
+    def __init__(self, name: str, value: Union[str, int]):
+        self.name = name
+        self.value = value
+
+    def to_dict(self):
+        return {"name": self.name, "value": self.value}
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(data["name"], data["value"])
+
+
 # {'options': [{'value': 'args', 'type': 3, 'name': 'args'}]
 class ResponseOption:
-    __slots__ = ("type", "name", "value")
+    __slots__ = ("type", "name", "value", "focused")
 
-    def __init__(self, *, type: SlashOptionType, name: str, value: str):
+    def __init__(self, *, type: SlashOptionType, name: str, value: str, focused: bool = False):
         self.type = type
         self.name = name
         self.value = value
+        self.focused = focused
 
     def set_value(self, value):
         self.value = value
 
     def __repr__(self):
-        return f"<ResponseOption type={self.type!r} name={self.name!r} value={self.value!r}>"
+        members = ("type", "name", "value", "focused")
+        attrs = " ".join(f"{member}={getattr(self, member)!r}" for member in members)
+        return f"<{self.__class__.__name__} {attrs}>"
 
     @classmethod
     def from_dict(cls, data: dict):
         type = SlashOptionType(data.get("type", 3))
-        return cls(type=type, name=data["name"], value=data["value"])
+        return cls(
+            type=type, name=data["name"], value=data["value"], focused=data.get("focused", False)
+        )
 
 
 class Component:
@@ -284,6 +314,17 @@ class UnknownCommand:
         return False
 
 
+class InteractionType(IntEnum):
+    UNKNOWN = -1
+    APPLICATION_COMMAND = 2
+    MESSAGE_COMPONENT = 3
+    APPLICATION_COMMAND_AUTOCOMPLETE = 4
+
+    @classmethod
+    def _missing_(cls):
+        return cls.UNKNOWN
+
+
 class InteractionResponse:
     __slots__ = (
         "cog",
@@ -291,6 +332,7 @@ class InteractionResponse:
         "http",
         "_state",
         "id",
+        "type",
         "version",
         "_token",
         "_original_data",
@@ -304,6 +346,7 @@ class InteractionResponse:
         "sent",
         "deferred",
         "completed",
+        "options",
     )
 
     def __init__(self, *, cog, data: dict):
@@ -312,6 +355,7 @@ class InteractionResponse:
         self.http: SlashHTTP = cog.http
         self._state: discord.state.AutoShardedConnectionState = self.bot._connection
         self.id = int(data["id"])
+        self.type = InteractionType(data["type"])
         self.version = data["version"]
         self._token = data["token"]
         self._original_data = data
@@ -320,6 +364,8 @@ class InteractionResponse:
         self.channel_id = discord.utils._get_as_snowflake(data, "channel_id")
         self._channel = None
         self.application_id = discord.utils._get_as_snowflake(data, "application_id")
+
+        self.options: List[ResponseOption] = []
 
         if guild_id:
             member_data = data["member"]
@@ -339,6 +385,17 @@ class InteractionResponse:
         return (
             f"<{type(self).__name__} id={self.id} channel={self.channel!r} author={self.author!r}>"
         )
+
+    @classmethod
+    def from_interaction(cls, *, cog, data: dict):
+        interaction_type = InteractionType(data["type"])
+        classes = {
+            InteractionType.APPLICATION_COMMAND: InteractionCommand,
+            InteractionType.MESSAGE_COMPONENT: InteractionButton,
+            InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE: InteractionAutocomplete,
+        }
+        cls = classes.get(interaction_type, cls)
+        return cls(cog=cog, data=data)
 
     @property
     def guild(self) -> discord.Guild:
@@ -433,6 +490,77 @@ class InteractionResponse:
             self.sent = True
         self.deferred = True
         return data
+
+    def _parse_options(self):
+        options = self.interaction_data.get("options", [])
+        resolved = self.interaction_data.get("resolved", {})
+        for o in options:
+            option = ResponseOption.from_dict(o)
+            handler_name = f"_handle_option_{option.type.name.lower()}"
+            try:
+                handler = getattr(self, handler_name)
+            except AttributeError:
+                pass
+            else:
+                try:
+                    option = handler(o, option, resolved)
+                except Exception as error:
+                    log.exception(
+                        "Failed to handle option data for option:\n%r", o, exc_info=error
+                    )
+            self.options.append(option)
+
+    def _handle_option_channel(
+        self, data: dict, option: ResponseOption, resolved: Dict[str, Dict[str, dict]]
+    ):
+        channel_id = int(data["value"])
+        resolved_channel = resolved["channels"][data["value"]]
+        if self.guild_id:
+            if channel := self.guild.get_channel(channel_id):
+                pass
+            else:
+                channel = discord.TextChannel(
+                    state=self._state, guild=self.guild, data=resolved_channel
+                )
+        else:
+            if channel := self._state._get_private_channel(channel_id):
+                pass
+            else:
+                channel = discord.DMChannel(
+                    state=self._state, me=self.bot.user, data=resolved_channel
+                )
+        option.set_value(channel)
+        return option
+
+    def _handle_option_user(
+        self, data: dict, option: ResponseOption, resolved: Dict[str, Dict[str, dict]]
+    ):
+        user_id = int(data["value"])
+        resolved_user = resolved["users"][data["value"]]
+        if self.guild_id:
+            if user := self.guild.get_member(user_id):
+                pass
+            else:
+                user = discord.Member(guild=self.guild, data=resolved_user, state=self._state)
+                self.guild._add_member(user)
+        else:
+            user = self._state.store_user(resolved_user)
+        option.set_value(user)
+        return option
+
+    def _handle_option_role(
+        self, data: dict, option: ResponseOption, resolved: Dict[str, Dict[str, dict]]
+    ):
+        role_id = int(data["value"])
+        resolved_role = resolved["roles"][data["value"]]
+        if self.guild_id:
+            if role := self.guild.get_role(role_id):
+                pass
+            else:
+                role = discord.Role(guild=self.guild, data=resolved_role, state=self)
+                self.guild._add_role(role)
+            option.set_value(role)
+        return option
 
 
 class InteractionButton(InteractionResponse):
@@ -584,7 +712,6 @@ class InteractionCommand(InteractionResponse):
         "type",
         "command_name",
         "command_id",
-        "options",
         "_cs_content",
         "target_id",
         "resolved",
@@ -596,14 +723,11 @@ class InteractionCommand(InteractionResponse):
         self.type = ApplicationCommandType(interaction_data["type"])
         self.command_name = interaction_data["name"]
         self.command_id = int(interaction_data["id"])
-        self.options: List[ResponseOption] = []
         self.target_id: Optional[int] = discord.utils._get_as_snowflake(
             interaction_data, "target_id"
         )
         self.resolved: Optional[InteractionResolved] = InteractionResolved(self)
-        self._parse_options(
-            interaction_data.get("options", []), interaction_data.get("resolved", {})
-        )
+        self._parse_options()
 
     def __repr__(self) -> str:
         values = ("id", "command", "options", "channel", "author")
@@ -626,75 +750,6 @@ class InteractionCommand(InteractionResponse):
         guild_id = getattr(self.guild, "id", "@me")
         return f"https://discord.com/channels/{guild_id}/{self.channel_id}/{self.id}"
 
-    def _parse_options(self, options: List[dict], resolved: Dict[str, Dict[str, dict]]):
-        for o in options:
-            option = ResponseOption.from_dict(o)
-            handler_name = f"_handle_option_{option.type.name.lower()}"
-            try:
-                handler = getattr(self, handler_name)
-            except AttributeError:
-                pass
-            else:
-                try:
-                    option = handler(o, option, resolved)
-                except Exception as error:
-                    log.exception(
-                        "Failed to handle option data for option:\n%r", o, exc_info=error
-                    )
-            self.options.append(option)
-
-    def _handle_option_channel(
-        self, data: dict, option: ResponseOption, resolved: Dict[str, Dict[str, dict]]
-    ):
-        channel_id = int(data["value"])
-        resolved_channel = resolved["channels"][data["value"]]
-        if self.guild_id:
-            if channel := self.guild.get_channel(channel_id):
-                pass
-            else:
-                channel = discord.TextChannel(
-                    state=self._state, guild=self.guild, data=resolved_channel
-                )
-        else:
-            if channel := self._state._get_private_channel(channel_id):
-                pass
-            else:
-                channel = discord.DMChannel(
-                    state=self._state, me=self.bot.user, data=resolved_channel
-                )
-        option.set_value(channel)
-        return option
-
-    def _handle_option_user(
-        self, data: dict, option: ResponseOption, resolved: Dict[str, Dict[str, dict]]
-    ):
-        user_id = int(data["value"])
-        resolved_user = resolved["users"][data["value"]]
-        if self.guild_id:
-            if user := self.guild.get_member(user_id):
-                pass
-            else:
-                user = discord.Member(guild=self.guild, data=resolved_user, state=self._state)
-                self.guild._add_member(user)
-        else:
-            user = self._state.store_user(resolved_user)
-        option.set_value(user)
-        return option
-
-    def _handle_option_role(
-        self, data: dict, option: ResponseOption, resolved: Dict[str, Dict[str, dict]]
-    ):
-        role_id = int(data["value"])
-        resolved_role = resolved["roles"][data["value"]]
-        if self.guild_id:
-            if role := self.guild.get_role(role_id):
-                pass
-            else:
-                role = discord.Role(guild=self.guild, data=resolved_role, state=self)
-                self.guild._add_role(role)
-            option.set_value(role)
-        return option
-
     def to_reference(self, *args, **kwargs):
         # return None to prevent reply since interaction responses already reply (visually)
         # additionally, replying to an interaction response raises
@@ -704,3 +759,17 @@ class InteractionCommand(InteractionResponse):
     @property
     def me(self):
         return self.guild.me if self.guild else self.bot.user
+
+
+class InteractionAutocomplete(InteractionResponse):
+    def __init__(self, *, cog, data: dict):
+        super().__init__(cog=cog, data=data)
+        self._parse_options()
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__} options={self.options!r}>"
+
+    async def send_autocomplete_choices(self, choices: List[ApplicationOptionChoice]):
+        await self.http.autocomplete(
+            self._token, self.id, [choice.to_dict() for choice in choices]
+        )

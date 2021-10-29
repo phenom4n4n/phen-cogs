@@ -24,7 +24,7 @@ SOFTWARE.
 
 import asyncio
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import discord
 import TagScriptEngine as tse
@@ -32,12 +32,17 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box, pagify
 
-from .http import ApplicationCommandType, InteractionResponse, SlashHTTP, SlashOptionType
+from .http import (
+    ApplicationCommandType,
+    ApplicationOptionChoice,
+    InteractionResponse,
+    SlashHTTP,
+    SlashOptionType,
+)
 
 log = logging.getLogger("red.phenom4n4n.slashtags.objects")
 
 __all__ = (
-    "SlashOptionChoice",
     "SlashOption",
     "ApplicationCommand",
     "SlashTag",
@@ -46,23 +51,8 @@ __all__ = (
 )
 
 
-class SlashOptionChoice:
-    __slots__ = ("name", "value")
-
-    def __init__(self, name: str, value: Union[str, int]):
-        self.name = name
-        self.value = value
-
-    def to_dict(self):
-        return {"name": self.name, "value": self.value}
-
-    @classmethod
-    def from_dict(cls, data: dict):
-        return cls(data["name"], data["value"])
-
-
 class SlashOption:
-    __slots__ = ("type", "name", "description", "required", "choices", "options")
+    __slots__ = ("type", "name", "description", "required", "choices", "options", "autocomplete")
 
     def __init__(
         self,
@@ -71,8 +61,9 @@ class SlashOption:
         name: str,
         description: str,
         required: bool = False,
-        choices: List[SlashOptionChoice] = [],
+        choices: List[ApplicationOptionChoice] = [],
         options: list = [],
+        autocomplete: bool = False,
     ):
         if not isinstance(option_type, SlashOptionType):
             option_type = SlashOptionType(option_type)
@@ -82,12 +73,13 @@ class SlashOption:
         self.required = required
         self.choices = choices.copy()
         self.options = options.copy()
+        self.autocomplete = autocomplete
 
     def __str__(self):
         return self.name
 
     def __repr__(self):
-        values = ["name", "type", "required"]
+        values = ["name", "type", "required", "autocomplete"]
         if self.choices:
             values.append("choices")
         if self.options:
@@ -101,6 +93,7 @@ class SlashOption:
             "name": self.name,
             "description": self.description,
             "required": self.required,
+            "autocomplete": self.autocomplete,
         }
 
         if self.choices:
@@ -111,8 +104,7 @@ class SlashOption:
 
     @classmethod
     def from_dict(cls, data: dict):
-        choices = [SlashOptionChoice.from_dict(choice) for choice in data.get("choices", [])]
-
+        choices = [ApplicationOptionChoice.from_dict(choice) for choice in data.get("choices", [])]
         options = [cls.from_dict(option) for option in data.get("options", [])]
         return cls(
             option_type=SlashOptionType(data["type"]),
@@ -121,6 +113,7 @@ class SlashOption:
             required=data.get("required", False),
             choices=choices,
             options=options,
+            autocomplete=data.get("autocomplete", False),
         )
 
 
@@ -135,6 +128,7 @@ class ApplicationCommand:
         "guild_id",
         "options",
         "type",
+        "version",
     )
 
     def __init__(
@@ -145,9 +139,10 @@ class ApplicationCommand:
         application_id: int = None,
         name: str,
         description: str,
-        guild_id: int = None,
+        guild_id: Optional[int] = None,
         options: List[SlashOption] = [],
         type: ApplicationCommandType = ApplicationCommandType.CHAT_INPUT,
+        version: int = 1,
     ):
         self.cog = cog
         self.http = cog.http
@@ -159,12 +154,13 @@ class ApplicationCommand:
         self.guild_id = guild_id
         self.type = type
         self.options = options.copy()
+        self.version = version
 
     def __str__(self) -> str:
         return self.name
 
     def __repr__(self) -> str:
-        members = ("id", "type", "name", "description", "options", "guild_id")
+        members = ("id", "type", "name", "description", "options", "guild_id", "version")
         attrs = " ".join(f"{member}={getattr(self, member)!r}" for member in members)
         return f"<{self.__class__.__name__} {attrs}>"
 
@@ -203,11 +199,14 @@ class ApplicationCommand:
         }
         if command_type := data.get("type"):
             kwargs["type"] = ApplicationCommandType(command_type)
+        if version := data.get("version"):
+            kwargs["version"] = version
         return cls(cog, **kwargs)
 
     def _parse_response_data(self, data: dict):
         _id = discord.utils._get_as_snowflake(data, "id")
         application_id = discord.utils._get_as_snowflake(data, "application_id")
+        version = discord.utils._get_as_snowflake(data, "version")
         name = data.get("name")
         description = data.get("description")
         if _id:
@@ -218,6 +217,8 @@ class ApplicationCommand:
             self.name = name
         if description:
             self.description = description
+        if version:
+            self.version = version
         self.options = [SlashOption.from_dict(o) for o in data.get("options", [])]
 
     async def register(self):
@@ -353,7 +354,7 @@ class SlashTag:
         return self.command.type
 
     def run(
-        self, interpreter: tse.Interpreter, seed_variables: dict = {}, **kwargs
+        self, interpreter: tse.Interpreter, seed_variables: dict = None, **kwargs
     ) -> tse.Response:
         self.uses += 1
         seed_variables.update(uses=tse.IntAdapter(self.uses))
@@ -522,7 +523,7 @@ def maybe_set_attr(cls, name, attr):
 
 def implement_methods(parent):
     def wrapper(cls):
-        log.debug("implementing %r methods on %r" % (parent, cls))
+        log.debug("implementing %r methods on %r", parent, cls)
 
         for name in getattr(parent, "__slots__", []):
             func = getattr(parent, name)
@@ -546,6 +547,7 @@ class FakeMessage(discord.Message):
         "embeds": [],
         "flags": discord.MessageFlags._from_value(0),
         "_edited_timestamp": None,
+        "reference": None,
     }
 
     def __init__(

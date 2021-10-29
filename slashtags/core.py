@@ -39,7 +39,15 @@ from redbot.core.utils.chat_formatting import humanize_list
 
 from .abc import CompositeMetaClass
 from .errors import MissingTagPermissions
-from .http import InteractionButton, InteractionCommand, SlashHTTP
+from .http import (
+    ApplicationOptionChoice,
+    InteractionAutocomplete,
+    InteractionButton,
+    InteractionCommand,
+    InteractionResponse,
+    InteractionType,
+    SlashHTTP,
+)
 from .mixins import Commands, Processor
 from .objects import ApplicationCommand, SlashContext, SlashTag
 
@@ -53,7 +61,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.5.1"
+    __version__ = "0.5.2"
     __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -104,7 +112,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         try:
             task.result()
         except Exception as error:
-            log.exception(f"Task failed.", exc_info=error)
+            log.exception("Task failed.", exc_info=error)
 
     def create_task(self, coroutine: Coroutine):
         task = asyncio.create_task(coroutine)
@@ -169,8 +177,9 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             cached += 1
 
         log.debug(
-            "completed caching slash tags, %s guild slash tags cached, %s global slash tags cached"
-            % (guild_cached, cached)
+            "completed caching slash tags, %s guild slash tags cached, %s global slash tags cached",
+            guild_cached,
+            cached,
         )
 
     async def validate_tagscript(self, ctx: commands.Context, tagscript: str):
@@ -193,11 +202,9 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         check_global: bool = True,
         global_priority: bool = False,
     ) -> Optional[SlashTag]:
-        tag = None
         if global_priority and check_global:
             return self.global_tag_cache.get(tag_id)
-        if guild is not None:
-            tag = self.guild_tag_cache[guild.id].get(tag_id)
+        tag = self.guild_tag_cache[guild.id].get(tag_id) if guild is not None else None
         if tag is None and check_global:
             tag = self.global_tag_cache.get(tag_id)
         return tag
@@ -225,22 +232,25 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     @commands.Cog.listener()
     async def on_interaction_create(self, data: dict):
-        log.debug("Interaction data received:\n%r" % data)
-        handlers = {2: self.handle_slash_interaction, 3: self.handle_slash_button}
-        handler = handlers.get(data["type"], self.handle_slash_interaction)
+        log.debug("Interaction data received:\n%r", data)
+        interaction = InteractionResponse.from_interaction(cog=self, data=data)
+        handlers = {
+            InteractionType.APPLICATION_COMMAND: self.handle_slash_interaction,
+            InteractionType.MESSAGE_COMPONENT: self.handle_slash_button,
+            InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE: self.handle_autocomplete,
+        }
+        handler = handlers.get(interaction.type, self.handle_slash_interaction)
         try:
-            await handler(data)
+            await handler(interaction)
         except Exception as e:
             log.exception(
-                "An exception occured while handling an interaction:\n%r" % data, exc_info=e
+                "An exception occured while handling an interaction:\n%r", data, exc_info=e
             )
 
-    async def handle_slash_button(self, data: dict):
-        button = InteractionButton(cog=self, data=data)
-        self.bot.dispatch("button_interaction", button)
+    async def handle_slash_button(self, interaction: InteractionButton):
+        self.bot.dispatch("button_interaction", interaction)
 
-    async def handle_slash_interaction(self, data: dict):
-        interaction = InteractionCommand(data=data, cog=self)
+    async def handle_slash_interaction(self, interaction: InteractionCommand):
         self.bot.dispatch("slash_interaction", interaction)
 
     @commands.Cog.listener()
@@ -251,6 +261,15 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             ctx = SlashContext.from_interaction(interaction)
             self.bot.dispatch("command_error", ctx, e)
 
+    async def handle_autocomplete(self, interaction: InteractionAutocomplete):
+        log.debug("Autocomplete data received:\n%r", interaction)
+        choices = [
+            ApplicationOptionChoice("test", "slashtags autocomplete test value"),
+            ApplicationOptionChoice("dog", "doggo"),
+            ApplicationOptionChoice("cat", "kitty"),
+        ]
+        await interaction.send_autocomplete_choices(choices)
+
     async def invoke_and_catch(self, interaction: InteractionCommand):
         try:
             command = interaction.command
@@ -260,7 +279,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             elif interaction.command_id == self.eval_command:
                 await self.slash_eval(interaction)
             else:
-                log.debug("Unknown interaction created:\n%r" % interaction)
+                log.debug("Unknown interaction created:\n%r", interaction)
         except Exception as e:
             raise commands.CommandInvokeError(e) from e
 

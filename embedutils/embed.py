@@ -128,12 +128,14 @@ class EmbedUtils(commands.Cog):
     ) -> str:
         if not ctx.message.attachments:
             raise EmbedFileError(
-                f"Run `{ctx.clean_prefix}{ctx.command.qualified_name}` again, but this time attach an embed file."
+                f"Run `{ctx.clean_prefix}{ctx.command.qualified_name}` again, but this time "
+                "attach an embed file."
             )
         attachment = ctx.message.attachments[0]
         if not any(attachment.filename.endswith("." + ft) for ft in file_types):
+            file_names = humanize_list([inline(ft) for ft in file_types])
             raise EmbedFileError(
-                f"Invalid file type. The file name must end with one of {humanize_list([inline(ft) for ft in file_types])}."
+                f"Invalid file type. The file name must end with one of {file_names}."
             )
 
         content = await attachment.read()
@@ -438,6 +440,32 @@ class EmbedUtils(commands.Cog):
         embed = await self.get_embed_from_message(ctx, source, index)
         await target.edit(embed=embed)
         await ctx.tick()
+
+    @embed_edit.group("store", aliases=["stored"], invoke_without_command=True)
+    async def embed_edit_store(
+        self, ctx: commands.Context, message: MyMessageConverter, name: StoredEmbedConverter
+    ):
+        """
+        Edit a message's embed using an embed that's stored on this server.
+        """
+        embed = discord.Embed.from_dict(name["embed"])
+        await message.edit(embed=embed)
+        await ctx.tick()
+        async with self.config.guild(ctx.guild).embeds() as a:
+            a[name["name"]]["uses"] += 1
+
+    @embed_edit_store.command("global")
+    async def embed_edit_store_global(
+        self, ctx: commands.Context, message: MyMessageConverter, name: GlobalStoredEmbedConverter
+    ):
+        """
+        Edit a message's embed using an embed that's stored globally.
+        """
+        embed = discord.Embed.from_dict(name["embed"])
+        await message.edit(embed=embed)
+        await ctx.tick()
+        async with self.config.embeds() as a:
+            a[name["name"]]["uses"] += 1
 
     @commands.mod_or_permissions(manage_guild=True)
     @embed.group("store")
