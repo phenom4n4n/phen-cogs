@@ -180,7 +180,7 @@ class InfoJson:
 
 
 def save_json(folder, data):
-    with open(folder, "w") as newfile:
+    with open(folder, "w", encoding="utf-8") as newfile:
         json.dump(data, newfile, indent=4, sort_keys=True, separators=(",", " : "))
 
 
@@ -196,11 +196,11 @@ def mass_fix():
         if folder.startswith("."):
             continue
         try:
-            with open(f"{ROOT}/{folder}/info.json", "r") as infile:
+            with open(f"{ROOT}/{folder}/info.json", "r", encoding="utf-8") as infile:
                 info = InfoJson.from_json(json.load(infile))
             save_json(f"{ROOT}/{folder}/info.json", info.__dict__)
         except Exception:
-            log.exception(f"Error reading info.json in {folder}")
+            log.exception("Error reading info.json in %s", folder)
             continue
 
 
@@ -346,13 +346,13 @@ def countlines(include_hidden: bool = False, include_disabled: bool = False):
     """Count the number of lines of .py files in all folders"""
     total = 0
     totals = []
-    log.info(f"{ROOT}")
+    log.info(ROOT)
     for folder in os.listdir(f"{ROOT}/"):
         cog = 0
         if folder.startswith("."):
             continue
         try:
-            with open(f"{ROOT}/{folder}/info.json", "r") as infile:
+            with open(f"{ROOT}/{folder}/info.json", "r", encoding="utf-8") as infile:
                 info = InfoJson.from_json(json.load(infile))
         except Exception:
             continue
@@ -363,7 +363,7 @@ def countlines(include_hidden: bool = False, include_disabled: bool = False):
         try:
             for file in glob.glob(f"{ROOT}/{folder}/*.py"):
                 try:
-                    with open(file, "r") as infile:
+                    with open(file, "r", encoding="utf-8") as infile:
                         lines = len(infile.readlines())
                     cog += lines
                     total += lines
@@ -385,13 +385,13 @@ def countchars(include_hidden: bool = False, include_disabled: bool = False):
     """Count the number of lines of .py files in all folders"""
     total = 0
     totals = []
-    log.info(f"{ROOT}")
+    log.info(ROOT)
     for folder in os.listdir(f"{ROOT}/"):
         cog = 0
         if folder.startswith("."):
             continue
         try:
-            with open(f"{ROOT}/{folder}/info.json", "r") as infile:
+            with open(f"{ROOT}/{folder}/info.json", "r", encoding="utf-8") as infile:
                 info = InfoJson.from_json(json.load(infile))
         except Exception:
             continue
@@ -402,7 +402,7 @@ def countchars(include_hidden: bool = False, include_disabled: bool = False):
         try:
             for file in glob.glob(f"{ROOT}/{folder}/*.py"):
                 try:
-                    with open(file, "r") as infile:
+                    with open(file, "r", encoding="utf-8") as infile:
                         lines = len(infile.read())
                     cog += lines
                     total += lines
@@ -431,13 +431,13 @@ def makereadme():
                 continue
             if file.endswith("info.json"):
                 try:
-                    with open(file) as infile:
+                    with open(file, encoding="utf-8") as infile:
                         data = json.loads(infile.read())
                     info = InfoJson.from_json(data)
                 except Exception:
-                    log.exception(f"Error reading info.json {file}")
+                    log.exception("Error reading info.json %s", file)
             if _version == "":
-                with open(file) as infile:
+                with open(file, encoding="utf-8") as infile:
                     data = infile.read()
                     maybe_version = VER_REG.search(data)
                     if maybe_version:
@@ -454,7 +454,7 @@ def makereadme():
         headers=["Name", "Status/Version", "Description (Click to see full status)", "Authors"],
         tablefmt="github",
     )
-    with open(f"{ROOT}/README.md", "w") as outfile:
+    with open(f"{ROOT}/README.md", "w", encoding="utf-8") as outfile:
         outfile.write(HEADER.format(body=body))
 
 
@@ -473,7 +473,7 @@ def makerequirements():
                 continue
             if file.endswith("info.json"):
                 try:
-                    with open(file) as infile:
+                    with open(file, encoding="utf-8") as infile:
                         data = json.loads(infile.read())
                     info = InfoJson.from_json(data)
                     if info.disabled:
@@ -481,9 +481,9 @@ def makerequirements():
                     for req in info.requirements:
                         requirements.add(req)
                 except Exception:
-                    log.exception(f"Error reading info.json {file}")
-    with open(ROOT / "requirements.txt", "w") as outfile:
-        outfile.write("\n".join(r for r in requirements))
+                    log.exception("Error reading info.json %s", file)
+    with open(ROOT / "requirements.txt", "w", encoding="utf-8") as outfile:
+        outfile.write("\n".join(requirements))
 
 
 def run_cli():
