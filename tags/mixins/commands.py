@@ -122,7 +122,7 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+        await menu(ctx, embeds)
 
     @commands.command(usage="<tag_name> [args]")
     async def invoketag(
