@@ -62,7 +62,7 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.3.7"
+    __version__ = "2.4.0"
     __author__ = ("PhenoM4n4n", "sravan", "npc203")
 
     def format_help_for_context(self, ctx: commands.Context):
