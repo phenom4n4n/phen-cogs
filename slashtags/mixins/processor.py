@@ -110,13 +110,13 @@ class Processor(MixinMeta):
         if guild:
             seed_variables["server"] = tse.GuildAdapter(guild)
 
-        interaction_type = interaction.type
-        if interaction_type == ApplicationCommandType.USER:
+        command_type = interaction.command_type
+        if command_type == ApplicationCommandType.USER:
             target_id: int = interaction.target_id
             user = interaction.resolved.users[target_id]
             seed_variables["user"] = tse.MemberAdapter(user)
             seed_variables["target_id"] = tse.StringAdapter(target_id)
-        elif interaction_type == ApplicationCommandType.MESSAGE:
+        elif command_type == ApplicationCommandType.MESSAGE:
             target_id: int = interaction.target_id
             message = interaction.resolved.messages[target_id]
             seed_variables["message"] = tse.SafeObjectAdapter(message)

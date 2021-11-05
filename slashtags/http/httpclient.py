@@ -143,8 +143,12 @@ class SlashHTTP:
         allowed_mentions: discord.AllowedMentions = None,
         flags: int = None,
         components: list = None,
+        view: discord.ui.View = discord.utils.MISSING,
     ):
         payload = {"type": type.value}
+
+        if view and components:
+            raise RuntimeError("view and components arguments cannot both be used")
 
         if embed is not None:
             embeds = [embed]
@@ -166,6 +170,8 @@ class SlashHTTP:
             data["flags"] = flags
         if components is not None:
             data["components"] = [c.to_dict() for c in components]
+        if view is not discord.utils.MISSING:
+            data["components"] = view.to_components()
 
         if data:
             data["allowed_mentions"] = allowed_mentions.to_dict()

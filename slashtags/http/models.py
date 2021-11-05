@@ -321,7 +321,7 @@ class InteractionType(IntEnum):
     APPLICATION_COMMAND_AUTOCOMPLETE = 4
 
     @classmethod
-    def _missing_(cls):
+    def _missing_(cls, value):
         return cls.UNKNOWN
 
 
@@ -436,6 +436,7 @@ class InteractionResponse:
         allowed_mentions: discord.AllowedMentions = None,
         hidden: bool = False,
         delete_after: int = None,
+        view: discord.ui.View = discord.utils.MISSING,
         reference=None,  # this parameter and the one below are unused
         mention_author=None,  # they exist to prevent replies from erroring
     ):
@@ -452,12 +453,18 @@ class InteractionResponse:
             allowed_mentions=allowed_mentions,
             tts=tts,
             flags=flags,
+            view=view,
         )
 
         if initial:
             self.sent = True
         if not self.completed:
             self.completed = True
+
+        if view is not discord.utils.MISSING:
+            if hidden and view.timeout is None:
+                view.timeout = 15 * 60.0
+            self._state.store_view(view)
 
         if data:
             try:
@@ -710,6 +717,7 @@ class InteractionResolved:
 class InteractionCommand(InteractionResponse):
     __slots__ = (
         "type",
+        "command_type",
         "command_name",
         "command_id",
         "_cs_content",
@@ -720,7 +728,7 @@ class InteractionCommand(InteractionResponse):
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
         interaction_data = self.interaction_data
-        self.type = ApplicationCommandType(interaction_data["type"])
+        self.command_type = ApplicationCommandType(interaction_data["type"])
         self.command_name = interaction_data["name"]
         self.command_id = int(interaction_data["id"])
         self.target_id: Optional[int] = discord.utils._get_as_snowflake(

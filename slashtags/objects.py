@@ -563,6 +563,7 @@ class FakeMessage(discord.Message):
         self._state = state
         self.id = id
         self.channel = channel
+        self.guild = channel.guild
         self.interaction = interaction
 
         self.content = content
@@ -621,6 +622,7 @@ class SlashContext(commands.Context):
             prefix="/",
             command=interaction.command,
             invoked_with=interaction.command_name,
+            view=None,
         )
 
     async def tick(self):

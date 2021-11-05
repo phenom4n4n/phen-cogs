@@ -42,7 +42,6 @@ from .errors import MissingTagPermissions
 from .http import (
     ApplicationOptionChoice,
     InteractionAutocomplete,
-    InteractionButton,
     InteractionCommand,
     InteractionResponse,
     InteractionType,
@@ -99,9 +98,15 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache: Dict[int, SlashTag] = {}
 
+        self._old_parser = None
+        self._monkeypatch_interaction_parser()
+
         self.load_task = self.create_task(self.initialize_task())
         self.session = aiohttp.ClientSession()
-        bot.add_dev_env_value("st", lambda ctx: self)
+        try:
+            bot.add_dev_env_value("st", lambda ctx: self)
+        except Exception:
+            pass
 
         super().__init__()
 
@@ -126,18 +131,15 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             log.exception("An error occurred while unloading the cog.", exc_info=error)
 
     def __unload(self):
-        self.bot.remove_dev_env_value("st")
+        self._remove_monkeypatch()
+        try:
+            self.bot.remove_dev_env_value("st")
+        except Exception:
+            pass
         if self.testing_enabled:
             self.remove_test_cog()
         self.load_task.cancel()
         asyncio.create_task(self.session.close())
-
-    async def cog_before_invoke(self, ctx: commands.Context) -> bool:
-        if not self.bot.get_cog("SlashInjector"):
-            raise commands.UserFeedbackCheckFailure(
-                "This cog requires `slashinjector` by Kowlin/Sentinel to be loaded to parse slash command responses (<https://github.com/Kowlin/Sentinel>)."
-            )
-        return True
 
     async def pre_load(self):
         data = await self.config.all()
@@ -230,25 +232,42 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
 
+    def _monkeypatch_interaction_parser(self):
+        """
+        Monkeypatches the bot's ConnectionState to allow for interaction parsing, since dpy
+        doesn't expose any raw websocket event data.
+        """
+        state = self.bot._connection
+        self._old_parser = state.parsers["INTERACTION_CREATE"]
+        if self._old_parser.__module__ == "discord.state":
+            # this shouldn't happen, but prevent monkeypatching if the parser has already been monkeypatched
+            state.parsers["INTERACTION_CREATE"] = self.parse_interaction_create
+
+    def _remove_monkeypatch(self):
+        if self._old_parser.__module__ == "discord.state":
+            self.bot._connection.parsers["INTERACTION_CREATE"] = self._old_parser
+
+    def parse_interaction_create(self, data):
+        self._old_parser(data)
+        self.bot.dispatch("st_interaction_create", data)
+
     @commands.Cog.listener()
-    async def on_interaction_create(self, data: dict):
+    async def on_st_interaction_create(self, data: dict):
         log.debug("Interaction data received:\n%r", data)
         interaction = InteractionResponse.from_interaction(cog=self, data=data)
         handlers = {
             InteractionType.APPLICATION_COMMAND: self.handle_slash_interaction,
-            InteractionType.MESSAGE_COMPONENT: self.handle_slash_button,
             InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE: self.handle_autocomplete,
         }
-        handler = handlers.get(interaction.type, self.handle_slash_interaction)
+        handler = handlers.get(interaction.type)
+        if handler is None:
+            return
         try:
             await handler(interaction)
         except Exception as e:
             log.exception(
                 "An exception occured while handling an interaction:\n%r", data, exc_info=e
             )
-
-    async def handle_slash_button(self, interaction: InteractionButton):
-        self.bot.dispatch("button_interaction", interaction)
 
     async def handle_slash_interaction(self, interaction: InteractionCommand):
         self.bot.dispatch("slash_interaction", interaction)
@@ -284,7 +303,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             raise commands.CommandInvokeError(e) from e
 
     @property
-    def testing_enabled(self):
+    def testing_enabled(self) -> bool:
         return bool(self.bot.get_cog("SlashTagTesting"))
 
     def add_test_cog(self):

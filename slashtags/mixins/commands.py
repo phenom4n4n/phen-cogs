@@ -24,7 +24,6 @@ from ..converters import (
 )
 from ..http import ApplicationOptionChoice, SlashOptionType
 from ..objects import ApplicationCommand, ApplicationCommandType, SlashOption, SlashTag
-from ..testing.button_menus import menu as button_menu
 from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
@@ -438,10 +437,10 @@ class Commands(MixinMeta):
         e = discord.Embed(color=await ctx.embed_color())
         if is_global:
             slash_tags = "global slash tags"
-            e.set_author(name="Global Slash Tags", icon_url=ctx.me.avatar_url)
+            e.set_author(name="Global Slash Tags", icon_url=ctx.me.avatar.url)
         else:
             slash_tags = "slash tags"
-            e.set_author(name="Stored Slash Tags", icon_url=ctx.guild.icon_url)
+            e.set_author(name="Stored Slash Tags", icon_url=ctx.guild.icon.url)
 
         embeds = []
         pages = list(pagify(description))
@@ -450,8 +449,7 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {len(tags)} {slash_tags}")
             embeds.append(embed)
-        # await menu(ctx, embeds, DEFAULT_CONTROLS)
-        await button_menu(ctx, embeds)
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @slashtag.command("list")
     async def slashtag_list(self, ctx: commands.Context):
