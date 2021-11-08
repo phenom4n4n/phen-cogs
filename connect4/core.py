@@ -15,10 +15,10 @@ class Board(list):
 
     def __getitem__(self, pos: Union[int, tuple]):
         if isinstance(pos, int):
-            return list(self)[pos]
+            return super().__getitem__(pos)
         elif isinstance(pos, tuple):
             x, y = pos
-            return list(self)[x][y]
+            return super().__getitem__(x)[y]
         else:
             raise TypeError("pos must be an int or tuple")
 
@@ -49,28 +49,21 @@ class Board(list):
                 return y
         raise ValueError("that column is full")
 
+    def _position_check(self, x: int, y: int) -> bool:
+        """Checks if the given position is in the board"""
+        return x >= 0 and y >= 0 and x < self.width and y < self.height
+
     def _pos_diagonals(self):
         """Get positive diagonals, going from bottom-left to top-right."""
-        for di in (
-            [(j, i - j) for j in range(self.width)] for i in range(self.width + self.height - 1)
-        ):
-            yield [
-                self[i, j]
-                for i, j in di
-                if i >= 0 and j >= 0 and i < self.width and j < self.height
-            ]
+        for y in range(self.width + self.height - 1):
+            diagonal = [(x, y - x) for x in range(self.width)]
+            yield [self[i, j] for i, j in diagonal if self._position_check(i, j)]
 
     def _neg_diagonals(self):
         """Get negative diagonals, going from top-left to bottom-right."""
-        for di in (
-            [(j, i - self.width + j + 1) for j in range(self.width)]
-            for i in range(self.width + self.height - 1)
-        ):
-            yield [
-                self[i, j]
-                for i, j in di
-                if i >= 0 and j >= 0 and i < self.width and j < self.height
-            ]
+        for y in range(self.width + self.height - 1):
+            diagonal = [(x, y - self.width + x + 1) for x in range(self.width)]
+            yield [self[i, j] for i, j in diagonal if self._position_check(i, j)]
 
     def _full(self):
         """is there a move in every position?"""
