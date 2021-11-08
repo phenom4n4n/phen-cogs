@@ -3,7 +3,7 @@
     "short": "Create custom slash commands.",
     "description": "Create custom slash commands.",
     "end_user_data_statement": "This cog does not persistently store any data or metadata about users.",
-    "install_msg": "**This cog is in beta testing.** Report any bugs/log output in *#support_phen-cogs* on the cog support server (https://discord.gg/GET4DVk).\n\nThanks for installing SlashTags!\nThis cog requires `slashinjector` by Kowlin/Sentinel to be loaded to parse slash command responses (<https://github.com/Kowlin/Sentinel>).",
+    "install_msg": "Thanks for installing SlashTags!\nPlease report any bugs/log output in *#support_phen-cogs* on the cog support server (https://discord.gg/GET4DVk).",
     "author": [
         "PhenoM4n4n"
     ],
