@@ -63,7 +63,7 @@ class Board(list):
     def _neg_diagonals(self):
         """Get negative diagonals, going from top-left to bottom-right."""
         for di in (
-            [(j, i - self.width + j + 1) for j in range(self.height)]
+            [(j, i - self.width + j + 1) for j in range(self.width)]
             for i in range(self.width + self.height - 1)
         ):
             yield [
