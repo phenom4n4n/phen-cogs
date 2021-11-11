@@ -212,6 +212,7 @@ class DisboardReminder(commands.Cog):
             else:
                 await self.config.guild(ctx.guild).channel.set(channel.id)
                 self.channel_cache[ctx.guild.id] = channel.id
+                await ctx.tick()
         else:
             raise commands.BadArgument
 
