@@ -37,6 +37,7 @@ from redbot.core.utils.menus import DEFAULT_CONTROLS
 from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import MixinMeta
+from .blocks import ContextVariableBlock, ConverterBlock
 from .errors import BlockCompileError
 from .objects import Tag
 from .utils import get_menu
@@ -45,6 +46,10 @@ log = logging.getLogger("red.phenom4n4n.owner")
 
 
 class OwnerCommands(MixinMeta):
+    def __init__(self):
+        self.custom_command_engine = tse.Interpreter([ContextVariableBlock(), ConverterBlock()])
+        super().__init__()
+
     async def compile_blocks(self, data: dict = None) -> List[tse.Block]:
         blocks = []
         blocks_data = data["blocks"] if data else await self.config.blocks()
@@ -113,7 +118,7 @@ class OwnerCommands(MixinMeta):
             block = self.compile_block(code)
             self.test_block(block)
         except SyntaxError as e:
-            return await ctx.send(Dev.get_syntax_error(e))
+            return await ctx.send_interactive(Dev.get_syntax_error(e))
         except Exception as e:
             response = traceback.format_exc()
             response = Dev.sanitize_output(ctx, response)
@@ -193,7 +198,7 @@ class OwnerCommands(MixinMeta):
         await self.config.dot_parameter.set(target_state)
         await self.initialize_interpreter()
         enabled = "enabled" if target_state else "disabled"
-        parameter = f".parameter" if target_state else f"(parameter)"
+        parameter = ".parameter" if target_state else "(parameter)"
         await ctx.send(
             f"`dot parameter` parsing has been {enabled}.\n"
             "Blocks will be parsed like this: `{declaration%s:payload}`." % parameter
@@ -211,7 +216,7 @@ class OwnerCommands(MixinMeta):
         **Example:**
         `[p]migratealias`
         """
-        await ctx.send(f"Are you sure you want to migrate Alias data to tags? (Y/n)")
+        await ctx.send("Are you sure you want to migrate Alias data to tags? (Y/n)")
         pred = MessagePredicate.yes_or_no(ctx)
         try:
             await self.bot.wait_for("message", check=pred, timeout=30)
@@ -266,8 +271,7 @@ class OwnerCommands(MixinMeta):
 
     def parse_cc_text(self, content: str) -> str:
         output = self.custom_command_engine.process(content)
-        tagscript = output.body
-        return tagscript
+        return output.body
 
     def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
         author_id = custom_command.get("author", {"id": None})["id"]
@@ -301,7 +305,7 @@ class OwnerCommands(MixinMeta):
         **Example:**
         `[p]migratealias`
         """
-        await ctx.send(f"Are you sure you want to migrate CustomCommands data to tags? (Y/n)")
+        await ctx.send("Are you sure you want to migrate CustomCommands data to tags? (Y/n)")
         pred = MessagePredicate.yes_or_no(ctx)
         try:
             await self.bot.wait_for("message", check=pred, timeout=30)

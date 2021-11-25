@@ -182,7 +182,7 @@ class MyMessageConverter(commands.MessageConverter):
     async def convert(self, ctx: commands.Context, argument: str) -> discord.Message:
         message = await super().convert(ctx, argument)
         if message.author.id != ctx.me.id:
-            raise commands.BadArgument(f"That is not a message sent by me.")
+            raise commands.BadArgument("That is not a message sent by me.")
         elif not message.channel.permissions_for(ctx.me).send_messages:
             raise commands.BadArgument(
                 f"I do not have permissions to send/edit messages in {message.channel.mention}."

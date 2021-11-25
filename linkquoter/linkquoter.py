@@ -408,7 +408,11 @@ class LinkQuoter(commands.Cog):
         if not await self.bot.message_eligible_as_command(message):
             return
 
-        cog = webhook_check(ctx)
+        try:
+            cog = webhook_check(ctx)
+        except commands.CheckFailure:
+            cog = False
+
         data = await self.config.guild(ctx.guild).all()
         tasks = []
         if cog and data["webhooks"]:

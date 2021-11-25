@@ -23,7 +23,7 @@ class TypeRacer(commands.Cog):
 
     FONT_SIZE = 30
 
-    __version__ = "1.0.2"
+    __version__ = "1.0.4"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -48,8 +48,12 @@ class TypeRacer(commands.Cog):
 
     async def get_quote(self) -> Tuple[str, str]:
         async with self.session.get("https://api.quotable.io/random") as resp:
-            resp = await resp.json()
-            return resp["content"], resp["author"]
+            data = await resp.json()
+        return data["content"], data["author"]
+        # back up api in case above goes down
+        # async with self.session.get("https://zenquotes.io/api/random") as resp:
+        #    data = await resp.json(content_type=None)[0]
+        # return data["q"], data["a"]
 
     @property
     def font(self) -> ImageFont:

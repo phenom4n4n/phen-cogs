@@ -29,6 +29,7 @@ class Processor(MixinMeta):
         SlashOptionType.USER: tse.MemberAdapter,
         SlashOptionType.CHANNEL: tse.ChannelAdapter,
         SlashOptionType.ROLE: tse.SafeObjectAdapter,
+        SlashOptionType.NUMBER: tse.StringAdapter,
     }
     EMPTY_ADAPTER = tse.StringAdapter("")
 
@@ -89,14 +90,16 @@ class Processor(MixinMeta):
                 seed_variables[option.name] = adapter(option.value)
             except Exception as exc:
                 log.exception(
-                    "Failed to initialize adapter %r for option %r:" % (adapter, option),
+                    "Failed to initialize adapter %r for option %r:",
+                    adapter,
+                    option,
                     exc_info=exc,
                 )
                 seed_variables[option.name] = tse.StringAdapter(option.value)
 
         for original_option in interaction.command.options:
             if original_option.name not in seed_variables:
-                log.debug("optional option %s not found, using empty adapter" % original_option)
+                log.debug("optional option %s not found, using empty adapter", original_option)
                 seed_variables[original_option.name] = self.EMPTY_ADAPTER
 
         guild = interaction.guild
@@ -125,11 +128,11 @@ class Processor(MixinMeta):
         interaction: InteractionCommand,
         tag: SlashTag,
         *,
-        seed_variables: dict = {},
+        seed_variables: dict = None,
         **kwargs,
     ) -> str:
-        log.debug("processing tag %s | options: %r" % (tag, interaction.options))
-        seed_variables = await self.handle_seed_variables(interaction, seed_variables)
+        log.debug("processing tag %s | options: %r", tag, interaction.options)
+        seed_variables = await self.handle_seed_variables(interaction, seed_variables or {})
         output = tag.run(self.engine, seed_variables=seed_variables, **kwargs)
         await tag.update_config()
         to_gather = []
@@ -270,7 +273,10 @@ class Processor(MixinMeta):
             return await destination.send(content, embed=embed, **kwargs)
         except discord.HTTPException as exc:
             log.exception(
-                f"Error sending to destination:{destination!r} for interaction:{interaction!r}\nkwargs:{kwargs!r}",
+                "Error sending to destination:%r for interaction:%r\nkwargs:%r",
+                destination,
+                interaction,
+                kwargs,
                 exc_info=exc,
             )
 

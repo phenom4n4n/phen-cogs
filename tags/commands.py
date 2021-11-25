@@ -28,21 +28,18 @@ import re
 import time
 import types
 from collections import Counter
-from typing import Dict, List, Optional, Set, Union
+from typing import Dict, List, Optional, Union
 from urllib.parse import quote_plus
 
 import discord
 import TagScriptEngine as tse
 from redbot.core import commands
-from redbot.core.config import Config
-from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
 from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
-from redbot.core.utils.predicates import MessagePredicate, ReactionPredicate
+from redbot.core.utils.predicates import ReactionPredicate
 from tabulate import tabulate
 
 from .abc import MixinMeta
-from .blocks import ContextVariableBlock, ConverterBlock
 from .converters import (
     GlobalTagConverter,
     GuildTagConverter,
@@ -93,12 +90,8 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
 
 
 class Commands(MixinMeta):
-    def __init__(self):
-        self.custom_command_engine = tse.Interpreter([ContextVariableBlock(), ConverterBlock()])
-        super().__init__()
-
     @staticmethod
-    def generate_tag_list(tags: Set[Tag]) -> Dict[str, List[str]]:
+    def generate_tag_list(tags: List[Tag]) -> Dict[str, List[str]]:
         aliases = []
         description = []
 
@@ -111,6 +104,23 @@ class Commands(MixinMeta):
             description.append(f"`{tag}` - {tagscript}")
 
         return {"aliases": aliases, "description": description}
+
+    @staticmethod
+    async def show_tag_list(ctx, data: Dict[str, List[str]], name: str, icon_url: str):
+        aliases = data["aliases"]
+        description = data["description"]
+        e = discord.Embed(color=await ctx.embed_color())
+        e.set_author(name=name, icon_url=icon_url)
+
+        embeds = []
+        pages = list(pagify("\n".join(description)))
+        footer = f"{len(description)} tags | {len(aliases)} aliases"
+        for index, page in enumerate(pages, 1):
+            embed = e.copy()
+            embed.description = page
+            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
+            embeds.append(embed)
+        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
 
     @commands.command(usage="<tag_name> [args]")
     async def invoketag(
@@ -188,7 +198,7 @@ class Commands(MixinMeta):
     async def create_tag(
         self, ctx: commands.Context, tag_name: str, tagscript: str, *, global_tag: bool = False
     ):
-        kwargs = {"author_id": ctx.author.id}
+        kwargs = {"author_id": ctx.author.id, "created_at": ctx.message.created_at}
 
         if global_tag:
             guild = None
@@ -363,6 +373,20 @@ class Commands(MixinMeta):
         """
         await tag.send_raw_tagscript(ctx)
 
+    @tag.command("search")
+    async def tag_search(self, ctx: commands.Context, *, keyword: str):
+        """
+        Search for tags by name.
+
+        **Example:**
+        `[p]tag search notsupport`
+        """
+        tags = self.search_tag(keyword, guild=ctx.guild)
+        if not tags:
+            return await ctx.send(f"There are no close matches for '{keyword}'.")
+        data = self.generate_tag_list(tags)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.guild.icon_url)
+
     @tag.command("list")
     async def tag_list(self, ctx: commands.Context):
         """
@@ -376,23 +400,8 @@ class Commands(MixinMeta):
         tags = self.get_unique_tags(ctx.guild)
         if not tags:
             return await ctx.send("There are no stored tags on this server.")
-
         data = self.generate_tag_list(tags)
-        aliases = data["aliases"]
-        description = data["description"]
-
-        e = discord.Embed(color=await ctx.embed_color())
-        e.set_author(name="Stored Tags", icon_url=ctx.guild.icon_url)
-
-        embeds = []
-        pages = list(pagify("\n".join(description)))
-        footer = f"{len(tags)} tags | {len(aliases)} aliases"
-        for index, page in enumerate(pages, 1):
-            embed = e.copy()
-            embed.description = page
-            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
-            embeds.append(embed)
-        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+        await self.show_tag_list(ctx, data, "Stored Tags", ctx.guild.icon_url)
 
     async def doc_fetch(self):
         async with self.session.get(f"{DOCS_URL}/objects.inv") as response:
@@ -594,171 +603,25 @@ class Commands(MixinMeta):
     async def tag_global_raw(self, ctx: commands.Context, tag: GlobalTagConverter):
         await tag.send_raw_tagscript(ctx)
 
+    @tag_global.command("search")
+    @copy_doc(tag_search)
+    async def tag_global_search(self, ctx: commands.Context, *, keyword: str):
+        tags = self.search_tag(keyword)
+        if not tags:
+            return await ctx.send(f"There are no close matches for '{keyword}'.")
+        data = self.generate_tag_list(tags)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.me.avatar_url)
+
     @tag_global.command("list")
     @copy_doc(tag_list)
     async def tag_global_list(self, ctx: commands.Context):
         tags = self.get_unique_tags()
         if not tags:
             return await ctx.send("There are no global tags.")
-
         data = self.generate_tag_list(tags)
-        aliases = data["aliases"]
-        description = data["description"]
-
-        e = discord.Embed(color=await ctx.embed_color())
-        e.set_author(name="Global Tags", icon_url=ctx.me.avatar_url)
-
-        embeds = []
-        pages = list(pagify("\n".join(description)))
-        footer = f"{len(tags)} tags | {len(aliases)} aliases"
-        for index, page in enumerate(pages, 1):
-            embed = e.copy()
-            embed.description = page
-            embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
-            embeds.append(embed)
-        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+        await self.show_tag_list(ctx, data, "Global Tags", ctx.me.avatar_url)
 
     @tag_global.command("usage", aliases=["stats"])
     @copy_doc(tag_usage)
     async def tag_global_usage(self, ctx: commands.Context):
         await self.show_tag_usage(ctx)
-
-    @commands.is_owner()
-    @commands.command()
-    async def migratealias(self, ctx: commands.Context):
-        """
-        Migrate the Alias cog's global and server aliases into tags.
-
-        This converts all aliases created with the Alias cog into tags with command blocks.
-        This action cannot be undone.
-
-        **Example:**
-        `[p]migratealias`
-        """
-        await ctx.send(f"Are you sure you want to migrate Alias data to tags? (Y/n)")
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            await self.bot.wait_for("message", check=pred, timeout=30)
-        except asyncio.TimeoutError:
-            return await ctx.send("Query timed out, not migrating alias to tags.")
-        if pred.result is False:
-            return await ctx.send("Migration cancelled.")
-
-        migrated_guilds = 0
-        migrated_guild_alias = 0
-        alias_config = Config.get_conf(
-            None, 8927348724, cog_name="Alias"  # core cog doesn't use force_registration=True smh
-        )  # Red can't change these values without breaking data
-        # so while this is sus it is technically safe to use
-        alias_config.register_global(entries=[])
-        all_guild_data: dict = await alias_config.all_guilds()
-
-        async for guild_data in AsyncIter(all_guild_data.values(), steps=100):
-            if not guild_data["entries"]:
-                continue
-            migrated_guilds += 1
-            for alias in guild_data["entries"]:
-                tagscript = "{c:%s {args}}" % alias["command"]
-                tag = Tag(
-                    self,
-                    alias["name"],
-                    tagscript,
-                    author_id=alias["creator"],
-                    guild_id=alias["guild"],
-                    uses=alias["uses"],
-                )
-                await tag.initialize()
-                migrated_guild_alias += 1
-        await ctx.send(
-            f"Migrated {migrated_guild_alias} aliases from {migrated_guilds} "
-            "servers to tags. Moving on to global aliases.."
-        )
-
-        migrated_global_alias = 0
-        async for entry in AsyncIter(await alias_config.entries(), steps=50):
-            tagscript = "{c:%s {args}}" % entry["command"]
-            global_tag = Tag(
-                self,
-                entry["name"],
-                tagscript,
-                author_id=entry["creator"],
-                uses=entry["uses"],
-            )
-            await global_tag.initialize()
-            migrated_global_alias += 1
-        await ctx.send(f"Migrated {migrated_global_alias} global aliases to tags.")
-
-    def parse_cc_text(self, content: str) -> str:
-        output = self.custom_command_engine.process(content)
-        return output.body
-
-    def convert_customcommand(self, guild_id: int, name: str, custom_command: dict) -> Tag:
-        author_id = custom_command.get("author", {"id": None})["id"]
-        response = custom_command["response"]
-        if isinstance(response, str):
-            tagscript = self.parse_cc_text(response)
-        else:
-            tag_lines = []
-            indices = []
-            for index, response_text in enumerate(response, 1):
-                script = self.parse_cc_text(response_text)
-                tag_lines.append("{=(choice.%s):%s}" % (index, script))
-                indices.append(index)
-            random_block = "{#:%s}" % ",".join(str(i) for i in indices)
-            tag_lines.append("{=(chosen):%s}" % random_block)
-            tag_lines.append("{choice.{chosen}}")
-            tagscript = "\n".join(tag_lines)
-        return Tag(self, name, tagscript, guild_id=guild_id, author_id=author_id)
-
-    @commands.is_owner()
-    @commands.command(aliases=["migratecustomcommands"])
-    async def migratecustomcom(self, ctx: commands.Context):
-        """
-        Migrate the CustomCommand cog's server commands into tags.
-
-        This converts all custom commands created into tags with the command text as TagScript.
-        Randomized commands are converted into random blocks.
-        Commands with converters are converted into indexed args blocks.
-        This action cannot be undone.
-
-        **Example:**
-        `[p]migratecustomcom`
-        """
-        await ctx.send(f"Are you sure you want to migrate CustomCommands data to tags? (Y/n)")
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            await self.bot.wait_for("message", check=pred, timeout=30)
-        except asyncio.TimeoutError:
-            return await ctx.send("Query timed out, not migrating CustomCommands to tags.")
-        if pred.result is False:
-            return await ctx.send("Migration cancelled.")
-
-        cc_config = Config.get_conf(None, 414589031223512, cog_name="CustomCommands")
-        migrated_guilds = 0
-        migrated_ccs = 0
-        all_guild_data: dict = await cc_config.all_guilds()
-
-        async for guild_id, guild_data in AsyncIter(all_guild_data.items(), steps=100):
-            if not guild_data["commands"]:
-                continue
-            migrated_guilds += 1
-            for name, command in guild_data["commands"].items():
-                if not command:
-                    continue  # some keys in custom commands config are None instead of being deleted
-                try:
-                    tag = self.convert_customcommand(guild_id, name, command)
-                except Exception as exc:
-                    log.exception(
-                        "An exception occured while converting custom command %s (%r) from guild %s"
-                        % (name, command, guild_id),
-                        exc_info=exc,
-                    )
-                    return await ctx.send(
-                        f"An exception occured while converting custom command `{name}` from "
-                        f"server {guild_id}. Check your logs for more details and report this to the cog author."
-                    )
-                await tag.initialize()
-                migrated_ccs += 1
-        await ctx.send(
-            f"Migrated {migrated_ccs} custom commands from {migrated_guilds} servers to tags."
-        )
