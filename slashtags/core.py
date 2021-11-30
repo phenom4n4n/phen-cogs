@@ -248,8 +248,8 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             self.bot._connection.parsers["INTERACTION_CREATE"] = self._old_parser
 
     def parse_interaction_create(self, data):
-        self._old_parser(data)
         self.bot.dispatch("st_interaction_create", data)
+        self._old_parser(data)
 
     @commands.Cog.listener()
     async def on_st_interaction_create(self, data: dict):
