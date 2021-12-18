@@ -99,7 +99,7 @@ class EmbedUtils(commands.Cog):
             guild = self.bot.get_guild(guild_id)
             if guild and data["embeds"]:
                 for name, embed in data["embeds"].items():
-                    if str(user_id) in embed["author"]:
+                    if user_id == embed["author"]:
                         async with self.config.guild(guild).embeds() as e:
                             del e[name]
         global_data = await self.config.all()
