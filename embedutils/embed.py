@@ -105,7 +105,7 @@ class EmbedUtils(commands.Cog):
         global_data = await self.config.all()
         if global_data["embeds"]:
             for name, embed in global_data["embeds"].items():
-                if str(user_id) in embed["author"]:
+                if user_id == embed["author"]:
                     async with self.config.embeds() as e:
                         del e[name]
 
