@@ -229,5 +229,5 @@ class PastebinConverter(PastebinMixin, StringToEmbed):
     ...
 
 
-class PastebinConverterWebhook(PastebinMixin, ListStringToEmbed):
+class PastebinListConverter(PastebinMixin, ListStringToEmbed):
     ...

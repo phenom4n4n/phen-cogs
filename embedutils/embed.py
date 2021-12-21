@@ -40,7 +40,7 @@ from .converters import (
     MessageableChannel,
     MyMessageConverter,
     PastebinConverter,
-    PastebinConverterWebhook,
+    PastebinListConverter,
     StoredEmbedConverter,
     StringToEmbed,
 )
@@ -54,6 +54,7 @@ JSON_CONTENT_CONVERTER = StringToEmbed(content=True)
 JSON_LIST_CONVERTER = ListStringToEmbed()
 PASTEBIN_CONVERTER = PastebinConverter(conversion_type="yaml")
 PASTEBIN_CONTENT_CONVERTER = PastebinConverter(conversion_type="yaml", content=True)
+PASTEBIN_LIST_CONVERTER = PastebinListConverter(conversion_type="yaml")
 
 
 def webhook_check(ctx: commands.Context) -> Union[bool, commands.Cog]:
@@ -72,7 +73,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.5.0"
+    __version__ = "1.6.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -111,9 +112,7 @@ class EmbedUtils(commands.Cog):
                     async with self.config.embeds() as e:
                         del e[name]
 
-    async def get_embed_from_message(
-        self, ctx: commands.Context, message: discord.Message, index: int = 0
-    ):
+    async def get_embed_from_message(self, message: discord.Message, index: int = 0):
         embeds = message.embeds
         if not embeds:
             raise EmbedNotFound("That message has no embeds.")
@@ -165,7 +164,7 @@ class EmbedUtils(commands.Cog):
         try:
             await channel.send(embeds=embeds)
         except discord.HTTPException as error:
-            raise EmbedConversionError(ctx, "Embed Send Error", error) from error
+            raise EmbedConversionError("Embed Send Error", error) from error
 
     @commands.guild_only()
     @commands.mod_or_permissions(embed_links=True)
@@ -196,12 +195,12 @@ class EmbedUtils(commands.Cog):
         ctx: commands.Context,
         channel: Optional[MessageableChannel] = None,
         *,
-        data: JSON_CONTENT_CONVERTER,
+        data: JSON_LIST_CONVERTER,
     ):
         """
-        Post an embed from valid JSON.
+        Post embeds from valid JSON.
         """
-        await self.send_embed(ctx, channel, data)
+        await self.send_multiple_embeds(ctx, channel, data)
 
     @embed.command("yaml", aliases=["fromyaml"], add_example_info=True, info_type="yaml")
     async def embed_yaml(
@@ -209,10 +208,10 @@ class EmbedUtils(commands.Cog):
         ctx: commands.Context,
         channel: Optional[MessageableChannel] = None,
         *,
-        data: YAML_CONTENT_CONVERTER,
+        data: YAML_LIST_CONVERTER,
     ):
         """
-        Post an embed from valid YAML.
+        Post embeds from valid YAML.
         """
         await self.send_embed(ctx, channel, data)
 
@@ -222,14 +221,12 @@ class EmbedUtils(commands.Cog):
         ctx: commands.Context,
         channel: Optional[MessageableChannel] = None,
         *,
-        data: PASTEBIN_CONTENT_CONVERTER,
+        data: PASTEBIN_LIST_CONVERTER,
     ):
         """
-        Post an embed from a pastebin link containing valid JSON or YAML.
+        Post embeds from a pastebin link containing valid JSON or YAML.
         """
-        if channel and channel != ctx.channel:
-            await channel.send(embed=data)
-        await ctx.tick()
+        await self.send_multiple_embeds(ctx, channel, data)
 
     @embed.command(
         "fromfile",
@@ -274,7 +271,7 @@ class EmbedUtils(commands.Cog):
         """
         Post an embed from a message.
         """
-        embed = await self.get_embed_from_message(ctx, message, index)
+        embed = await self.get_embed_from_message(message, index)
         channel = channel or ctx.channel
         await channel.send(embed=embed)
         await ctx.tick()
@@ -287,7 +284,7 @@ class EmbedUtils(commands.Cog):
         """
         Download a JSON file for a message's embed.
         """
-        embed = await self.get_embed_from_message(ctx, message, index)
+        embed = await self.get_embed_from_message(message, index)
         data = embed.to_dict()
         data = json.dumps(data, indent=4)
         fp = io.BytesIO(bytes(data, "utf-8"))
@@ -297,28 +294,36 @@ class EmbedUtils(commands.Cog):
         "post",
         aliases=["view", "drop", "show"],
         invoke_without_command=True,
+        require_var_positional=True,
     )
     async def embed_post(
-        self, ctx: commands.Context, name: StoredEmbedConverter, channel: MessageableChannel = None
+        self,
+        ctx: commands.Context,
+        channel: Optional[MessageableChannel],
+        *embed_names: StoredEmbedConverter,
     ):
-        """Post a stored embed."""
+        """Post stored embeds."""
         channel = channel or ctx.channel
-        await channel.send(embed=discord.Embed.from_dict(name["embed"]))
-        async with self.config.guild(ctx.guild).embeds() as a:
-            a[name["name"]]["uses"] += 1
+        embeds = [discord.Embed.from_dict(data["embed"]) for data in embed_names]
+        await channel.send(embeds=embeds)
+        async with self.config.guild(ctx.guild).embeds() as stored_embeds:
+            for name in map(lambda e: e["name"], embed_names):
+                stored_embeds[name]["uses"] += 1
 
     @embed_post.command("global")
     async def embed_post_global(
         self,
         ctx: commands.Context,
-        name: GlobalStoredEmbedConverter,
-        channel: MessageableChannel = None,
+        channel: Optional[MessageableChannel],
+        *embed_names: StoredEmbedConverter,
     ):
-        """Post a global stored embed."""
+        """Post global stored embeds."""
         channel = channel or ctx.channel
-        await channel.send(embed=discord.Embed.from_dict(name["embed"]))
-        async with self.config.embeds() as a:
-            a[name["name"]]["uses"] += 1
+        embeds = [discord.Embed.from_dict(data["embed"]) for data in embed_names]
+        await channel.send(embeds=embeds)
+        async with self.config.embeds() as stored_embeds:
+            for name in map(lambda e: e["name"], embed_names):
+                stored_embeds[name]["uses"] += 1
 
     @embed.command("info")
     async def embed_info(self, ctx: commands.Context, name: StoredEmbedConverter):
@@ -437,7 +442,7 @@ class EmbedUtils(commands.Cog):
         """
         Edit a message's embed using another message's embed.
         """
-        embed = await self.get_embed_from_message(ctx, source, index)
+        embed = await self.get_embed_from_message(source, index)
         await target.edit(embed=embed)
         await ctx.tick()
 
@@ -604,7 +609,7 @@ class EmbedUtils(commands.Cog):
         """
         Store an embed from a message on this server.
         """
-        embed = await self.get_embed_from_message(ctx, message, index)
+        embed = await self.get_embed_from_message(message, index)
         await ctx.send(embed=embed)
         await self.store_embed(ctx, name, embed)
 
@@ -734,7 +739,7 @@ class EmbedUtils(commands.Cog):
 
         The `locked` argument specifies whether the embed should be locked to owners only.
         """
-        embed = await self.get_embed_from_message(ctx, message, index)
+        embed = await self.get_embed_from_message(message, index)
         await ctx.send(embed=embed)
         await self.global_store_embed(ctx, name, embed, locked)
 
@@ -779,7 +784,7 @@ class EmbedUtils(commands.Cog):
                 **kwargs,
             )
         except discord.HTTPException as error:
-            raise EmbedConversionError(ctx, "Embed Send Error", error) from error
+            raise EmbedConversionError("Embed Send Error", error) from error
 
     @commands.check(webhook_check)
     @commands.admin_or_permissions(manage_webhooks=True)
@@ -828,7 +833,7 @@ class EmbedUtils(commands.Cog):
         self,
         ctx: commands.Context,
         *,
-        embeds: PastebinConverterWebhook(conversion_type="yaml"),  # noqa: F821
+        embeds: PASTEBIN_LIST_CONVERTER,
     ):
         """
         Send embeds through webhooks using a pastebin link with valid YAML or JSON.
@@ -842,7 +847,7 @@ class EmbedUtils(commands.Cog):
         """
         Send embeds through webhooks.
         """
-        embed = await self.get_embed_from_message(ctx, message, index)
+        embed = await self.get_embed_from_message(message, index)
         await self.webhook_send(ctx, embed=embed)
 
     @webhook.command(
@@ -911,15 +916,15 @@ class EmbedUtils(commands.Cog):
         embed = discord.Embed.from_dict(embed)
         return embed, data["author"], data["uses"], data["locked"]
 
-    async def cog_command_error(self, ctx: commands.Context, exc: Exception):
-        if isinstance(exc, commands.CommandInvokeError):
-            error = exc.original
-            if isinstance(error, EmbedConversionError):
-                await StringToEmbed.embed_convert_error(error.ctx, error.error_type, error.error)
-            elif isinstance(error, EmbedUtilsException):
+    async def cog_command_error(self, ctx: commands.Context, error: Exception):
+        if isinstance(error, commands.CommandInvokeError):
+            exc = error.original
+            if isinstance(exc, EmbedConversionError):
+                await StringToEmbed.embed_convert_error(ctx, exc.error_type, exc.error)
+            elif isinstance(exc, EmbedUtilsException):
                 ref = ctx.message.to_reference(fail_if_not_exists=False)
-                await ctx.send(error, reference=ref)
+                await ctx.send(exc, reference=ref)
             else:
-                self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)
+                self.bot.dispatch("command_error", ctx, error, unhandled_by_cog=True)
         else:
-            self.bot.dispatch("command_error", ctx, exc, unhandled_by_cog=True)
+            self.bot.dispatch("command_error", ctx, error, unhandled_by_cog=True)

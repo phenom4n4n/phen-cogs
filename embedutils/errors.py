@@ -1,4 +1,4 @@
-from redbot.core import commands
+__all__ = ("EmbedUtilsException", "EmbedNotFound", "EmbedFileError", "EmbedConversionError")
 
 
 class EmbedUtilsException(Exception):
@@ -14,8 +14,7 @@ class EmbedFileError(EmbedUtilsException):
 
 
 class EmbedConversionError(EmbedUtilsException):
-    def __init__(self, ctx: commands.Context, error_type: str, error: Exception):
-        self.ctx = ctx
+    def __init__(self, error_type: str, error: Exception):
         self.error_type = error_type
         self.error = error
         super().__init__(error)
