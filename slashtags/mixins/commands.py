@@ -156,7 +156,6 @@ class Commands(MixinMeta):
             author_id=ctx.author.id,
             command=command,
         )
-        self.command_cache[tag.command.id] = tag.command
         await ctx.send(await tag.initialize())
 
     async def get_options(
@@ -503,13 +502,15 @@ class Commands(MixinMeta):
             return await ctx.send("Timed out, not restoring slash tags.")
         if not pred.result:
             return await ctx.send("Ok, not restoring slash tags.")
-        slashtags = self.guild_tag_cache[ctx.guild.id]
+        slashtags: Dict[str, SlashTag] = self.guild_tag_cache[ctx.guild.id]
         if not slashtags:
             return await ctx.send("No slash tags have been created for this server.")
         await ctx.send(f"Restoring {len(slashtags)} slash tags...")
         async with ctx.typing():
             for tag in slashtags.values():
-                await tag.register()
+                tag.remove_from_cache()
+                await tag.command.register()
+                await tag.initialize()
         await ctx.send(f"Restored {len(slashtags)} slash tags.")
 
     @commands.is_owner()
