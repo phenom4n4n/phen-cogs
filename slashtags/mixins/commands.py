@@ -489,6 +489,30 @@ class Commands(MixinMeta):
         await self.show_slash_tag_usage(ctx, ctx.guild)
 
     @commands.is_owner()
+    @slashtag.command("restore", hidden=True)
+    async def slashtag_restore(self, ctx: commands.Context):
+        """Restore all slash tags for this server from the database."""
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            await self.send_and_query_response(
+                ctx,
+                "Are you sure you want to restore all slash tags on this server from the database? (Y/n)",
+                pred,
+            )
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out, not restoring slash tags.")
+        if not pred.result:
+            return await ctx.send("Ok, not restoring slash tags.")
+        slashtags = self.guild_tag_cache[ctx.guild.id]
+        if not slashtags:
+            return await ctx.send("No slash tags have been created for this server.")
+        await ctx.send(f"Restoring {len(slashtags)} slash tags...")
+        async with ctx.typing():
+            for tag in slashtags.values():
+                await tag.register()
+        await ctx.send(f"Restored {len(slashtags)} slash tags.")
+
+    @commands.is_owner()
     @slashtag.command("clear", hidden=True)
     async def slashtag_clear(self, ctx: commands.Context):
         """Clear all slash tags for this server."""
