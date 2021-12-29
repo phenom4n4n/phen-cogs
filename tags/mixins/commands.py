@@ -381,7 +381,7 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send(f"There are no close matches for '{keyword}'.")
         data = self.generate_tag_list(tags)
-        await self.show_tag_list(ctx, data, "Search Results", ctx.guild.icon_url)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.guild.icon.url)
 
     @tag.command("list")
     async def tag_list(self, ctx: commands.Context):
@@ -606,7 +606,7 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send(f"There are no close matches for '{keyword}'.")
         data = self.generate_tag_list(tags)
-        await self.show_tag_list(ctx, data, "Search Results", ctx.me.avatar_url)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.me.avatar.url)
 
     @tag_global.command("list")
     @copy_doc(tag_list)
