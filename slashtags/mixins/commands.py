@@ -507,7 +507,7 @@ class Commands(MixinMeta):
             return await ctx.send("No slash tags have been created for this server.")
         await ctx.send(f"Restoring {len(slashtags)} slash tags...")
         async with ctx.typing():
-            for tag in slashtags.values():
+            for tag in slashtags.copy().values():
                 tag.remove_from_cache()
                 await tag.command.register()
                 await tag.initialize()
