@@ -61,8 +61,8 @@ class SlashOption:
         name: str,
         description: str,
         required: bool = False,
-        choices: List[ApplicationOptionChoice] = [],
-        options: list = [],
+        choices: List[ApplicationOptionChoice] = None,
+        options: list = None,
         autocomplete: bool = False,
     ):
         if not isinstance(option_type, SlashOptionType):
@@ -71,8 +71,8 @@ class SlashOption:
         self.name = name
         self.description = description
         self.required = required
-        self.choices = choices.copy()
-        self.options = options.copy()
+        self.choices = choices or []
+        self.options = options or []
         self.autocomplete = autocomplete
 
     def __str__(self):

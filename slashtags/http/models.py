@@ -47,7 +47,7 @@ __all__ = (
     "Button",
     "InteractionMessage",
     "UnknownCommand",
-    "InteractionType",
+    "InteractionWrapper",
     "InteractionResponse",
     "InteractionButton",
     "InteractionCommand",
@@ -314,15 +314,41 @@ class UnknownCommand:
         return False
 
 
-class InteractionType(IntEnum):
-    UNKNOWN = -1
-    APPLICATION_COMMAND = 2
-    MESSAGE_COMPONENT = 3
-    APPLICATION_COMMAND_AUTOCOMPLETE = 4
+class InteractionWrapper:
+    __slots__ = (
+        "interaction",
+        "cog",
+        "bot",
+    )
+    PROXIED_ATTRIBUTES = {
+        "id",
+        "type",
+        "version" "token",
+        "data",
+        "channel_id",
+        "channel",
+        "guild",
+        "guild_id",
+        "application_id",
+        "user",
+    }
 
-    @classmethod
-    def _missing_(cls, value):
-        return cls.UNKNOWN
+    def __init__(self, interaction: discord.Interaction, cog):
+        self.interaction = interaction
+        self.cog = cog
+        self.bot = cog.bot
+
+    def __dir__(self) -> List[str]:
+        return super().__dir__() + self.PROXIED_ATTRIBUTES
+
+    def __getattr__(self, name: str):
+        if name in self.PROXIED_ATTRIBUTES:
+            return getattr(self.interaction, name)
+        raise AttributeError(f"{self.__class__.__name__!r} object has no attribute {name!r}")
+
+
+def get_interaction_type(value: int) -> discord.InteractionType:
+    return discord.enums.try_enum(discord.InteractionType, value)
 
 
 class InteractionResponse:
@@ -355,7 +381,7 @@ class InteractionResponse:
         self.http: SlashHTTP = cog.http
         self._state: discord.state.AutoShardedConnectionState = self.bot._connection
         self.id = int(data["id"])
-        self.type = InteractionType(data["type"])
+        self.type = get_interaction_type(data["type"])
         self.version = data["version"]
         self._token = data["token"]
         self._original_data = data
@@ -388,11 +414,11 @@ class InteractionResponse:
 
     @classmethod
     def from_interaction(cls, *, cog, data: dict):
-        interaction_type = InteractionType(data["type"])
+        interaction_type = get_interaction_type(data["type"])
         classes = {
-            InteractionType.APPLICATION_COMMAND: InteractionCommand,
-            InteractionType.MESSAGE_COMPONENT: InteractionButton,
-            InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE: InteractionAutocomplete,
+            discord.InteractionType.application_command: InteractionCommand,
+            discord.InteractionType.component: InteractionButton,
+            get_interaction_type(4): InteractionAutocomplete,
         }
         cls = classes.get(interaction_type, cls)
         return cls(cog=cog, data=data)

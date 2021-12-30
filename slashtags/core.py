@@ -45,6 +45,7 @@ from .http import (
     InteractionCommand,
     InteractionResponse,
     InteractionType,
+    InteractionWrapper,
     SlashHTTP,
 )
 from .mixins import Commands, Processor
@@ -231,6 +232,13 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
+
+    # @commands.Cog.listener()
+    async def on_interaction(self, interaction: discord.Interaction):
+        if interaction.type != discord.InteractionType.application_command:
+            return
+        wrapped = InteractionWrapper(interaction, self)
+        await self.handle_slash_interaction(wrapped)
 
     def _monkeypatch_interaction_parser(self):
         """
