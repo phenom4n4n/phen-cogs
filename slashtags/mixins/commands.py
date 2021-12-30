@@ -490,28 +490,8 @@ class Commands(MixinMeta):
     @commands.is_owner()
     @slashtag.command("restore", hidden=True)
     async def slashtag_restore(self, ctx: commands.Context):
-        """Restore all slash tags for this server from the database."""
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            await self.send_and_query_response(
-                ctx,
-                "Are you sure you want to restore all slash tags on this server from the database? (Y/n)",
-                pred,
-            )
-        except asyncio.TimeoutError:
-            return await ctx.send("Timed out, not restoring slash tags.")
-        if not pred.result:
-            return await ctx.send("Ok, not restoring slash tags.")
-        slashtags: Dict[str, SlashTag] = self.guild_tag_cache[ctx.guild.id]
-        if not slashtags:
-            return await ctx.send("No slash tags have been created for this server.")
-        await ctx.send(f"Restoring {len(slashtags)} slash tags...")
-        async with ctx.typing():
-            for tag in slashtags.copy().values():
-                tag.remove_from_cache()
-                await tag.command.register()
-                await tag.initialize()
-        await ctx.send(f"Restored {len(slashtags)} slash tags.")
+        """Restore all slash tags from the database."""
+        await self.restore_tags(ctx, ctx.guild)
 
     @commands.is_owner()
     @slashtag.command("clear", hidden=True)
@@ -658,6 +638,11 @@ class Commands(MixinMeta):
     @copy_doc(slashtag_usage)
     async def slashtag_global_usage(self, ctx: commands.Context):
         await self.show_slash_tag_usage(ctx)
+
+    @slashtag_global.command("restore", hidden=True)
+    @copy_doc(slashtag_restore)
+    async def slashtag_global_restore(self, ctx: commands.Context):
+        await self.restore_tags(ctx, None)
 
     @commands.is_owner()
     @commands.group(aliases=["slashset"])
