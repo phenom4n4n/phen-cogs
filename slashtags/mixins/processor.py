@@ -140,7 +140,7 @@ class Processor(MixinMeta):
         actions = output.actions
 
         embed = actions.get("embed", discord.utils.MISSING)
-        hidden = actions.get("hide", False)
+        ephemeral = actions.get("hide", False)
 
         try:
             await self.handle_requires(interaction, actions)
@@ -149,10 +149,10 @@ class Processor(MixinMeta):
 
         if content or embed:
             await self.send_tag_response(
-                interaction, actions, content, ephemeral=hidden, embed=embed
+                interaction, actions, content, ephemeral=ephemeral, embed=embed
             )
         else:
-            await interaction.defer(hidden=hidden)
+            await interaction.response.defer(ephemeral=ephemeral)
 
         if command_task := await self.handle_commands(interaction, actions):
             to_gather.append(command_task)
@@ -160,8 +160,8 @@ class Processor(MixinMeta):
         if to_gather:
             await asyncio.gather(*to_gather)
 
-        if not interaction.response.is_done():
-            await interaction.send("Slash Tag completed.", hidden=True)
+        if not interaction.completed:
+            await interaction.send("Slash Tag completed.", ephemeral=True)
 
     async def handle_requires(self, interaction: InteractionCommandWrapper, actions: dict):
         try:
@@ -169,9 +169,9 @@ class Processor(MixinMeta):
         except RequireCheckFailure as error:
             response = error.response
             if response is not None and (response := response.strip()):
-                await interaction.send(response[:2000], hidden=True)
+                await interaction.send(response[:2000], ephemeral=True)
             else:
-                await interaction.send("You aren't allowed to use this tag.", hidden=True)
+                await interaction.send("You aren't allowed to use this tag.", ephemeral=True)
             raise
 
     async def handle_commands(
@@ -187,24 +187,18 @@ class Processor(MixinMeta):
             message = FakeMessage.from_interaction(interaction, prefix + command)
             command_messages.append(message)
 
-        silent = actions.get("silent", False)
         overrides = actions.get("overrides")
-        return self.create_task(
-            self.process_commands(interaction, command_messages, silent, overrides)
-        )
+        return self.create_task(self.process_commands(interaction, command_messages, overrides))
 
     async def process_commands(
         self,
         interaction: InteractionCommandWrapper,
         messages: List[discord.Message],
-        silent: bool,
         overrides: dict,
     ):
         command_tasks = []
         for message in messages:
-            command_task = self.create_task(
-                self.process_command(interaction, message, silent, overrides)
-            )
+            command_task = self.create_task(self.process_command(interaction, message, overrides))
             command_tasks.append(command_task)
             await asyncio.sleep(0.1)
         await asyncio.gather(*command_tasks)
@@ -213,7 +207,6 @@ class Processor(MixinMeta):
         self,
         interaction: InteractionCommandWrapper,
         command_message: discord.Message,
-        silent: bool,
         overrides: dict,
     ):
         ctx = await self.bot.get_context(
@@ -255,10 +248,8 @@ class Processor(MixinMeta):
         if target := actions.get("target"):
             if target == "dm":
                 destination = interaction.author
-                del kwargs["hidden"]
-            elif target == "reply":
-                pass
-            else:
+                del kwargs["ephemeral"]
+            elif target != "reply":
                 try:
                     chan = await self.channel_converter.convert(interaction, target)
                 except commands.BadArgument:
@@ -266,7 +257,7 @@ class Processor(MixinMeta):
                 else:
                     if chan.permissions_for(interaction.me).send_messages:
                         destination = chan
-                        del kwargs["hidden"]
+                        del kwargs["ephemeral"]
 
         if not (content or embed is not None):
             return
@@ -300,9 +291,8 @@ class Processor(MixinMeta):
             if isinstance(role_or_channel, discord.Role):
                 if role_or_channel in ctx.author.roles:
                     return
-            else:
-                if role_or_channel == ctx.channel:
-                    return
+            elif role_or_channel == ctx.channel:
+                return
         raise RequireCheckFailure(requires["response"])
 
     async def validate_blacklist(self, ctx: commands.Context, blacklist: dict):
@@ -314,9 +304,8 @@ class Processor(MixinMeta):
             if isinstance(role_or_channel, discord.Role):
                 if role_or_channel in ctx.author.roles:
                     raise RequireCheckFailure(blacklist["response"])
-            else:
-                if role_or_channel == ctx.channel:
-                    raise RequireCheckFailure(blacklist["response"])
+            elif role_or_channel == ctx.channel:
+                raise RequireCheckFailure(blacklist["response"])
 
     async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
         objects = await asyncio.gather(
@@ -329,8 +318,8 @@ class Processor(MixinMeta):
 
     async def slash_eval(self, interaction: InteractionCommandWrapper):
         if not await self.bot.is_owner(interaction.author):
-            return await interaction.send("Only bot owners may eval.", hidden=True)
-        await interaction.defer()
+            return await interaction.send("Only bot owners may eval.", ephemeral=True)
+        await interaction.response.defer()
         ctx = SlashContext.from_interaction(interaction)
         dev = dev_check(self)
         await dev._eval(ctx, body=interaction.options[0].value)

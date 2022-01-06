@@ -39,15 +39,7 @@ from redbot.core.utils.chat_formatting import humanize_list
 
 from .abc import CompositeMetaClass
 from .errors import MissingTagPermissions
-from .http import (
-    ApplicationOptionChoice,
-    InteractionAutocomplete,
-    InteractionCommand,
-    InteractionCommandWrapper,
-    InteractionResponse,
-    SlashHTTP,
-    get_interaction_type,
-)
+from .http import InteractionCommandWrapper, SlashHTTP
 from .mixins import Commands, Processor
 from .objects import ApplicationCommand, SlashContext, SlashTag
 
@@ -239,63 +231,13 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         log.debug("Received interaction %r", wrapped)
         await self.handle_slash_interaction(wrapped)
 
-    def _monkeypatch_interaction_parser(self):
-        """
-        Monkeypatches the bot's ConnectionState to allow for interaction parsing, since dpy
-        doesn't expose any raw websocket event data.
-        """
-        state = self.bot._connection
-        self._old_parser = state.parsers["INTERACTION_CREATE"]
-        if self._old_parser.__module__ == "discord.state":
-            # this shouldn't happen, but prevent monkeypatching if the parser has already been monkeypatched
-            state.parsers["INTERACTION_CREATE"] = self.parse_interaction_create
-
-    def _remove_monkeypatch(self):
-        if self._old_parser.__module__ == "discord.state":
-            self.bot._connection.parsers["INTERACTION_CREATE"] = self._old_parser
-
-    def parse_interaction_create(self, data):
-        self.bot.dispatch("st_interaction_create", data)
-        self._old_parser(data)
-
-    @commands.Cog.listener()
-    async def on_st_interaction_create(self, data: dict):
-        log.debug("Interaction data received:\n%r", data)
-        interaction = InteractionResponse.from_interaction(cog=self, data=data)
-        handlers = {
-            discord.InteractionType.application_command: self.handle_slash_interaction,
-            get_interaction_type(4): self.handle_autocomplete,
-        }
-        handler = handlers.get(interaction.type)
-        if handler is None:
-            return
-        try:
-            await handler(interaction)
-        except Exception as e:
-            log.exception(
-                "An exception occured while handling an interaction:\n%r", data, exc_info=e
-            )
-
-    async def handle_slash_interaction(self, interaction: InteractionCommand):
-        self.bot.dispatch("slash_interaction", interaction)
-
-    @commands.Cog.listener()
-    async def on_slash_interaction(self, interaction: InteractionCommandWrapper):
+    async def handle_slash_interaction(self, interaction: InteractionCommandWrapper):
         try:
             await self.invoke_and_catch(interaction)
         except commands.CommandInvokeError as e:
             if self.error_dispatching:
                 ctx = SlashContext.from_interaction(interaction)
                 self.bot.dispatch("command_error", ctx, e)
-
-    async def handle_autocomplete(self, interaction: InteractionAutocomplete):
-        log.debug("Autocomplete data received:\n%r", interaction)
-        choices = [
-            ApplicationOptionChoice("test", "slashtags autocomplete test value"),
-            ApplicationOptionChoice("dog", "doggo"),
-            ApplicationOptionChoice("cat", "kitty"),
-        ]
-        await interaction.send_autocomplete_choices(choices)
 
     async def invoke_and_catch(self, interaction: InteractionCommandWrapper):
         try:

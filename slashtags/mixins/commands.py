@@ -255,9 +255,7 @@ class Commands(MixinMeta):
         name, description = match.group(1), match.group(2)
 
         valid_option_types = [
-            name.lower()
-            for name in SlashOptionType.__members__.keys()
-            if not name.startswith("SUB")
+            name.lower() for name in SlashOptionType.__members__ if not name.startswith("SUB")
         ]
         valid_option_types.append("choices")
 

@@ -35,7 +35,7 @@ from redbot.core.utils.chat_formatting import box, pagify
 from .http import (
     ApplicationCommandType,
     ApplicationOptionChoice,
-    InteractionResponse,
+    InteractionCommandWrapper,
     SlashHTTP,
     SlashOptionType,
 )
@@ -557,7 +557,7 @@ class FakeMessage(discord.Message):
         channel: discord.TextChannel,
         author: discord.Member,
         id: int,
-        interaction: InteractionResponse = None,
+        interaction: InteractionCommandWrapper = None,
         state,
     ):
         self._state = state
@@ -573,7 +573,7 @@ class FakeMessage(discord.Message):
             maybe_set_attr(self, name, attr)
 
     @classmethod
-    def from_interaction(cls, interaction: InteractionResponse, content: str):
+    def from_interaction(cls, interaction: InteractionCommandWrapper, content: str):
         return cls(
             content,
             state=interaction._state,
@@ -590,17 +590,14 @@ class FakeMessage(discord.Message):
         return
 
     def reply(self, content: str = None, **kwargs):
-        try:
-            del kwargs["reference"]  # this shouldn't be passed when replying but it might be
-        except KeyError:
-            pass
+        kwargs.pop("reference", None)  # this shouldn't be passed when replying but it might be
         destination = self.interaction or self.channel
         return destination.send(content, **kwargs)
 
 
 class SlashContext(commands.Context):
-    def __init__(self, *, interaction: InteractionResponse, **kwargs):
-        self.interaction: InteractionResponse = interaction
+    def __init__(self, *, interaction: InteractionCommandWrapper, **kwargs):
+        self.interaction: InteractionCommandWrapper = interaction
         super().__init__(**kwargs)
         self.send = interaction.send
 
@@ -612,7 +609,7 @@ class SlashContext(commands.Context):
         )
 
     @classmethod
-    def from_interaction(cls, interaction: InteractionResponse):
+    def from_interaction(cls, interaction: InteractionCommandWrapper):
         args_values = [o.value for o in interaction.options]
         return cls(
             interaction=interaction,
@@ -626,4 +623,4 @@ class SlashContext(commands.Context):
         )
 
     async def tick(self):
-        await self.interaction.send("✅", hidden=True)
+        await self.interaction.send("✅", ephemeral=True)
