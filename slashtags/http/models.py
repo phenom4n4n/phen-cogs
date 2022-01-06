@@ -24,7 +24,6 @@ SOFTWARE.
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from enum import IntEnum
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
@@ -43,9 +42,7 @@ __all__ = (
     "ApplicationCommandType",
     "ApplicationOptionChoice",
     "ResponseOption",
-    "InteractionMessage",
     "UnknownCommand",
-    "get_interaction_type",
     "InteractionWrapper",
     "InteractionCommandWrapper",
     "InteractionAutocompleteWrapper",
@@ -158,56 +155,6 @@ class ResponseOption:
         )
 
 
-class InteractionMessage(discord.Message):
-    def __init__(
-        self,
-        interaction,
-        *,
-        state: discord.state.AutoShardedConnectionState,
-        channel: discord.TextChannel,
-        data: dict,
-    ):
-        super().__init__(state=state, channel=channel, data=data)
-        self.interaction = interaction
-        self.http = interaction.http
-        self._token = interaction._token
-
-    async def edit(
-        self,
-        *,
-        content: str = None,
-        embed: discord.Embed = None,
-        embeds: List[discord.Embed] = None,
-        allowed_mentions: discord.AllowedMentions = None,
-    ):
-        return await self.http.edit_message(
-            self._token,
-            self.id,
-            content=content,
-            embed=embed,
-            embeds=embeds,
-            allowed_mentions=allowed_mentions,
-        )
-
-    async def delete(self, *, delay=None):
-        if delay is not None:
-
-            async def delete():
-                await asyncio.sleep(delay)
-                try:
-                    await self.http.delete_message(self._token, self.id)
-                except discord.HTTPException:
-                    pass
-
-            asyncio.create_task(delete())
-        else:
-            await self.http.delete_message(self._token, self.id)
-
-    @property
-    def reply(self):
-        return self.interaction.send
-
-
 class UnknownCommand:
     __slots__ = ("id",)
     cog = None
@@ -228,10 +175,6 @@ class UnknownCommand:
 
     def __bool__(self) -> bool:
         return False
-
-
-def get_interaction_type(value: int) -> discord.InteractionType:
-    return discord.enums.try_enum(discord.InteractionType, value)
 
 
 class InteractionWrapper:
