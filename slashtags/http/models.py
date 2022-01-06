@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Un
 import discord
 
 if TYPE_CHECKING:
+    from ..objects import ApplicationCommand
     from .httpclient import SlashHTTP
 
 log = logging.getLogger("red.phenom4n4n.slashtags.models")
@@ -47,7 +48,9 @@ __all__ = (
     "Button",
     "InteractionMessage",
     "UnknownCommand",
+    "get_interaction_type",
     "InteractionWrapper",
+    "InteractionCommandWrapper",
     "InteractionResponse",
     "InteractionButton",
     "InteractionCommand",
@@ -314,16 +317,23 @@ class UnknownCommand:
         return False
 
 
+def get_interaction_type(value: int) -> discord.InteractionType:
+    return discord.enums.try_enum(discord.InteractionType, value)
+
+
 class InteractionWrapper:
     __slots__ = (
         "interaction",
         "cog",
         "bot",
+        "options",
     )
     PROXIED_ATTRIBUTES = {
+        "_state",
         "id",
         "type",
-        "version" "token",
+        "version",
+        "token",
         "data",
         "channel_id",
         "channel",
@@ -331,24 +341,108 @@ class InteractionWrapper:
         "guild_id",
         "application_id",
         "user",
+        "permissions",
+        "response",
+        "followup",
     }
 
     def __init__(self, interaction: discord.Interaction, cog):
         self.interaction = interaction
         self.cog = cog
         self.bot = cog.bot
+        self.options = []
 
     def __dir__(self) -> List[str]:
-        return super().__dir__() + self.PROXIED_ATTRIBUTES
+        default = super().__dir__()
+        default.extend(self.PROXIED_ATTRIBUTES)
+        return default
 
     def __getattr__(self, name: str):
         if name in self.PROXIED_ATTRIBUTES:
             return getattr(self.interaction, name)
         raise AttributeError(f"{self.__class__.__name__!r} object has no attribute {name!r}")
 
+    def _parse_options(self):
+        options = self.data.get("options", [])
+        resolved = self.data.get("resolved", {})
+        for o in options:
+            option = ResponseOption.from_dict(o)
+            handler_name = f"_handle_option_{option.type.name.lower()}"
+            try:
+                handler = getattr(self, handler_name)
+            except AttributeError:
+                pass
+            else:
+                try:
+                    option = handler(o, option, resolved)
+                except Exception as error:
+                    log.exception(
+                        "Failed to handle option data for option:\n%r", o, exc_info=error
+                    )
+            self.options.append(option)
 
-def get_interaction_type(value: int) -> discord.InteractionType:
-    return discord.enums.try_enum(discord.InteractionType, value)
+    @property
+    def author(self) -> discord.User | discord.Member:
+        return self.interaction.user
+
+    def send(self, *args, **kwargs):
+        response = self.interaction.response
+        method = self.interaction.followup.send if response.is_done() else response.send_message
+        return method(*args, **kwargs)
+
+
+class InteractionCommandWrapper(InteractionWrapper):
+    __slots__ = (
+        "command_type",
+        "command_name",
+        "command_id",
+        "_cs_content",
+        "target_id",
+        "resolved",
+    )
+
+    def __init__(self, interaction: discord.Interaction, cog):
+        super().__init__(interaction, cog)
+        interaction_data = self.data
+        self.command_type = ApplicationCommandType(interaction_data["type"])
+        self.command_name = interaction_data["name"]
+        self.command_id = int(interaction_data["id"])
+        self.target_id: Optional[int] = discord.utils._get_as_snowflake(
+            interaction_data, "target_id"
+        )
+        self.resolved: Optional[InteractionResolved] = InteractionResolved(self)
+        self._parse_options()
+
+    def __repr__(self) -> str:
+        values = ("id", "command", "options", "channel", "author")
+        inner = " ".join(f"{value}={getattr(self, value)!r}" for value in values)
+        return f"<{type(self).__name__} {inner}"
+
+    @discord.utils.cached_slot_property("_cs_content")
+    def content(self):
+        items = [f"/{self.command_name}"]
+        for option in self.options:
+            items.append(f"`{option.name}: {option.value}`")
+        return " ".join(items)
+
+    @property
+    def command(self) -> ApplicationCommand | UnknownCommand:
+        return self.cog.get_command(self.command_id) or UnknownCommand(id=self.command_id)
+
+    @property
+    def jump_url(self):
+        guild_id = getattr(self.guild, "id", "@me")
+        return f"https://discord.com/channels/{guild_id}/{self.channel_id}/{self.id}"
+
+    def to_reference(self, *args, **kwargs):
+        # return None to prevent reply since interaction responses already reply (visually)
+        # additionally, replying to an interaction response raises
+        # message_reference: Unknown message
+        return
+
+    @property
+    def me(self):
+        return self.guild.me if self.guild else self.bot.user
 
 
 class InteractionResponse:
@@ -689,8 +783,8 @@ class InteractionResolved:
         "_messages",
     )
 
-    def __init__(self, parent: "InteractionCommand"):
-        self._data = parent.interaction_data.get("resolved", {})
+    def __init__(self, parent: InteractionCommandWrapper):
+        self._data = parent.data.get("resolved", {})
         self._parent = parent
         self._state = parent._state
         self._users = {}
@@ -742,7 +836,6 @@ class InteractionResolved:
 
 class InteractionCommand(InteractionResponse):
     __slots__ = (
-        "type",
         "command_type",
         "command_name",
         "command_id",
