@@ -135,7 +135,7 @@ class DisboardReminder(commands.Cog):
             if guild_data["channel"]:
                 self.channel_cache[guild_id] = guild_data["channel"]
 
-    async def red_delete_data_for_user(self, **kwargs):
+    async def red_delete_data_for_user(self, requester, user_id):
         return
 
     async def bump_check_loop(self):
@@ -211,6 +211,7 @@ class DisboardReminder(commands.Cog):
             else:
                 await self.config.guild(ctx.guild).channel.set(channel.id)
                 self.channel_cache[ctx.guild.id] = channel.id
+                await ctx.tick()
         else:
             raise commands.BadArgument
 

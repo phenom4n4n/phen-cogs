@@ -397,15 +397,22 @@ class SlashTag:
             "command": self.command.to_dict(),
         }
 
-    async def delete(self) -> str:
-        try:
-            await self.command.delete()
-        except discord.NotFound:
-            pass
+    async def delete(self, request: bool = True) -> str:
+        if request:
+            try:
+                await self.command.delete()
+            except discord.NotFound:
+                pass
+        self.remove_from_cache()
         async with self.config_path.tags() as t:
             del t[str(self.id)]
-        self.remove_from_cache()
         return f"{self.name_prefix} `{self}` deleted."
+
+    async def restore(self) -> str:
+        await self.delete(False)
+        await self.command.register()
+        await self.initialize()
+        return f"{self.name_prefix} `{self}` restored."
 
     def remove_from_cache(self):
         self.command.remove_from_cache()
@@ -509,7 +516,7 @@ class SlashTag:
         except asyncio.TimeoutError:
             await ctx.send("Adding this argument timed out.", delete_after=15)
             return
-        index = options.index(option)
+        index = options.index(chosen_option)
         options.pop(index)
         options.insert(index, new_option)
         await self.command.edit(options=options)

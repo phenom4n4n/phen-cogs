@@ -424,11 +424,11 @@ class InteractionResolved:
         self._data = parent.data.get("resolved", {})
         self._parent = parent
         self._state = parent._state
-        self._users = None
-        self._members = None
-        self._roles = None
-        self._channels = None
-        self._messages = None
+        self._users: Optional[Dict[int, discord.User]] = None
+        self._members: Optional[Dict[int, discord.Member]] = None
+        self._roles: Optional[Dict[int, discord.Role]] = None
+        self._channels: Optional[Dict[int, Union[discord.TextChannel, discord.DMChannel]]] = None
+        self._messages: Optional[Dict[int, discord.Message]] = None
 
     def __repr__(self) -> str:
         inner = " ".join(f"{k}={len(v)}" for k, v in self._data.items() if v)

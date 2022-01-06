@@ -36,6 +36,7 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list
+from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import CompositeMetaClass
 from .errors import MissingTagPermissions
@@ -219,6 +220,44 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         if tag is None and check_global:
             tag = get(self.global_tag_cache.values())
         return tag
+
+    @staticmethod
+    async def delete_quietly(message: discord.Message):
+        try:
+            await message.delete()
+        except discord.HTTPException:
+            pass
+
+    async def restore_tags(self, ctx: commands.Context, guild: Optional[discord.Guild] = None):
+        slashtags: Dict[str, SlashTag] = (
+            self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
+        )
+        if not slashtags:
+            message = "No slash tags have been created"
+            if guild is not None:
+                message += " for this server"
+            return await ctx.send(message + ".")
+
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            text = f"Are you sure you want to restore {len(slashtags)} slash tags"
+            if guild is not None:
+                text += " on this server"
+            await self.send_and_query_response(
+                ctx,
+                text + " from the database? (Y/n)",
+                pred,
+            )
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out, not restoring slash tags.")
+        if not pred.result:
+            return await ctx.send("Ok, not restoring slash tags.")
+        msg = await ctx.send(f"Restoring {len(slashtags)} slash tags...")
+        async with ctx.typing():
+            for tag in slashtags.copy().values():
+                await tag.restore()
+        await self.delete_quietly(msg)
+        await ctx.send(f"Restored {len(slashtags)} slash tags.")
 
     def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
