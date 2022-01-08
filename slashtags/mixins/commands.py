@@ -8,8 +8,7 @@ from typing import Dict, List, Union
 
 import discord
 from redbot.core import commands
-from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu
+from redbot.core.utils.chat_formatting import box, pagify
 from redbot.core.utils.predicates import MessagePredicate
 from tabulate import tabulate
 
@@ -24,7 +23,8 @@ from ..converters import (
 )
 from ..http import ApplicationOptionChoice, SlashOptionType
 from ..objects import ApplicationCommand, ApplicationCommandType, SlashOption, SlashTag
-from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check
+from ..utils import ARGUMENT_NAME_DESCRIPTION, chunks, dev_check, menu
+from ..views import ConfirmationView, OptionPickerView
 
 TAG_RE = re.compile(r"(?i)(\[p\])?\b(slash\s?)?tag'?s?\b")
 
@@ -112,16 +112,13 @@ class Commands(MixinMeta):
             description = ""
 
         if command_type == ApplicationCommandType.CHAT_INPUT:
-            pred = MessagePredicate.yes_or_no(ctx)
-            try:
-                await self.send_and_query_response(
-                    ctx, "Would you like to add arguments to this tag? (Y/n)", pred
-                )
-            except asyncio.TimeoutError:
-                await ctx.send("Query timed out, not adding arguments.")
-            else:
-                if pred.result is True:
-                    await self.get_options(ctx, options)
+            result = await ConfirmationView.confirm(
+                ctx,
+                "Would you like to add arguments to this tag?",
+                cancel_message=None,
+            )
+            if result is True:
+                await self.get_options(ctx, options)
 
         command = ApplicationCommand(
             self,
@@ -174,16 +171,12 @@ class Commands(MixinMeta):
             if i == 10:
                 break
 
-            pred = MessagePredicate.yes_or_no(ctx)
-            try:
-                await self.send_and_query_response(
-                    ctx, "Would you like to add another argument? (Y/n)", pred
-                )
-            except asyncio.TimeoutError:
-                await ctx.send("Query timed out, not adding additional arguments.")
-                break
-
-            if pred.result is False:
+            result = await ConfirmationView.confirm(
+                ctx,
+                "Would you like to add another argument?",
+                cancel_message=None,
+            )
+            if not result:
                 break
         return options
 
@@ -252,37 +245,18 @@ class Commands(MixinMeta):
         await self.send_and_query_response(ctx, "\n".join(name_desc), name_pred)
         match = name_pred.result
         name, description = match.group(1), match.group(2)
-
-        valid_option_types = [
-            name.lower() for name in SlashOptionType.__members__ if not name.startswith("SUB")
-        ]
-        valid_option_types.append("choices")
-
-        option_query = [
-            "What should the argument type be?",
-            f"Valid option types: {humanize_list([inline(n) for n in valid_option_types])}",
-            "(select `string` if you don't understand)",
-        ]
-        option_type = await self.send_and_query_response(
-            ctx,
-            "\n".join(option_query),
-            MessagePredicate.lower_contained_in(valid_option_types, ctx),
-        )
-        if option_type.lower() == "choices":
+        option_type = await OptionPickerView.pick(ctx, "What should the argument type be?")
+        choices = []
+        if option_type == SlashOptionType.CHOICES:
             choices = await self.get_choices(ctx)
-            option_type = "STRING"
-        else:
-            choices = []
-        option_type = SlashOptionType[option_type.upper()]
+            option_type = SlashOptionType.STRING
 
         if not added_required:
-            pred = MessagePredicate.yes_or_no(ctx)
-            await self.send_and_query_response(
-                ctx,
-                "Is this argument required? (Y/n)\n*Keep in mind that if you choose to make this argument optional, all following arguments must also be optional.*",
-                pred,
+            text = (
+                "Is this argument required?\n*Keep in mind that if you choose to make this "
+                "argument optional, all following arguments must also be optional.*"
             )
-            required = pred.result
+            required = await ConfirmationView.confirm(ctx, text, cancel_message=None)
         else:
             await ctx.send(
                 "This argument was automatically made optional as the previous one was optional.",
@@ -446,7 +420,7 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {len(tags)} {slash_tags}")
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await menu(ctx, embeds)
 
     @slashtag.command("list")
     async def slashtag_list(self, ctx: commands.Context):
@@ -471,12 +445,12 @@ class Commands(MixinMeta):
             embed = e.copy()
             embed.description = usage_chart
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await menu(ctx, embeds)
 
     @slashtag.command("usage", aliases=["stats"])
     async def slashtag_usage(self, ctx: commands.Context):
         """
-        See this slash tag usage stats.
+        See slash tag usage stats.
 
         **Example:**
         `[p]slashtag usage`
@@ -493,24 +467,20 @@ class Commands(MixinMeta):
     @slashtag.command("clear", hidden=True)
     async def slashtag_clear(self, ctx: commands.Context):
         """Clear all slash tags for this server."""
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            await self.send_and_query_response(
-                ctx, "Are you sure you want to delete all slash tags on this server? (Y/n)", pred
-            )
-        except asyncio.TimeoutError:
-            return await ctx.send("Timed out, not deleting slash tags.")
-        if not pred.result:
-            return await ctx.send("Ok, not deleting slash tags.")
+        result = await ConfirmationView.confirm(
+            ctx,
+            "Are you sure you want to delete all slash tags on this server?",
+            cancel_message="Ok, not deleting slash tags.",
+        )
+        if not result:
+            return
         guild: discord.Guild = ctx.guild
         await self.http.put_guild_slash_commands(guild.id, [])
         for tag in copy(self.guild_tag_cache[guild.id]).values():
             tag.remove_from_cache()
-            tag.command.remove_from_cache()
-            del tag
         self.guild_tag_cache[guild.id].clear()
         await self.config.guild(guild).tags.clear()
-        await ctx.send("Tags deleted.")
+        await ctx.send("Slash tags deleted.")
 
     @commands.is_owner()
     @slashtag.group("global")

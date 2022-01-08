@@ -68,7 +68,7 @@ class SlashOptionType(IntEnum):
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
     | Number  | Accepts any floating point number.                                                                    | ``{number}``         | :doc:`StringAdapter <tse:adapter>`         |
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
-    | Choices | Offers a list of choices for the user to pick.                                                        | ``{choice}``         | :doc:`StringAdapter <tse:adapter>`         |
+    | Choices | Offers a list of string choices for the user to pick.                                                 | ``{choice}``         | :doc:`StringAdapter <tse:adapter>`         |
     |         | Each option has a name and underlying value which is returned as string argument when accessed.       |                      |                                            |
     +---------+-------------------------------------------------------------------------------------------------------+----------------------+--------------------------------------------+
     """
@@ -82,6 +82,26 @@ class SlashOptionType(IntEnum):
     CHANNEL = 7
     ROLE = 8
     NUMBER = 10
+
+    CHOICES = -1
+    # doesn't exist as a seperate value in the API, but is used for the choices option
+
+    @classmethod
+    def get_descriptions(cls) -> Dict[SlashOptionType, str]:
+        return {
+            cls.STRING: "Accepts any user inputted text as an argument.",
+            cls.INTEGER: "Only allows integer input for the argument.",
+            cls.BOOLEAN: "Allows either `True` or `False` as input.",
+            cls.USER: "Refers to a member of the server, accepting username or IDs as input.",
+            cls.CHANNEL: "Refers to a text, voice, or category channel in this server.",
+            cls.ROLE: "Refers to a server role, accepting role name or IDs as input.",
+            cls.NUMBER: "Accepts any floating point number.",
+            cls.CHOICES: "Offers a list of string choices for the user to pick.",
+        }
+
+    @property
+    def description(self) -> str:
+        return self.get_descriptions()[self]
 
 
 class InteractionCallbackType(IntEnum):

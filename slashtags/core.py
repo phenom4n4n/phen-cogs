@@ -36,13 +36,13 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list
-from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import CompositeMetaClass
 from .errors import MissingTagPermissions
 from .http import InteractionCommandWrapper, SlashHTTP
 from .mixins import Commands, Processor
 from .objects import ApplicationCommand, SlashContext, SlashTag
+from .views import ConfirmationView
 
 log = logging.getLogger("red.phenom4n4n.slashtags")
 
@@ -236,26 +236,26 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
                 message += " for this server"
             return await ctx.send(message + ".")
 
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            text = f"Are you sure you want to restore {len(slashtags)} slash tags"
-            if guild is not None:
-                text += " on this server"
-            await self.send_and_query_response(
-                ctx,
-                text + " from the database? (Y/n)",
-                pred,
-            )
-        except asyncio.TimeoutError:
-            return await ctx.send("Timed out, not restoring slash tags.")
-        if not pred.result:
-            return await ctx.send("Ok, not restoring slash tags.")
-        msg = await ctx.send(f"Restoring {len(slashtags)} slash tags...")
+        s = "s" if len(slashtags) > 1 else ""
+        text = f"Are you sure you want to restore {len(slashtags)} slash tag{s}"
+        if guild is not None:
+            text += " on this server"
+
+        result = await ConfirmationView.confirm(
+            ctx,
+            text + " from the database?",
+            cancel_message="Ok, not restoring slash tags.",
+            delete_after=False,
+        )
+        if not result:
+            return
+        msg = await ctx.send(f"Restoring {len(slashtags)} slash tag{s}...")
         async with ctx.typing():
             for tag in slashtags.copy().values():
                 await tag.restore()
         await self.delete_quietly(msg)
-        await ctx.send(f"Restored {len(slashtags)} slash tags.")
+        s = "s" if len(slashtags) > 1 else ""
+        await ctx.send(f"Restored {len(slashtags)} slash tag{s}.")
 
     def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
