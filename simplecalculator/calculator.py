@@ -58,10 +58,14 @@ class Calculator(commands.Cog):
         end = time.monotonic()
 
         output_string = output.body.replace("{m:", "").replace("}", "")
+        try:
+            fmt_str = f"{float(output_string):,}"
+        except ValueError:
+            fmt_str = output_string
         e = discord.Embed(
             color=await ctx.embed_color(),
             title=f"Input: `{query}`",
-            description=f"Output: `{float(output_string):,.2f}`",
+            description=f"Output: `{fmt_str}`",
         )
         e.set_footer(text=f"Calculated in {round((end - start) * 1000, 3)} ms")
         await ctx.send(embed=e)
