@@ -2,7 +2,7 @@ import asyncio
 import logging
 from copy import copy
 from functools import partial
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import discord
 import TagScriptEngine as tse
@@ -68,13 +68,6 @@ class Processor(MixinMeta):
         self.emoji_converter = commands.EmojiConverter()
         super().__init__()
 
-    @staticmethod
-    async def delete_quietly(message: discord.Message):
-        try:
-            await message.delete()
-        except discord.HTTPException:
-            pass
-
     def get_adapter(
         self, option_type: SlashOptionType, default: tse.Adapter = tse.StringAdapter
     ) -> tse.Adapter:
@@ -110,13 +103,13 @@ class Processor(MixinMeta):
         if guild:
             seed_variables["server"] = tse.GuildAdapter(guild)
 
-        interaction_type = interaction.type
-        if interaction_type == ApplicationCommandType.USER:
+        command_type = interaction.command_type
+        if command_type == ApplicationCommandType.USER:
             target_id: int = interaction.target_id
             user = interaction.resolved.users[target_id]
             seed_variables["user"] = tse.MemberAdapter(user)
             seed_variables["target_id"] = tse.StringAdapter(target_id)
-        elif interaction_type == ApplicationCommandType.MESSAGE:
+        elif command_type == ApplicationCommandType.MESSAGE:
             target_id: int = interaction.target_id
             message = interaction.resolved.messages[target_id]
             seed_variables["message"] = tse.SafeObjectAdapter(message)
@@ -175,34 +168,28 @@ class Processor(MixinMeta):
     async def handle_commands(
         self, interaction: InteractionCommand, actions: dict
     ) -> Optional[asyncio.Task]:
-        commands = actions.get("commands")
-        if not commands:
+        cmds = actions.get("commands")
+        if not cmds:
             return
 
         command_messages = []
         prefix = (await self.bot.get_valid_prefixes(interaction.guild))[0]
-        for command in commands:
+        for command in cmds:
             message = FakeMessage.from_interaction(interaction, prefix + command)
             command_messages.append(message)
 
-        silent = actions.get("silent", False)
         overrides = actions.get("overrides")
-        return self.create_task(
-            self.process_commands(interaction, command_messages, silent, overrides)
-        )
+        return self.create_task(self.process_commands(interaction, command_messages, overrides))
 
     async def process_commands(
         self,
         interaction: InteractionCommand,
         messages: List[discord.Message],
-        silent: bool,
         overrides: dict,
     ):
         command_tasks = []
         for message in messages:
-            command_task = self.create_task(
-                self.process_command(interaction, message, silent, overrides)
-            )
+            command_task = self.create_task(self.process_command(interaction, message, overrides))
             command_tasks.append(command_task)
             await asyncio.sleep(0.1)
         await asyncio.gather(*command_tasks)
@@ -211,7 +198,6 @@ class Processor(MixinMeta):
         self,
         interaction: InteractionCommand,
         command_message: discord.Message,
-        silent: bool,
         overrides: dict,
     ):
         ctx = await self.bot.get_context(
@@ -254,9 +240,7 @@ class Processor(MixinMeta):
             if target == "dm":
                 destination = interaction.author
                 del kwargs["hidden"]
-            elif target == "reply":
-                pass
-            else:
+            elif target != "reply":
                 try:
                     chan = await self.channel_converter.convert(interaction, target)
                 except commands.BadArgument:
@@ -289,33 +273,6 @@ class Processor(MixinMeta):
         if to_gather:
             await asyncio.gather(*to_gather)
 
-    async def validate_requires(self, ctx: commands.Context, requires: dict):
-        # sourcery skip: merge-duplicate-blocks
-        for argument in requires["items"]:
-            role_or_channel = await self.role_or_channel_convert(ctx, argument)
-            if not role_or_channel:
-                continue
-            if isinstance(role_or_channel, discord.Role):
-                if role_or_channel in ctx.author.roles:
-                    return
-            else:
-                if role_or_channel == ctx.channel:
-                    return
-        raise RequireCheckFailure(requires["response"])
-
-    async def validate_blacklist(self, ctx: commands.Context, blacklist: dict):
-        # sourcery skip: merge-duplicate-blocks
-        for argument in blacklist["items"]:
-            role_or_channel = await self.role_or_channel_convert(ctx, argument)
-            if not role_or_channel:
-                continue
-            if isinstance(role_or_channel, discord.Role):
-                if role_or_channel in ctx.author.roles:
-                    raise RequireCheckFailure(blacklist["response"])
-            else:
-                if role_or_channel == ctx.channel:
-                    raise RequireCheckFailure(blacklist["response"])
-
     async def role_or_channel_convert(self, ctx: commands.Context, argument: str):
         objects = await asyncio.gather(
             self.role_converter.convert(ctx, argument),
@@ -324,6 +281,37 @@ class Processor(MixinMeta):
         )
         objects = [obj for obj in objects if isinstance(obj, (discord.Role, discord.TextChannel))]
         return objects[0] if objects else None
+
+    async def validate_requires(self, ctx: commands.Context, requires: dict):
+        for argument in requires["items"]:
+            role_or_channel = await self.role_or_channel_convert(ctx, argument)
+            if not role_or_channel:
+                continue
+            if isinstance(role_or_channel, discord.Role):
+                if role_or_channel in ctx.author.roles:
+                    return
+            elif role_or_channel == ctx.channel:
+                return
+        raise RequireCheckFailure(requires["response"])
+
+    @staticmethod
+    def blacklist_check(
+        ctx: commands.Context,
+        role_or_channel: Union[discord.Role, discord.TextChannel],
+        roles: List[discord.Role],
+    ) -> bool:
+        if isinstance(role_or_channel, discord.Role):
+            return role_or_channel in roles
+        return role_or_channel == ctx.channel
+
+    async def validate_blacklist(self, ctx: commands.Context, blacklist: dict):
+        roles: List[discord.Role] = ctx.author.roles
+        for argument in blacklist["items"]:
+            role_or_channel = await self.role_or_channel_convert(ctx, argument)
+            if not role_or_channel:
+                continue
+            if self.blacklist_check(ctx, role_or_channel, roles):
+                raise RequireCheckFailure(blacklist["response"])
 
     async def slash_eval(self, interaction: InteractionCommand):
         if not await self.bot.is_owner(interaction.author):
