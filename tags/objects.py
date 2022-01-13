@@ -259,7 +259,7 @@ class Tag:
             timestamp=self.created_at,
         ).set_footer(text="Created at")
         if self.guild_id:
-            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+            e.set_author(name=ctx.guild, icon_url=ctx.guild.icon.url)
         else:
             e.set_author(name=ctx.me, icon_url=ctx.me.avatar_url)
         return e
