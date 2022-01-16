@@ -25,6 +25,7 @@ SOFTWARE.
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from enum import IntEnum
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
@@ -241,6 +242,10 @@ class InteractionWrapper:
         if name in self.PROXIED_ATTRIBUTES:
             return getattr(self.interaction, name)
         raise AttributeError(f"{self.__class__.__name__!r} object has no attribute {name!r}")
+
+    @property
+    def created_at(self) -> datetime:
+        return discord.utils.snowflake_time(self.id)
 
     @property
     def author(self) -> discord.User | discord.Member:
