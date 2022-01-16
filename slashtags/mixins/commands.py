@@ -587,6 +587,11 @@ class Commands(MixinMeta):
     async def slashtag_global_remove(self, ctx: commands.Context, *, tag: GlobalTagConverter):
         await ctx.send(await tag.delete())
 
+    @slashtag_global.command("info")
+    @copy_doc(slashtag_info)
+    async def slashtag_global_info(self, ctx: commands.Context, *, tag: GlobalTagConverter):
+        await tag.send_info(ctx)
+
     @slashtag_global.command("raw")
     @copy_doc(slashtag_raw)
     async def slashtag_global_raw(self, ctx: commands.Context, *, tag: GlobalTagConverter):
