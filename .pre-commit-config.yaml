@@ -33,6 +33,7 @@ repos:
     hooks:
         - id: autoflake
           args: ['--recursive', '--in-place', '--remove-all-unused-imports', '--exclude=*.__init__.py']
+
 -   repo: local
     hooks:
       - id: readmegen
