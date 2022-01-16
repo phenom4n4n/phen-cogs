@@ -34,7 +34,7 @@ class Calculator(commands.Cog):
     Do math
     """
 
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def __init__(self, bot):
         self.bot = bot
@@ -63,10 +63,14 @@ class Calculator(commands.Cog):
         end = time.monotonic()
 
         output_string = output.body.replace("{m:", "").replace("}", "")
+        try:
+            fmt_str = f"{float(output_string):,}"
+        except ValueError:
+            fmt_str = output_string
         e = discord.Embed(
             color=await ctx.embed_color(),
             title=f"Input: `{query[:247]}`",
-            description=f"Output: `{output_string}`",
+            description=f"Output: `{fmt_str}`",
         )
         e.set_footer(text=f"Calculated in {round((end - start) * 1000, 3)} ms")
         await ctx.send(embed=e)
