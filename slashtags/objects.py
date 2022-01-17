@@ -581,12 +581,12 @@ class FakeMessage(discord.Message):
             maybe_set_attr(self, name, attr)
 
     @classmethod
-    def from_interaction(cls, interaction: InteractionCommandWrapper, content: str):
+    async def from_interaction(cls, interaction: InteractionCommandWrapper, content: str):
         return cls(
             content,
             state=interaction._state,
             id=interaction.id,
-            channel=interaction.channel,
+            channel=interaction.get_channel(),
             author=interaction.author,
             interaction=interaction,
         )

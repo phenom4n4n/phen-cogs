@@ -206,6 +206,7 @@ class InteractionWrapper:
         "bot",
         "options",
         "completed",
+        "_channel",
     )
     PROXIED_ATTRIBUTES = {
         "_state",
@@ -232,6 +233,7 @@ class InteractionWrapper:
         self.bot = cog.bot
         self.options = []
         self.completed = False
+        self._channel: Optional[discord.TextChannel | discord.PartialMessageable] = None
 
     def __dir__(self) -> List[str]:
         default = super().__dir__()
@@ -250,6 +252,13 @@ class InteractionWrapper:
     @property
     def author(self) -> discord.User | discord.Member:
         return self.interaction.user
+
+    async def get_channel(self) -> discord.TextChannel | discord.PartialMessageable:
+        if isinstance(self.interaction, discord.PartialMessageable):
+            self._channel = self.author.dm_channel or await self.author.create_dm()
+        else:
+            self._channel = self.interaction.channel
+        return self._channel
 
     def send(self, *args, **kwargs):
         to_pop = ("reference", "mention_author")

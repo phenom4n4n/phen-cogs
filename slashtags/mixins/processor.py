@@ -97,7 +97,7 @@ class Processor(MixinMeta):
 
         guild = interaction.guild
         author = interaction.author
-        channel = interaction.channel
+        channel = await interaction.get_channel()
         seed_variables["author"] = tse.MemberAdapter(author)
         seed_variables["channel"] = tse.ChannelAdapter(channel)
         if guild:
@@ -177,7 +177,7 @@ class Processor(MixinMeta):
         command_messages = []
         prefix = (await self.bot.get_valid_prefixes(interaction.guild))[0]
         for command in cmds:
-            message = FakeMessage.from_interaction(interaction, prefix + command)
+            message = await FakeMessage.from_interaction(interaction, prefix + command)
             command_messages.append(message)
 
         overrides = actions.get("overrides")
