@@ -586,7 +586,7 @@ class FakeMessage(discord.Message):
             content,
             state=interaction._state,
             id=interaction.id,
-            channel=interaction.get_channel(),
+            channel=await interaction.get_channel(),
             author=interaction.author,
             interaction=interaction,
         )
