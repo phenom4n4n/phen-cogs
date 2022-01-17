@@ -570,7 +570,8 @@ class FakeMessage(discord.Message):
         self._state = state
         self.id = id
         self.channel = channel
-        self.guild = getattr(channel, "guild")  # PartialMessageables don't have guild attributes
+        self.guild = getattr(channel, "guild", None)
+        # PartialMessageables don't have guild attributes
         self.interaction = interaction
 
         self.content = content
