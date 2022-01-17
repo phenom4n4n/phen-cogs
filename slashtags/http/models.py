@@ -254,7 +254,7 @@ class InteractionWrapper:
         return self.interaction.user
 
     async def get_channel(self) -> discord.TextChannel | discord.PartialMessageable:
-        if isinstance(self.interaction, discord.PartialMessageable):
+        if isinstance(self.interaction.channel, discord.PartialMessageable):
             self._channel = self.author.dm_channel or await self.author.create_dm()
         else:
             self._channel = self.interaction.channel
