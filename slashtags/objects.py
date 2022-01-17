@@ -24,7 +24,7 @@ SOFTWARE.
 
 import asyncio
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import discord
 import TagScriptEngine as tse
@@ -561,7 +561,7 @@ class FakeMessage(discord.Message):
         self,
         content: str,
         *,
-        channel: discord.TextChannel,
+        channel: Union[discord.TextChannel, discord.PartialMessageable],
         author: discord.Member,
         id: int,
         interaction: InteractionCommandWrapper = None,
@@ -570,7 +570,7 @@ class FakeMessage(discord.Message):
         self._state = state
         self.id = id
         self.channel = channel
-        self.guild = channel.guild
+        self.guild = getattr(channel, "guild")  # PartialMessageables don't have guild attributes
         self.interaction = interaction
 
         self.content = content
