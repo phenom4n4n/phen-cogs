@@ -19,8 +19,9 @@ class BaseView(discord.ui.View):
         self, ctx: commands.Context, content: str = None, **kwargs
     ) -> discord.Message:
         self._author_id = ctx.author.id
-        ref = ctx.message.to_reference(fail_if_not_exists=False)
-        message = await ctx.send(content, view=self, reference=ref, **kwargs)
+        kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
+        kwargs["mention_author"] = False
+        message = await ctx.send(content, view=self, **kwargs)
         self.message = message
         return message
 
@@ -184,6 +185,7 @@ class PaginatedView(BaseView):
         page = await self._source.get_page(self.current_page)
         kwargs = await self._get_kwargs_from_page(page)
         kwargs["reference"] = ctx.message.to_reference(fail_if_not_exists=False)
+        kwargs["mention_author"] = False
         message = await ctx.send(**kwargs)
         self.message = message
         return message
