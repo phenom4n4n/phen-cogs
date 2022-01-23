@@ -372,7 +372,7 @@ class LinkQuoter(commands.Cog):
         guild: discord.Guild = message.guild
         if "no quote" in message.content.lower():
             return
-        channel: discord.TextChannel = message.channel
+        channel = message.channel
 
         bucket = self.spam_control.get_bucket(message)
         current = message.created_at.timestamp()
@@ -403,7 +403,7 @@ class LinkQuoter(commands.Cog):
 
         data = await self.config.guild(ctx.guild).all()
         tasks = []
-        if cog and data["webhooks"]:
+        if cog and data["webhooks"] and channel.type == discord.ChannelType.text:
             embed = await self.message_to_embed(
                 quoted_message, invoke_guild=ctx.guild, author_field=False
             )
