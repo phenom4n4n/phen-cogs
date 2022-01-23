@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 import discord
@@ -24,7 +26,7 @@ class LinkToMessage(commands.Converter):
             return await self.validate_message(ctx, message)
 
         channel = ctx.bot.get_channel(channel_id)
-        if not channel or not channel.guild:
+        if not channel or not hasattr(channel, "guild"):
             raise commands.ChannelNotFound(channel_id)
 
         my_perms = channel.permissions_for(channel.guild.me)
@@ -47,7 +49,7 @@ class LinkToMessage(commands.Converter):
         if not message.guild:
             raise commands.BadArgument("I can only quote messages from servers.")
         guild = message.guild
-        if message.channel.nsfw and not ctx.channel.nsfw:
+        if message.channel.is_nsfw() and not ctx.channel.is_nsfw():
             raise commands.BadArgument(
                 "Messages from NSFW channels cannot be quoted in non-NSFW channels."
             )
@@ -59,11 +61,11 @@ class LinkToMessage(commands.Converter):
             guild_data = await cog.config.guild(guild).all()
             if not data["cross_server"]:
                 raise commands.BadArgument(
-                    f"This server is not opted in to quote messages from other servers."
+                    "This server is not opted in to quote messages from other servers."
                 )
             elif not guild_data["cross_server"]:
                 raise commands.BadArgument(
-                    f"That server is not opted in to allow its messages to be quoted in other servers."
+                    "That server is not opted in to allow its messages to be quoted in other servers."
                 )
 
         member = guild.get_member(ctx.author.id)
@@ -71,6 +73,6 @@ class LinkToMessage(commands.Converter):
             author_perms = message.channel.permissions_for(member)
             if not (author_perms.read_message_history and author_perms.read_messages):
                 raise commands.BadArgument(
-                    f"You don't have permission to read messages in that channel."
+                    "You don't have permission to read messages in that channel."
                 )
         return message
