@@ -246,6 +246,8 @@ class Commands(MixinMeta):
         match = name_pred.result
         name, description = match.group(1), match.group(2)
         option_type = await OptionPickerView.pick(ctx, "What should the argument type be?")
+        if option_type is None:
+            raise asyncio.TimeoutError
         choices = []
         if option_type == SlashOptionType.CHOICES:
             choices = await self.get_choices(ctx)
