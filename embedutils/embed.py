@@ -474,7 +474,7 @@ class EmbedUtils(commands.Cog):
         _embeds = await self.config.guild(ctx.guild).embeds()
         if not _embeds:
             return await ctx.send("There are no stored embeds on this server.")
-        description = [f"`{embed}`" for embed in _embeds]
+        description = [f"`{embed}`" for embed in sorted(_embeds)]
 
         description = "\n".join(description)
 
