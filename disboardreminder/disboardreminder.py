@@ -93,6 +93,7 @@ class DisboardReminder(commands.Cog):
         self.tagscript_engine = tse.Interpreter(blocks)
 
         self.bump_loop = self.create_task(self.bump_check_loop())
+        self.initialize_task = self.create_task(self.initialize())
 
     def cog_unload(self):
         try:
@@ -114,13 +115,14 @@ class DisboardReminder(commands.Cog):
             for task in tasks.values():
                 task.cancel()
 
-    def task_done_callback(self, task: asyncio.Task):
+    @staticmethod
+    def task_done_callback(task: asyncio.Task):
         try:
             task.result()
         except asyncio.CancelledError:
             pass
         except Exception as error:
-            log.exception(f"Task failed.", exc_info=error)
+            log.exception("Task failed.", exc_info=error)
 
     def create_task(self, coroutine: Coroutine, *, name: str = None):
         task = asyncio.create_task(coroutine, name=name)
@@ -135,9 +137,7 @@ class DisboardReminder(commands.Cog):
                 self.channel_cache[guild_id] = guild_data["channel"]
 
     async def red_delete_data_for_user(self, requester, user_id):
-        for guild, members in await self.config.all_members():
-            if user_id in members:
-                await self.config.member_from_ids(guild, user_id).clear()
+        return
 
     async def bump_check_loop(self):
         await self.bot.wait_until_ready()
