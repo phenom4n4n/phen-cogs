@@ -660,11 +660,11 @@ class InteractionResolved:
         self._data = parent.interaction_data.get("resolved", {})
         self._parent = parent
         self._state = parent._state
-        self._users = {}
-        self._members = {}
-        self._roles = {}
-        self._channels = {}
-        self._messages = {}
+        self._users: Optional[Dict[int, discord.User]] = None
+        self._members: Optional[Dict[int, discord.Member]] = None
+        self._roles: Optional[Dict[int, discord.Role]] = None
+        self._channels: Optional[Dict[int, Union[discord.TextChannel, discord.DMChannel]]] = None
+        self._messages: Optional[Dict[int, discord.Message]] = None
 
     def __repr__(self) -> str:
         inner = " ".join(f"{k}={len(v)}" for k, v in self._data.items() if v)
@@ -672,7 +672,7 @@ class InteractionResolved:
 
     @property
     def users(self) -> Dict[int, discord.User]:
-        if self._users:
+        if self._users is not None:
             return self._users.copy()
         users = {
             int(user_id): self._state.store_user(user_data)
@@ -695,7 +695,7 @@ class InteractionResolved:
 
     @property
     def messages(self) -> Dict[int, discord.Message]:
-        if self._messages:
+        if self._messages is not None:
             return self._messages.copy()
         messages = {
             int(message_id): discord.Message(
@@ -709,7 +709,7 @@ class InteractionResolved:
 
 class InteractionCommand(InteractionResponse):
     __slots__ = (
-        "type",
+        "command_type",
         "command_name",
         "command_id",
         "_cs_content",
@@ -720,13 +720,13 @@ class InteractionCommand(InteractionResponse):
     def __init__(self, *, cog, data: dict):
         super().__init__(cog=cog, data=data)
         interaction_data = self.interaction_data
-        self.type = ApplicationCommandType(interaction_data["type"])
+        self.command_type = ApplicationCommandType(interaction_data["type"])
         self.command_name = interaction_data["name"]
         self.command_id = int(interaction_data["id"])
         self.target_id: Optional[int] = discord.utils._get_as_snowflake(
             interaction_data, "target_id"
         )
-        self.resolved: Optional[InteractionResolved] = InteractionResolved(self)
+        self.resolved: InteractionResolved = InteractionResolved(self)
         self._parse_options()
 
     def __repr__(self) -> str:

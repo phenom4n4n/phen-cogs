@@ -36,4 +36,3 @@ with open(Path(__file__).parent / "info.json") as fp:
 async def setup(bot: Red) -> None:
     role_utils = RoleUtils(bot)
     bot.add_cog(role_utils)
-    await role_utils.initialize()

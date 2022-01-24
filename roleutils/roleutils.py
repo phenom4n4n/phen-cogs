@@ -23,9 +23,10 @@ SOFTWARE.
 """
 
 # Multi-file class combining taken from https://github.com/Cog-Creators/Red-DiscordBot/blob/V3/develop/redbot/cogs/mod/mod.py
+import asyncio
 import logging
 from abc import ABC
-from typing import Literal
+from typing import Coroutine, Literal
 
 from redbot.core import commands
 from redbot.core.bot import Red
@@ -58,7 +59,7 @@ class RoleUtils(
     Includes massroling, role targeting, and reaction roles.
     """
 
-    __version__ = "1.3.7"
+    __version__ = "1.3.8"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -80,6 +81,7 @@ class RoleUtils(
         self.config.init_custom("GuildMessage", 2)
         self.config.register_custom("GuildMessage", **default_guildmessage)
         super().__init__(*_args)
+        self.initialize_task = self.create_task(self.initialize())
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -87,3 +89,17 @@ class RoleUtils(
     async def initialize(self):
         log.debug("RoleUtils initialize")
         await super().initialize()
+
+    @staticmethod
+    def task_done_callback(task: asyncio.Task):
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception as error:
+            log.exception("Task failed.", exc_info=error)
+
+    def create_task(self, coroutine: Coroutine, *, name: str = None):
+        task = asyncio.create_task(coroutine, name=name)
+        task.add_done_callback(self.task_done_callback)
+        return task

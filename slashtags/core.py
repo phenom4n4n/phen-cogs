@@ -36,6 +36,7 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list
+from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import CompositeMetaClass
 from .errors import MissingTagPermissions
@@ -61,7 +62,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.5.2"
+    __version__ = "0.5.4"
     __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -227,19 +228,60 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             tag = get(self.global_tag_cache.values())
         return tag
 
+    @staticmethod
+    async def delete_quietly(message: discord.Message):
+        try:
+            await message.delete()
+        except discord.HTTPException:
+            pass
+
+    async def restore_tags(self, ctx: commands.Context, guild: Optional[discord.Guild] = None):
+        slashtags: Dict[str, SlashTag] = (
+            self.guild_tag_cache[guild.id] if guild else self.global_tag_cache
+        )
+        if not slashtags:
+            message = "No slash tags have been created"
+            if guild is not None:
+                message += " for this server"
+            return await ctx.send(message + ".")
+
+        pred = MessagePredicate.yes_or_no(ctx)
+        try:
+            text = f"Are you sure you want to restore {len(slashtags)} slash tags"
+            if guild is not None:
+                text += " on this server"
+            await self.send_and_query_response(
+                ctx,
+                text + " from the database? (Y/n)",
+                pred,
+            )
+        except asyncio.TimeoutError:
+            return await ctx.send("Timed out, not restoring slash tags.")
+        if not pred.result:
+            return await ctx.send("Ok, not restoring slash tags.")
+        msg = await ctx.send(f"Restoring {len(slashtags)} slash tags...")
+        async with ctx.typing():
+            for tag in slashtags.copy().values():
+                await tag.restore()
+        await self.delete_quietly(msg)
+        await ctx.send(f"Restored {len(slashtags)} slash tags.")
+
     def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
 
     @commands.Cog.listener()
     async def on_interaction_create(self, data: dict):
         log.debug("Interaction data received:\n%r", data)
-        interaction = InteractionResponse.from_interaction(cog=self, data=data)
+        interaction: InteractionResponse = InteractionResponse.from_interaction(
+            cog=self, data=data
+        )
         handlers = {
             InteractionType.APPLICATION_COMMAND: self.handle_slash_interaction,
             InteractionType.MESSAGE_COMPONENT: self.handle_slash_button,
             InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE: self.handle_autocomplete,
         }
         handler = handlers.get(interaction.type, self.handle_slash_interaction)
+        log.debug("%r : %r", interaction, handler)
         try:
             await handler(interaction)
         except Exception as e:

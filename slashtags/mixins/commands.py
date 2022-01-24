@@ -156,7 +156,6 @@ class Commands(MixinMeta):
             author_id=ctx.author.id,
             command=command,
         )
-        self.command_cache[tag.command.id] = tag.command
         await ctx.send(await tag.initialize())
 
     async def get_options(
@@ -489,6 +488,12 @@ class Commands(MixinMeta):
         await self.show_slash_tag_usage(ctx, ctx.guild)
 
     @commands.is_owner()
+    @slashtag.command("restore", hidden=True)
+    async def slashtag_restore(self, ctx: commands.Context):
+        """Restore all slash tags from the database."""
+        await self.restore_tags(ctx, ctx.guild)
+
+    @commands.is_owner()
     @slashtag.command("clear", hidden=True)
     async def slashtag_clear(self, ctx: commands.Context):
         """Clear all slash tags for this server."""
@@ -633,6 +638,11 @@ class Commands(MixinMeta):
     @copy_doc(slashtag_usage)
     async def slashtag_global_usage(self, ctx: commands.Context):
         await self.show_slash_tag_usage(ctx)
+
+    @slashtag_global.command("restore", hidden=True)
+    @copy_doc(slashtag_restore)
+    async def slashtag_global_restore(self, ctx: commands.Context):
+        await self.restore_tags(ctx, None)
 
     @commands.is_owner()
     @commands.group(aliases=["slashset"])

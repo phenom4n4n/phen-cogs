@@ -96,7 +96,7 @@ class Tags(
         self.initialize_task = None
         self.dot_parameter: bool = None
         self.async_enabled: bool = None
-        # self.initialize_task = self.create_task(self.initialize())
+        self.initialize_task = self.create_task(self.initialize())
 
         self.session = aiohttp.ClientSession()
         self.docs: list = []
