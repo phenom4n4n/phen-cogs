@@ -1,5 +1,13 @@
 from redbot.core import commands
 
+__all__ = (
+    "EmbedUtilsException",
+    "EmbedNotFound",
+    "EmbedFileError",
+    "EmbedLimitReached",
+    "EmbedConversionError",
+)
+
 
 class EmbedUtilsException(Exception):
     """Base class for EmbedUtils exceptions."""
@@ -11,6 +19,10 @@ class EmbedNotFound(EmbedUtilsException):
 
 class EmbedFileError(EmbedUtilsException):
     """Provides error messages when users supply invalid/no embed files."""
+
+
+class EmbedLimitReached(EmbedUtilsException):
+    """Raised when the limit for embeds that can be stored has been reached."""
 
 
 class EmbedConversionError(EmbedUtilsException):
