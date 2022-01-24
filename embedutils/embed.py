@@ -474,9 +474,7 @@ class EmbedUtils(commands.Cog):
         _embeds = await self.config.guild(ctx.guild).embeds()
         if not _embeds:
             return await ctx.send("There are no stored embeds on this server.")
-        description = [f"`{embed}`" for embed in sorted(_embeds)]
-
-        description = "\n".join(description)
+        description = "\n".join(sorted(map(inline, _embeds)))
 
         color = await self.bot.get_embed_colour(ctx)
         e = discord.Embed(color=color, title="Stored Embeds")
@@ -620,9 +618,7 @@ class EmbedUtils(commands.Cog):
     async def global_list(self, ctx):
         """View global embeds."""
         embeds = await self.config.embeds()
-        description = [f"`{embed}`" for embed in sorted(embeds)]
-
-        description = "\n".join(description)
+        description = "\n".join(sorted(map(inline, embeds)))
 
         color = await self.bot.get_embed_colour(ctx)
         e = discord.Embed(color=color, title="Stored Embeds", description=description)
