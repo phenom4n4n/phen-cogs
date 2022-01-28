@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import json
 import logging
 from typing import List
 
@@ -137,6 +138,8 @@ class SlashHTTP:
         type: int,
         initial_response: bool,
         content: str = None,
+        file: discord.File = None,
+        files: List[discord.File] = [],
         embed: discord.Embed = None,
         embeds: List[discord.Embed] = [],
         tts: bool = False,
@@ -151,6 +154,7 @@ class SlashHTTP:
         if allowed_mentions is None:
             allowed_mentions = self.bot.allowed_mentions
 
+        form = []
         data = {}
         if content:
             data["content"] = str(content)
@@ -177,6 +181,33 @@ class SlashHTTP:
         else:
             url = "/webhooks/{application_id}/{token}"
             send_data = data
+        
+        form.append({'name': 'payload_json', 'value': self._to_json(send_data)})
+        
+        if file:
+            files = [file]
+        if len(files) == 1:
+            file = files[0]
+            form.append(
+                {
+                    'name': 'file',
+                    'value': file.fp,
+                    'filename': file.filename,
+                    'content_type': 'application/octet-stream',
+                }
+            )
+        else:
+            for index, file in enumerate(files):
+                form.append(
+                    {
+                        'name': f'file{index}',
+                        'value': file.fp,
+                        'filename': file.filename,
+                        'content_type': 'application/octet-stream',
+                    }
+                )
+        
+        
         route = Route(
             "POST",
             url,
@@ -186,8 +217,7 @@ class SlashHTTP:
         )
 
         log.debug("sending response, initial = %r: %r", initial_response, send_data)
-        return self.request(route, json=send_data)
-
+        return self.request(route, form=form, files=files)
     def edit_message(
         self,
         token: str,
@@ -248,3 +278,7 @@ class SlashHTTP:
             "data": {"choices": choices},
         }
         return self.request(route, json=payload)
+
+    @staticmethod
+    def _to_json(obj) -> str:
+        return json.dumps(obj, separators=(',', ':'), ensure_ascii=True)
