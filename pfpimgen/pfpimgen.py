@@ -27,9 +27,10 @@ import functools
 from io import BytesIO
 from typing import Literal, Optional
 
+import aiohttp
 import discord
 from PIL import Image, ImageDraw, ImageFont
-from redbot.core import checks, commands
+from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.data_manager import bundled_data_path
@@ -45,7 +46,7 @@ class PfpImgen(commands.Cog):
     Make images from avatars!
     """
 
-    __version__ = "1.0.0"
+    __version__ = "1.1.0"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -54,11 +55,15 @@ class PfpImgen(commands.Cog):
             identifier=82345678897346,
             force_registration=True,
         )
+        self.session = aiohttp.ClientSession()
+
+    def cog_unload(self):
+        asyncio.create_task(self.session.close())
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(aliases=["catgirl"], cooldown_after_parsing=True)
     async def neko(self, ctx, *, member: FuzzyMember = None):
@@ -75,7 +80,7 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
     async def bonk(self, ctx, *, member: FuzzyMember = None):
@@ -100,7 +105,7 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
     async def simp(self, ctx, *, member: FuzzyMember = None):
@@ -116,7 +121,7 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
     async def banner(self, ctx, *, member: FuzzyMember = None):
@@ -132,7 +137,7 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
     async def nickel(
@@ -157,7 +162,7 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
     async def stoptalking(
@@ -180,7 +185,7 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
     async def horny(self, ctx, *, member: FuzzyMember = None):
@@ -195,7 +200,7 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
-    @checks.bot_has_permissions(attach_files=True)
+    @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
     async def shutup(
@@ -223,6 +228,27 @@ class PfpImgen(commands.Cog):
         else:
             await ctx.send(file=image)
 
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command(cooldown_after_parsing=True)
+    async def petpet(self, ctx: commands.Context, member: FuzzyMember = None):
+        """petpet someone"""
+        member = member or ctx.author
+        async with ctx.typing():
+            params = {"avatar": str(member.avatar_url_as(format="png"))}
+            url = "https://api.obamabot.ml/v1/image/petpet"
+            async with self.session.get(url, params=params) as resp:
+                if resp.status != 200:
+                    return await ctx.send(
+                        "An error occurred while generating this image. Try again later."
+                    )
+                image = await resp.read()
+            fp = BytesIO(image)
+            fp.seek(0)
+            file = discord.File(fp, "petpet.gif")
+            fp.close()
+        await ctx.send(file=file)
+
     async def generate_image(self, ctx: commands.Context, task: functools.partial):
         task = self.bot.loop.run_in_executor(None, task)
         try:
@@ -237,7 +263,8 @@ class PfpImgen(commands.Cog):
         await member.avatar_url.save(avatar, seek_begin=True)
         return avatar
 
-    def bytes_to_image(self, image: BytesIO, size: int):
+    @staticmethod
+    def bytes_to_image(image: BytesIO, size: int):
         image = Image.open(image).convert("RGBA")
         image = image.resize((size, size), Image.ANTIALIAS)
         return image
