@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020-2021 phenom4n4n
+Copyright (c) 2020-present phenom4n4n
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,13 @@ from .converters import (
     StoredEmbedConverter,
     StringToEmbed,
 )
-from .errors import EmbedConversionError, EmbedFileError, EmbedNotFound, EmbedUtilsException
+from .errors import (
+    EmbedConversionError,
+    EmbedFileError,
+    EmbedLimitReached,
+    EmbedNotFound,
+    EmbedUtilsException,
+)
 
 JSON_CONVERTER = StringToEmbed()
 JSON_CONTENT_CONVERTER = StringToEmbed(content=True)
@@ -70,7 +76,10 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.5.0"
+    __version__ = "1.5.1"
+
+    EMBED_LIMIT = 50
+    GLOBAL_EMBED_LIMIT = 100
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -302,13 +311,12 @@ class EmbedUtils(commands.Cog):
     @embed.command(name="info")
     async def embed_info(self, ctx, name: StoredEmbedConverter):
         """Get info about an embed that is stored on this server."""
-        e = discord.Embed(
-            title=f"`{name['name']}` Info",
-            description=(
-                f"Author: <@!{name['author']}>\nUses: {name['uses']}\n"
-                f"Length: {len(name['embed'])}"
-            ),
-        )
+        description = [
+            f"Author: <@!{name['author']}>",
+            "Uses: {name['uses']}",
+            f"Length: {len(name['embed'])}",
+        ]
+        e = discord.Embed(title=f"`{name['name']}` Info", description="\n".join(description))
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
 
@@ -469,15 +477,13 @@ class EmbedUtils(commands.Cog):
         await ctx.send(file=discord.File(fp, "embed.json"))
 
     @embed_store.command(name="list")
-    async def embed_store_list(self, ctx):
+    async def embed_store_list(self, ctx: commands.Context):
         """View stored embeds."""
-        _embeds = await self.config.guild(ctx.guild).embeds()
-        if not _embeds:
+        embeds = await self.config.guild(ctx.guild).embeds()
+        if not embeds:
             return await ctx.send("There are no stored embeds on this server.")
-        description = [f"`{embed}`" for embed in _embeds]
 
-        description = "\n".join(description)
-
+        description = "\n".join(map(inline, sorted(embeds)))
         color = await self.bot.get_embed_colour(ctx)
         e = discord.Embed(color=color, title="Stored Embeds")
         e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
@@ -593,14 +599,11 @@ class EmbedUtils(commands.Cog):
         """Store embeds for global use."""
         if ctx.subcommand_passed:
             return
-
         embeds = await self.config.embeds()
         if embeds is None:
             return
-        description = [f"`{embed}`" for embed in embeds]
 
-        description = "\n".join(description)
-
+        description = "\n".join(map(inline, sorted(embeds)))
         color = await self.bot.get_embed_colour(ctx)
         e = discord.Embed(color=color, title="Stored Embeds", description=description)
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
@@ -620,10 +623,10 @@ class EmbedUtils(commands.Cog):
     async def global_list(self, ctx):
         """View global embeds."""
         embeds = await self.config.embeds()
-        description = [f"`{embed}`" for embed in embeds]
+        if not embeds:
+            return await ctx.send("There are no stored global embeds.")
 
-        description = "\n".join(description)
-
+        description = "\n".join(map(inline, sorted(embeds)))
         color = await self.bot.get_embed_colour(ctx)
         e = discord.Embed(color=color, title="Stored Embeds", description=description)
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
@@ -725,13 +728,12 @@ class EmbedUtils(commands.Cog):
     @global_store.command(name="info")
     async def global_info(self, ctx, name: GlobalStoredEmbedConverter):
         """Get info about an embed that is stored globally."""
-        e = discord.Embed(
-            title=f"`{name['name']}` Info",
-            description=(
-                f"Author: <@!{name['author']}>\nUses: {name['uses']}\n"
-                f"Length: {len(name['embed'])}\nLocked: {name['locked']}"
-            ),
-        )
+        description = [
+            f"Author: <@!{name['author']}>",
+            f"Uses: {name['uses']}" f"Length: {len(name['embed'])}",
+            f"Locked: {name['locked']}",
+        ]
+        e = discord.Embed(title=f"`{name['name']}` Info", description="\n".join(description))
         e.set_author(name=ctx.bot.user.name, icon_url=ctx.bot.user.avatar_url)
         await ctx.send(embed=e)
 
@@ -858,8 +860,19 @@ class EmbedUtils(commands.Cog):
 
     async def store_embed(self, ctx: commands.Context, name: str, embed: discord.Embed):
         embed = embed.to_dict()
-        async with self.config.guild(ctx.guild).embeds() as a:
-            a[name] = {"author": ctx.author.id, "uses": 0, "embed": embed, "name": name}
+        async with self.config.guild(ctx.guild).embeds() as embeds:
+            total_embeds = set(embeds)
+            total_embeds.add(name)
+            # if the user provides a name that's already used as an embed, it won't increment
+            # the embed count, which is why total embeds is converted to a set to calculate length
+            # to prevent duplicate names
+            if len(total_embeds) > self.EMBED_LIMIT:
+                raise EmbedLimitReached(
+                    f"This server has reached the embed limit of {self.EMBED_LIMIT}. You must "
+                    f"remove an embed with `{ctx.clean_prefix}embed store remove` before you can "
+                    "add a new one."
+                )
+            embeds[name] = {"author": ctx.author.id, "uses": 0, "embed": embed, "name": name}
         await ctx.send(f"Embed stored under the name `{name}`.")
 
     async def get_stored_embed(self, ctx: commands.Context, name: str):
@@ -877,8 +890,16 @@ class EmbedUtils(commands.Cog):
         self, ctx: commands.Context, name: str, embed: discord.Embed, locked: bool
     ):
         embed = embed.to_dict()
-        async with self.config.embeds() as a:
-            a[name] = {"author": ctx.author.id, "uses": 0, "locked": locked, "embed": embed}
+        async with self.config.embeds() as embeds:
+            total_embeds = set(embeds)
+            total_embeds.add(name)
+            if len(total_embeds) > self.GLOBAL_EMBED_LIMIT:
+                raise EmbedLimitReached(
+                    f"You have reached the global embed limit of {self.GLOBAL_EMBED_LIMIT}. You must "
+                    f"remove an embed with `{ctx.clean_prefix}embed global remove` before you can "
+                    "add a new one."
+                )
+            embeds[name] = {"author": ctx.author.id, "uses": 0, "locked": locked, "embed": embed}
         await ctx.send(f"Global embed stored under the name `{name}`.")
 
     async def get_global_stored_embed(self, ctx: commands.Context, name: str):

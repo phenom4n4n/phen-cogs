@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020-2021 phenom4n4n
+Copyright (c) 2020-present phenom4n4n
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -177,7 +177,7 @@ class Component:
         self,
         type: int = 1,
         *,
-        components: List["Component"] = [],
+        components: List["Component"] = None,
         style: ButtonStyle = None,
         label: str = None,
         custom_id: int = None,
@@ -186,7 +186,7 @@ class Component:
         disabled: bool = False,
     ):
         self.type = type
-        self.components = components.copy()
+        self.components = components or []
         self.style = style
         self.label = label
         self.custom_id = str(custom_id) if custom_id else None
@@ -430,8 +430,10 @@ class InteractionResponse:
         self,
         content: str = None,
         *,
+        file: discord.File = None,
+        files: List[discord.File] = None,
         embed: discord.Embed = None,
-        embeds: List[discord.Embed] = [],
+        embeds: List[discord.Embed] = None,
         tts: bool = False,
         allowed_mentions: discord.AllowedMentions = None,
         hidden: bool = False,
@@ -447,6 +449,8 @@ class InteractionResponse:
             type=InteractionCallbackType.channel_message_with_source,
             initial_response=initial,
             content=content,
+            file=file,
+            files=files,
             embed=embed,
             embeds=embeds,
             allowed_mentions=allowed_mentions,
@@ -605,7 +609,7 @@ class InteractionButton(InteractionResponse):
         content: str = None,
         *,
         embed: discord.Embed = None,
-        embeds: List[discord.Embed] = [],
+        embeds: List[discord.Embed] = None,
         tts: bool = False,
         allowed_mentions: discord.AllowedMentions = None,
         hidden: bool = False,
