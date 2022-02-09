@@ -46,7 +46,7 @@ class PfpImgen(commands.Cog):
     Make images from avatars!
     """
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
