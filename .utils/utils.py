@@ -417,7 +417,7 @@ def makereadme():
             to_append = [info.name, _version]
             description = f"<details><summary>{info.short}</summary>{info.description}</details>"
             to_append.append(description)
-            to_append.append(babel_list(info.author, style="standard"))
+            to_append.append(babel_list(info.author, locale="en_US_POSIX"))
             table_data.append(to_append)
 
     body = tabulate.tabulate(
