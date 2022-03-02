@@ -53,7 +53,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -240,12 +240,11 @@ class LinkQuoter(commands.Cog):
     async def linkquote(self, ctx, message_link: LinkToMessage = None):
         """Quote a message from a link."""
         if not message_link:
-            if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
-                message_link = ref.resolved or await ctx.bot.get_channel(
-                    ref.channel_id
-                ).fetch_message(ref.message_id)
-            else:
+            if not hasattr(ctx.message, "reference") or not (ref := ctx.message.reference):
                 raise commands.BadArgument
+            message_link = ref.resolved or await ctx.guild.get_channel(
+                ref.channel_id
+            ).fetch_message(ref.message_id)
         cog = webhook_check(ctx)
         if (await self.config.guild(ctx.guild).webhooks()) and cog:
             embed = await self.message_to_embed(

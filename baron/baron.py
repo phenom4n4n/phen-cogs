@@ -61,7 +61,7 @@ class Baron(commands.Cog):
     Tools for managing guild joins and leaves.
     """
 
-    __version__ = "1.2.3"
+    __version__ = "1.2.4"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -158,8 +158,9 @@ class Baron(commands.Cog):
     async def settings(self, ctx: commands.Context):
         """View Baron settings."""
         data = await self.config.all()
+        log_guild = self.bot.get_guild(data["log_guild"])
         log_chan = data["log_channel"]
-        if log_chan := self.bot.get_channel(data["log_channel"]):
+        if log_guild and (log_chan := self.bot.get_channel(log_chan)):
             log_chan = log_chan.mention
         description = [
             f"Log Channel: {log_chan}",
