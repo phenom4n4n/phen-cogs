@@ -160,7 +160,7 @@ class Baron(commands.Cog):
         data = await self.config.all()
         log_guild = self.bot.get_guild(data["log_guild"])
         log_chan = data["log_channel"]
-        if log_guild and (log_chan := self.bot.get_channel(log_chan)):
+        if log_guild and (log_chan := log_guild.get_channel(log_chan)):
             log_chan = log_chan.mention
         description = [
             f"Log Channel: {log_chan}",
