@@ -50,7 +50,7 @@ class DisboardReminder(commands.Cog):
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.3.6"
+    __version__ = "1.3.7"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -431,6 +431,12 @@ class DisboardReminder(commands.Cog):
             return
         embed = message.embeds[0]
         if ":thumbsup:" in embed.description:
+            return embed
+        if message.webhook_id and "Bump done!" in embed.description: 
+            # slash command responses to the bump command don't have the thumbsup emoji in them
+            # for some reason
+            # this solution is a temporary fix, since it isn't language agnostic, but atm I can't 
+            # a different telling sign that only appears on bump command responses
             return embed
 
     async def respond_to_bump(
