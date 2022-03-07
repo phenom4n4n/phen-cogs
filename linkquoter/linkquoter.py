@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020-2021 phenom4n4n
+Copyright (c) 2020-present phenom4n4n
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -228,15 +228,14 @@ class LinkQuoter(commands.Cog):
     @commands.cooldown(*COOLDOWN)
     @commands.guild_only()
     @commands.command(aliases=["linkmessage"])
-    async def linkquote(self, ctx, message_link: LinkToMessage = None):
+    async def linkquote(self, ctx: commands.Context, message_link: LinkToMessage = None):
         """Quote a message from a link."""
         if not message_link:
-            if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
-                message_link = ref.resolved or await ctx.bot.get_channel(
-                    ref.channel_id
-                ).fetch_message(ref.message_id)
-            else:
+            if not (ref := ctx.message.reference):
                 raise commands.BadArgument
+            message_link = ref.resolved or await ctx.guild.get_channel(
+                ref.channel_id
+            ).fetch_message(ref.message_id)
         cog = webhook_check(ctx)
         if (await self.config.guild(ctx.guild).webhooks()) and cog:
             embed = await self.message_to_embed(

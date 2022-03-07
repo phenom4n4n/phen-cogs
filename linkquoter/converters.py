@@ -1,3 +1,27 @@
+"""
+MIT License
+
+Copyright (c) 2020-present phenom4n4n
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 from __future__ import annotations
 
 import re
@@ -18,6 +42,9 @@ class LinkToMessage(commands.Converter):
         if not match:
             raise commands.MessageNotFound(argument)
 
+        guild_id = int(
+            match.group("guild_id")
+        )  # note: links can have "@me" here but the regex doesn't match that
         channel_id = int(match.group("channel_id"))
         message_id = int(match.group("message_id"))
 
@@ -25,11 +52,15 @@ class LinkToMessage(commands.Converter):
         if message:
             return await self.validate_message(ctx, message)
 
-        channel = ctx.bot.get_channel(channel_id)
-        if not channel or not hasattr(channel, "guild"):
+        guild = ctx.bot.get_guild(guild_id)
+        if not guild:
+            raise commands.GuildNotFound(guild_id)
+
+        channel = guild.get_channel(channel_id)
+        if not channel:
             raise commands.ChannelNotFound(channel_id)
 
-        my_perms = channel.permissions_for(channel.guild.me)
+        my_perms = channel.permissions_for(guild.me)
         if not my_perms.read_messages:
             raise commands.BadArgument(f"Can't read messages in {channel.mention}.")
         elif not my_perms.read_message_history:

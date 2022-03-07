@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020-2021 phenom4n4n
+Copyright (c) 2020-present phenom4n4n
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -92,8 +92,6 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.command_cache: Dict[int, ApplicationCommand] = {}
         self.guild_tag_cache: Dict[int, Dict[int, SlashTag]] = defaultdict(dict)
         self.global_tag_cache: Dict[int, SlashTag] = {}
-
-        self._old_parser = None
 
         self.load_task = self.create_task(self.initialize_task())
         self.session = aiohttp.ClientSession()

@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020-2021 phenom4n4n
+Copyright (c) 2020-present phenom4n4n
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import json
 import logging
-from typing import List
 
 import discord
-
-from .models import InteractionCallbackType
 
 log = logging.getLogger("red.phenom4n4n.slashtags.http")
 
@@ -129,15 +127,6 @@ class SlashHTTP:
         )
         return self.request(route, json=commands)
 
-    def autocomplete(self, token: str, interaction_id: int, choices: List[dict]):
-        route = Route(
-            "POST",
-            "/interactions/{interaction_id}/{token}/callback",
-            token=token,
-            interaction_id=interaction_id,
-        )
-        payload = {
-            "type": InteractionCallbackType.application_command_autocomplete_result.value,
-            "data": {"choices": choices},
-        }
-        return self.request(route, json=payload)
+    @staticmethod
+    def _to_json(obj) -> str:
+        return json.dumps(obj, separators=(",", ":"), ensure_ascii=True)

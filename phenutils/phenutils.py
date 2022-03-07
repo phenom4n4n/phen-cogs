@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020-2021 phenom4n4n
+Copyright (c) 2020-present phenom4n4n
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ class PhenUtils(commands.Cog):
     Various developer utilities.
     """
 
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -159,10 +159,13 @@ class PhenUtils(commands.Cog):
         You may reply to a message to reinvoke it or pass a message ID/link.
         """
         if not message:
-            if hasattr(ctx.message, "reference") and (ref := ctx.message.reference):
-                message = ref.resolved or await ctx.bot.get_channel(ref.channel_id).fetch_message(
-                    ref.message_id
-                )
+            if not (ref := ctx.message.reference):
+                raise commands.BadArgument
+            if ref.resolved:
+                message = ref.resolved
+            elif guild := self.bot.get_guild(ref.guild_id):
+                if channel := guild.get_channel(ref.channel_id):
+                    message = await channel.fetch_message(ref.message_id)
             else:
                 raise commands.BadArgument
         await self.bot.process_commands(message)
