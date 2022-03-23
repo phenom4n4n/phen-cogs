@@ -42,7 +42,7 @@ class AutoRole(MixinMeta):
         await super().initialize()
 
     @commands.is_owner()
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.group(name="autorole")
     async def _autorole(self, ctx: commands.Context):

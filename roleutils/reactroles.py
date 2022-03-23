@@ -99,12 +99,12 @@ class ReactRoles(MixinMeta):
     def emoji_id(self, emoji: Union[discord.Emoji, str]) -> str:
         return emoji if isinstance(emoji, str) else str(emoji.id)
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.group()
     async def reactrole(self, ctx: commands.Context):
         """Base command for Reaction Role management."""
 
-    # @commands.admin_or_permissions(manage_roles=True)
+    # @commands.has_guild_permissions(manage_roles=True)
     # @commands.bot_has_permissions(manage_roles=True)
     # @reactrole.command()
     # async def enable(self, ctx: commands.Context, true_or_false: bool = None):
