@@ -83,6 +83,23 @@ class PfpImgen(commands.Cog):
     @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.command(cooldown_after_parsing=True)
+    async def conference(self, ctx, *, member: FuzzyMember = None):
+        """Make a conference avatar..."""
+        if not member:
+            member = ctx.author
+
+        async with ctx.typing():
+            avatar = await self.get_avatar(member)
+            task = functools.partial(self.gen_ogey, ctx, avatar)
+            image = await self.generate_image(ctx, task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
+
+    @commands.bot_has_permissions(attach_files=True)
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.command(cooldown_after_parsing=True)
     async def bonk(self, ctx, *, member: FuzzyMember = None):
         """Bonk! Go to horny jail."""
         await ctx.trigger_typing()
@@ -290,6 +307,30 @@ class PfpImgen(commands.Cog):
         fp.seek(0)
         im.close()
         _file = discord.File(fp, "neko.png")
+        fp.close()
+        return _file
+
+    def gen_ogey(self, ctx, member_avatar):
+        member_avatar = self.bytes_to_image(member_avatar, 228)
+        # base canvas
+        im = Image.new("RGBA", (960, 540), None)
+        # ogey = Image.open(f"{bundled_data_path(self)}/ogey/ogey.png", mode="r").convert("RGBA")
+        ogeymask = Image.open(f"{bundled_data_path(self)}/ogey/ogeymask.png", mode="r").convert(
+            "RGBA"
+        )
+        # im.paste(ogey, (0, 0), ogey)
+
+        # pasting the pfp
+        im.paste(member_avatar, (585, 119), member_avatar)
+        im.paste(ogeymask, (0, 0), ogeymask)
+        ogeymask.close()
+        member_avatar.close()
+
+        fp = BytesIO()
+        im.save(fp, "PNG")
+        fp.seek(0)
+        im.close()
+        _file = discord.File(fp, "ogey.png")
         fp.close()
         return _file
 
