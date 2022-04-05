@@ -102,8 +102,8 @@ class EmbedUtils(commands.Cog):
         self.config.register_guild(**default_guild)
         self.session = aiohttp.ClientSession()
 
-    def cog_unload(self):
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self):
+        await self.session.close()
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         guilds_data = await self.config.all_guilds()

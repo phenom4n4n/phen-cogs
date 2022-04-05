@@ -59,8 +59,8 @@ class TypeRacer(commands.Cog):
         self.session = aiohttp.ClientSession()
         self._font = None
 
-    def cog_unload(self) -> None:
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self) -> None:
+        await self.session.close()
 
     def format_help_for_context(self, ctx: commands.Context) -> str:
         pre_processed = super().format_help_for_context(ctx)

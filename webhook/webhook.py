@@ -70,8 +70,8 @@ class Webhook(commands.Cog):
         if data["monkey_patch"]:
             self._apply_monkeypatch()
 
-    def cog_unload(self):
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self):
+        await self.session.close()
         self._remove_monkeypatch()
 
     async def red_delete_data_for_user(self, **kwargs):

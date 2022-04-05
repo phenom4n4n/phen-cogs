@@ -57,8 +57,8 @@ class PfpImgen(commands.Cog):
         )
         self.session = aiohttp.ClientSession()
 
-    def cog_unload(self):
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self):
+        await self.session.close()
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return

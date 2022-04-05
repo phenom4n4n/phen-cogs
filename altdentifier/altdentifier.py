@@ -95,9 +95,9 @@ class AltDentifier(commands.Cog):
     async def build_cache(self):
         self.guild_data_cache = await self.config.all_guilds()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         # self.bot.loop.create_task(self.session.close())
-        self.task.cancel()
+        await self.task.cancel()
 
     @checks.mod_or_permissions(manage_guild=True)
     @commands.guild_only()

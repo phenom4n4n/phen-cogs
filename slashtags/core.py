@@ -123,13 +123,13 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         except Exception as error:
             log.exception("An error occurred while unloading the cog.", exc_info=error)
 
-    def __unload(self):
+    async def __unload(self):
         try:
-            self.bot.remove_dev_env_value("st")
+            await self.bot.remove_dev_env_value("st")
         except Exception:
             pass
         self.load_task.cancel()
-        asyncio.create_task(self.session.close())
+        await self.session.close()
 
     async def pre_load(self):
         data = await self.config.all()
