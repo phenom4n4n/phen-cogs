@@ -111,7 +111,7 @@ class Tags(
             log.exception("An error occurred during cog unload.", exc_info=e)
 
     async def __unload(self):
-        await self.bot.remove_dev_env_value("tags")
+        self.bot.remove_dev_env_value("tags")
         if self.initialize_task:
             self.initialize_task.cancel()
         await self.session.close()

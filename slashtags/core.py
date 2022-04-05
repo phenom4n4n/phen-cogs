@@ -125,7 +125,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     async def __unload(self):
         try:
-            await self.bot.remove_dev_env_value("st")
+            self.bot.remove_dev_env_value("st")
         except Exception:
             pass
         self.load_task.cancel()
