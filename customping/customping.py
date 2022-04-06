@@ -221,5 +221,5 @@ async def setup(bot):
         bot.remove_command(old_ping.name)
 
     cog = CustomPing(bot)
-    await cog.initialize()
+    await cog.cog_load()
     await bot.add_cog(cog)

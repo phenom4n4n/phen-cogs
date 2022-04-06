@@ -104,9 +104,9 @@ class Tags(
         bot.add_dev_env_value("tags", lambda ctx: self)
         super().__init__()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         try:
-            self.__unload()
+            await self.__unload()
         except Exception as e:
             log.exception("An error occurred during cog unload.", exc_info=e)
 

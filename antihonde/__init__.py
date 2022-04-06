@@ -35,5 +35,5 @@ with open(Path(__file__).parent / "info.json") as fp:
 
 async def setup(bot: Red):
     antihonde = AntiHonde(bot)
-    await antihonde.initialize()
+    await antihonde.cog_load()
     await bot.add_cog(antihonde)

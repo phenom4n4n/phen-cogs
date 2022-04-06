@@ -84,7 +84,7 @@ class LinkQuoter(commands.Cog):
 
     async def cog_unload(self):
         if self.task:
-            await self.task.cancel()
+            self.task.cancel()
 
     async def initialize(self):
         for guild_id, guild_data in (await self.config.all_guilds()).items():

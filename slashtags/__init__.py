@@ -57,5 +57,5 @@ if not tse_version:
 async def setup(bot: Red):
     await validate_tagscriptengine(bot, tse_version)
     cog = SlashTags(bot)
-    await cog.pre_load()
+    await cog.cog_load()
     await bot.add_cog(cog)
