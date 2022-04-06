@@ -54,7 +54,7 @@ class CustomPing(commands.Cog):
         self.config.register_global(**default_global)
         self.settings = {}
 
-    async def initialize(self):
+    async def cog_load(self):
         self.settings = await self.config.all()
 
     async def red_delete_data_for_user(self, **kwargs):
@@ -221,5 +221,4 @@ async def setup(bot):
         bot.remove_command(old_ping.name)
 
     cog = CustomPing(bot)
-    await cog.cog_load()
     await bot.add_cog(cog)

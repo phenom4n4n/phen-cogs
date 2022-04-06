@@ -64,7 +64,7 @@ class Webhook(commands.Cog):
         self.old_send = commands.Context.send
         self._monkey_patched = False
 
-    async def initialize(self):
+    async def cog_load(self):
         self.session = aiohttp.ClientSession()
         data = await self.config.all()
         if data["monkey_patch"]:

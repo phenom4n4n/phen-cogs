@@ -131,7 +131,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.load_task.cancel()
         await self.session.close()
 
-    async def pre_load(self):
+    async def cog_load(self):
         data = await self.config.all()
         self.eval_command = data["eval_command"]
         self.error_dispatching = data["error_dispatching"]
