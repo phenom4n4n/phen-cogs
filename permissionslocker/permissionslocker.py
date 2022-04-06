@@ -108,7 +108,7 @@ class PermissionsLocker(commands.Cog):
         permissions = discord.Permissions(permissions)
         await self.config.permissions.set(permissions.value)
         await ctx.send(
-            f"I will now require these permissions on commands:\n{box(await self.humanize_perms(permissions, True), 'diff')}"
+            f"I will now require these permissions on commands:\n{box(self.humanize_perms(permissions, True), 'diff')}"
         )
         self.perms = permissions
 
