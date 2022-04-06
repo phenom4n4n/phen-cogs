@@ -40,11 +40,11 @@ class AkiView(discord.ui.View):
         return await self.send_initial_message(ctx, ctx.channel)
 
     @discord.ui.button(label="yes", style=discord.ButtonStyle.green)
-    async def yes(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def yes(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.answer_question("yes", interaction)
 
     @discord.ui.button(label="no", style=discord.ButtonStyle.red)
-    async def no(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def no(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.answer_question("no", interaction)
 
     @discord.ui.button(label="idk", style=discord.ButtonStyle.blurple)
