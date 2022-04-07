@@ -117,21 +117,21 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         task.add_done_callback(self.task_done_callback)
         return task
 
-    def cog_unload(self):
+    async def cog_unload(self):
         try:
-            self.__unload()
+            await self.__unload()
         except Exception as error:
             log.exception("An error occurred while unloading the cog.", exc_info=error)
 
-    def __unload(self):
+    async def __unload(self):
         try:
             self.bot.remove_dev_env_value("st")
         except Exception:
             pass
         self.load_task.cancel()
-        asyncio.create_task(self.session.close())
+        await self.session.close()
 
-    async def pre_load(self):
+    async def cog_load(self):
         data = await self.config.all()
         self.eval_command = data["eval_command"]
         self.error_dispatching = data["error_dispatching"]

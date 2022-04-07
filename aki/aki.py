@@ -62,8 +62,8 @@ class Aki(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
         return
 
-    def cog_unload(self):
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self):
+        await self.session.close()
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.bot_has_permissions(embed_links=True, add_reactions=True)

@@ -82,7 +82,7 @@ class LinkQuoter(commands.Cog):
         self.task = asyncio.create_task(self.initialize())
         self.spam_control = commands.CooldownMapping.from_cooldown(*COOLDOWN)
 
-    def cog_unload(self):
+    async def cog_unload(self):
         if self.task:
             self.task.cancel()
 

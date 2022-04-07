@@ -40,27 +40,27 @@ class AkiView(discord.ui.View):
         return await self.send_initial_message(ctx, ctx.channel)
 
     @discord.ui.button(label="yes", style=discord.ButtonStyle.green)
-    async def yes(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def yes(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.answer_question("yes", interaction)
 
     @discord.ui.button(label="no", style=discord.ButtonStyle.red)
-    async def no(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def no(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.answer_question("no", interaction)
 
     @discord.ui.button(label="idk", style=discord.ButtonStyle.blurple)
-    async def idk(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def idk(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.answer_question("idk", interaction)
 
     @discord.ui.button(label="probably", style=discord.ButtonStyle.blurple)
-    async def probably(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def probably(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.answer_question("probably", interaction)
 
     @discord.ui.button(label="probably not", style=discord.ButtonStyle.blurple)
-    async def probably_not(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def probably_not(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.answer_question("probably not", interaction)
 
     @discord.ui.button(label="back", style=discord.ButtonStyle.gray)
-    async def back(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
         try:
             await self.aki.back()
         except akinator.CantGoBackAnyFurther:
@@ -73,11 +73,11 @@ class AkiView(discord.ui.View):
             await self.send_current_question(interaction)
 
     @discord.ui.button(label="win", style=discord.ButtonStyle.gray)
-    async def react_win(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def react_win(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.win(interaction)
 
     @discord.ui.button(label="cancel", style=discord.ButtonStyle.gray)
-    async def end(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def end(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.message.delete()
         self.stop()
 

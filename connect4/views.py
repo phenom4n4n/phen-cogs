@@ -47,13 +47,13 @@ class ConfirmationView(BaseView):
         return message
 
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
-    async def yes(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def yes(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = True
         self.stop()
         await interaction.message.delete()
 
     @discord.ui.button(label="No", style=discord.ButtonStyle.red)
-    async def no(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def no(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = False
         self.stop()
         await interaction.followup.send("Game offer declined, cancelling.")

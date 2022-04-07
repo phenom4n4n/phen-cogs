@@ -57,8 +57,8 @@ class PfpImgen(commands.Cog):
         )
         self.session = aiohttp.ClientSession()
 
-    def cog_unload(self):
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self):
+        await self.session.close()
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -235,7 +235,7 @@ class PfpImgen(commands.Cog):
         """petpet someone"""
         member = member or ctx.author
         async with ctx.typing():
-            params = {"avatar": str(member.avatar_url_as(format="png"))}
+            params = {"avatar": member.display_avatar.replace(format="png").url}
             url = "https://api.obamabot.ml/v1/image/petpet"
             async with self.session.get(url, params=params) as resp:
                 if resp.status != 200:

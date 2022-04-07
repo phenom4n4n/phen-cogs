@@ -50,9 +50,9 @@ class Processor(MixinMeta):
         self.bot.add_dev_env_value("tse", lambda ctx: tse)
         super().__init__()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.bot.remove_dev_env_value("tse")
-        super().cog_unload()
+        await super().cog_unload()
 
     async def initialize_interpreter(self, data: dict = None):
         if not data:

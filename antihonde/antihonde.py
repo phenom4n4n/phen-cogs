@@ -46,7 +46,7 @@ class AntiHonde(commands.Cog):
         self.h0nde_re = re.compile(r"h[0o]nd[ea]", flags=re.I)
         self.enabled = set()
 
-    async def initialize(self):
+    async def cog_load(self):
         for guild_id, guild_data in (await self.config.all_guilds()).items():
             if guild_data["enabled"]:
                 self.enabled.add(guild_id)

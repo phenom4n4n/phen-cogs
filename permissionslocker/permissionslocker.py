@@ -61,7 +61,7 @@ class PermissionsLocker(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
-    async def initialize(self):
+    async def cog_load(self):
         data = await self.config.all()
         self.perms = discord.Permissions(data["permissions"])
         self._whitelist.update(data["whitelisted"])
@@ -108,7 +108,7 @@ class PermissionsLocker(commands.Cog):
         permissions = discord.Permissions(permissions)
         await self.config.permissions.set(permissions.value)
         await ctx.send(
-            f"I will now require these permissions on commands:\n{box(await self.humanize_perms(permissions, True), 'diff')}"
+            f"I will now require these permissions on commands:\n{box(self.humanize_perms(permissions, True), 'diff')}"
         )
         self.perms = permissions
 

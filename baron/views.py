@@ -40,13 +40,13 @@ class ConfirmationView(BaseView):
         return message
 
     @discord.ui.button(label="Yes", style=discord.ButtonStyle.green)
-    async def yes(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def yes(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = True
         self.stop()
         await self.disable_all(button, interaction)
 
     @discord.ui.button(label="No", style=discord.ButtonStyle.red)
-    async def no(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def no(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.value = False
         self.stop()
         await self.disable_all(button, interaction)
@@ -85,7 +85,7 @@ class Button(discord.ui.Button):
         self._callback = callback
 
     async def callback(self, interaction: discord.Interaction):
-        await self._callback(self, interaction)
+        await self._callback(interaction, self)
 
 
 class PaginatedView(BaseView):
@@ -144,14 +144,14 @@ class PaginatedView(BaseView):
             # An error happened that can be handled, so ignore it.
             pass
 
-    async def previous(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.show_checked_page(self.current_page - 1, interaction)
 
-    async def close(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def close(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.message.delete()
         self.stop()
 
-    async def next(self, button: discord.ui.Button, interaction: discord.Interaction):
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.show_checked_page(self.current_page + 1, interaction)
 
     async def on_timeout(self):
