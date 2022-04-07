@@ -53,7 +53,7 @@ class ConfirmationView(BaseView):
         await self.disable_all(button, interaction)
         await interaction.followup.send(self.cancel_message, ephemeral=True)
 
-    async def disable_all(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def disable_all(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.disable_items(ignore_color=(button,))
         await interaction.response.edit_message(view=self)
 
@@ -94,7 +94,7 @@ class Button(discord.ui.Button):
         self._callback = callback
 
     async def callback(self, interaction: discord.Interaction):
-        await self._callback(self, interaction)
+        await self._callback(interaction, self)
 
 
 class PaginatedView(BaseView):
