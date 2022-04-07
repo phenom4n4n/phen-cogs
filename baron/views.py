@@ -52,7 +52,7 @@ class ConfirmationView(BaseView):
         await self.disable_all(button, interaction)
         await interaction.followup.send("Action cancelled.", ephemeral=True)
 
-    async def disable_all(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def disable_all(self, button: discord.ui.Button, interaction: discord.Interaction):
         self.disable_items(ignore_color=(button,))
         await interaction.response.edit_message(view=self)
 
