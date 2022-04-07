@@ -85,7 +85,7 @@ class Button(discord.ui.Button):
         self._callback = callback
 
     async def callback(self, interaction: discord.Interaction):
-        await self._callback(self, interaction)
+        await self._callback(interaction, self)
 
 
 class PaginatedView(BaseView):
