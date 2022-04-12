@@ -40,7 +40,9 @@ class LinkToMessage(commands.Converter):
         if not match:
             raise commands.MessageNotFound(argument)
 
-        guild_id = int(match.group("guild_id"))  # note: links can have "@me" here but the regex doesn't match that
+        guild_id = int(
+            match.group("guild_id")
+        )  # note: links can have "@me" here but the regex doesn't match that
         channel_id = int(match.group("channel_id"))
         message_id = int(match.group("message_id"))
 
