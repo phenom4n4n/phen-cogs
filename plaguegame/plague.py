@@ -472,8 +472,8 @@ class Plague(commands.Cog):
         game_data = await self.config.all()
         plagueName = game_data["plagueName"]
 
-        channel = game_data["logChannel"]
-        channel = ctx.bot.get_channel(channel)
+        channel_id = game_data["logChannel"]
+        channel = ctx.bot.get_channel(channel_id)
         autoInfect = f" since **{ctx.author}** didn't wear a mask" if auto else ""
 
         await self.config.user(user).gameState.set(GameState.INFECTED)
@@ -487,8 +487,8 @@ class Plague(commands.Cog):
     async def cure_user(self, ctx, user: discord.User):
         game_data = await self.config.all()
         plagueName = game_data["plagueName"]
-        channel = game_data["logChannel"]
-        channel = ctx.bot.get_channel(channel)
+        channel_id = game_data["logChannel"]
+        channel = ctx.bot.get_channel(channel_id)
 
         await self.config.user(user).gameState.set(GameState.HEALTHY)
         await self.notify_user(ctx, user, NotificationType.CURE)

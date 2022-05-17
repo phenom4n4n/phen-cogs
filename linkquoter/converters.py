@@ -40,6 +40,9 @@ class LinkToMessage(commands.Converter):
         if not match:
             raise commands.MessageNotFound(argument)
 
+        guild_id = int(
+            match.group("guild_id")
+        )  # note: links can have "@me" here but the regex doesn't match that
         channel_id = int(match.group("channel_id"))
         message_id = int(match.group("message_id"))
 
@@ -47,11 +50,15 @@ class LinkToMessage(commands.Converter):
         if message:
             return await self.validate_message(ctx, message)
 
-        channel = ctx.bot.get_channel(channel_id)
-        if not channel or not channel.guild:
+        guild = ctx.bot.get_guild(guild_id)
+        if not guild:
+            raise commands.GuildNotFound(guild_id)
+
+        channel = guild.get_channel(channel_id)
+        if not channel:
             raise commands.ChannelNotFound(channel_id)
 
-        my_perms = channel.permissions_for(channel.guild.me)
+        my_perms = channel.permissions_for(guild.me)
         if not my_perms.read_messages:
             raise commands.BadArgument(f"Can't read messages in {channel.mention}.")
         elif not my_perms.read_message_history:

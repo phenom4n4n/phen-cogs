@@ -46,7 +46,7 @@ class PfpImgen(commands.Cog):
     Make images from avatars!
     """
 
-    __version__ = "1.1.0"
+    __version__ = "1.1.1"
 
     def __init__(self, bot: Red) -> None:
         self.bot = bot
@@ -260,7 +260,7 @@ class PfpImgen(commands.Cog):
 
     async def get_avatar(self, member: discord.User):
         avatar = BytesIO()
-        await member.avatar_url.save(avatar, seek_begin=True)
+        await member.avatar_url_as(static_format="png").save(avatar, seek_begin=True)
         return avatar
 
     @staticmethod

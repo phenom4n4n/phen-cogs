@@ -134,7 +134,7 @@ class Roles(MixinMeta):
         return output.body
 
     @commands.bot_has_permissions(attach_files=True)
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @role.command("members", aliases=["dump"])
     async def role_members(
         self,
@@ -167,7 +167,7 @@ class Roles(MixinMeta):
         return rgb_to_hsv(*role.color.to_rgb())
 
     @commands.bot_has_permissions(embed_links=True)
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @role.command("colors")
     async def role_colors(self, ctx: commands.Context):
         """Sends the server's roles, ordered by color."""
@@ -182,7 +182,7 @@ class Roles(MixinMeta):
             await ctx.send(embed=e)
 
     @commands.bot_has_permissions(manage_roles=True)
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @role.command("create")
     async def role_create(
         self,
@@ -203,7 +203,7 @@ class Roles(MixinMeta):
         role = await ctx.guild.create_role(name=name, colour=color, hoist=hoist)
         await ctx.send(f"**{role}** created!", embed=await self.get_info(role))
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("color", aliases=["colour"])
     async def role_color(
@@ -215,7 +215,7 @@ class Roles(MixinMeta):
             f"**{role}** color changed to **{color}**.", embed=await self.get_info(role)
         )
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("hoist")
     async def role_hoist(
@@ -230,7 +230,7 @@ class Roles(MixinMeta):
         now = "now" if hoisted else "no longer"
         await ctx.send(f"**{role}** is {now} hoisted.", embed=await self.get_info(role))
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("name")
     async def role_name(
@@ -241,7 +241,7 @@ class Roles(MixinMeta):
         await role.edit(name=name)
         await ctx.send(f"Changed **{old_name}** to **{name}**.", embed=await self.get_info(role))
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("add")
     async def role_add(self, ctx: commands.Context, member: TouchableMember, *, role: StrictRole):
@@ -255,7 +255,7 @@ class Roles(MixinMeta):
         await member.add_roles(role, reason=reason)
         await ctx.send(f"Added **{role.name}** to **{member}**.")
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("remove")
     async def role_remove(
@@ -271,7 +271,7 @@ class Roles(MixinMeta):
         await member.remove_roles(role, reason=reason)
         await ctx.send(f"Removed **{role.name}** from **{member}**.")
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command(require_var_positional=True)
     async def addmulti(self, ctx: commands.Context, role: StrictRole, *members: TouchableMember):
@@ -292,7 +292,7 @@ class Roles(MixinMeta):
             msg.append(f"{humanize_roles(already_members)} already had **{role}**.")
         await ctx.send("\n".join(msg))
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command(require_var_positional=True)
     async def removemulti(
@@ -315,7 +315,7 @@ class Roles(MixinMeta):
             msg.append(f"{humanize_roles(already_members)} didn't have **{role}**.")
         await ctx.send("\n".join(msg))
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.group(invoke_without_command=True, require_var_positional=True)
     async def multirole(self, ctx: commands.Context, member: TouchableMember, *roles: StrictRole):
@@ -344,7 +344,7 @@ class Roles(MixinMeta):
             )
         await ctx.send("\n".join(msg))
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @multirole.command("remove", require_var_positional=True)
     async def multirole_remove(
@@ -375,14 +375,14 @@ class Roles(MixinMeta):
             )
         await ctx.send("\n".join(msg))
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
     async def all(self, ctx: commands.Context, *, role: StrictRole):
         """Add a role to all members of the server."""
         await self.super_massrole(ctx, ctx.guild.members, role)
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command(aliases=["removeall"])
     async def rall(self, ctx: commands.Context, *, role: StrictRole):
@@ -392,7 +392,7 @@ class Roles(MixinMeta):
             ctx, member_list, role, "No one on the server has this role.", False
         )
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
     async def humans(self, ctx: commands.Context, *, role: StrictRole):
@@ -404,7 +404,7 @@ class Roles(MixinMeta):
             "Every human in the server has this role.",
         )
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
     async def rhumans(self, ctx: commands.Context, *, role: StrictRole):
@@ -417,7 +417,7 @@ class Roles(MixinMeta):
             False,
         )
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
     async def bots(self, ctx: commands.Context, *, role: StrictRole):
@@ -429,7 +429,7 @@ class Roles(MixinMeta):
             "Every bot in the server has this role.",
         )
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command()
     async def rbots(self, ctx: commands.Context, *, role: StrictRole):
@@ -442,7 +442,7 @@ class Roles(MixinMeta):
             False,
         )
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("in")
     async def role_in(
@@ -456,7 +456,7 @@ class Roles(MixinMeta):
             f"Every member of **{target_role}** has this role.",
         )
 
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.command("rin")
     async def role_rin(
@@ -472,7 +472,7 @@ class Roles(MixinMeta):
         )
 
     @commands.check(targeter_cog)
-    @commands.admin_or_permissions(manage_roles=True)
+    @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @role.group()
     async def target(self, ctx: commands.Context):

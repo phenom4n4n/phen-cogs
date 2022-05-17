@@ -59,7 +59,7 @@ class RoleUtils(
     Includes massroling, role targeting, and reaction roles.
     """
 
-    __version__ = "1.3.8"
+    __version__ = "1.4.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
