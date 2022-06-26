@@ -59,6 +59,9 @@ HEADER = """<h1 align="center">
 <h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
 
 # Installation
+Follow the installation steps for [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot).
+Once the bot is installed, run the following command in Discord:
+
 `[p]repo add Phen-Cogs https://github.com/phenom4n4n/phen-cogs`
 
 # Cogs

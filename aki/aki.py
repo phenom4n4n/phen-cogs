@@ -52,7 +52,7 @@ class Aki(commands.Cog):
         )
         self.session = aiohttp.ClientSession()
 
-    __version__ = "1.1.1"
+    __version__ = "1.1.2"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)

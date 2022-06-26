@@ -160,12 +160,20 @@ class AkiMenu(menus.Menu):
         return any(word in text for word in NSFW_WORDS)
 
     async def win(self, payload):
-        winner = await self.aki.win()
-        description = winner["description"]
-        if not channel_is_nsfw(self.message.channel) and self.text_is_nsfw(description):
-            embed = self.get_nsfw_embed()
-        else:
-            embed = self.get_winner_embed(winner)
+        try:
+            winner = await self.aki.win()
+            description = winner["description"]
+            if not channel_is_nsfw(self.message.channel) and self.text_is_nsfw(description):
+                embed = self.get_nsfw_embed()
+            else:
+                embed = self.get_winner_embed(winner)
+        except Exception as e:
+            log.exception("An error occurred while trying to win an Akinator game.", exc_info=e)
+            embed = discord.Embed(
+                color=self.color,
+                title="An error occurred while trying to win the game.",
+                description="Try again later.",
+            )
         await self.edit_or_send(payload, embed=embed, components=[])
         self.stop()
         # TODO allow for continuation of game
@@ -206,7 +214,7 @@ class AkiMenu(menus.Menu):
         except akinator.AkiNoQuestions:
             await self.win(payload)
         except akinator.AkiTimedOut:
-            await self.cancel("The connection to the Akinator servers was lost.")
+            await self.cancel(payload, "The connection to the Akinator servers was lost.")
         except Exception as error:
             log.exception(
                 f"Encountered an exception while answering with {message} during Akinator session",
