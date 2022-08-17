@@ -630,5 +630,5 @@ class SlashContext(commands.Context):
             invoked_with=interaction.command_name,
         )
 
-    async def tick(self):
-        await self.interaction.send("✅", hidden=True)
+    async def tick(self, *, message: Optional[str] = None):
+        await self.interaction.send(message or "✅", hidden=True)
