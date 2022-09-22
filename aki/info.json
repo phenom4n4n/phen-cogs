@@ -8,7 +8,7 @@
         "PhenoM4n4n"
     ],
     "required_cogs": {},
-    "requirements": ["akinator.py[fast_async]"],
+    "requirements": ["akinator[fast_async]==1.0.3"],
     "tags": [
         "fun"
     ],
