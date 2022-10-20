@@ -41,8 +41,6 @@ from redbot.core.data_manager import bundled_data_path
 class TypeRacer(commands.Cog):
     """
     Race to see who can type the fastest!
-
-    Credits to Cats3153.
     """
 
     FONT_SIZE = 30
@@ -125,14 +123,12 @@ class TypeRacer(commands.Cog):
     async def typerace(self, ctx: commands.Context) -> None:
         """
         Begin a typing race!
-
-        Credits to Cats3153.
         """
         try:
             quote, author = await self.get_quote()
         except KeyError:
             raise commands.UserFeedbackCheckFailure(
-                "Could not fetch quote. Please try again later."
+                "i couldnt fetch a quote! sorry.."
             )
 
         color = discord.Color.random()
@@ -140,7 +136,6 @@ class TypeRacer(commands.Cog):
         embed = discord.Embed(color=color)
         embed.set_image(url="attachment://typerace.png")
         if author:
-            embed.set_footer(text=f"~ {author}")
 
         msg = await ctx.send(file=discord.File(img, "typerace.png"), embed=embed)
         acc: Optional[float] = None
@@ -163,7 +158,7 @@ class TypeRacer(commands.Cog):
         except asyncio.TimeoutError:
             embed = discord.Embed(
                 color=discord.Color.blurple(),
-                description=f"No one typed the [sentence]({msg.jump_url}) in time.",
+                description=f"no one typed the [sentence]({msg.jump_url}) in time.",
             )
             return await ctx.send(embed=embed, reference=ref)
 
@@ -171,7 +166,7 @@ class TypeRacer(commands.Cog):
         winner_ref = winner.to_reference(fail_if_not_exists=False)
         wpm = (len(quote) / 5) / (seconds / 60) * (acc / 100)
         description = (
-            f"{winner.author.mention} typed the [sentence]({msg.jump_url}) in `{seconds:.2f}s` "
+            f"🎉 {winner.author.mention} typed the [sentence]({msg.jump_url}) in `{seconds:.2f}s` "
             f"with **{acc:.2f}%** accuracy. (**{wpm:.1f} WPM**)"
         )
         embed = discord.Embed(color=winner.author.color, description=description)
