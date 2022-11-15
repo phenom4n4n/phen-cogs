@@ -171,7 +171,6 @@ class Processor(MixinMeta):
                 await interaction.defer(hidden=hidden)
             except discord.NotFound:
                 pass
-            
 
         if command_task := await self.handle_commands(interaction, actions):
             to_gather.append(command_task)
