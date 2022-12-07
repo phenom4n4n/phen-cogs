@@ -91,6 +91,9 @@ class Baron(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
+    async def cog_load(self):
+        await self.build_cache()
+
     async def build_cache(self):
         self.settings_cache = await self.config.all()
 
