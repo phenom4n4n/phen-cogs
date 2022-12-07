@@ -92,6 +92,9 @@ class Baron(commands.Cog):
         return
 
     async def cog_load(self):
+        await self.build_cache()
+
+    async def build_cache(self):
         self.settings_cache = await self.config.all()
 
     @commands.is_owner()
