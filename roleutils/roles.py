@@ -228,7 +228,7 @@ class Roles(MixinMeta):
         """Change a role's icon."""
         if "ROLE_ICONS" not in ctx.guild.features:
             return await ctx.send(
-                "Server does not have support for the role icons feature yet."
+                "This server does not have support for the role icons feature yet."
             )
             
         if isinstance(icon, discord.Emoji):
