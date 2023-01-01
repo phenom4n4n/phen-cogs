@@ -236,7 +236,7 @@ class PfpImgen(commands.Cog):
         member = member or ctx.author
         async with ctx.typing():
             params = {"avatar": member.display_avatar.replace(format="png").url}
-            url = "https://api.obamabot.ml/v1/image/petpet"
+            url = "https://api.popcat.xyz/pet"
             async with self.session.get(url, params=params) as resp:
                 if resp.status != 200:
                     return await ctx.send(

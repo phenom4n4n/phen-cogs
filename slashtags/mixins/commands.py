@@ -604,7 +604,7 @@ class Commands(MixinMeta):
     @slashtag_global_edit.command("argument", aliases=["option"])
     @copy_doc(slashtag_edit_argument)
     async def slashtag_global_edit_argument(
-        self, ctx: commands.Context, tag: GuildTagConverter, argument: str
+        self, ctx: commands.Context, tag: GlobalTagConverter, argument: str
     ):
         await tag.edit_single_option(ctx, argument)
 

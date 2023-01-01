@@ -62,7 +62,7 @@ class DisboardReminder(commands.Cog):
     default_guild = {
         "channel": None,
         "role": None,
-        "message": "It's been 2 hours since the last successful bump, could someone run `!d bump`?",
+        "message": "It's been 2 hours since the last successful bump, could someone run `/bump`?",
         "tyMessage": "{member(mention)} thank you for bumping! Make sure to leave a review at <https://disboard.org/server/{guild(id)}>.",
         "nextBump": None,
         "lock": False,

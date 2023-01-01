@@ -22,6 +22,9 @@
 <h4 align="center">Various phun and utility cogs for Red-DiscordBot.</h4>
 
 # Installation
+Follow the installation steps for [Red-DiscordBot](https://github.com/Cog-Creators/Red-DiscordBot).
+Once the bot is installed, run the following command in Discord:
+
 `[p]repo add Phen-Cogs https://github.com/phenom4n4n/phen-cogs`
 
 # Cogs
@@ -45,7 +48,7 @@
 | Plague            | 1.0.6            | <details><summary>Infect users with the plague!</summary>Plague game with a doctor and plaguebearer.</details>                                             | PhenoM4n4n                                         |
 | Prefix            | 1.0.2            | <details><summary>Manage guild prefixes.</summary>Manage guild prefixes more extensively.</details>                                                        | PhenoM4n4n                                         |
 | Ratings           | 1.0.0            | <details><summary>Find out how (simp/sane/smart) you are.</summary>Rate yourself on many things.</details>                                                 | PhenoM4n4n                                         |
-| RoleUtils         | 1.3.8            | <details><summary>Reaction roles, massroling, and role targeting!.</summary>Reaction roles, massroling, and role targeting!.</details>                     | PhenoM4n4n, Bobloy, TrustyJaid, and Neuro Assassin |
+| RoleUtils         | 1.4.0            | <details><summary>Reaction roles, massroling, and role targeting!.</summary>Reaction roles, massroling, and role targeting!.</details>                     | PhenoM4n4n, Bobloy, TrustyJaid, and Neuro Assassin |
 | Calculator        | 1.0.1            | <details><summary>Calculate stuff</summary>Calculate stuff</details>                                                                                       | PhenoM4n4n                                         |
 | SlashTags         | 1.0.0            | <details><summary>Create custom slash commands.</summary>Create custom slash commands.</details>                                                           | PhenoM4n4n                                         |
 | Tags              | 2.4.0            | <details><summary>Create and use tags.</summary>Create and use tags.</details>                                                                             | PhenoM4n4n, sravan, and npc203                     |

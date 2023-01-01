@@ -169,7 +169,10 @@ class Processor(MixinMeta):
                 interaction, actions, content, ephemeral=ephemeral, embed=embed
             )
         else:
-            await interaction.response.defer(ephemeral=ephemeral)
+            try:
+                await interaction.response.defer(ephemeral=ephemeral)
+            except discord.NotFound:
+                pass
 
         if command_task := await self.handle_commands(interaction, actions):
             to_gather.append(command_task)
@@ -178,7 +181,10 @@ class Processor(MixinMeta):
             await asyncio.gather(*to_gather)
 
         if not interaction.completed:
-            await interaction.send("Slash Tag completed.", ephemeral=True)
+            try:
+                await interaction.send("Slash Tag completed.", ephemeral=True)
+            except discord.NotFound:
+                pass
 
     async def handle_requires(self, interaction: InteractionCommandWrapper, actions: dict):
         try:
