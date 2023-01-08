@@ -445,25 +445,25 @@ class Commands(MixinMeta):
         **Example:**
         `[p]tag docs embed`
         """
-        await ctx.trigger_typing()
-        e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
-        if keyword:
-            matched_labels = await self.doc_search(keyword)
-            description = [f"Search for: `{keyword}`"]
-            for name, url in matched_labels.items():
-                description.append(f"[`{name}`]({url})")
-            url = f"{DOCS_URL}/search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
-            e.url = url
-            embeds = []
-            description = "\n".join(description)
-            for page in pagify(description):
-                embed = e.copy()
-                embed.description = page
-                embeds.append(embed)
-            await menu(ctx, embeds)
-        else:
-            e.url = DOCS_URL
-            await ctx.send(embed=e)
+        async with ctx.typing():
+            e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
+            if keyword:
+                matched_labels = await self.doc_search(keyword)
+                description = [f"Search for: `{keyword}`"]
+                for name, url in matched_labels.items():
+                    description.append(f"[`{name}`]({url})")
+                url = f"{DOCS_URL}/search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
+                e.url = url
+                embeds = []
+                description = "\n".join(description)
+                for page in pagify(description):
+                    embed = e.copy()
+                    embed.description = page
+                    embeds.append(embed)
+                await menu(ctx, embeds)
+            else:
+                e.url = DOCS_URL
+                await ctx.send(embed=e)
 
     @commands.is_owner()
     @tag.command("run", aliases=["execute"])
