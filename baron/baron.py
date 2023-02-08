@@ -112,7 +112,7 @@ class Baron(commands.Cog):
 
         Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2).
         """
-        await ctx.trigger_typing()
+        await ctx.typing()
         date = ctx.message.created_at - time if time else self.bot.user.created_at
         guilds = [
             guild.me.joined_at
