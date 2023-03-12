@@ -663,7 +663,7 @@ class Commands(MixinMeta):
     async def slashtag_global_usage(self, ctx: commands.Context):
         await self.show_slash_tag_usage(ctx)
 
-    @slashtag_global.command("restore", hidden=True)
+    @slashtag_global.command("restore", aliases=["sync"], hidden=True)
     @copy_doc(slashtag_restore)
     async def slashtag_global_restore(self, ctx: commands.Context):
         await self.restore_tags(ctx, None)
