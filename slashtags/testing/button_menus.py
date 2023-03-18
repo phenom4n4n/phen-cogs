@@ -194,7 +194,7 @@ class ButtonMenuMixin:
                     raise asyncio.TimeoutError()
 
                 # Exception will propagate if e.g. cancelled or timed out
-                payload = done.pop().result()
+                payload: InteractionButton = done.pop().result()
                 loop.create_task(self.update(payload))
 
                 # NOTE: Removing the reaction ourselves after it's been done when
@@ -249,6 +249,8 @@ class ButtonMenuMixin:
         if not button:
             return
         if not self._running:
+            return
+        if not button.skip_if(self):
             return
 
         try:
