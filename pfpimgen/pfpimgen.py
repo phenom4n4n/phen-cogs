@@ -85,7 +85,7 @@ class PfpImgen(commands.Cog):
     @commands.command(cooldown_after_parsing=True)
     async def bonk(self, ctx, *, member: FuzzyMember = None):
         """Bonk! Go to horny jail."""
-        await ctx.trigger_typing()
+        await ctx.typing()
         bonker = False
         if member:
             bonker = ctx.author
