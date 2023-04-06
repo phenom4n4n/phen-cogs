@@ -95,7 +95,7 @@ class Aki(commands.Cog):
             )
         except akinator.InvalidLanguageError:
             await ctx.send(
-                "Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>"
+                "Invalid language. Refer here to view valid languages.\n<https://akinator.readthedocs.io/en/latest/#functions>"
             )
         except Exception:
             await ctx.send("I encountered an error while connecting to the Akinator servers.")

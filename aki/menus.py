@@ -212,7 +212,7 @@ class AkiMenu(menus.Menu):
         try:
             await self.aki.answer(message)
         except akinator.AkiNoQuestions:
-            await self.win(payload)
+            await self.cancel(payload, "Akinator is stumped and ran out of questions to ask!")
         except akinator.AkiTimedOut:
             await self.cancel(payload, "The connection to the Akinator servers was lost.")
         except Exception as error:

@@ -525,6 +525,8 @@ class SlashTag:
 
 def maybe_set_attr(cls, name, attr):
     if not hasattr(cls, name):
+        if hasattr(attr, "copy"):
+            attr = attr.copy()
         setattr(cls, name, attr)
 
 
@@ -549,6 +551,8 @@ class FakeMessage(discord.Message):
     REIMPLEMENTS = {
         "reactions": [],
         "mentions": [],
+        "role_mentions": [],
+        "channel_mentions": [],
         "attachments": [],
         "stickers": [],
         "embeds": [],
@@ -630,5 +634,5 @@ class SlashContext(commands.Context):
             invoked_with=interaction.command_name,
         )
 
-    async def tick(self):
-        await self.interaction.send("✅", hidden=True)
+    async def tick(self, *, message: Optional[str] = None):
+        await self.interaction.send(message or "✅", hidden=True)

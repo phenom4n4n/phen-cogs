@@ -167,7 +167,11 @@ class Processor(MixinMeta):
         if content or embed:
             await self.send_tag_response(interaction, actions, content, hidden=hidden, embed=embed)
         else:
-            await interaction.defer(hidden=hidden)
+            try:
+                await interaction.defer(hidden=hidden)
+            except discord.NotFound:
+                pass
+            
 
         if command_task := await self.handle_commands(interaction, actions):
             to_gather.append(command_task)
@@ -176,7 +180,10 @@ class Processor(MixinMeta):
             await asyncio.gather(*to_gather)
 
         if not interaction.completed:
-            await interaction.send("Slash Tag completed.", hidden=True)
+            try:
+                await interaction.send("Slash Tag completed.", hidden=True)
+            except discord.NotFound:
+                pass
 
     async def handle_requires(self, interaction: InteractionCommand, actions: dict):
         try:

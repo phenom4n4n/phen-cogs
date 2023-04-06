@@ -11,7 +11,7 @@
     ],
     "required_cogs": {},
     "requirements": [
-        "TagScript==2.6.2",
+        "TagScript==2.6.3",
         "tabulate",
         "rapidfuzz"
     ],
