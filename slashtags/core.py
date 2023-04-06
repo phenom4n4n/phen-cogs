@@ -122,6 +122,11 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     def cog_unload(self):
         try:
+            self.remove_dev_env_value("st")
+        except Exception as error:
+            log.exception("Failed to remove dev env value.", exc_info=error)
+            
+        try:
             self.__unload()
         except Exception as error:
             log.exception("An error occurred while unloading the cog.", exc_info=error)
