@@ -48,7 +48,7 @@
 | RoleUtils         | 1.4.0            | <details><summary>Reaction roles, massroling, and role targeting!.</summary>Reaction roles, massroling, and role targeting!.</details>                     | PhenoM4n4n, Bobloy, TrustyJaid, and Neuro Assassin |
 | Calculator        | 1.0.1            | <details><summary>Calculate stuff</summary>Calculate stuff</details>                                                                                       | PhenoM4n4n                                         |
 | SlashTags         | 0.6.0            | <details><summary>Create custom slash commands.</summary>Create custom slash commands.</details>                                                           | PhenoM4n4n                                         |
-| Tags              | 2.3.7            | <details><summary>Create and use tags.</summary>Create and use tags.</details>                                                                             | PhenoM4n4n, sravan, and npc203                     |
+| Tags              | 2.3.8            | <details><summary>Create and use tags.</summary>Create and use tags.</details>                                                                             | PhenoM4n4n, sravan, and npc203                     |
 | TypeRacer         | 1.0.4            | <details><summary>Race to see who can type the fastest!</summary>Race to see who can type the fastest!</details>                                           | Cats3153 and PhenoM4n4n                            |
 | Webhook           | 1.2.1            | <details><summary>Webhook related commands.</summary>Various webhook commands to create and send messages along webhooks.</details>                        | PhenoM4n4n                                         |
 
