@@ -120,7 +120,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         task.add_done_callback(self.task_done_callback)
         return task
 
-    def cog_unload(self):      
+    def cog_unload(self):
         try:
             self.__unload()
         except Exception as error:
