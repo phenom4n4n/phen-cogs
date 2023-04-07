@@ -120,19 +120,18 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         task.add_done_callback(self.task_done_callback)
         return task
 
-    def cog_unload(self):
-        try:
-            self.remove_dev_env_value("st")
-        except Exception as error:
-            log.exception("Failed to remove dev env value.", exc_info=error)
-            
+    def cog_unload(self):      
         try:
             self.__unload()
         except Exception as error:
             log.exception("An error occurred while unloading the cog.", exc_info=error)
 
     def __unload(self):
-        self.bot.remove_dev_env_value("st")
+        try:
+            self.remove_dev_env_value("st")
+        except Exception as error:
+            log.exception("Failed to remove dev env value.", exc_info=error)
+            
         if self.testing_enabled:
             self.remove_test_cog()
         self.load_task.cancel()
