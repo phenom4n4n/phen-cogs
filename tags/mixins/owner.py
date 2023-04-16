@@ -30,7 +30,7 @@ from typing import List
 import discord
 import TagScriptEngine as tse
 from redbot.core import Config, commands
-from redbot.core.dev_commands import Dev
+from redbot.core.dev_commands import Dev, async_compile, cleanup_code, get_pages
 from redbot.core.utils import AsyncIter
 
 from ..abc import MixinMeta
@@ -58,7 +58,7 @@ class OwnerCommands(MixinMeta):
 
     def compile_block(self, code: str) -> tse.Block:
         to_compile = "def func():\n%s" % textwrap.indent(code, "  ")
-        compiled = Dev.async_compile(to_compile, "<string>", "exec")
+        compiled = async_compile(to_compile, "<string>", "exec")
         env = globals().copy()
         env["bot"] = self.bot
         env["tags"] = self
@@ -104,9 +104,7 @@ class OwnerCommands(MixinMeta):
         """
 
     @tagsettings_block.command("add")
-    async def tagsettings_block_add(
-        self, ctx: commands.Context, name: str, *, code: Dev.cleanup_code
-    ):
+    async def tagsettings_block_add(self, ctx: commands.Context, name: str, *, code: cleanup_code):
         """
         Add a custom block to the TagScript interpreter.
 
@@ -116,7 +114,13 @@ class OwnerCommands(MixinMeta):
             block = self.compile_block(code)
             self.test_block(block)
         except SyntaxError as e:
-            return await ctx.send_interactive(Dev.get_syntax_error(e))
+            if e.text is None:
+                error = get_pages("{0.__class__.__name__}: {0}".format(e))
+            else:
+                error = get_pages(
+                    "{0.text}\n{1:>{0.offset}}\n{2}: {0}".format(e, "^", type(e).__name__)
+                )
+            return await ctx.send_interactive(error)
         except Exception as e:
             exc = traceback.format_exception(e.__class__, e, e.__traceback__)
             response = Dev.sanitize_output(ctx, exc)
