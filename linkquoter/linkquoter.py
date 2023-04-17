@@ -54,7 +54,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.2.0"
+    __version__ = "1.2.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -198,11 +198,12 @@ class LinkQuoter(commands.Cog):
                     inline=False,
                 )
 
-        e.add_field(
-            name="Source",
-            value=f'\n[[jump to message]]({message.jump_url} "Follow me to the original message!")',
-            inline=False,
-        )
+        if not any(field.name == "Source" for field in e.fields):
+            e.add_field(
+                name="Source",
+                value=f'\n[[jump to message]]({message.jump_url} "Follow me to the original message!")',
+                inline=False,
+            )
         return e
 
     async def create_embeds(
