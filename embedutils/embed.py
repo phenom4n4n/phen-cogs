@@ -799,7 +799,8 @@ class EmbedUtils(commands.Cog):
     async def webhook(self, ctx: commands.Context, *embeds: StoredEmbedConverter):
         """Send embeds through webhooks.
 
-        Running this command with stored embed names will send up to 10 embeds through a webhook."""
+        Running this command with stored embed names will send up to 10 embeds through a webhook.
+        """
         await self.webhook_send(
             ctx, embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]]
         )
@@ -808,7 +809,8 @@ class EmbedUtils(commands.Cog):
     async def webhook_global(self, ctx: commands.Context, *embeds: GlobalStoredEmbedConverter):
         """Send global embeds through webhooks.
 
-        Running this command with global stored embed names will send up to 10 embeds through a webhook."""
+        Running this command with global stored embed names will send up to 10 embeds through a webhook.
+        """
         await self.webhook_send(
             ctx, embeds=[discord.Embed.from_dict(e["embed"]) for e in embeds[:10]]
         )

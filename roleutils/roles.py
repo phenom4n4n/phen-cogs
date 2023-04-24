@@ -80,7 +80,8 @@ class Roles(MixinMeta):
     ):
         """Base command for modifying roles.
 
-        Invoking this command will add or remove the given role from the member, depending on whether they already had it."""
+        Invoking this command will add or remove the given role from the member, depending on whether they already had it.
+        """
         if role in member.roles and await can_run_command(ctx, "role remove"):
             com = self.bot.get_command("role remove")
             await ctx.invoke(
