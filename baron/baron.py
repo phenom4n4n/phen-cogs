@@ -132,8 +132,8 @@ class Baron(commands.Cog):
                 )
             e = discord.Embed(color=await ctx.embed_color(), title="Guilds Growth")
             e.set_image(url="attachment://attachment.png")
-            await ctx.send(embed=e, file=discord.File(buf, "attachment.png"))
-            buf.close()
+        await ctx.send(embed=e, file=discord.File(buf, "attachment.png"))
+        buf.close()
 
     def create_graph(self, guilds: list):
         plt.clf()
