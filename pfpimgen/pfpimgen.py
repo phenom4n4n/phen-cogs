@@ -92,18 +92,17 @@ class PfpImgen(commands.Cog):
             else:
                 member = ctx.author
 
-            async with ctx.typing():
-                victim_avatar = await self.get_avatar(member)
-                if bonker:
-                    bonker_avatar = await self.get_avatar(bonker)
-                    task = functools.partial(self.gen_bonk, ctx, victim_avatar, bonker_avatar)
-                else:
-                    task = functools.partial(self.gen_bonk, ctx, victim_avatar)
-                image = await self.generate_image(task)
-            if isinstance(image, str):
-                await ctx.send(image)
+            victim_avatar = await self.get_avatar(member)
+            if bonker:
+                bonker_avatar = await self.get_avatar(bonker)
+                task = functools.partial(self.gen_bonk, ctx, victim_avatar, bonker_avatar)
             else:
-                await ctx.send(file=image)
+                task = functools.partial(self.gen_bonk, ctx, victim_avatar)
+            image = await self.generate_image(task)
+        if isinstance(image, str):
+            await ctx.send(image)
+        else:
+            await ctx.send(file=image)
 
     @commands.bot_has_permissions(attach_files=True)
     @commands.cooldown(1, 10, commands.BucketType.user)
