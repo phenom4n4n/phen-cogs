@@ -255,8 +255,8 @@ class Lock(commands.Cog):
                 msg += overwrite[2]
             if overwrite[3]:
                 msg += overwrite[3]
-            if msg:
-                await ctx.send(msg)
+        if msg:
+            await ctx.send(msg)
 
     @commands.bot_has_permissions(manage_roles=True)
     @commands.admin_or_permissions(manage_roles=True)
@@ -460,8 +460,8 @@ class Lock(commands.Cog):
                 msg += overwrite[2]
             if overwrite[3]:
                 msg += overwrite[3]
-            if msg:
-                await ctx.send(msg)
+        if msg:
+            await ctx.send(msg)
 
     @staticmethod
     def update_overwrite(
