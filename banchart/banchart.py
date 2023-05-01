@@ -66,14 +66,15 @@ class BanChart(commands.Cog):
 
     @staticmethod
     async def get_ban_limit(ctx: commands.Context, limit: int) -> Tuple[int, list]:
-        await ctx.trigger_typing()
-        bans = await ctx.guild.bans()
-        ban_count = len(bans)
-        if not ban_count:
-            raise commands.UserFeedbackCheckFailure("This server has no bans.")
-        limit = min(LIMIT, min(limit, ban_count))
-        await ctx.send(f"Gathering stats up to the last {limit} bans.")
-        return limit, bans
+        async with ctx.typing():
+            limit = min(LIMIT, limit)
+            bans = [entry async for entry in ctx.guild.bans(limit=limit)]
+            ban_count = len(bans)
+            if not ban_count:
+                raise commands.UserFeedbackCheckFailure("This server has no bans.")
+            limit = min(ban_count, limit)
+            await ctx.send(f"Gathering stats up to the last {limit} bans.")
+            return limit, bans
 
     @staticmethod
     def get_name(user: Union[discord.User, int]) -> str:
