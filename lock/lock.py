@@ -157,7 +157,7 @@ class Lock(commands.Cog):
             await ctx.typing()
         except discord.Forbidden:
             return
-        
+
         if not channel:
             channel = ctx.channel
         if not roles_or_members:
@@ -295,7 +295,7 @@ class Lock(commands.Cog):
             await ctx.typing()
         except discord.Forbidden:
             return
-        
+
         if not channel:
             channel = ctx.channel
         if roles_or_members:
@@ -331,7 +331,7 @@ class Lock(commands.Cog):
                         failed.append(inline(role.name))
                 else:
                     cancelled.append(inline(role.name))
-    
+
         msg = ""
         if succeeded:
             msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
