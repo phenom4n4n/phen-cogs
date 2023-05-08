@@ -459,27 +459,31 @@ class Lock(commands.Cog):
         if not permissions:
             raise commands.BadArgument
 
-        async with ctx.typing():
-            channel = channel or ctx.channel
-            roles_or_members = roles_or_members or [ctx.guild.default_role]
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
 
-            perms = {}
-            for perm in permissions:
-                perms.update({perm: state})
-            for role in roles_or_members:
-                overwrite = self.update_overwrite(ctx, channel.overwrites_for(role), perms)
-                await channel.set_permissions(role, overwrite=overwrite[0])
-            msg = ""
-            if overwrite[1]:
-                msg += (
-                    f"The following permissions have been set to `{state}` for "
-                    f"{humanize_list([f'`{obj}`' for obj in roles_or_members])} in {channel.mention}:\n"
-                    f"{humanize_list([f'`{perm}`' for perm in overwrite[1]])}"
-                )
-            if overwrite[2]:
-                msg += overwrite[2]
-            if overwrite[3]:
-                msg += overwrite[3]
+        channel = channel or ctx.channel
+        roles_or_members = roles_or_members or [ctx.guild.default_role]
+
+        perms = {}
+        for perm in permissions:
+            perms.update({perm: state})
+        for role in roles_or_members:
+            overwrite = self.update_overwrite(ctx, channel.overwrites_for(role), perms)
+            await channel.set_permissions(role, overwrite=overwrite[0])
+        msg = ""
+        if overwrite[1]:
+            msg += (
+                f"The following permissions have been set to `{state}` for "
+                f"{humanize_list([f'`{obj}`' for obj in roles_or_members])} in {channel.mention}:\n"
+                f"{humanize_list([f'`{perm}`' for perm in overwrite[1]])}"
+            )
+        if overwrite[2]:
+            msg += overwrite[2]
+        if overwrite[3]:
+            msg += overwrite[3]
         if msg:
             await ctx.send(msg)
 
