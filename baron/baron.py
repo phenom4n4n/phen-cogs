@@ -112,26 +112,26 @@ class Baron(commands.Cog):
 
         Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2).
         """
-        async with ctx.typing():
-            date = ctx.message.created_at - time if time else self.bot.user.created_at
-            guilds = [
-                guild.me.joined_at
-                async for guild in AsyncIter(self.bot.guilds, steps=100)
-                if guild.me.joined_at > date
-            ]
-            if len(guilds) <= 1:
-                return await ctx.send("There aren't enough server joins during that time.")
-
-            task = functools.partial(self.create_graph, guilds)
-            task = self.bot.loop.run_in_executor(None, task)
-            try:
-                buf = await asyncio.wait_for(task, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send(
-                    "An error occurred while generating this image. Try again later."
-                )
-            e = discord.Embed(color=await ctx.embed_color(), title="Guilds Growth")
-            e.set_image(url="attachment://attachment.png")
+        await ctx.typing()
+        date = ctx.message.created_at - time if time else self.bot.user.created_at
+        guilds = [
+            guild.me.joined_at
+            async for guild in AsyncIter(self.bot.guilds, steps=100)
+            if guild.me.joined_at > date
+        ]
+        if len(guilds) <= 1:
+            return await ctx.send("There aren't enough server joins during that time.")
+        
+        task = functools.partial(self.create_graph, guilds)
+        task = self.bot.loop.run_in_executor(None, task)
+        try:
+            buf = await asyncio.wait_for(task, timeout=60)
+        except asyncio.TimeoutError:
+            return await ctx.send(
+                "An error occurred while generating this image. Try again later."
+            )
+        e = discord.Embed(color=await ctx.embed_color(), title="Guilds Growth")
+        e.set_image(url="attachment://attachment.png")
         await ctx.send(embed=e, file=discord.File(buf, "attachment.png"))
         buf.close()
 
