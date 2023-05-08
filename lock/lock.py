@@ -79,56 +79,60 @@ class Lock(commands.Cog):
         `[p]lock #general`
         `[p]lock 737958453905063977 @members`
         """
-        async with ctx.typing():
-            if not channel:
-                channel = ctx.channel
-            if not roles_or_members:
-                roles_or_members = [ctx.guild.default_role]
-            else:
-                roles_or_members = roles_or_members[:10]
-            succeeded = []
-            cancelled = []
-            failed = []
-            reason = get_audit_reason(ctx.author)
-            
-            if isinstance(channel, discord.TextChannel):
-                for role in roles_or_members:
-                    current_perms = channel.overwrites_for(role)
-                    my_perms = channel.overwrites_for(ctx.me)
-                    if my_perms.send_messages != True:
-                        my_perms.update(send_messages=True)
-                        await channel.set_permissions(ctx.me, overwrite=my_perms)
-                    if current_perms.send_messages == False:
-                        cancelled.append(inline(role.name))
-                    else:
-                        current_perms.update(send_messages=False)
-                        try:
-                            await channel.set_permissions(role, overwrite=current_perms, reason=reason)
-                            succeeded.append(inline(role.name))
-                        except:
-                            failed.append(inline(role.name))
-            elif isinstance(channel, discord.VoiceChannel):
-                for role in roles_or_members:
-                    current_perms = channel.overwrites_for(role)
-                    if current_perms.connect == False:
-                        cancelled.append(inline(role.name))
-                    else:
-                        current_perms.update(connect=False)
-                        try:
-                            await channel.set_permissions(role, overwrite=current_perms, reason=reason)
-                            succeeded.append(inline(role.name))
-                        except:
-                            failed.append(inline(role.name))
-                            
-            msg = ""
-            if succeeded:
-                msg += f"{channel.mention} has been locked for {humanize_list(succeeded)}.\n"
-            if cancelled:
-                msg += f"{channel.mention} was already locked for {humanize_list(cancelled)}.\n"
-            if failed:
-                msg += f"I failed to lock {channel.mention} for {humanize_list(failed)}.\n"
-            if msg:
-                await ctx.send(msg)
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
+
+        if not channel:
+            channel = ctx.channel
+        if not roles_or_members:
+            roles_or_members = [ctx.guild.default_role]
+        else:
+            roles_or_members = roles_or_members[:10]
+        succeeded = []
+        cancelled = []
+        failed = []
+        reason = get_audit_reason(ctx.author)
+
+        if isinstance(channel, discord.TextChannel):
+            for role in roles_or_members:
+                current_perms = channel.overwrites_for(role)
+                my_perms = channel.overwrites_for(ctx.me)
+                if my_perms.send_messages != True:
+                    my_perms.update(send_messages=True)
+                    await channel.set_permissions(ctx.me, overwrite=my_perms)
+                if current_perms.send_messages == False:
+                    cancelled.append(inline(role.name))
+                else:
+                    current_perms.update(send_messages=False)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
+        elif isinstance(channel, discord.VoiceChannel):
+            for role in roles_or_members:
+                current_perms = channel.overwrites_for(role)
+                if current_perms.connect == False:
+                    cancelled.append(inline(role.name))
+                else:
+                    current_perms.update(connect=False)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
+
+        msg = ""
+        if succeeded:
+            msg += f"{channel.mention} has been locked for {humanize_list(succeeded)}.\n"
+        if cancelled:
+            msg += f"{channel.mention} was already locked for {humanize_list(cancelled)}.\n"
+        if failed:
+            msg += f"I failed to lock {channel.mention} for {humanize_list(failed)}.\n"
+        if msg:
+            await ctx.send(msg)
 
     @commands.bot_has_permissions(manage_roles=True)
     @commands.admin_or_permissions(manage_roles=True)
@@ -149,39 +153,43 @@ class Lock(commands.Cog):
         `[p]viewlock #secret-channel`
         `[p]viewlock 7382395026348520 @nubs`
         """
-        async with ctx.typing():
-            if not channel:
-                channel = ctx.channel
-            if not roles_or_members:
-                roles_or_members = [ctx.guild.default_role]
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
+        
+        if not channel:
+            channel = ctx.channel
+        if not roles_or_members:
+            roles_or_members = [ctx.guild.default_role]
+        else:
+            roles_or_members = roles_or_members[:10]
+        succeeded = []
+        cancelled = []
+        failed = []
+        reason = get_audit_reason(ctx.author)
+
+        for role in roles_or_members:
+            current_perms = channel.overwrites_for(role)
+            if current_perms.read_messages == False:
+                cancelled.append(inline(role.name))
             else:
-                roles_or_members = roles_or_members[:10]
-            succeeded = []
-            cancelled = []
-            failed = []
-            reason = get_audit_reason(ctx.author)
-            
-            for role in roles_or_members:
-                current_perms = channel.overwrites_for(role)
-                if current_perms.read_messages == False:
-                    cancelled.append(inline(role.name))
-                else:
-                    current_perms.update(read_messages=False)
-                    try:
-                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
-                        succeeded.append(inline(role.name))
-                    except:
-                        failed.append(inline(role.name))
-                        
-            msg = ""
-            if succeeded:
-                msg += f"{channel.mention} has been viewlocked for {humanize_list(succeeded)}.\n"
-            if cancelled:
-                msg += f"{channel.mention} was already viewlocked for {humanize_list(cancelled)}.\n"
-            if failed:
-                msg += f"I failed to viewlock {channel.mention} for {humanize_list(failed)}.\n"
-            if msg:
-                await ctx.send(msg)
+                current_perms.update(read_messages=False)
+                try:
+                    await channel.set_permissions(role, overwrite=current_perms, reason=reason)
+                    succeeded.append(inline(role.name))
+                except:
+                    failed.append(inline(role.name))
+
+        msg = ""
+        if succeeded:
+            msg += f"{channel.mention} has been viewlocked for {humanize_list(succeeded)}.\n"
+        if cancelled:
+            msg += f"{channel.mention} was already viewlocked for {humanize_list(cancelled)}.\n"
+        if failed:
+            msg += f"I failed to viewlock {channel.mention} for {humanize_list(failed)}.\n"
+        if msg:
+            await ctx.send(msg)
 
     @lock.command("server")
     async def lock_server(self, ctx: commands.Context, *roles: LockableRole):
@@ -234,27 +242,31 @@ class Lock(commands.Cog):
         if not permissions:
             raise commands.BadArgument
 
-        async with ctx.typing():
-            channel = channel or ctx.channel
-            roles_or_members = roles_or_members or [ctx.guild.default_role]
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
 
-            perms = {}
-            for perm in permissions:
-                perms.update({perm: False})
-            for role in roles_or_members:
-                overwrite = self.update_overwrite(ctx, channel.overwrites_for(role), perms)
-                await channel.set_permissions(role, overwrite=overwrite[0])
-            msg = ""
-            if overwrite[1]:
-                msg += (
-                    f"The following permissions have been denied for "
-                    f"{humanize_list([f'`{obj}`' for obj in roles_or_members])} in {channel.mention}:\n"
-                    f"{humanize_list([f'`{perm}`' for perm in overwrite[1]])}\n"
-                )
-            if overwrite[2]:
-                msg += overwrite[2]
-            if overwrite[3]:
-                msg += overwrite[3]
+        channel = channel or ctx.channel
+        roles_or_members = roles_or_members or [ctx.guild.default_role]
+
+        perms = {}
+        for perm in permissions:
+            perms.update({perm: False})
+        for role in roles_or_members:
+            overwrite = self.update_overwrite(ctx, channel.overwrites_for(role), perms)
+            await channel.set_permissions(role, overwrite=overwrite[0])
+        msg = ""
+        if overwrite[1]:
+            msg += (
+                f"The following permissions have been denied for "
+                f"{humanize_list([f'`{obj}`' for obj in roles_or_members])} in {channel.mention}:\n"
+                f"{humanize_list([f'`{perm}`' for perm in overwrite[1]])}\n"
+            )
+        if overwrite[2]:
+            msg += overwrite[2]
+        if overwrite[3]:
+            msg += overwrite[3]
         if msg:
             await ctx.send(msg)
 
@@ -279,52 +291,56 @@ class Lock(commands.Cog):
         `[p]unlock #general`
         `[p]unlock 739562845027353 true`
         """
-        async with ctx.typing():
-            if not channel:
-                channel = ctx.channel
-            if roles_or_members:
-                roles_or_members = roles_or_members[:10]
-            else:
-                roles_or_members = [ctx.guild.default_role]
-            succeeded = []
-            cancelled = []
-            failed = []
-            reason = get_audit_reason(ctx.author)
-            
-            if isinstance(channel, discord.TextChannel):
-                for role in roles_or_members:
-                    current_perms = channel.overwrites_for(role)
-                    if current_perms.send_messages != False and current_perms.send_messages == state:
-                        cancelled.append(inline(role.name))
-                    else:
-                        current_perms.update(send_messages=state)
-                        try:
-                            await channel.set_permissions(role, overwrite=current_perms, reason=reason)
-                            succeeded.append(inline(role.name))
-                        except:
-                            failed.append(inline(role.name))
-            elif isinstance(channel, discord.VoiceChannel):
-                for role in roles_or_members:
-                    current_perms = channel.overwrites_for(role)
-                    if current_perms.connect in [False, state]:
-                        current_perms.update(connect=state)
-                        try:
-                            await channel.set_permissions(role, overwrite=current_perms, reason=reason)
-                            succeeded.append(inline(role.name))
-                        except:
-                            failed.append(inline(role.name))
-                    else:
-                        cancelled.append(inline(role.name))
-                        
-            msg = ""
-            if succeeded:
-                msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
-            if cancelled:
-                msg += f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`.\n"
-            if failed:
-                msg += f"I failed to unlock {channel.mention} for {humanize_list(failed)}.\n"
-            if msg:
-                await ctx.send(msg)
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
+        
+        if not channel:
+            channel = ctx.channel
+        if roles_or_members:
+            roles_or_members = roles_or_members[:10]
+        else:
+            roles_or_members = [ctx.guild.default_role]
+        succeeded = []
+        cancelled = []
+        failed = []
+        reason = get_audit_reason(ctx.author)
+
+        if isinstance(channel, discord.TextChannel):
+            for role in roles_or_members:
+                current_perms = channel.overwrites_for(role)
+                if current_perms.send_messages != False and current_perms.send_messages == state:
+                    cancelled.append(inline(role.name))
+                else:
+                    current_perms.update(send_messages=state)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
+        elif isinstance(channel, discord.VoiceChannel):
+            for role in roles_or_members:
+                current_perms = channel.overwrites_for(role)
+                if current_perms.connect in [False, state]:
+                    current_perms.update(connect=state)
+                    try:
+                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
+                        succeeded.append(inline(role.name))
+                    except:
+                        failed.append(inline(role.name))
+                else:
+                    cancelled.append(inline(role.name))
+    
+        msg = ""
+        if succeeded:
+            msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
+        if cancelled:
+            msg += f"{channel.mention} was already unlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`.\n"
+        if failed:
+            msg += f"I failed to unlock {channel.mention} for {humanize_list(failed)}.\n"
+        if msg:
+            await ctx.send(msg)
 
     @commands.bot_has_permissions(manage_roles=True)
     @commands.admin_or_permissions(manage_roles=True)
@@ -347,39 +363,43 @@ class Lock(commands.Cog):
         `[p]unviewlock #hidden-channel true`
         `[p]unviewlock 746284923572835 @boosters`
         """
-        async with ctx.typing():
-            if not channel:
-                channel = ctx.channel
-            if not roles_or_members:
-                roles_or_members = [ctx.guild.default_role]
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
+
+        if not channel:
+            channel = ctx.channel
+        if not roles_or_members:
+            roles_or_members = [ctx.guild.default_role]
+        else:
+            roles_or_members = roles_or_members[:10]
+        succeeded = []
+        cancelled = []
+        failed = []
+        reason = get_audit_reason(ctx.author)
+
+        for role in roles_or_members:
+            current_perms = channel.overwrites_for(role)
+            if current_perms.read_messages != False and current_perms.read_messages == state:
+                cancelled.append(inline(role.name))
             else:
-                roles_or_members = roles_or_members[:10]
-            succeeded = []
-            cancelled = []
-            failed = []
-            reason = get_audit_reason(ctx.author)
-            
-            for role in roles_or_members:
-                current_perms = channel.overwrites_for(role)
-                if current_perms.read_messages != False and current_perms.read_messages == state:
-                    cancelled.append(inline(role.name))
-                else:
-                    current_perms.update(read_messages=state)
-                    try:
-                        await channel.set_permissions(role, overwrite=current_perms, reason=reason)
-                        succeeded.append(inline(role.name))
-                    except:
-                        failed.append(inline(role.name))
-                        
-            msg = ""
-            if succeeded:
-                msg += f"{channel.mention} has unlocked viewing for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
-            if cancelled:
-                msg += f"{channel.mention} was already unviewlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`.\n"
-            if failed:
-                msg += f"I failed to unlock {channel.mention} for {humanize_list(failed)}.\n"
-            if msg:
-                await ctx.send(msg)
+                current_perms.update(read_messages=state)
+                try:
+                    await channel.set_permissions(role, overwrite=current_perms, reason=reason)
+                    succeeded.append(inline(role.name))
+                except:
+                    failed.append(inline(role.name))
+
+        msg = ""
+        if succeeded:
+            msg += f"{channel.mention} has unlocked viewing for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
+        if cancelled:
+            msg += f"{channel.mention} was already unviewlocked for {humanize_list(cancelled)} with state `{'true' if state else 'default'}`.\n"
+        if failed:
+            msg += f"I failed to unlock {channel.mention} for {humanize_list(failed)}.\n"
+        if msg:
+            await ctx.send(msg)
 
     @unlock.command("server")
     async def unlock_server(self, ctx: commands.Context, *roles: LockableRole):
