@@ -22,10 +22,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import aiohttp
 import logging
 from collections import defaultdict
 from colorsys import rgb_to_hsv
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import discord
 from redbot.core import commands
@@ -215,6 +216,36 @@ class Roles(MixinMeta):
         await ctx.send(
             f"**{role}** color changed to **{color}**.", embed=await self.get_info(role)
         )
+        
+    @commands.admin_or_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    @role.command("icon")
+    async def role_icon(
+        self,
+        ctx: commands.Conext,
+        role: StrictRole(check_integrated=False),
+        icon: Union[discord.Emoji, discord.PartialEmoji, str] = None,
+    ):
+        """Change a role's icon."""
+        if "ROLE_ICONS" not in ctx.guild.features:
+            return await ctx.send(
+                "This server does not have support for the role icons feature yet."
+            )
+            
+        if isinstance(icon, discord.Emoji):
+            await role.edit(display_icon=await icon.read())
+        elif isinstance(icon, discord.PartialEmoji) and icon.is_custom_emoji():
+            await role.edit(display_icon=await icon.read())
+        elif isinstance(icon, str) and icon.startswith("http"):
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url=icon, raise_for_status=True) as response:
+                    await role.edit(display_icon=await response.read())
+        else:
+            return await ctx.send(
+                f"Please provide a valid emoji or link for the icon."
+            )
+            
+        await ctx.send(f"Role icon successfully updated to **`{icon}`**.")
 
     @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
