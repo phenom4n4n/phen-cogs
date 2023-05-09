@@ -121,7 +121,7 @@ class Baron(commands.Cog):
         ]
         if len(guilds) <= 1:
             return await ctx.send("There aren't enough server joins during that time.")
-
+        
         task = functools.partial(self.create_graph, guilds)
         task = self.bot.loop.run_in_executor(None, task)
         try:
