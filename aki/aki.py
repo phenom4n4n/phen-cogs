@@ -71,21 +71,21 @@ class Aki(commands.Cog):
         """
         Start a game of Akinator!
         """
-        async with ctx.typing():
-            aki = Akinator()
-            child_mode = not channel_is_nsfw(ctx.channel)
-            try:
-                await aki.start_game(
-                    language=language.replace(" ", "_"),
-                    child_mode=child_mode,
-                    client_session=self.session,
-                )
-            except akinator.InvalidLanguageError:
-                await ctx.send(
-                    "Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>"
-                )
-            except Exception:
-                await ctx.send("I encountered an error while connecting to the Akinator servers.")
-            else:
-                aki_color = discord.Color(0xE8BC90)
-                await AkiView(aki, aki_color, author_id=ctx.author.id).start(ctx)
+        await ctx.typing()
+        aki = Akinator()
+        child_mode = not channel_is_nsfw(ctx.channel)
+        try:
+            await aki.start_game(
+                language=language.replace(" ", "_"),
+                child_mode=child_mode,
+                client_session=self.session,
+            )
+        except akinator.InvalidLanguageError:
+            await ctx.send(
+                "Invalid language. Refer here to view valid languages.\n<https://github.com/NinjaSnail1080/akinator.py#functions>"
+            )
+        except Exception:
+            await ctx.send("I encountered an error while connecting to the Akinator servers.")
+        else:
+            aki_color = discord.Color(0xE8BC90)
+            await AkiView(aki, aki_color, author_id=ctx.author.id).start(ctx)
