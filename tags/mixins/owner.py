@@ -21,7 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import asyncio
 import inspect
 import logging
 import textwrap
@@ -31,18 +30,17 @@ from typing import List
 import discord
 import TagScriptEngine as tse
 from redbot.core import Config, commands
-from redbot.core.dev_commands import Dev
+from redbot.core.dev_commands import Dev, async_compile, cleanup_code, get_pages
 from redbot.core.utils import AsyncIter
-from redbot.core.utils.menus import DEFAULT_CONTROLS
-from redbot.core.utils.predicates import MessagePredicate
 
-from .abc import MixinMeta
-from .blocks import ContextVariableBlock, ConverterBlock
-from .errors import BlockCompileError
-from .objects import Tag
-from .utils import get_menu
+from ..abc import MixinMeta
+from ..blocks import ContextVariableBlock, ConverterBlock
+from ..errors import BlockCompileError
+from ..objects import Tag
+from ..utils import menu
+from ..views import ConfirmationView
 
-log = logging.getLogger("red.phenom4n4n.owner")
+log = logging.getLogger("red.phenom4n4n.tags.owner")
 
 
 class OwnerCommands(MixinMeta):
@@ -60,7 +58,7 @@ class OwnerCommands(MixinMeta):
 
     def compile_block(self, code: str) -> tse.Block:
         to_compile = "def func():\n%s" % textwrap.indent(code, "  ")
-        compiled = Dev.async_compile(to_compile, "<string>", "exec")
+        compiled = async_compile(to_compile, "<string>", "exec")
         env = globals().copy()
         env["bot"] = self.bot
         env["tags"] = self
@@ -106,9 +104,7 @@ class OwnerCommands(MixinMeta):
         """
 
     @tagsettings_block.command("add")
-    async def tagsettings_block_add(
-        self, ctx: commands.Context, name: str, *, code: Dev.cleanup_code
-    ):
+    async def tagsettings_block_add(self, ctx: commands.Context, name: str, *, code: cleanup_code):
         """
         Add a custom block to the TagScript interpreter.
 
@@ -118,10 +114,16 @@ class OwnerCommands(MixinMeta):
             block = self.compile_block(code)
             self.test_block(block)
         except SyntaxError as e:
-            return await ctx.send_interactive(Dev.get_syntax_error(e))
+            if e.text is None:
+                error = get_pages("{0.__class__.__name__}: {0}".format(e))
+            else:
+                error = get_pages(
+                    "{0.text}\n{1:>{0.offset}}\n{2}: {0}".format(e, "^", type(e).__name__)
+                )
+            return await ctx.send_interactive(error)
         except Exception as e:
-            response = traceback.format_exc()
-            response = Dev.sanitize_output(ctx, response)
+            exc = traceback.format_exception(e.__class__, e, e.__traceback__)
+            response = Dev.sanitize_output(ctx, exc)
             return await ctx.send_interactive(Dev.get_pages(response), box_lang="py")
 
         async with self.config.blocks() as b:
@@ -155,7 +157,7 @@ class OwnerCommands(MixinMeta):
             color=await ctx.embed_color(),
             description="\n".join(description),
         )
-        await get_menu()(ctx, [embed], DEFAULT_CONTROLS)
+        await menu(ctx, [embed])
 
     @tagsettings_block.command("show")
     async def tagsettings_block_show(self, ctx: commands.Context, name: str):
@@ -216,14 +218,9 @@ class OwnerCommands(MixinMeta):
         **Example:**
         `[p]migratealias`
         """
-        await ctx.send("Are you sure you want to migrate Alias data to tags? (Y/n)")
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            await self.bot.wait_for("message", check=pred, timeout=30)
-        except asyncio.TimeoutError:
-            return await ctx.send("Query timed out, not migrating alias to tags.")
-        if pred.result is False:
-            return await ctx.send("Migration cancelled.")
+        msg = "Are you sure you want to migrate Alias data to tags?"
+        if not await ConfirmationView.confirm(ctx, msg, cancel_message="Migration cancelled."):
+            return
 
         migrated_guilds = 0
         migrated_guild_alias = 0
@@ -305,14 +302,9 @@ class OwnerCommands(MixinMeta):
         **Example:**
         `[p]migratealias`
         """
-        await ctx.send("Are you sure you want to migrate CustomCommands data to tags? (Y/n)")
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            await self.bot.wait_for("message", check=pred, timeout=30)
-        except asyncio.TimeoutError:
-            return await ctx.send("Query timed out, not migrating CustomCommands to tags.")
-        if pred.result is False:
-            return await ctx.send("Migration cancelled.")
+        msg = "Are you sure you want to migrate CustomCommands data to tags?"
+        if not await ConfirmationView.confirm(ctx, msg, cancel_message="Migration cancelled."):
+            return
 
         cc_config = Config.get_conf(None, 414589031223512, cog_name="CustomCommands")
         migrated_guilds = 0
@@ -330,8 +322,10 @@ class OwnerCommands(MixinMeta):
                     tag = self.convert_customcommand(guild_id, name, command)
                 except Exception as exc:
                     log.exception(
-                        "An exception occured while converting custom command %s (%r) from guild %s"
-                        % (name, command, guild_id),
+                        "An exception occured while converting custom command %s (%r) from guild %s",
+                        name,
+                        command,
+                        guild_id,
                         exc_info=exc,
                     )
                     return await ctx.send(

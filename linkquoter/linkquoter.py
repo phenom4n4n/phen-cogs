@@ -32,6 +32,7 @@ from redbot.core import Config, checks, commands
 from .converters import LinkToMessage
 
 log = logging.getLogger("red.phenom4n4n.linkquoter")
+
 COOLDOWN = (3, 10, commands.BucketType.channel)
 
 
@@ -53,7 +54,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.1.1"
+    __version__ = "1.2.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -81,7 +82,7 @@ class LinkQuoter(commands.Cog):
         self.task = asyncio.create_task(self.initialize())
         self.spam_control = commands.CooldownMapping.from_cooldown(*COOLDOWN)
 
-    def cog_unload(self):
+    async def cog_unload(self):
         if self.task:
             self.task.cancel()
 
@@ -89,10 +90,6 @@ class LinkQuoter(commands.Cog):
         for guild_id, guild_data in (await self.config.all_guilds()).items():
             if guild_data["on"]:
                 self.enabled_guilds.add(guild_id)
-
-    @staticmethod
-    def get_name(user: Union[discord.Member, discord.User]) -> str:
-        return user.display_name if hasattr(user, "display_name") else user.name
 
     async def get_messages(self, guild: discord.Guild, author: discord.Member, links: list):
         messages = []
@@ -107,19 +104,13 @@ class LinkQuoter(commands.Cog):
             if link_ids[0] != guild.id:
                 continue
             channel = guild.get_channel(link_ids[1])
-            if (
-                not channel
-                or channel.is_nsfw()
-                or not (
-                    channel.permissions_for(author).read_messages
-                    and channel.permissions_for(author).read_message_history
-                )
-            ):
+            if not channel or channel.is_nsfw():
                 continue
-            if not (
-                channel.permissions_for(guild.me).read_messages
-                and channel.permissions_for(guild.me).read_message_history
-            ):
+            author_perms = channel.permissions_for(author)
+            if not (author_perms.read_messages and author_perms.read_message_history):
+                continue
+            my_perms = channel.permissions_for(guild.me)
+            if not (my_perms.read_messages and my_perms.read_message_history):
                 continue
             try:
                 message = await channel.fetch_message(link_ids[2])
@@ -139,7 +130,7 @@ class LinkQuoter(commands.Cog):
         image = None
         e: discord.Embed = None
         if message.embeds:
-            embed = message.embeds[0]
+            embed = message.embeds[0].copy()
             if str(embed.type) == "rich":
                 if footer_field:
                     embed.timestamp = message.created_at
@@ -158,14 +149,14 @@ class LinkQuoter(commands.Cog):
         if author_field:
             e.set_author(
                 name=f"{message.author} said..",
-                icon_url=message.author.avatar_url,
+                icon_url=message.author.display_avatar.url,
                 url=message.jump_url,
             )
 
         if footer_field:
             if invoke_guild and message.guild != invoke_guild:
                 e.set_footer(
-                    icon_url=message.guild.icon_url,
+                    icon_url=message.guild.icon.url,
                     text=f"#{message.channel.name} | {message.guild}",
                 )
             else:
@@ -237,10 +228,10 @@ class LinkQuoter(commands.Cog):
     @commands.cooldown(*COOLDOWN)
     @commands.guild_only()
     @commands.command(aliases=["linkmessage"])
-    async def linkquote(self, ctx, message_link: LinkToMessage = None):
+    async def linkquote(self, ctx: commands.Context, message_link: LinkToMessage = None):
         """Quote a message from a link."""
         if not message_link:
-            if not hasattr(ctx.message, "reference") or not (ref := ctx.message.reference):
+            if not (ref := ctx.message.reference):
                 raise commands.BadArgument
             message_link = ref.resolved or await ctx.guild.get_channel(
                 ref.channel_id
@@ -255,8 +246,8 @@ class LinkQuoter(commands.Cog):
                 ctx.me,
                 ctx.author,
                 reason=f"For the {ctx.command.qualified_name} command",
-                username=self.get_name(message_link.author),
-                avatar_url=message_link.author.avatar_url,
+                username=message_link.author.display_name,
+                avatar_url=message_link.author.display_avatar.url,
                 embed=embed,
             )
         else:
@@ -365,7 +356,7 @@ class LinkQuoter(commands.Cog):
             f"**Use Webhooks:** {data['webhooks']}",
         ]
         e = discord.Embed(color=await ctx.embed_color(), description="\n".join(description))
-        e.set_author(name=f"{ctx.guild} LinkQuoter Settings", icon_url=ctx.guild.icon_url)
+        e.set_author(name=f"{ctx.guild} LinkQuoter Settings", icon_url=ctx.guild.icon.url)
         await ctx.send(embed=e)
 
     @commands.Cog.listener()
@@ -380,23 +371,20 @@ class LinkQuoter(commands.Cog):
         guild: discord.Guild = message.guild
         if "no quote" in message.content.lower():
             return
-        channel: discord.TextChannel = message.channel
+        channel = message.channel
 
         bucket = self.spam_control.get_bucket(message)
         current = message.created_at.timestamp()
         retry_after = bucket.get_retry_after(current)
         if retry_after:
-            log.debug("%r ratelimits exhausted, retry after: %s" % (channel, retry_after))
+            log.debug("%r ratelimits exhausted, retry after: %s", channel, retry_after)
             return
 
         ctx = commands.Context(
             message=message,
-            author=message.author,
-            guild=guild,
-            channel=channel,
-            me=message.guild.me,
             bot=self.bot,
-            prefix="auto_linkquote",
+            view=None,
+            prefix="[auto-linkquote]",
             command=self.bot.get_command("linkquote"),
         )
         try:
@@ -414,7 +402,7 @@ class LinkQuoter(commands.Cog):
 
         data = await self.config.guild(ctx.guild).all()
         tasks = []
-        if cog and data["webhooks"]:
+        if cog and data["webhooks"] and channel.type == discord.ChannelType.text:
             embed = await self.message_to_embed(
                 quoted_message, invoke_guild=ctx.guild, author_field=False
             )
@@ -424,8 +412,8 @@ class LinkQuoter(commands.Cog):
                     ctx.me,
                     ctx.author,
                     reason=f"For the {ctx.command.qualified_name} command",
-                    username=self.get_name(quoted_message.author),
-                    avatar_url=quoted_message.author.avatar_url,
+                    username=quoted_message.author.display_name,
+                    avatar_url=quoted_message.author.display_avatar.url,
                     embed=embed,
                 )
             )

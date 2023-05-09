@@ -26,7 +26,7 @@ import asyncio
 import logging
 import re
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Coroutine, DefaultDict, Dict, Optional
 
 import discord
@@ -100,7 +100,8 @@ class DisboardReminder(commands.Cog):
             self.__unload()
         except Exception as error:
             log.exception(
-                f"An error occurred while unloading the cog. Version: {self.__version__}",
+                "An error occurred while unloading the cog. Version: %s",
+                self.__version__,
                 exc_info=error,
             )
 
@@ -161,7 +162,7 @@ class DisboardReminder(commands.Cog):
         end_time = guild_data["nextBump"]
         if not end_time:
             return
-        now = datetime.utcnow().timestamp()
+        now = discord.utils.utcnow().timestamp()
         remaining = end_time - now
         if remaining > 60:
             return
@@ -190,7 +191,7 @@ class DisboardReminder(commands.Cog):
         This sends a reminder to bump in a specified channel 2 hours after someone successfully bumps, thus making it more accurate than a repeating schedule.
         """
 
-    @bumpreminder.command(name="channel")
+    @bumpreminder.command("channel")
     async def bumpreminder_channel(self, ctx, channel: discord.TextChannel = None):
         """
         Set the channel to send bump reminders to.
@@ -217,7 +218,7 @@ class DisboardReminder(commands.Cog):
             raise commands.BadArgument
 
     @commands.has_permissions(mention_everyone=True)
-    @bumpreminder.command(name="pingrole")
+    @bumpreminder.command("pingrole")
     async def bumpreminder_pingrole(self, ctx: commands.Context, role: FuzzyRole = None):
         """
         Set a role to ping for bump reminders.
@@ -231,7 +232,7 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(ctx.guild).role.set(role.id)
             await ctx.send(f"Set {role.name} to ping for bump reminders.")
 
-    @bumpreminder.command(name="thankyou", aliases=["ty"])
+    @bumpreminder.command("thankyou", aliases=["ty"])
     async def bumpreminder_thankyou(self, ctx, *, message: str = None):
         """
         Change the message used for 'Thank You' messages. Providing no message will reset to the default message.
@@ -257,7 +258,7 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(ctx.guild).tyMessage.clear()
             await ctx.send("Reset this server's Thank You message.")
 
-    @bumpreminder.command(name="message")
+    @bumpreminder.command("message")
     async def bumpreminder_message(self, ctx, *, message: str = None):
         """Change the message used for reminders. Providing no message will reset to the default message."""
         if message:
@@ -267,7 +268,7 @@ class DisboardReminder(commands.Cog):
             await self.config.guild(ctx.guild).message.clear()
             await ctx.send("Reset this server's reminder message.")
 
-    @bumpreminder.command(name="clean")
+    @bumpreminder.command("clean")
     async def bumpreminder_clean(self, ctx, true_or_false: bool = None):
         """
         Toggle whether [botname] should keep the bump channel "clean."
@@ -286,7 +287,7 @@ class DisboardReminder(commands.Cog):
             await ctx.send("I will no longer clean the bump channel.")
 
     @commands.has_permissions(manage_roles=True)
-    @bumpreminder.command(name="lock")
+    @bumpreminder.command("lock")
     async def bumpreminder_lock(self, ctx, true_or_false: bool = None):
         """Toggle whether the bot should automatically lock/unlock the bump channel."""
         target_state = (
@@ -300,7 +301,7 @@ class DisboardReminder(commands.Cog):
         else:
             await ctx.send("I will no longer auto-lock the bump channel.")
 
-    @bumpreminder.command(name="settings")
+    @bumpreminder.command("settings")
     async def bumpreminder_settings(self, ctx: commands.Context):
         """Show your Bump Reminder settings."""
         data = await self.config.guild(ctx.guild).all()
@@ -328,20 +329,20 @@ class DisboardReminder(commands.Cog):
             title="Bump Reminder Settings",
             description=description,
         )
-        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon.url)
 
         for key, value in data.items():
             if isinstance(value, str):
                 value = f"```{discord.utils.escape_markdown(value)}```"
                 e.add_field(name=key, value=value, inline=False)
         if data["nextBump"]:
-            timestamp = datetime.fromtimestamp(data["nextBump"])
+            timestamp = datetime.fromtimestamp(data["nextBump"], timezone.utc)
             e.timestamp = timestamp
             e.set_footer(text="Next bump registered for")
         await ctx.send(embed=e)
 
     async def bump_timer(self, guild: discord.Guild, timestamp: int):
-        d = datetime.fromtimestamp(timestamp)
+        d = datetime.fromtimestamp(timestamp, timezone.utc)
         await discord.utils.sleep_until(d)
         await self.bump_remind(guild)
 
@@ -505,18 +506,17 @@ class DisboardReminder(commands.Cog):
 
         if embed := self.validate_success(message):
             last_bump = data["nextBump"]
-            if last_bump and not (last_bump - message.created_at.timestamp() <= 0):
+            if last_bump and last_bump - message.created_at.timestamp() > 0:
                 return
             await self.respond_to_bump(data, bump_channel, message, embed)
-        else:
-            if my_perms.manage_messages and clean and channel == bump_channel:
-                await asyncio.sleep(2)
-                try:
-                    await message.delete()
-                except (discord.Forbidden, discord.NotFound):
-                    pass
+        elif my_perms.manage_messages and clean and channel == bump_channel:
+            await asyncio.sleep(2)
+            try:
+                await message.delete()
+            except (discord.Forbidden, discord.NotFound):
+                pass
 
-    def process_tagscript(self, content: str, *, seed_variables: dict = {}):
+    def process_tagscript(self, content: str, *, seed_variables: dict = None):
         output = self.tagscript_engine.process(content, seed_variables)
         kwargs = {}
         if output.body:

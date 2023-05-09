@@ -24,10 +24,14 @@ SOFTWARE.
 
 import re
 from importlib import reload
+from typing import List, Union
 
+import discord
 from redbot.core import commands
 from redbot.core.bot import Red
 from redbot.core.errors import CogLoadError
+
+from .views import PageSource, PaginatedView
 
 VALID_NAME = r"[\w-]{1,32}"
 
@@ -38,6 +42,11 @@ ARGUMENT_NAME_DESCRIPTION = re.compile(r"^(%s):(.{1,100})$" % VALID_NAME)
 
 def dev_check(ctx: commands.Context):
     return ctx.bot.get_cog("Dev")
+
+
+async def menu(ctx: commands.Context, pages: List[Union[str, discord.Embed]]):
+    view = PaginatedView(PageSource(pages))
+    await view.send_initial_message(ctx)
 
 
 async def validate_tagscriptengine(bot: Red, tse_version: str, *, reloaded: bool = False):

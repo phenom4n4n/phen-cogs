@@ -122,7 +122,7 @@ class Connect4Game:
         self.turn_count = 0
         self._whomst_forfeited = 0
 
-    def move(self, column):
+    def move(self, column: int):
         self.board[column] = self.whomst_turn()
         self.turn_count += 1
 

@@ -174,7 +174,7 @@ def mass_fix():
                 info = InfoJson.from_json(json.load(infile))
             save_json(f"{ROOT}/{folder}/info.json", info.__dict__)
         except Exception:
-            log.exception(f"Error reading info.json in {folder}")
+            log.exception("Error reading info.json in %s", folder)
             continue
 
 
@@ -320,7 +320,7 @@ def countlines(include_hidden: bool = False, include_disabled: bool = False):
     """Count the number of lines of .py files in all folders"""
     total = 0
     totals = []
-    log.info(f"{ROOT}")
+    log.info(ROOT)
     for folder in os.listdir(f"{ROOT}/"):
         cog = 0
         if folder.startswith("."):
@@ -359,7 +359,7 @@ def countchars(include_hidden: bool = False, include_disabled: bool = False):
     """Count the number of lines of .py files in all folders"""
     total = 0
     totals = []
-    log.info(f"{ROOT}")
+    log.info(ROOT)
     for folder in os.listdir(f"{ROOT}/"):
         cog = 0
         if folder.startswith("."):
@@ -409,7 +409,7 @@ def makereadme():
                         data = json.loads(infile.read())
                     info = InfoJson.from_json(data)
                 except Exception:
-                    log.exception(f"Error reading info.json {file}")
+                    log.exception("Error reading info.json %s", file)
             if _version == "":
                 with open(file, encoding="utf-8") as infile:
                     data = infile.read()
@@ -428,7 +428,7 @@ def makereadme():
         headers=["Name", "Status/Version", "Description (Click to see full status)", "Authors"],
         tablefmt="github",
     )
-    with open(f"{ROOT}/README.md", "w") as outfile:
+    with open(f"{ROOT}/README.md", "w", encoding="utf-8") as outfile:
         outfile.write(HEADER.format(body=body))
 
 
@@ -455,7 +455,7 @@ def makerequirements():
                     for req in info.requirements:
                         requirements.add(req)
                 except Exception:
-                    log.exception(f"Error reading info.json {file}")
+                    log.exception("Error reading info.json %s", file)
     with open(ROOT / "requirements.txt", "w", encoding="utf-8") as outfile:
         outfile.write("\n".join(requirements))
 

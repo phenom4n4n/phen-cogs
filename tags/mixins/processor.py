@@ -32,10 +32,10 @@ import TagScriptEngine as tse
 from redbot.core import commands
 from redbot.core.utils.menus import start_adding_reactions
 
-from .abc import MixinMeta
-from .blocks import DeleteBlock, ReactBlock, SilentBlock
-from .errors import BlacklistCheckFailure, RequireCheckFailure, WhitelistCheckFailure
-from .objects import SilentContext, Tag
+from ..abc import MixinMeta
+from ..blocks import DeleteBlock, ReactBlock, SilentBlock
+from ..errors import BlacklistCheckFailure, RequireCheckFailure, WhitelistCheckFailure
+from ..objects import SilentContext, Tag
 
 log = logging.getLogger("red.phenom4n4n.tags.processor")
 
@@ -50,9 +50,9 @@ class Processor(MixinMeta):
         self.bot.add_dev_env_value("tse", lambda ctx: tse)
         super().__init__()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.bot.remove_dev_env_value("tse")
-        super().cog_unload()
+        await super().cog_unload()
 
     async def initialize_interpreter(self, data: dict = None):
         if not data:
@@ -161,13 +161,11 @@ class Processor(MixinMeta):
                 await self.validate_checks(ctx, actions)
             except RequireCheckFailure as error:
                 response = error.response
-                if response is not None:
-                    if response.strip():
-                        await ctx.send(response[:2000])
-                else:
+                if response is None:
                     start_adding_reactions(ctx.message, ["❌"])
+                elif response.strip():
+                    await ctx.send(response[:2000])
                 return
-
             if delete := actions.get("delete", False):
                 to_gather.append(self.delete_quietly(ctx))
 

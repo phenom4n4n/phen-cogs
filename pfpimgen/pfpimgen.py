@@ -57,8 +57,8 @@ class PfpImgen(commands.Cog):
         )
         self.session = aiohttp.ClientSession()
 
-    def cog_unload(self):
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self):
+        await self.session.close()
 
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
@@ -74,7 +74,7 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_neko, ctx, avatar)
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -85,21 +85,20 @@ class PfpImgen(commands.Cog):
     @commands.command(cooldown_after_parsing=True)
     async def bonk(self, ctx, *, member: FuzzyMember = None):
         """Bonk! Go to horny jail."""
-        await ctx.trigger_typing()
-        bonker = False
-        if member:
-            bonker = ctx.author
-        else:
-            member = ctx.author
-
         async with ctx.typing():
+            bonker = False
+            if member:
+                bonker = ctx.author
+            else:
+                member = ctx.author
+
             victim_avatar = await self.get_avatar(member)
             if bonker:
                 bonker_avatar = await self.get_avatar(bonker)
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar, bonker_avatar)
             else:
                 task = functools.partial(self.gen_bonk, ctx, victim_avatar)
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -115,7 +114,7 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_simp, ctx, avatar)
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -131,7 +130,7 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_banner, ctx, avatar, member.color)
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -156,7 +155,7 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_nickel, ctx, avatar, text[:29])
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -179,7 +178,7 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_stop, ctx, avatar, text)
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -194,7 +193,7 @@ class PfpImgen(commands.Cog):
         async with ctx.typing():
             avatar = await self.get_avatar(member)
             task = functools.partial(self.gen_horny, avatar)
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -222,7 +221,7 @@ class PfpImgen(commands.Cog):
             if biden:
                 biden = await self.get_avatar(biden)
             task = functools.partial(self.gen_shut, ctx, trump, text, biden_avatar=biden)
-            image = await self.generate_image(ctx, task)
+            image = await self.generate_image(task)
         if isinstance(image, str):
             await ctx.send(image)
         else:
@@ -235,7 +234,7 @@ class PfpImgen(commands.Cog):
         """petpet someone"""
         member = member or ctx.author
         async with ctx.typing():
-            params = {"image": str(member.avatar_url_as(format="png"))}
+            params = {"avatar": member.display_avatar.replace(format="png").url}
             url = "https://api.popcat.xyz/pet"
             async with self.session.get(url, params=params) as resp:
                 if resp.status != 200:
@@ -249,7 +248,7 @@ class PfpImgen(commands.Cog):
             fp.close()
         await ctx.send(file=file)
 
-    async def generate_image(self, ctx: commands.Context, task: functools.partial):
+    async def generate_image(self, task: functools.partial):
         task = self.bot.loop.run_in_executor(None, task)
         try:
             image = await asyncio.wait_for(task, timeout=60)
@@ -258,9 +257,10 @@ class PfpImgen(commands.Cog):
         else:
             return image
 
-    async def get_avatar(self, member: discord.User):
+    async def get_avatar(self, member: discord.abc.User):
         avatar = BytesIO()
-        await member.avatar_url_as(static_format="png").save(avatar, seek_begin=True)
+        display_avatar: discord.Asset = member.display_avatar.replace(static_format="png")
+        await display_avatar.save(avatar, seek_begin=True)
         return avatar
 
     @staticmethod

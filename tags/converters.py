@@ -41,7 +41,7 @@ class TagSearcher:
         return ctx.cog.get_tag(ctx.guild, argument, **self.search_kwargs)
 
 
-class TagName(TagSearcher, commands.Converter):
+class TagName(TagSearcher, commands.Converter[str]):
     def __init__(self, *, allow_named_tags: bool = False, **kwargs):
         self.allow_named_tags = allow_named_tags
         super().__init__(**kwargs)
@@ -59,7 +59,7 @@ class TagName(TagSearcher, commands.Converter):
         return "".join(argument.split())
 
 
-class TagConverter(TagSearcher, commands.Converter):
+class TagConverter(TagSearcher, commands.Converter[Tag]):
     async def convert(self, ctx: commands.Context, argument: str) -> Tag:
         if not ctx.guild and not await ctx.bot.is_owner(ctx.author):
             raise commands.BadArgument("Tags can only be used in guilds.")
@@ -75,7 +75,7 @@ GlobalTagConverter = TagConverter(check_global=True, global_priority=True)
 GuildTagConverter = TagConverter(check_global=False, global_priority=False)
 
 
-class TagScriptConverter(commands.Converter):
+class TagScriptConverter(commands.Converter[str]):
     async def convert(self, ctx: commands.Context, argument: str) -> str:
         try:
             await ctx.cog.validate_tagscript(ctx, argument)

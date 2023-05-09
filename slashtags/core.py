@@ -36,21 +36,13 @@ from redbot.core.bot import Red
 from redbot.core.config import Config
 from redbot.core.utils import AsyncIter
 from redbot.core.utils.chat_formatting import humanize_list
-from redbot.core.utils.predicates import MessagePredicate
 
 from .abc import CompositeMetaClass
 from .errors import MissingTagPermissions
-from .http import (
-    ApplicationOptionChoice,
-    InteractionAutocomplete,
-    InteractionButton,
-    InteractionCommand,
-    InteractionResponse,
-    InteractionType,
-    SlashHTTP,
-)
+from .http import InteractionCommandWrapper, SlashHTTP
 from .mixins import Commands, Processor
 from .objects import ApplicationCommand, SlashContext, SlashTag
+from .views import ConfirmationView
 
 log = logging.getLogger("red.phenom4n4n.slashtags")
 
@@ -62,7 +54,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.6.1"
+    __version__ = "1.0.0"
     __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -80,6 +72,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         self.bot = bot
         self.application_id = None
         self.eval_command = None
+        self.error_dispatching = None
         self.http = SlashHTTP(self)
         self.config = Config.get_conf(
             self,
@@ -91,7 +84,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             "application_id": None,
             "eval_command": None,
             "tags": {},
-            "testing_enabled": False,
+            "error_dispatching": True,
         }
         self.config.register_guild(**default_guild)
         self.config.register_global(**default_global)
@@ -102,18 +95,19 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
         self.load_task = self.create_task(self.initialize_task())
         self.session = aiohttp.ClientSession()
-        
+
         try:
             bot.add_dev_env_value("st", lambda ctx: self)
         except Exception:
-            log.exception("Failed to add `slashtags` in the dev environment", exc_info=True)
+            log.exception("Failed to add `slashtags` in the dev environment", exc_info=Exception)
 
         super().__init__()
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int) -> None:
         return
 
-    def task_done_callback(self, task: asyncio.Task):
+    @staticmethod
+    def task_done_callback(task: asyncio.Task):
         try:
             task.result()
         except Exception as error:
@@ -124,35 +118,29 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         task.add_done_callback(self.task_done_callback)
         return task
 
-    def cog_unload(self):
+    async def cog_unload(self):
         try:
-            self.__unload()
+            await self.__unload()
         except Exception as error:
             log.exception("An error occurred while unloading the cog.", exc_info=error)
 
-    def __unload(self):
-        self.bot.remove_dev_env_value("st")
-            
+    async def __unload(self):
+        try:
+            self.bot.remove_dev_env_value("st")
+        except Exception:
+            pass
+
         if self.testing_enabled:
             self.remove_test_cog()
         self.load_task.cancel()
-        asyncio.create_task(self.session.close())
+        await self.session.close()
 
-    async def cog_before_invoke(self, ctx: commands.Context) -> bool:
-        if not self.bot.get_cog("SlashInjector"):
-            raise commands.UserFeedbackCheckFailure(
-                "This cog requires `slashinjector` by Kowlin/Sentinel to be loaded to parse slash command responses (<https://github.com/Kowlin/Sentinel>)."
-            )
-        return True
-
-    async def pre_load(self):
+    async def cog_load(self):
         data = await self.config.all()
         self.eval_command = data["eval_command"]
+        self.error_dispatching = data["error_dispatching"]
         if app_id := data["application_id"]:
             self.application_id = app_id
-
-        if data["testing_enabled"]:
-            self.add_test_cog()
 
     async def initialize_task(self):
         all_data = await self.config.all()
@@ -250,74 +238,47 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
                 message += " for this server"
             return await ctx.send(message + ".")
 
-        pred = MessagePredicate.yes_or_no(ctx)
-        try:
-            text = f"Are you sure you want to restore {len(slashtags)} slash tags"
-            if guild is not None:
-                text += " on this server"
-            await self.send_and_query_response(
-                ctx,
-                text + " from the database? (Y/n)",
-                pred,
-            )
-        except asyncio.TimeoutError:
-            return await ctx.send("Timed out, not restoring slash tags.")
-        if not pred.result:
-            return await ctx.send("Ok, not restoring slash tags.")
-        msg = await ctx.send(f"Restoring {len(slashtags)} slash tags...")
+        s = "s" if len(slashtags) > 1 else ""
+        text = f"Are you sure you want to restore {len(slashtags)} slash tag{s}"
+        if guild is not None:
+            text += " on this server"
+
+        result = await ConfirmationView.confirm(
+            ctx,
+            text + " from the database?",
+            cancel_message="Ok, not restoring slash tags.",
+            delete_after=False,
+        )
+        if not result:
+            return
+        msg = await ctx.send(f"Restoring {len(slashtags)} slash tag{s}...")
         async with ctx.typing():
             for tag in slashtags.copy().values():
                 await tag.restore()
         await self.delete_quietly(msg)
-        await ctx.send(f"Restored {len(slashtags)} slash tags.")
+        s = "s" if len(slashtags) > 1 else ""
+        await ctx.send(f"Restored {len(slashtags)} slash tag{s}.")
 
     def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
 
     @commands.Cog.listener()
-    async def on_interaction_create(self, data: dict):
-        log.debug("Interaction data received:\n%r", data)
-        interaction: InteractionResponse = InteractionResponse.from_interaction(
-            cog=self, data=data
-        )
-        handlers = {
-            InteractionType.APPLICATION_COMMAND: self.handle_slash_interaction,
-            InteractionType.MESSAGE_COMPONENT: self.handle_slash_button,
-            InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE: self.handle_autocomplete,
-        }
-        handler = handlers.get(interaction.type, self.handle_slash_interaction)
-        log.debug("%r : %r", interaction, handler)
-        try:
-            await handler(interaction)
-        except Exception as e:
-            log.exception(
-                "An exception occured while handling an interaction:\n%r", data, exc_info=e
-            )
+    async def on_interaction(self, interaction: discord.Interaction):
+        if interaction.type != discord.InteractionType.application_command:
+            return
+        wrapped = InteractionCommandWrapper(interaction, self)
+        log.debug("Received interaction %r", wrapped)
+        await self.handle_slash_interaction(wrapped)
 
-    async def handle_slash_button(self, interaction: InteractionButton):
-        self.bot.dispatch("button_interaction", interaction)
-
-    async def handle_slash_interaction(self, interaction: InteractionCommand):
-        self.bot.dispatch("slash_interaction", interaction)
-
-    @commands.Cog.listener()
-    async def on_slash_interaction(self, interaction: InteractionCommand):
+    async def handle_slash_interaction(self, interaction: InteractionCommandWrapper):
         try:
             await self.invoke_and_catch(interaction)
         except commands.CommandInvokeError as e:
-            ctx = SlashContext.from_interaction(interaction)
-            self.bot.dispatch("command_error", ctx, e)
+            if self.error_dispatching:
+                ctx = SlashContext.from_interaction(interaction)
+                self.bot.dispatch("command_error", ctx, e)
 
-    async def handle_autocomplete(self, interaction: InteractionAutocomplete):
-        log.debug("Autocomplete data received:\n%r", interaction)
-        choices = [
-            ApplicationOptionChoice("test", "slashtags autocomplete test value"),
-            ApplicationOptionChoice("dog", "doggo"),
-            ApplicationOptionChoice("cat", "kitty"),
-        ]
-        await interaction.send_autocomplete_choices(choices)
-
-    async def invoke_and_catch(self, interaction: InteractionCommand):
+    async def invoke_and_catch(self, interaction: InteractionCommandWrapper):
         try:
             command = interaction.command
             if isinstance(command, ApplicationCommand):
@@ -329,15 +290,3 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
                 log.debug("Unknown interaction created:\n%r", interaction)
         except Exception as e:
             raise commands.CommandInvokeError(e) from e
-
-    @property
-    def testing_enabled(self):
-        return bool(self.bot.get_cog("SlashTagTesting"))
-
-    def add_test_cog(self):
-        from .testing.test_cog import SlashTagTesting
-
-        self.bot.add_cog(SlashTagTesting(self.bot))
-
-    def remove_test_cog(self):
-        self.bot.remove_cog("SlashTagTesting")

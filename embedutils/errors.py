@@ -22,8 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from redbot.core import commands
-
 __all__ = (
     "EmbedUtilsException",
     "EmbedNotFound",
@@ -50,8 +48,7 @@ class EmbedLimitReached(EmbedUtilsException):
 
 
 class EmbedConversionError(EmbedUtilsException):
-    def __init__(self, ctx: commands.Context, error_type: str, error: Exception):
-        self.ctx = ctx
+    def __init__(self, error_type: str, error: Exception):
         self.error_type = error_type
         self.error = error
         super().__init__(error)

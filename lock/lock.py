@@ -80,8 +80,8 @@ class Lock(commands.Cog):
         `[p]lock 737958453905063977 @members`
         """
         try:
-            await ctx.trigger_typing()
-        except discord.Forbidden:  # when another bot is faster to lock
+            await ctx.typing()
+        except discord.Forbidden:
             return
 
         if not channel:
@@ -154,8 +154,8 @@ class Lock(commands.Cog):
         `[p]viewlock 7382395026348520 @nubs`
         """
         try:
-            await ctx.trigger_typing()
-        except discord.Forbidden:  # when another bot is faster to lock
+            await ctx.typing()
+        except discord.Forbidden:
             return
 
         if not channel:
@@ -242,7 +242,11 @@ class Lock(commands.Cog):
         if not permissions:
             raise commands.BadArgument
 
-        await ctx.trigger_typing()
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
+
         channel = channel or ctx.channel
         roles_or_members = roles_or_members or [ctx.guild.default_role]
 
@@ -288,8 +292,8 @@ class Lock(commands.Cog):
         `[p]unlock 739562845027353 true`
         """
         try:
-            await ctx.trigger_typing()
-        except discord.Forbidden:  # when another bot is faster to lock
+            await ctx.typing()
+        except discord.Forbidden:
             return
 
         if not channel:
@@ -325,9 +329,9 @@ class Lock(commands.Cog):
                         succeeded.append(inline(role.name))
                     except:
                         failed.append(inline(role.name))
-
                 else:
                     cancelled.append(inline(role.name))
+
         msg = ""
         if succeeded:
             msg += f"{channel.mention} has unlocked for {humanize_list(succeeded)} with state `{'true' if state else 'default'}`.\n"
@@ -360,8 +364,8 @@ class Lock(commands.Cog):
         `[p]unviewlock 746284923572835 @boosters`
         """
         try:
-            await ctx.trigger_typing()
-        except discord.Forbidden:  # when another bot is faster to lock
+            await ctx.typing()
+        except discord.Forbidden:
             return
 
         if not channel:
@@ -455,7 +459,11 @@ class Lock(commands.Cog):
         if not permissions:
             raise commands.BadArgument
 
-        await ctx.trigger_typing()
+        try:
+            await ctx.typing()
+        except discord.Forbidden:
+            return
+
         channel = channel or ctx.channel
         roles_or_members = roles_or_members or [ctx.guild.default_role]
 

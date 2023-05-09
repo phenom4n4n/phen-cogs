@@ -42,8 +42,8 @@ from redbot.core.utils.chat_formatting import (
     humanize_timedelta,
     pagify,
 )
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate
+
+from .views import ConfirmationView, PageSource, PaginatedView
 
 RequestType = Literal["discord_deleted_user", "owner", "user", "user_strict"]
 
@@ -91,6 +91,9 @@ class Baron(commands.Cog):
     async def red_delete_data_for_user(self, *, requester: RequestType, user_id: int) -> None:
         return
 
+    async def cog_load(self):
+        await self.build_cache()
+
     async def build_cache(self):
         self.settings_cache = await self.config.all()
 
@@ -109,12 +112,12 @@ class Baron(commands.Cog):
 
         Ported from [GuildManager V2](https://github.com/dragdev-studios/guildmanager_v2).
         """
-        await ctx.trigger_typing()
+        await ctx.typing()
         date = ctx.message.created_at - time if time else self.bot.user.created_at
         guilds = [
             guild.me.joined_at
             async for guild in AsyncIter(self.bot.guilds, steps=100)
-            if guild.me.joined_at.timestamp() > date.timestamp()
+            if guild.me.joined_at > date
         ]
         if len(guilds) <= 1:
             return await ctx.send("There aren't enough server joins during that time.")
@@ -337,7 +340,8 @@ class Baron(commands.Cog):
                 footer_text += f" | {footer}"
             e.set_footer(text=footer_text)
             embeds.append(e)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        source = PageSource(embeds)
+        await PaginatedView(source).send_initial_message(ctx)
 
     @baron.group(name="view")
     async def baron_view(self, ctx: commands.Context):
@@ -613,19 +617,12 @@ class Baron(commands.Cog):
         )
 
         if not confirmed:
-            msg = await ctx.send(
+            msg = (
                 f"Are you sure you want me to leave the following {len(unwl_guilds)} servers?\n"
                 + box(guild_preview, "py")
             )
-            start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
-            pred = ReactionPredicate.yes_or_no(msg, ctx.author)
-            try:
-                await self.bot.wait_for("reaction_add", check=pred, timeout=60)
-            except asyncio.TimeoutError:
-                return await ctx.send("Timed out, action cancelled.")
-
-            if not pred.result:
-                return await ctx.send("Action cancelled.")
+            if not await ConfirmationView.confirm(ctx, msg):
+                return
 
         async with ctx.typing():
             async for guild in AsyncIter(unwl_guilds, steps=100):
@@ -655,6 +652,10 @@ class Baron(commands.Cog):
         guilds: list = None,
         author: discord.User = None,
     ):
+        if guild.icon is None:
+            icon = None
+        else:
+            icon = guild.icon.url
         data = self.settings_cache
         if not (data["log_channel"] and data["log_guild"]):
             return
@@ -672,14 +673,14 @@ class Baron(commands.Cog):
                 title="Limit Leave",
                 description=f"I left {guild.name} since it was past my server limit. ({data['limit']})",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=icon)
             await channel.send(embed=e)
         elif log_type == "min_member_leave":
             e = discord.Embed(
                 title="Minimum Member Leave",
                 description=f"I left {guild.name} since it has less than {data['min_members']} members. ({guild.member_count})",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=icon)
             await channel.send(embed=e)
         elif log_type == "mass_leave":
             e = discord.Embed(
@@ -692,14 +693,14 @@ class Baron(commands.Cog):
                 title="Bot Farm Leave",
                 description=f"I left {guild.name} since it has a high bot to member ratio. ({data['bot_ratio']}%)",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=icon)
             await channel.send(embed=e)
         elif log_type == "bl_leave":
             e = discord.Embed(
                 title="Blacklist Leave",
                 description=f"I left {guild.name} since it was in the blacklist.",
             )
-            e.set_author(name=f"{guild} ({guild.id})", icon_url=guild.icon_url)
+            e.set_author(name=f"{guild} ({guild.id})", icon_url=icon)
             await channel.send(embed=e)
 
     async def notify_guild(self, guild: discord.Guild, message: str):

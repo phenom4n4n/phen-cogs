@@ -25,7 +25,7 @@ SOFTWARE.
 import asyncio
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 import discord
 from redbot.core import Config, commands, modlog
@@ -36,7 +36,7 @@ log = logging.getLogger("red.phenom4n4n.antihonde")
 
 
 class AntiHonde(commands.Cog):
-    __version__ = "1.0.0"
+    __version__ = "1.0.1"
 
     def __init__(self, bot):
         self.bot = bot
@@ -46,7 +46,7 @@ class AntiHonde(commands.Cog):
         self.h0nde_re = re.compile(r"h[0o]nd[ea]", flags=re.I)
         self.enabled = set()
 
-    async def initialize(self):
+    async def cog_load(self):
         for guild_id, guild_data in (await self.config.all_guilds()).items():
             if guild_data["enabled"]:
                 self.enabled.add(guild_id)
@@ -121,7 +121,7 @@ class AntiHonde(commands.Cog):
 
     def is_honde(self, member: discord.Member) -> bool:
         two_weeks = timedelta(weeks=2)
-        if (datetime.now() - member.created_at) > two_weeks:
+        if (discord.utils.utcnow() - member.created_at) > two_weeks:
             return False
         return bool(self.h0nde_re.search(member.name))
 
@@ -138,7 +138,7 @@ class AntiHonde(commands.Cog):
         await modlog.create_case(
             self.bot,
             guild,
-            datetime.now(tz=timezone.utc),
+            discord.utils.utcnow(),
             "ban",
             member,
             guild.me,

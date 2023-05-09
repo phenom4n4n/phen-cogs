@@ -24,7 +24,7 @@ SOFTWARE.
 
 import asyncio
 import logging
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import discord
 import TagScriptEngine as tse
@@ -35,7 +35,7 @@ from redbot.core.utils.chat_formatting import box, pagify
 from .http import (
     ApplicationCommandType,
     ApplicationOptionChoice,
-    InteractionResponse,
+    InteractionCommandWrapper,
     SlashHTTP,
     SlashOptionType,
 )
@@ -61,8 +61,8 @@ class SlashOption:
         name: str,
         description: str,
         required: bool = False,
-        choices: List[ApplicationOptionChoice] = [],
-        options: list = [],
+        choices: List[ApplicationOptionChoice] = None,
+        options: list = None,
         autocomplete: bool = False,
     ):
         if not isinstance(option_type, SlashOptionType):
@@ -71,8 +71,8 @@ class SlashOption:
         self.name = name
         self.description = description
         self.required = required
-        self.choices = choices.copy()
-        self.options = options.copy()
+        self.choices = choices or []
+        self.options = options or []
         self.autocomplete = autocomplete
 
     def __str__(self):
@@ -462,7 +462,7 @@ class SlashTag:
         if option_info:
             e.add_field(name="Options", value="\n".join(option_info), inline=False)
 
-        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon.url)
         return e
 
     async def send_info(self, ctx: commands.Context) -> discord.Message:
@@ -565,15 +565,17 @@ class FakeMessage(discord.Message):
         self,
         content: str,
         *,
-        channel: discord.TextChannel,
+        channel: Union[discord.TextChannel, discord.PartialMessageable],
         author: discord.Member,
         id: int,
-        interaction: InteractionResponse = None,
+        interaction: InteractionCommandWrapper = None,
         state,
     ):
         self._state = state
         self.id = id
         self.channel = channel
+        self.guild = getattr(channel, "guild", None)
+        # PartialMessageables don't have guild attributes
         self.interaction = interaction
 
         self.content = content
@@ -583,12 +585,12 @@ class FakeMessage(discord.Message):
             maybe_set_attr(self, name, attr)
 
     @classmethod
-    def from_interaction(cls, interaction: InteractionResponse, content: str):
+    async def from_interaction(cls, interaction: InteractionCommandWrapper, content: str):
         return cls(
             content,
             state=interaction._state,
             id=interaction.id,
-            channel=interaction.channel,
+            channel=await interaction.get_channel(),
             author=interaction.author,
             interaction=interaction,
         )
@@ -600,17 +602,14 @@ class FakeMessage(discord.Message):
         return
 
     def reply(self, content: str = None, **kwargs):
-        try:
-            del kwargs["reference"]  # this shouldn't be passed when replying but it might be
-        except KeyError:
-            pass
+        kwargs.pop("reference", None)  # this shouldn't be passed when replying but it might be
         destination = self.interaction or self.channel
         return destination.send(content, **kwargs)
 
 
 class SlashContext(commands.Context):
-    def __init__(self, *, interaction: InteractionResponse, **kwargs):
-        self.interaction: InteractionResponse = interaction
+    def __init__(self, *, interaction: InteractionCommandWrapper, **kwargs):
+        self.interaction: InteractionCommandWrapper = interaction
         super().__init__(**kwargs)
         self.send = interaction.send
 
@@ -622,7 +621,7 @@ class SlashContext(commands.Context):
         )
 
     @classmethod
-    def from_interaction(cls, interaction: InteractionResponse):
+    def from_interaction(cls, interaction: InteractionCommandWrapper):
         args_values = [o.value for o in interaction.options]
         return cls(
             interaction=interaction,
@@ -632,7 +631,8 @@ class SlashContext(commands.Context):
             prefix="/",
             command=interaction.command,
             invoked_with=interaction.command_name,
+            view=None,
         )
 
     async def tick(self, *, message: Optional[str] = None):
-        await self.interaction.send(message or "✅", hidden=True)
+        await self.interaction.send(message or "✅", ephemeral=True)

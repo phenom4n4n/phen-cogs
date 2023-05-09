@@ -69,4 +69,4 @@ async def setup(bot: Red) -> None:
             )
 
     tags = Tags(bot)
-    bot.add_cog(tags)
+    await bot.add_cog(tags)

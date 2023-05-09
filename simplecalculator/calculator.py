@@ -49,8 +49,13 @@ class Calculator(commands.Cog):
         return
 
     @commands.command(aliases=["calc"])
-    async def calculate(self, ctx, *, query):
-        """Math"""
+    async def calculate(self, ctx: commands.Context, *, query):
+        """
+        Calculate a math expression.
+
+        **Example:**
+        `[p]calculate 7 / (2 * 2)`
+        """
         query = query.replace(",", "")
         engine_input = "{m:" + query + "}"
         start = time.monotonic()
@@ -64,7 +69,7 @@ class Calculator(commands.Cog):
             fmt_str = output_string
         e = discord.Embed(
             color=await ctx.embed_color(),
-            title=f"Input: `{query}`",
+            title=f"Input: `{query[:247]}`",
             description=f"Output: `{fmt_str}`",
         )
         e.set_footer(text=f"Calculated in {round((end - start) * 1000, 3)} ms")

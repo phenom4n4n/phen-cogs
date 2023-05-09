@@ -27,7 +27,6 @@ SOFTWARE.
 
 import asyncio
 import concurrent
-import datetime
 import logging
 import time
 
@@ -55,7 +54,7 @@ class CustomPing(commands.Cog):
         self.config.register_global(**default_global)
         self.settings = {}
 
-    async def initialize(self):
+    async def cog_load(self):
         self.settings = await self.config.all()
 
     async def red_delete_data_for_user(self, **kwargs):
@@ -76,7 +75,8 @@ class CustomPing(commands.Cog):
     async def ping(self, ctx):
         """View bot latency."""
         start = time.monotonic()
-        message = await ctx.send("Pinging...")
+        ref = ctx.message.to_reference(fail_if_not_exists=False)
+        message = await ctx.send("Pinging...", reference=ref)
         end = time.monotonic()
         totalPing = round((end - start) * 1000, 2)
         e = discord.Embed(title="Pinging..", description=f"Overall Latency: {totalPing}ms")
@@ -121,9 +121,10 @@ class CustomPing(commands.Cog):
         else:
             result = s.results.dict()
             host_latency = round(result["ping"], 2)
+            host_latency = f"{host_latency}ms"
 
         e.title = "Pong!"
-        e.description = e.description + f"\nHost Latency: {host_latency}ms"
+        e.description = e.description + f"\nHost Latency: {host_latency}"
         await asyncio.sleep(0.25)
         try:
             await message.edit(embed=e)
@@ -133,7 +134,7 @@ class CustomPing(commands.Cog):
     @ping.command()
     async def moreinfo(self, ctx: commands.Context):
         """Ping with additional latency stastics."""
-        now = datetime.datetime.utcnow().timestamp()
+        now = discord.utils.utcnow().timestamp()
         receival_ping = round((now - ctx.message.created_at.timestamp()) * 1000, 2)
 
         e = discord.Embed(
@@ -220,5 +221,4 @@ async def setup(bot):
         bot.remove_command(old_ping.name)
 
     cog = CustomPing(bot)
-    await cog.initialize()
-    bot.add_cog(cog)
+    await bot.add_cog(cog)

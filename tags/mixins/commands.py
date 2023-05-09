@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import asyncio
 import logging
 import re
 import time
@@ -35,12 +34,10 @@ import discord
 import TagScriptEngine as tse
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import box, humanize_list, inline, pagify
-from redbot.core.utils.menus import DEFAULT_CONTROLS, menu, start_adding_reactions
-from redbot.core.utils.predicates import ReactionPredicate
 from tabulate import tabulate
 
-from .abc import MixinMeta
-from .converters import (
+from ..abc import MixinMeta
+from ..converters import (
     GlobalTagConverter,
     GuildTagConverter,
     PastebinConverter,
@@ -48,10 +45,11 @@ from .converters import (
     TagName,
     TagScriptConverter,
 )
-from .doc_parser import SphinxObjectFileReader, parse_object_inv
-from .errors import TagFeedbackError
-from .objects import Tag
-from .utils import chunks, get_menu
+from ..doc_parser import SphinxObjectFileReader, parse_object_inv
+from ..errors import TagFeedbackError
+from ..objects import Tag
+from ..utils import chunks, menu
+from ..views import ConfirmationView
 
 TAG_GUILD_LIMIT = 250
 TAG_GLOBAL_LIMIT = 250
@@ -90,6 +88,10 @@ def copy_doc(original: Union[commands.Command, types.FunctionType]):
 
 
 class Commands(MixinMeta):
+    def __init__(self):
+        self.docs = None
+        super().__init__()
+
     @staticmethod
     def generate_tag_list(tags: List[Tag]) -> Dict[str, List[str]]:
         aliases = []
@@ -120,7 +122,7 @@ class Commands(MixinMeta):
             embed.description = page
             embed.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(embed)
-        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+        await menu(ctx, embeds)
 
     @commands.command(usage="<tag_name> [args]")
     async def invoketag(
@@ -181,7 +183,7 @@ class Commands(MixinMeta):
             e.description = page
             e.set_footer(text=f"{index}/{len(pages)} | {footer}")
             embeds.append(e)
-        await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
+        await menu(ctx, embeds)
 
     def validate_tag_count(self, guild: discord.Guild):
         tag_count = len(self.get_unique_tags(guild))
@@ -211,18 +213,12 @@ class Commands(MixinMeta):
 
         if tag:
             tag_prefix = tag.name_prefix
-            msg = await ctx.send(
-                f"`{tag_name}` is already a registered {tag_prefix.lower()}. Would you like to overwrite it?"
+            msg = f"`{tag_name}` is already a registered {tag_prefix.lower()}. Would you like to overwrite it?"
+            confirmed = await ConfirmationView.confirm(
+                ctx, msg, cancel_message=f"{tag_prefix} edit cancelled."
             )
-            start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
-            pred = ReactionPredicate.yes_or_no(msg, ctx.author)
-            try:
-                await ctx.bot.wait_for("reaction_add", check=pred, timeout=30)
-            except asyncio.TimeoutError:
-                return await ctx.send(f"{tag_prefix} edit cancelled.")
-
-            if pred.result is False:
-                return await ctx.send(f"{tag_prefix} edit cancelled.")
+            if not confirmed:
+                return
             await ctx.send(await tag.edit_tagscript(tagscript))
             return
 
@@ -385,7 +381,7 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send(f"There are no close matches for '{keyword}'.")
         data = self.generate_tag_list(tags)
-        await self.show_tag_list(ctx, data, "Search Results", ctx.guild.icon_url)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.guild.icon.url)
 
     @tag.command("list")
     async def tag_list(self, ctx: commands.Context):
@@ -401,7 +397,7 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send("There are no stored tags on this server.")
         data = self.generate_tag_list(tags)
-        await self.show_tag_list(ctx, data, "Stored Tags", ctx.guild.icon_url)
+        await self.show_tag_list(ctx, data, "Stored Tags", ctx.guild.icon.url)
 
     async def doc_fetch(self):
         async with self.session.get(f"{DOCS_URL}/objects.inv") as response:
@@ -427,7 +423,7 @@ class Commands(MixinMeta):
             embed = e.copy()
             embed.description = usage_chart
             embeds.append(embed)
-        await menu(ctx, embeds, DEFAULT_CONTROLS)
+        await menu(ctx, embeds)
 
     @tag.command("usage", aliases=["stats"])
     async def tag_usage(self, ctx: commands.Context):
@@ -449,25 +445,25 @@ class Commands(MixinMeta):
         **Example:**
         `[p]tag docs embed`
         """
-        await ctx.trigger_typing()
-        e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
-        if keyword:
-            matched_labels = await self.doc_search(keyword)
-            description = [f"Search for: `{keyword}`"]
-            for name, url in matched_labels.items():
-                description.append(f"[`{name}`]({url})")
-            url = f"{DOCS_URL}/search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
-            e.url = url
-            embeds = []
-            description = "\n".join(description)
-            for page in pagify(description):
-                embed = e.copy()
-                embed.description = page
-                embeds.append(embed)
-            await get_menu()(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            e.url = DOCS_URL
-            await ctx.send(embed=e)
+        async with ctx.typing():
+            e = discord.Embed(color=await ctx.embed_color(), title="Tags Documentation")
+            if keyword:
+                matched_labels = await self.doc_search(keyword)
+                description = [f"Search for: `{keyword}`"]
+                for name, url in matched_labels.items():
+                    description.append(f"[`{name}`]({url})")
+                url = f"{DOCS_URL}/search.html?q={quote_plus(keyword)}&check_keywords=yes&area=default"
+                e.url = url
+                embeds = []
+                description = "\n".join(description)
+                for page in pagify(description):
+                    embed = e.copy()
+                    embed.description = page
+                    embeds.append(embed)
+                await menu(ctx, embeds)
+            else:
+                e.url = DOCS_URL
+                await ctx.send(embed=e)
 
     @commands.is_owner()
     @tag.command("run", aliases=["execute"])
@@ -610,7 +606,7 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send(f"There are no close matches for '{keyword}'.")
         data = self.generate_tag_list(tags)
-        await self.show_tag_list(ctx, data, "Search Results", ctx.me.avatar_url)
+        await self.show_tag_list(ctx, data, "Search Results", ctx.me.avatar.url)
 
     @tag_global.command("list")
     @copy_doc(tag_list)
@@ -619,7 +615,7 @@ class Commands(MixinMeta):
         if not tags:
             return await ctx.send("There are no global tags.")
         data = self.generate_tag_list(tags)
-        await self.show_tag_list(ctx, data, "Global Tags", ctx.me.avatar_url)
+        await self.show_tag_list(ctx, data, "Global Tags", ctx.me.avatar.url)
 
     @tag_global.command("usage", aliases=["stats"])
     @copy_doc(tag_usage)

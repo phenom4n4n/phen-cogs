@@ -159,7 +159,7 @@ class PhenUtils(commands.Cog):
         You may reply to a message to reinvoke it or pass a message ID/link.
         """
         if not message:
-            if not hasattr(ctx.message, "reference") or not (ref := ctx.message.reference):
+            if not (ref := ctx.message.reference):
                 raise commands.BadArgument
             if ref.resolved:
                 message = ref.resolved

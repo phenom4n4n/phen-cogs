@@ -46,7 +46,7 @@ class Webhook(commands.Cog):
 
     __author__ = "PhenoM4n4n"
 
-    __version__ = "1.2.1"
+    __version__ = "1.3.0"
 
     def __init__(self, bot):
         self.bot = bot
@@ -60,18 +60,18 @@ class Webhook(commands.Cog):
         self.webhook_sessions: Dict[int, Session] = {}
         self.channel_cache: Dict[int, discord.Webhook] = {}
         self.link_cache: Dict[int, discord.Webhook] = {}
-        self.session = aiohttp.ClientSession()
 
         self.old_send = commands.Context.send
         self._monkey_patched = False
 
-    async def initialize(self):
+    async def cog_load(self):
+        self.session = aiohttp.ClientSession()
         data = await self.config.all()
         if data["monkey_patch"]:
             self._apply_monkeypatch()
 
-    def cog_unload(self):
-        asyncio.create_task(self.session.close())
+    async def cog_unload(self):
+        await self.session.close()
         self._remove_monkeypatch()
 
     async def red_delete_data_for_user(self, **kwargs):
@@ -97,17 +97,19 @@ class Webhook(commands.Cog):
 
     @commands.bot_has_permissions(manage_webhooks=True)
     @commands.admin_or_permissions(manage_webhooks=True)
-    @webhook.command()
-    async def create(
+    @webhook.command("create")
+    async def webhook_create(
         self,
         ctx: commands.Context,
         channel: discord.TextChannel = None,
         *,
         webhook_name: str = None,
     ):
-        """Creates a webhook in the channel specified with the name specified.
+        """
+        Creates a webhook in the channel specified with the name specified.
 
-        If no channel is specified then it will default to the current channel."""
+        If no channel is specified then it will default to the current channel.
+        """
         channel = channel or ctx.channel
         webhook_name = webhook_name or f"{ctx.bot.user.name} Webhook"
         creation_reason = f"Webhook creation requested by {ctx.author} ({ctx.author.id})"
@@ -115,22 +117,26 @@ class Webhook(commands.Cog):
         await ctx.tick()
 
     @commands.admin_or_permissions(manage_webhooks=True)
-    @webhook.command()
-    async def send(
+    @webhook.command("send")
+    async def webhook_send(
         self, ctx: commands.Context, webhook_link: WebhookLinkConverter, *, message: str
     ):
-        """Sends a message to the specified webhook using your avatar and display name."""
+        """
+        Sends a message to the specified webhook using your avatar and display name.
+        """
         await self.webhook_link_send(
             webhook_link,
             username=ctx.author.display_name,
-            avatar_url=ctx.author.avatar_url,
+            avatar_url=ctx.author.avatar.url,
             content=message,
         )
 
     @commands.bot_has_permissions(manage_webhooks=True)
-    @webhook.command()
-    async def say(self, ctx: commands.Context, *, message: str):
-        """Sends a message to the channel as a webhook with your avatar and display name."""
+    @webhook.command("say")
+    async def webhook_say(self, ctx: commands.Context, *, message: str):
+        """
+        Sends a message to the channel as a webhook with your avatar and display name.
+        """
         await self.delete_quietly(ctx)
         await self.send_to_channel(
             ctx.channel,
@@ -138,15 +144,17 @@ class Webhook(commands.Cog):
             ctx.author,
             ctx=ctx,
             content=message,
-            avatar_url=ctx.author.avatar_url,
+            avatar_url=ctx.author.avatar.url,
             username=ctx.author.display_name,
         )
 
     @commands.admin_or_permissions(manage_webhooks=True)
     @commands.bot_has_permissions(manage_webhooks=True)
-    @webhook.command()
-    async def sudo(self, ctx: commands.Context, member: discord.Member, *, message: str):
-        """Sends a message to the channel as a webhook with the specified member's avatar and display name."""
+    @webhook.command("sudo")
+    async def webhook_sudo(self, ctx: commands.Context, member: discord.Member, *, message: str):
+        """
+        Sends a message to the channel as a webhook with the specified member's avatar and display name.
+        """
         await self.delete_quietly(ctx)
         await self.send_to_channel(
             ctx.channel,
@@ -154,31 +162,37 @@ class Webhook(commands.Cog):
             ctx.author,
             ctx=ctx,
             content=message,
-            avatar_url=member.avatar_url,
+            avatar_url=member.avatar.url,
             username=member.display_name,
         )
 
     @commands.admin_or_permissions(manage_webhooks=True, manage_guild=True)
     @commands.bot_has_permissions(manage_webhooks=True)
-    @webhook.command(hidden=True)
-    async def loudsudo(self, ctx: commands.Context, member: discord.Member, *, message: str):
-        """Sends a message to the channel as a webhook with the specified member's avatar and display name."""
+    @webhook.command("loudsudo", hidden=True)
+    async def webhook_loudsudo(
+        self, ctx: commands.Context, member: discord.Member, *, message: str
+    ):
+        """
+        Sends a message to the channel as a webhook with the specified member's avatar and display name.
+        """
         await self.send_to_channel(
             ctx.channel,
             ctx.me,
             ctx.author,
             ctx=ctx,
             content=message,
-            avatar_url=member.avatar_url,
+            avatar_url=member.avatar.url,
             username=member.display_name,
             allowed_mentions=USER_MENTIONS,
         )
 
     @commands.admin_or_permissions(manage_webhooks=True, manage_guild=True)
     @commands.bot_has_permissions(manage_webhooks=True)
-    @webhook.command(hidden=True)
-    async def clyde(self, ctx: commands.Context, *, message: str):
-        """Sends a message to the channel as a webhook with Clyde's avatar and name."""
+    @webhook.command("clyde", hidden=True)
+    async def webhook_clyde(self, ctx: commands.Context, *, message: str):
+        """
+        Sends a message to the channel as a webhook with Clyde's avatar and name.
+        """
         await self.delete_quietly(ctx)
         await self.send_to_channel(
             ctx.channel,
@@ -194,9 +208,11 @@ class Webhook(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.has_permissions(manage_webhooks=True)
     @commands.bot_has_permissions(manage_webhooks=True)
-    @webhook.command()
-    async def clear(self, ctx):
-        """Delete all webhooks in the server."""
+    @webhook.command("clear")
+    async def webhook_clear(self, ctx):
+        """
+        Delete all webhooks in this server.
+        """
         webhooks = await ctx.guild.webhooks()
         if not webhooks:
             await ctx.send("There are no webhooks in this server.")
@@ -221,7 +237,7 @@ class Webhook(commands.Cog):
             for webhook in webhooks:
                 try:
                     await webhook.delete(
-                        reason=f"Guild Webhook Deletion requested by {ctx.author} ({ctx.author.id})"
+                        reason=f"Mass webhook deletion requested by {ctx.author} ({ctx.author.id})"
                     )
                 except discord.InvalidArgument:
                     pass
@@ -233,9 +249,9 @@ class Webhook(commands.Cog):
             await ctx.send(f"{count} webhooks deleted.")
 
     @commands.mod_or_permissions(ban_members=True)
-    @webhook.command(name="permissions", aliases=["perms"])
+    @webhook.command("permissions", aliases=["perms"])
     async def webhook_permissions(self, ctx: commands.Context):
-        """Show all members in the server that have `manage_webhook` permissions."""
+        """Show all members in the server that have Manage Webhook permissions."""
         async with ctx.typing():
             roles = []
             lines = []
@@ -258,11 +274,11 @@ class Webhook(commands.Cog):
 
             if not lines:
                 await ctx.send(
-                    "No one here has `manage_webhook` permissions other than the owner."
+                    "No one here has `Manage Webhook` permissions other than the owner."
                 )
 
             base_embed = discord.Embed(
-                color=await ctx.embed_color(), title="Users with `manage_webhook` Permissions"
+                color=await ctx.embed_color(), title="Users with `Manage Webhook` Permissions"
             )
             base_embed.set_footer(text=f"{len(roles)} roles | {len(total_members)} members")
             embeds = []
@@ -277,7 +293,7 @@ class Webhook(commands.Cog):
 
     @commands.max_concurrency(1, commands.BucketType.channel)
     @commands.admin_or_permissions(manage_webhooks=True)
-    @webhook.group(name="session", invoke_without_command=True)
+    @webhook.group("session", invoke_without_command=True)
     async def webhook_session(self, ctx: commands.Context, webhook_link: WebhookLinkConverter):
         """Initiate a session within this channel sending messages to a specified webhook link."""
         if ctx.channel.id in self.webhook_sessions:
@@ -287,7 +303,7 @@ class Webhook(commands.Cog):
         session = Session(self, channel=ctx.channel, author=ctx.author, webhook=webhook_link)
         await session.initialize(ctx)
 
-    @webhook_session.command(name="close")
+    @webhook_session.command("close")
     async def webhook_session_close(
         self, ctx: commands.Context, channel: discord.TextChannel = None
     ):
@@ -314,15 +330,17 @@ class Webhook(commands.Cog):
             message.content,
             embeds=message.embeds,
             username=author.display_name,
-            avatar_url=author.avatar_url,
+            avatar_url=author.avatar.url,
             allowed_mentions=USER_MENTIONS,
         )
 
     @commands.cooldown(5, 10, commands.BucketType.guild)
     @commands.admin_or_permissions(manage_webhooks=True)
-    @webhook.command(name="edit")
+    @webhook.command("edit")
     async def webhook_edit(self, ctx: commands.Context, message: discord.Message, *, content: str):
-        """Edit a message sent by a webhook."""
+        """
+        Edit a message sent by a webhook.
+        """
         if not message.webhook_id:
             raise commands.BadArgument
         if not message.channel.permissions_for(ctx.me).manage_webhooks:
@@ -356,7 +374,7 @@ class Webhook(commands.Cog):
         return _monkeypatch_send
 
     @commands.is_owner()
-    @webhook.command(name="monkeypatch", hidden=True)
+    @webhook.command("monkeypatch", hidden=True)
     async def webhook_monkeypatch(self, ctx: commands.Context, true_or_false: bool = None):
         """
         Monkeypatch `commands.Context.send` to use webhooks.
@@ -392,9 +410,7 @@ class Webhook(commands.Cog):
             if webhook := self.link_cache.get(webhook_id):
                 pass
             else:
-                webhook = discord.Webhook.from_url(
-                    match.group(0), adapter=discord.AsyncWebhookAdapter(self.session)
-                )
+                webhook = discord.Webhook.from_url(match.group(0), session=self.session)
                 self.link_cache[webhook.id] = webhook
             return webhook
 
@@ -468,7 +484,7 @@ class Webhook(commands.Cog):
             webhook = await channel.create_webhook(
                 name=f"{me.name} Webhook",
                 reason=creation_reason,
-                avatar=await me.avatar_url.read(),
+                avatar=await me.avatar.read(),
             )
         if not webhook.token:
             raise RuntimeError(f"returned webhook {webhook} has no token")

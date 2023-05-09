@@ -23,7 +23,6 @@ SOFTWARE.
 """
 
 # this is a modified version of Bobloy's forcemention cog
-import asyncio
 
 import discord
 from redbot.core import checks, commands
@@ -45,7 +44,7 @@ class ForceMention(commands.Cog):
 
     @checks.bot_has_permissions(manage_roles=True)
     @checks.admin_or_permissions(mention_everyone=True)
-    @commands.command(name="forcemention")
+    @commands.command("forcemention")
     async def cmd_forcemention(
         self, ctx: commands.Context, role: discord.Role, *, message: str = None
     ):
@@ -64,7 +63,7 @@ class ForceMention(commands.Cog):
     async def forcemention(
         self, channel: discord.TextChannel, role: discord.Role, message: str, **kwargs
     ):
-        mentionPerms = discord.AllowedMentions(roles=True)
+        mention_perms = discord.AllowedMentions(roles=[role])
         me = channel.guild.me
         if (
             not role.mentionable
@@ -73,8 +72,7 @@ class ForceMention(commands.Cog):
             and me.top_role > role
         ):
             await role.edit(mentionable=True)
-            await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
-            await asyncio.sleep(1.5)
+            await channel.send(message, allowed_mentions=mention_perms, **kwargs)
             await role.edit(mentionable=False)
         else:
-            await channel.send(message, allowed_mentions=mentionPerms, **kwargs)
+            await channel.send(message, allowed_mentions=mention_perms, **kwargs)

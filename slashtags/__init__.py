@@ -32,7 +32,6 @@ from redbot.core.errors import CogLoadError
 from .core import SlashTags
 from .http import *  # noqa
 from .objects import *  # noqa
-from .testing.button_menus import *  # noqa
 from .utils import validate_tagscriptengine
 
 VERSION_RE = re.compile(r"TagScript==(\d\.\d\.\d)")
@@ -58,5 +57,4 @@ if not tse_version:
 async def setup(bot: Red):
     await validate_tagscriptengine(bot, tse_version)
     cog = SlashTags(bot)
-    await cog.pre_load()
-    bot.add_cog(cog)
+    await bot.add_cog(cog)

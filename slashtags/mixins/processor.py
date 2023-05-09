@@ -35,7 +35,7 @@ from redbot.core import commands
 from ..abc import MixinMeta
 from ..blocks import HideBlock
 from ..errors import RequireCheckFailure
-from ..http import ApplicationCommandType, InteractionCommand, SlashOptionType
+from ..http import ApplicationCommandType, InteractionCommandWrapper, SlashOptionType
 from ..objects import FakeMessage, SlashContext, SlashTag
 from ..utils import dev_check
 
@@ -98,7 +98,7 @@ class Processor(MixinMeta):
         return self.OPTION_ADAPTERS.get(option_type, default)
 
     async def handle_seed_variables(
-        self, interaction: InteractionCommand, seed_variables: dict
+        self, interaction: InteractionCommandWrapper, seed_variables: dict
     ) -> dict:
         seed_variables = seed_variables.copy()
         for option in interaction.options:
@@ -142,7 +142,7 @@ class Processor(MixinMeta):
 
     async def process_tag(
         self,
-        interaction: InteractionCommand,
+        interaction: InteractionCommandWrapper,
         tag: SlashTag,
         *,
         seed_variables: dict = None,
@@ -156,8 +156,8 @@ class Processor(MixinMeta):
         content = output.body[:2000] if output.body else None
         actions = output.actions
 
-        embed = actions.get("embed")
-        hidden = actions.get("hide", False)
+        embed = actions.get("embed", discord.utils.MISSING)
+        ephemeral = actions.get("hide", False)
 
         try:
             await self.handle_requires(interaction, actions)
@@ -165,13 +165,14 @@ class Processor(MixinMeta):
             return
 
         if content or embed:
-            await self.send_tag_response(interaction, actions, content, hidden=hidden, embed=embed)
+            await self.send_tag_response(
+                interaction, actions, content, ephemeral=ephemeral, embed=embed
+            )
         else:
             try:
-                await interaction.defer(hidden=hidden)
+                await interaction.response.defer(ephemeral=ephemeral)
             except discord.NotFound:
                 pass
-            
 
         if command_task := await self.handle_commands(interaction, actions):
             to_gather.append(command_task)
@@ -181,23 +182,23 @@ class Processor(MixinMeta):
 
         if not interaction.completed:
             try:
-                await interaction.send("Slash Tag completed.", hidden=True)
+                await interaction.send("Slash Tag completed.", ephemeral=True)
             except discord.NotFound:
                 pass
 
-    async def handle_requires(self, interaction: InteractionCommand, actions: dict):
+    async def handle_requires(self, interaction: InteractionCommandWrapper, actions: dict):
         try:
             await self.validate_checks(interaction, actions)
         except RequireCheckFailure as error:
             response = error.response
             if response is not None and (response := response.strip()):
-                await interaction.send(response[:2000], hidden=True)
+                await interaction.send(response[:2000], ephemeral=True)
             else:
-                await interaction.send("You aren't allowed to use this tag.", hidden=True)
+                await interaction.send("You aren't allowed to use this tag.", ephemeral=True)
             raise
 
     async def handle_commands(
-        self, interaction: InteractionCommand, actions: dict
+        self, interaction: InteractionCommandWrapper, actions: dict
     ) -> Optional[asyncio.Task]:
         cmds = actions.get("commands")
         if not cmds:
@@ -206,7 +207,7 @@ class Processor(MixinMeta):
         command_messages = []
         prefix = (await self.bot.get_valid_prefixes(interaction.guild))[0]
         for command in cmds:
-            message = FakeMessage.from_interaction(interaction, prefix + command)
+            message = await FakeMessage.from_interaction(interaction, prefix + command)
             command_messages.append(message)
 
         overrides = actions.get("overrides")
@@ -214,7 +215,7 @@ class Processor(MixinMeta):
 
     async def process_commands(
         self,
-        interaction: InteractionCommand,
+        interaction: InteractionCommandWrapper,
         messages: List[discord.Message],
         overrides: dict,
     ):
@@ -227,7 +228,7 @@ class Processor(MixinMeta):
 
     async def process_command(
         self,
-        interaction: InteractionCommand,
+        interaction: InteractionCommandWrapper,
         command_message: discord.Message,
         overrides: dict,
     ):
@@ -258,7 +259,7 @@ class Processor(MixinMeta):
 
     async def send_tag_response(
         self,
-        interaction: InteractionCommand,
+        interaction: InteractionCommandWrapper,
         actions: dict,
         content: str = None,
         *,
@@ -270,7 +271,7 @@ class Processor(MixinMeta):
         if target := actions.get("target"):
             if target == "dm":
                 destination = interaction.author
-                del kwargs["hidden"]
+                del kwargs["ephemeral"]
             elif target != "reply":
                 try:
                     chan = await self.channel_converter.convert(interaction, target)
@@ -279,7 +280,7 @@ class Processor(MixinMeta):
                 else:
                     if chan.permissions_for(interaction.me).send_messages:
                         destination = chan
-                        del kwargs["hidden"]
+                        del kwargs["ephemeral"]
 
         if not (content or embed is not None):
             return
@@ -344,10 +345,10 @@ class Processor(MixinMeta):
             if self.blacklist_check(ctx, role_or_channel, roles):
                 raise RequireCheckFailure(blacklist["response"])
 
-    async def slash_eval(self, interaction: InteractionCommand):
+    async def slash_eval(self, interaction: InteractionCommandWrapper):
         if not await self.bot.is_owner(interaction.author):
-            return await interaction.send("Only bot owners may eval.", hidden=True)
-        await interaction.defer()
+            return await interaction.send("Only bot owners may eval.", ephemeral=True)
+        await interaction.response.defer()
         ctx = SlashContext.from_interaction(interaction)
         dev = dev_check(self)
         await dev._eval(ctx, body=interaction.options[0].value)

@@ -35,7 +35,7 @@ from redbot.core.utils import menus
 PASTEBIN_RE = re.compile(r"(?:https?://(?:www\.)?)?pastebin\.com/(?:raw/)?([a-zA-Z0-9]+)")
 
 
-class StringToEmbed(commands.Converter):
+class StringToEmbed(commands.Converter[discord.Embed]):
     def __init__(
         self, *, conversion_type: str = "json", validate: bool = True, content: bool = False
     ):
@@ -144,6 +144,10 @@ class StringToEmbed(commands.Converter):
 
 
 class ListStringToEmbed(StringToEmbed):
+    def __init__(self, *, conversion_type: str = "json", limit: int = 10):
+        super().__init__(conversion_type=conversion_type)
+        self.limit = limit
+
     async def convert(self, ctx: commands.Context, argument: str) -> List[discord.Embed]:
         data = argument.strip("`")
         data = await self.converter(ctx, data, data_type=(dict, list))
@@ -161,10 +165,12 @@ class ListStringToEmbed(StringToEmbed):
         self.check_data_type(ctx, data, data_type=list)
 
         embeds = []
-        for embed_data in data:
+        for i, embed_data in enumerate(data, 1):
             fields = await self.create_embed(ctx, embed_data)
             embed = fields["embed"]
             embeds.append(embed)
+            if i >= self.limit:
+                raise commands.BadArgument(f"Embed limit reached ({self.limit}).")
         if embeds:
             return embeds
         else:
@@ -247,5 +253,5 @@ class PastebinConverter(PastebinMixin, StringToEmbed):
     ...
 
 
-class PastebinConverterWebhook(PastebinMixin, ListStringToEmbed):
+class PastebinListConverter(PastebinMixin, ListStringToEmbed):
     ...

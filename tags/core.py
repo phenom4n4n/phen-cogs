@@ -40,11 +40,9 @@ from redbot.core.utils.chat_formatting import humanize_list
 from TagScriptEngine import __version__ as tse_version
 
 from .abc import CompositeMetaClass
-from .commands import Commands
 from .errors import MissingTagPermissions, TagCharacterLimitReached
+from .mixins import Commands, OwnerCommands, Processor
 from .objects import Tag
-from .owner import OwnerCommands
-from .processor import Processor
 
 log = logging.getLogger("red.phenom4n4n.tags")
 
@@ -64,7 +62,7 @@ class Tags(
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/).
     """
 
-    __version__ = "2.3.7"
+    __version__ = "2.4.1"
     __author__ = ("PhenoM4n4n", "sravan", "npc203")
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -106,18 +104,18 @@ class Tags(
         bot.add_dev_env_value("tags", lambda ctx: self)
         super().__init__()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         try:
-            self.__unload()
+            await self.__unload()
         except Exception as e:
             log.exception("An error occurred during cog unload.", exc_info=e)
 
-    def __unload(self):
+    async def __unload(self):
         self.bot.remove_dev_env_value("tags")
         if self.initialize_task:
             self.initialize_task.cancel()
-        asyncio.create_task(self.session.close())
-        super().cog_unload()
+        await self.session.close()
+        await super().cog_unload()
 
     async def red_delete_data_for_user(self, *, requester: str, user_id: int):
         if requester not in ("discord_deleted_user", "user"):
@@ -127,7 +125,7 @@ class Tags(
             guild = self.bot.get_guild(guild_id)
             if guild and data["tags"]:
                 for name, tag in data["tags"].items():
-                    if str(user_id) in str(tag["author"]):
+                    if str(user_id) in str(tag["author_id"]):
                         async with self.config.guild(guild).tags() as t:
                             del t[name]
 
@@ -137,7 +135,7 @@ class Tags(
         except asyncio.CancelledError:
             pass
         except Exception as error:
-            log.exception(f"Task failed.", exc_info=error)
+            log.exception("Task failed.", exc_info=error)
 
     def create_task(self, coroutine: Coroutine, *, name: str = None):
         task = asyncio.create_task(coroutine, name=name)

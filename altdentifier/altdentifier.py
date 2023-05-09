@@ -24,7 +24,7 @@ SOFTWARE.
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Dict, Optional, Tuple, Union
 
 import aiohttp
@@ -56,7 +56,7 @@ class AltDentifier(commands.Cog):
     Check new users with AltDentifier API
     """
 
-    __version__ = "1.2.0"
+    __version__ = "1.3.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -95,7 +95,7 @@ class AltDentifier(commands.Cog):
     async def build_cache(self):
         self.guild_data_cache = await self.config.all_guilds()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         # self.bot.loop.create_task(self.session.close())
         self.task.cancel()
 
@@ -139,14 +139,16 @@ class AltDentifier(commands.Cog):
         e.add_field(name="Actions", value=actions, inline=False)
         if data["whitelist"]:
             e.add_field(name="Whitelist", value=humanize_list(data["whitelist"]), inline=False)
-        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon_url)
+        e.set_author(name=ctx.guild, icon_url=ctx.guild.icon.url)
         await ctx.send(embed=e)
 
     @altset.command()
     async def channel(self, ctx, channel: discord.TextChannel = None):
-        """Set the channel to send AltDentifier join checks to.
+        """
+        Set the channel to send AltDentifier join checks to.
 
-        This also works as a toggle, so if no channel is provided, it will disable join checks for this server."""
+        This also works as a toggle, so if no channel is provided, it will disable join checks for this server.
+        """
         if not channel:
             await self.config.guild(ctx.guild).channel.clear()
             await ctx.send("Disabled AltDentifier join checks in this server.")
@@ -162,13 +164,15 @@ class AltDentifier(commands.Cog):
 
     @altset.command()
     async def action(self, ctx, level: LevelConverter, action: Union[discord.Role, str] = None):
-        """Specify what actions to take when a member joins and has a certain Trust Level.
+        """
+        Specify what actions to take when a member joins and has a certain Trust Level.
 
         Leave this empty to remove actions for the Level.
         The available actions are:
         `kick`
         `ban`
-        `role` (don't say 'role' for this, pass an actual role."""
+        `role` (don't say 'role' for this, pass an actual role)
+        """
         if not action:
             await self.clear_action(ctx.guild, level)
             return await ctx.send(f"Removed actions for Trust Level {level}.")
@@ -214,7 +218,7 @@ class AltDentifier(commands.Cog):
 
     @staticmethod
     def member_has_default_avatar(member: discord.Member) -> bool:
-        return member.avatar_url == member.default_avatar_url
+        return member.display_avatar.url == member.default_avatar.url
 
     async def alt_request(self, member: discord.Member) -> Tuple[int, str]:
         # TODO make calculations on a scale 1-10 that is divided by 4 and rounded
@@ -222,7 +226,7 @@ class AltDentifier(commands.Cog):
         # and count members with similar names while also taking server member count into consideration
         # add calculation based on default avatar
         # check if "alt" is in username
-        age = datetime.utcnow() - member.created_at
+        age = discord.utils.utcnow() - member.created_at
         if age < timedelta(days=2):
             trust_factor = 0
         elif age < timedelta(weeks=2):
@@ -261,7 +265,7 @@ class AltDentifier(commands.Cog):
         if actions:
             e.add_field(name="Actions Taken", value=actions, inline=False)
         e.set_footer(text="Account created at")
-        e.set_thumbnail(url=member.avatar_url)
+        e.set_thumbnail(url=member.display_avatar.url)
         return e
 
     def fail_embed(self, member: discord.Member) -> discord.Embed:
@@ -272,7 +276,7 @@ class AltDentifier(commands.Cog):
             timestamp=member.created_at,
         )
         e.set_footer(text="Account created at")
-        e.set_thumbnail(url=member.avatar_url)
+        e.set_thumbnail(url=member.display_avatar.url)
         return e
 
     async def take_action(
