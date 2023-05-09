@@ -95,10 +95,11 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
         self.load_task = self.create_task(self.initialize_task())
         self.session = aiohttp.ClientSession()
+
         try:
             bot.add_dev_env_value("st", lambda ctx: self)
         except Exception:
-            pass
+            log.exception("Failed to add `slashtags` in the dev environment", exc_info=Exception)
 
         super().__init__()
 
@@ -128,6 +129,9 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
             self.bot.remove_dev_env_value("st")
         except Exception:
             pass
+
+        if self.testing_enabled:
+            self.remove_test_cog()
         self.load_task.cancel()
         await self.session.close()
 
