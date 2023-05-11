@@ -343,7 +343,7 @@ class ReactRoles(MixinMeta):
         embeds = []
         pages = pagify(description, delims=["\n\n", "\n"])
         base_embed = discord.Embed(color=color)
-        base_embed.set_author(name="Reaction Roles", icon_url=ctx.guild.icon_url)
+        base_embed.set_author(name="Reaction Roles", icon_url=ctx.guild.icon.url if guild.icon else None)
         for page in pages:
             e = base_embed.copy()
             e.description = page
