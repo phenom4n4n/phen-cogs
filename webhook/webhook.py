@@ -239,7 +239,7 @@ class Webhook(commands.Cog):
                     await webhook.delete(
                         reason=f"Mass webhook deletion requested by {ctx.author} ({ctx.author.id})"
                     )
-                except discord.InvalidArgument:
+                except ValueError:
                     pass
                 else:
                     count += 1
@@ -434,7 +434,7 @@ class Webhook(commands.Cog):
                 allowed_mentions=allowed_mentions,
                 **kwargs,
             )
-        except (discord.InvalidArgument, discord.NotFound) as exc:
+        except (ValueError, discord.NotFound) as exc:
             try:
                 del self.link_cache[webhook.id]
             except KeyError:
@@ -517,7 +517,7 @@ class Webhook(commands.Cog):
                 return
             try:
                 return await webhook.send(allowed_mentions=allowed_mentions, **kwargs)
-            except (discord.InvalidArgument, discord.NotFound):
+            except (ValueError, discord.NotFound):
                 del self.channel_cache[channel.id]
                 if index >= 5:
                     log.debug(
