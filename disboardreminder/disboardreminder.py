@@ -41,16 +41,13 @@ log = logging.getLogger("red.phenom4n4n.disboardreminder")
 
 DISBOARD_BOT_ID = 302050872383242240
 LOCK_REASON = "DisboardReminder auto-lock"
-MENTION_RE = re.compile(r"<@!?(\d{15,20})>")
-BUMP_RE = re.compile(r"!d bump\b")
-
 
 class DisboardReminder(commands.Cog):
     """
     Set a reminder to bump on Disboard.
     """
 
-    __version__ = "1.3.7"
+    __version__ = "1.4.0"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -427,46 +424,26 @@ class DisboardReminder(commands.Cog):
             return
         return guild.get_channel(bump_chan_id)
 
-    def validate_success(self, message: discord.Message) -> Optional[discord.Embed]:
-        if not message.embeds:
-            return
-        embed = message.embeds[0]
-        if ":thumbsup:" in embed.description:
-            return embed
-        if message.webhook_id and "Bump done!" in embed.description:
-            # slash command responses to the bump command don't have the thumbsup emoji in them
-            # for some reason
-            # this solution is a temporary fix, since it isn't language agnostic, but atm I can't
-            # a different telling sign that only appears on bump command responses
-            return embed
+    def validate_success(self, message: discord.Message) -> bool:
+        return all(
+            message.embeds != [],
+            message.interaction is not None,
+            message.interaction.type == discord.InteractionType.application_command,
+            message.interaction.name == "bump",
+        )
 
     async def respond_to_bump(
         self,
         data: dict,
         bump_channel: discord.TextChannel,
         message: discord.Message,
-        embed: discord.Embed,
     ):
         guild: discord.Guild = message.guild
         my_perms = bump_channel.permissions_for(guild.me)
         next_bump = message.created_at.timestamp() + 7200
         await self.config.guild(guild).nextBump.set(next_bump)
 
-        member_adapter = None
-        match = MENTION_RE.search(embed.description)
-        if match:
-            member_id = int(match.group(1))
-            user = await self.bot.get_or_fetch_member(guild, member_id)
-            member_adapter = tse.MemberAdapter(user)
-        elif message.interaction:
-            member_adapter = tse.MemberAdapter(message.interaction.user)
-        elif my_perms.read_message_history:
-            async for m in bump_channel.history(before=message, limit=10):
-                if m.content and BUMP_RE.match(m.content):
-                    member_adapter = tse.MemberAdapter(m.author)
-                    break
-        if member_adapter is None:
-            member_adapter = tse.StringAdapter("Unknown User")
+        member_adapter = tse.MemberAdapter(message.interaction.user)
         tymessage = data["tyMessage"]
 
         if my_perms.send_messages:
@@ -503,15 +480,16 @@ class DisboardReminder(commands.Cog):
         data = await self.config.guild(guild).all()
         if not data["channel"]:
             return
+        
         clean = data["clean"]
         my_perms = channel.permissions_for(guild.me)
-
-        if embed := self.validate_success(message):
+        
+        if self.validate_success(message):
             last_bump = data["nextBump"]
             if last_bump and last_bump - message.created_at.timestamp() > 0:
                 return
-            await self.respond_to_bump(data, bump_channel, message, embed)
-        elif my_perms.manage_messages and clean and channel == bump_channel:
+            await self.respond_to_bump(data, bump_channel, message)
+        elif (my_perms.manage_messages or message.guild.me.guild_permissions.administrator) and clean and channel == bump_channel:
             await asyncio.sleep(2)
             try:
                 await message.delete()
