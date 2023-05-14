@@ -458,6 +458,8 @@ class DisboardReminder(commands.Cog):
             member_id = int(match.group(1))
             user = await self.bot.get_or_fetch_member(guild, member_id)
             member_adapter = tse.MemberAdapter(user)
+        elif message.interaction:
+            member_adapter = tse.MemberAdapter(message.interaction.user)
         elif my_perms.read_message_history:
             async for m in bump_channel.history(before=message, limit=10):
                 if m.content and BUMP_RE.match(m.content):
