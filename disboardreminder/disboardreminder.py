@@ -425,12 +425,12 @@ class DisboardReminder(commands.Cog):
         return guild.get_channel(bump_chan_id)
 
     def validate_success(self, message: discord.Message) -> bool:
-        return all(
+        return all((
             message.embeds != [],
             message.interaction is not None,
             message.interaction.type == discord.InteractionType.application_command,
             message.interaction.name == "bump",
-        )
+        ))
 
     async def respond_to_bump(
         self,
