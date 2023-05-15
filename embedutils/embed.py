@@ -78,7 +78,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.6.0"
+    __version__ = "1.6.1"
 
     EMBED_LIMIT = 50
     GLOBAL_EMBED_LIMIT = 100
@@ -323,7 +323,7 @@ class EmbedUtils(commands.Cog):
         self,
         ctx: commands.Context,
         channel: Optional[MessageableChannel],
-        *embed_names: StoredEmbedConverter,
+        *embed_names: GlobalStoredEmbedConverter,
     ):
         """Post global stored embeds."""
         channel = channel or ctx.channel
