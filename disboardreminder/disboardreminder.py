@@ -425,12 +425,10 @@ class DisboardReminder(commands.Cog):
         return guild.get_channel(bump_chan_id)
 
     def validate_success(self, message: discord.Message) -> bool:
-        return all((
-            message.embeds != [],
-            message.interaction is not None,
-            message.interaction.type == discord.InteractionType.application_command,
-            message.interaction.name == "bump",
-        ))
+        if not message.embeds or not message.interaction:
+            return False
+        
+        return message.interaction.type == discord.InteractionType.application_command and message.interaction.name == "bump"
 
     async def respond_to_bump(
         self,
@@ -489,7 +487,7 @@ class DisboardReminder(commands.Cog):
             if last_bump and last_bump - message.created_at.timestamp() > 0:
                 return
             await self.respond_to_bump(data, bump_channel, message)
-        elif (my_perms.manage_messages or message.guild.me.guild_permissions.administrator) and clean and channel == bump_channel:
+        elif my_perms.manage_messages and clean and channel == bump_channel:
             await asyncio.sleep(2)
             try:
                 await message.delete()
