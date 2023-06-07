@@ -221,7 +221,7 @@ class EmbedUtils(commands.Cog):
         """
         Post embeds from valid YAML.
         """
-        await self.send_embed(ctx, channel, data)
+        await self.send_multiple_embeds(ctx, channel, data)
 
     @embed.command("pastebin", aliases=["frompaste"], add_example_info=True, info_type="pastebin")
     async def embed_pastebin(
