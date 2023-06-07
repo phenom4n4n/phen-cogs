@@ -124,7 +124,7 @@ class OwnerCommands(MixinMeta):
         except Exception as e:
             exc = traceback.format_exception(e.__class__, e, e.__traceback__)
             response = Dev.sanitize_output(ctx, exc)
-            return await ctx.send_interactive(Dev.get_pages(response), box_lang="py")
+            return await ctx.send_interactive(get_pages(response), box_lang="py")
 
         async with self.config.blocks() as b:
             b[name] = code
@@ -171,7 +171,7 @@ class OwnerCommands(MixinMeta):
             code = blocks[name]
         except KeyError:
             return await ctx.send("That block doesn't exist.")
-        await ctx.send_interactive(Dev.get_pages(code), box_lang="py")
+        await ctx.send_interactive(get_pages(code), box_lang="py")
 
     @tagsettings.command("async")
     async def tagsettings_async(self, ctx: commands.Context, true_or_false: bool = None):
