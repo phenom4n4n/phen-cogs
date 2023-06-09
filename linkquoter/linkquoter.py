@@ -24,6 +24,7 @@ SOFTWARE.
 
 import asyncio
 import logging
+from copy import deepcopy
 from typing import List, Optional, Tuple, Union
 
 import discord
@@ -54,7 +55,7 @@ class LinkQuoter(commands.Cog):
     Quote Discord message links.
     """
 
-    __version__ = "1.2.0"
+    __version__ = "1.2.1"
 
     def format_help_for_context(self, ctx):
         pre_processed = super().format_help_for_context(ctx)
@@ -130,11 +131,11 @@ class LinkQuoter(commands.Cog):
         image = None
         e: discord.Embed = None
         if message.embeds:
-            embed = message.embeds[0].copy()
+            embed = message.embeds[0]
             if str(embed.type) == "rich":
                 if footer_field:
                     embed.timestamp = message.created_at
-                e = embed
+                e = discord.Embed.from_dict(deepcopy(embed.to_dict()))
             if str(embed.type) in ("image", "article"):
                 image = embed.url
 

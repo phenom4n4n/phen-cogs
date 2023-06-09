@@ -54,7 +54,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "1.0.0"
+    __version__ = "0.6.2"
     __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -130,8 +130,6 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
         except Exception:
             pass
 
-        if self.testing_enabled:
-            self.remove_test_cog()
         self.load_task.cancel()
         await self.session.close()
 
