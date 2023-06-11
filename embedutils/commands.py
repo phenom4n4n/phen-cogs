@@ -34,7 +34,7 @@ def _example(info_type: str, example_link: str) -> str:
 
 INFO_EXAMPLES = {
     "json": _example(
-        "json", "https://gist.github.com/TwinDragon/9cf12da39f6b2888c8d71865eb7eb6a8"
+        "json", "https://gist.github.com/sravan1946/6194c4816b6eb02a11f12c5f6c3f44df"
     ),
     "yaml": _example(
         "yaml", "https://gist.github.com/phenom4n4n/9ab118b8ec7911954499b150d0182c60"
