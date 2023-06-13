@@ -78,7 +78,7 @@ class EmbedUtils(commands.Cog):
     Create, post, and store embeds.
     """
 
-    __version__ = "1.6.1"
+    __version__ = "1.6.2"
 
     EMBED_LIMIT = 50
     GLOBAL_EMBED_LIMIT = 100
