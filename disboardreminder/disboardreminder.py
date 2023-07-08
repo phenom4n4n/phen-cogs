@@ -24,7 +24,6 @@ SOFTWARE.
 
 import asyncio
 import logging
-import re
 from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Coroutine, DefaultDict, Dict, Optional
@@ -41,6 +40,7 @@ log = logging.getLogger("red.phenom4n4n.disboardreminder")
 
 DISBOARD_BOT_ID = 302050872383242240
 LOCK_REASON = "DisboardReminder auto-lock"
+
 
 class DisboardReminder(commands.Cog):
     """
@@ -427,8 +427,11 @@ class DisboardReminder(commands.Cog):
     def validate_success(self, message: discord.Message) -> bool:
         if not message.embeds or not message.interaction:
             return False
-        
-        return message.interaction.type == discord.InteractionType.application_command and message.interaction.name == "bump"
+
+        return (
+            message.interaction.type == discord.InteractionType.application_command
+            and message.interaction.name == "bump"
+        )
 
     async def respond_to_bump(
         self,
@@ -478,10 +481,10 @@ class DisboardReminder(commands.Cog):
         data = await self.config.guild(guild).all()
         if not data["channel"]:
             return
-        
+
         clean = data["clean"]
         my_perms = channel.permissions_for(guild.me)
-        
+
         if self.validate_success(message):
             last_bump = data["nextBump"]
             if last_bump and last_bump - message.created_at.timestamp() > 0:
