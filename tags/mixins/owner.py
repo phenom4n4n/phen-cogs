@@ -300,7 +300,7 @@ class OwnerCommands(MixinMeta):
         This action cannot be undone.
 
         **Example:**
-        `[p]migratealias`
+        `[p]migratecustomcom`
         """
         msg = "Are you sure you want to migrate CustomCommands data to tags?"
         if not await ConfirmationView.confirm(ctx, msg, cancel_message="Migration cancelled."):
