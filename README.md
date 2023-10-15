@@ -1,3 +1,5 @@
+# This repository is archived and these cogs are now unsupported.
+
 <h1 align="center">
   <a href="https://github.com/phenom4n4n/phen-cogs"><img src="https://i.imgur.com/dIOX12K.png" alt="Phen-Cogs"></a>
 </h1>
