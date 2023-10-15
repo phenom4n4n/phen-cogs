@@ -127,7 +127,7 @@ class Webhook(commands.Cog):
         await self.webhook_link_send(
             webhook_link,
             username=ctx.author.display_name,
-            avatar_url=ctx.author.avatar.url,
+            avatar_url=ctx.author.display_avatar.url,
             content=message,
         )
 
@@ -144,7 +144,7 @@ class Webhook(commands.Cog):
             ctx.author,
             ctx=ctx,
             content=message,
-            avatar_url=ctx.author.avatar.url,
+            avatar_url=ctx.author.avatar.display_avatar.url,
             username=ctx.author.display_name,
         )
 
@@ -162,7 +162,7 @@ class Webhook(commands.Cog):
             ctx.author,
             ctx=ctx,
             content=message,
-            avatar_url=member.avatar.url,
+            avatar_url=member.display_avatar.url,
             username=member.display_name,
         )
 
@@ -181,7 +181,7 @@ class Webhook(commands.Cog):
             ctx.author,
             ctx=ctx,
             content=message,
-            avatar_url=member.avatar.url,
+            avatar_url=member.display_avatar.url,
             username=member.display_name,
             allowed_mentions=USER_MENTIONS,
         )
@@ -330,7 +330,7 @@ class Webhook(commands.Cog):
             message.content,
             embeds=message.embeds,
             username=author.display_name,
-            avatar_url=author.avatar.url,
+            avatar_url=author.display_avatar.url,
             allowed_mentions=USER_MENTIONS,
         )
 
