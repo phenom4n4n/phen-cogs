@@ -54,7 +54,7 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
     The TagScript documentation can be found [here](https://phen-cogs.readthedocs.io/en/latest/index.html).
     """
 
-    __version__ = "0.6.2"
+    __version__ = "0.7.0"
     __author__ = ("PhenoM4n4n",)
 
     def format_help_for_context(self, ctx: commands.Context):
@@ -259,14 +259,6 @@ class SlashTags(Commands, Processor, commands.Cog, metaclass=CompositeMetaClass)
 
     def get_command(self, command_id: int) -> ApplicationCommand:
         return self.command_cache.get(command_id)
-
-    @commands.Cog.listener()
-    async def on_interaction(self, interaction: discord.Interaction):
-        if interaction.type != discord.InteractionType.application_command:
-            return
-        wrapped = InteractionCommandWrapper(interaction, self)
-        log.debug("Received interaction %r", wrapped)
-        await self.handle_slash_interaction(wrapped)
 
     async def handle_slash_interaction(self, interaction: InteractionCommandWrapper):
         try:

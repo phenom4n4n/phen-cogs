@@ -32,6 +32,7 @@ from redbot.core import Config, commands
 from redbot.core.bot import Red
 from redbot.core.utils.chat_formatting import box, pagify
 
+from .errors import SlashTagException
 from .http import (
     ApplicationCommandType,
     ApplicationOptionChoice,
@@ -129,6 +130,7 @@ class ApplicationCommand:
         "options",
         "type",
         "version",
+        "_dpy_command",
     )
 
     def __init__(
@@ -155,6 +157,7 @@ class ApplicationCommand:
         self.type = type
         self.options = options.copy()
         self.version = version
+        self._dpy_command = None
 
     def __str__(self) -> str:
         return self.name
@@ -254,6 +257,45 @@ class ApplicationCommand:
 
     def add_to_cache(self):
         self.cog.command_cache[self.id] = self
+        guild = discord.Object(self.guild_id) if self.guild_id else None
+        if self.type == ApplicationCommandType.CHAT_INPUT:
+            deco = self.cog.bot.tree.command(
+                name=self.name, description=self.description, guild=guild
+            )
+
+            async def processor(interaction: discord.Interaction):
+                if interaction.type != discord.InteractionType.application_command:
+                    return
+                wrapped = InteractionCommandWrapper(interaction, self.cog)
+                log.debug("Received app command %r", wrapped)
+                await self.cog.handle_slash_interaction(wrapped)
+
+        else:
+            deco = self.cog.bot.tree.context_menu(name=self.name, guild=guild)
+
+            if self.type == ApplicationCommandType.USER:
+
+                async def processor(interaction: discord.Interaction, user: discord.User):
+                    if interaction.type != discord.InteractionType.application_command:
+                        return
+                    wrapped = InteractionCommandWrapper(interaction, self.cog)
+                    log.debug("Received user command %r", wrapped)
+                    await self.cog.handle_slash_interaction(wrapped)
+
+            elif self.type == ApplicationCommandType.MESSAGE:
+
+                async def processor(interaction: discord.Interaction, message: discord.Message):
+                    if interaction.type != discord.InteractionType.application_command:
+                        return
+                    wrapped = InteractionCommandWrapper(interaction, self.cog)
+                    log.debug("Received message command %r", wrapped)
+                    await self.cog.handle_slash_interaction(wrapped)
+
+            else:
+                raise SlashTagException(f"Unknown application command type: {self.type}")
+
+        self._dpy_command = deco(processor)
+        log.debug("dpy command created %s | %r", self.name, self._dpy_command)
 
     def remove_from_cache(self):
         try:
